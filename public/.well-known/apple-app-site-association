@@ -9,6 +9,10 @@
       {
         "appID": "K9883YB4VR.com.padocorp.clubhouse.staging",
         "paths": ["/club/*"]
+      },
+      {
+        "appID": "K9883YB4VR.com.padocorp.clubhouse.dev",
+        "paths": ["/club/*"]
       }
     ]
   }
