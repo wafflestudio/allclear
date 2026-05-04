@@ -53,7 +53,7 @@ const AppDownload = () => {
 
   useEffect(() => {
     const platform = checkMobile()
-    const path = platform === 'android' ? playstore : platform === 'ios' ? appstore : appstore
+    const path = platform === 'android' ? playstore : appstore
     setDownloadLink(path)
     if (path) {
       const userAgent = navigator.userAgent.toLowerCase()
