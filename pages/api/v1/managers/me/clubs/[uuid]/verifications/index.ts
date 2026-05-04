@@ -31,7 +31,7 @@ export default async function handler(
         success: true,
         message: '총동연 공식 인증 요청이 완료되었습니다. 운영진 검토 후 반영됩니다.',
         data: {
-          request_id: request.id,
+          request_id: Number(request.id),
           club_uuid: request.clubId,
           status: 'PENDING',
           created_at: request.createdAt,

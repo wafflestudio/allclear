@@ -30,11 +30,12 @@ import {
   UpdateClubReviewSchema,
 } from 'src/lib/schemas/clubs'
 import {
-  ClubRecruitmentIdParamsSchema,
   ClubRecruitmentParamsSchema,
   ClubRecruitmentSchema,
-  ClubRecruitmentsResponseSchema,
+  CreateRecruitmentResponseSchema,
   CreateClubRecruitmentSchema,
+  PublicClubRecruitmentDetailResponseSchema,
+  PublicClubRecruitmentsResponseSchema,
   RecruitmentIdParamsSchema,
   UpdateClubRecruitmentSchema,
   UpdateRecruitmentResponseSchema,
@@ -115,6 +116,95 @@ const conflictResponse = {
     'text/plain': {
       schema: ErrorMessageSchema,
     },
+  },
+}
+
+const successMessageSchema = z.object({
+  success: z.literal(true),
+  message: z.string(),
+})
+
+const failedMessageSchema = z.object({
+  success: z.literal(false),
+  message: z.string(),
+})
+
+const clubRegisterRequestExample = {
+  club_data: {
+    name: '와플스튜디오',
+    type: '교내',
+    image_uri: 'https://cdn.allclear.com/temp/upload_123.jpg',
+    category: '진로',
+    affiliation: '컴퓨터공학부',
+    short_description: '웹/앱 개발 동아리',
+    recruit_type: '정기',
+    min_activity_period: 1,
+    has_dongbang: true,
+    dongbang_location: '63동 619호',
+    sns: 'https://www.instagram.com/wafflestudio_official/',
+    introduction: '동아리 소개글',
+  },
+  manager_data: {
+    name: '홍길동',
+    phone: '010-1234-5678',
+    student_id: '2021-12345',
+  },
+}
+
+const clubRecruitmentRequestExample = {
+  title: '2026년 하반기 와플스튜디오 루키 모집',
+  deadline: '2026-03-15T23:59:00Z',
+  is_mandatory: true,
+  has_regular_meeting: true,
+  regular_meetings: [
+    { day_of_week: '월요일', start_time: '19:00', end_time: '21:00' },
+    { day_of_week: '수요일', start_time: '19:00', end_time: '21:00' },
+  ],
+  activity_location_type: '동방',
+  activity_location_text: '301동 2층 동아리방 및 비대면 병행',
+  has_eligibility: true,
+  eligibility_text: '서울대학교 재학생 및 휴학생 (전공 무관)',
+  has_capacity_limit: true,
+  capacity_limit_text: '00명 (개발 파트별 상이)',
+  has_membership_fee: true,
+  membership_fee_text: '학기당 3만원 (운영비 사용)',
+  application_url: 'https://wafflestudio.com/apply',
+  application_process: '서류 심사 -> 면접 -> 최종 합격',
+  full_recruitment_text: '기존 공고문 전체 텍스트 내용...',
+  image_urls: ['https://example.com/image1.jpg', 'https://example.com/image2.jpg'],
+}
+
+const publicRecruitmentsResponseExample = {
+  success: true,
+  message: '해당 동아리의 공고 목록 조회가 완료되었습니다.',
+  data: {
+    club_name: '와플스튜디오',
+    recruitments: [
+      {
+        id: 105,
+        display_title: '2026년 3월 공고',
+        title: '2026년 상반기 루키 모집',
+        deadline: '2026-03-15T23:59:00Z',
+        is_active: true,
+      },
+      {
+        id: 88,
+        display_title: '2025년 9월 공고',
+        title: '2025년 하반기 루키 모집',
+        deadline: '2025-09-10T23:59:00Z',
+        is_active: false,
+      },
+    ],
+  },
+}
+
+const publicRecruitmentDetailResponseExample = {
+  success: true,
+  data: {
+    id: 105,
+    display_title: '2026년 3월 공고',
+    club_id: '123e4567-e89b-12d3-a456-426614174000',
+    content: clubRecruitmentRequestExample,
   },
 }
 
@@ -460,12 +550,15 @@ registry.registerPath({
   path: '/api/v1/clubs/register',
   tags: ['Clubs'],
   summary: '동아리 등록 신청',
+  description:
+    '로그인한 사용자가 신규 동아리 등록을 신청합니다. 현재 교외 동아리는 신청할 수 없으며, 신청된 동아리는 PENDING 상태로 저장됩니다.',
   security: [{ bearerAuth: [] }],
   request: {
     body: {
       content: {
         'application/json': {
           schema: ClubRegisterRequestSchema,
+          example: clubRegisterRequestExample,
         },
       },
     },
@@ -475,14 +568,26 @@ registry.registerPath({
       description: '동아리 등록 신청 성공',
       content: {
         'application/json': {
-          schema: z.object({
-            success: z.literal(true),
-            message: z.string(),
-          }),
+          schema: successMessageSchema,
+          example: {
+            success: true,
+            message: '동아리 등록 신청이 완료되었습니다.',
+          },
         },
       },
     },
-    400: validationErrorResponse,
+    400: {
+      description: '필수 필드가 누락되었거나 현재 신청할 수 없는 동아리 유형입니다.',
+      content: {
+        'application/json': {
+          schema: z.union([z.array(ValidationIssueSchema), failedMessageSchema]),
+          example: {
+            success: false,
+            message: '현재 교외 동아리는 등록 신청이 불가능합니다.',
+          },
+        },
+      },
+    },
     401: unauthorizedResponse,
     500: internalServerErrorResponse,
   },
@@ -493,6 +598,8 @@ registry.registerPath({
   path: '/api/v1/clubs/{uuid}/manager-requests',
   tags: ['Clubs'],
   summary: '동아리 관리 권한 신청',
+  description:
+    '이미 등록된 동아리에 대해 로그인한 사용자가 관리자 매핑을 요청합니다. 대기 중인 본인 요청이나 이미 승인된 관리자 매핑이 있으면 409를 반환합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -500,6 +607,11 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: ClubManagerRequestSchema,
+          example: {
+            name: '홍길동',
+            phone: '010-1234-5678',
+            student_id: '2021-12345',
+          },
         },
       },
     },
@@ -509,10 +621,11 @@ registry.registerPath({
       description: '동아리 관리 권한 신청 성공',
       content: {
         'application/json': {
-          schema: z.object({
-            success: z.literal(true),
-            message: z.string(),
-          }),
+          schema: successMessageSchema,
+          example: {
+            success: true,
+            message: '동아리 관리 권한 신청이 완료되었습니다. 운영진 검토 후 승인됩니다.',
+          },
         },
       },
     },
@@ -529,6 +642,8 @@ registry.registerPath({
   path: '/api/v1/clubs/{uuid}/recruitments',
   tags: ['Clubs'],
   summary: '동아리 모집공고 목록 조회',
+  description:
+    '동아리 상세 화면에서 사용할 공개 모집공고 목록입니다. 삭제되지 않은 공고를 최근 생성순으로 반환하며, is_active는 deadline이 현재 시각보다 미래인지로 계산합니다.',
   request: {
     params: ClubRecruitmentParamsSchema,
   },
@@ -537,7 +652,8 @@ registry.registerPath({
       description: '조회 성공',
       content: {
         'application/json': {
-          schema: ClubRecruitmentsResponseSchema,
+          schema: PublicClubRecruitmentsResponseSchema,
+          example: publicRecruitmentsResponseExample,
         },
       },
     },
@@ -572,18 +688,21 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/{uuid}/recruitments/{recruitmentId}',
+  path: '/api/v1/recruitments/{recruitmentId}',
   tags: ['Clubs'],
   summary: '동아리 모집공고 상세 조회',
+  description:
+    '공개 모집공고 상세 정보입니다. recruitmentId만으로 조회하며, 삭제된 공고이거나 소속 동아리가 공개 상태가 아니면 404를 반환합니다.',
   request: {
-    params: ClubRecruitmentIdParamsSchema,
+    params: RecruitmentIdParamsSchema,
   },
   responses: {
     200: {
       description: '조회 성공',
       content: {
         'application/json': {
-          schema: ClubRecruitmentSchema,
+          schema: PublicClubRecruitmentDetailResponseSchema,
+          example: publicRecruitmentDetailResponseExample,
         },
       },
     },
@@ -863,6 +982,8 @@ registry.registerPath({
   path: '/api/v1/managers/me/clubs',
   tags: ['Managers'],
   summary: '내가 관리하는 동아리 목록',
+  description:
+    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. 승인 대기, 승인 완료, 반려 상태를 모두 포함합니다.',
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -870,9 +991,33 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: ManagedClubsResponseSchema,
+          example: {
+            success: true,
+            message: '관리 중인 동아리 목록 및 신청 현황 조회가 완료되었습니다.',
+            data: {
+              total_count: 3,
+              clubs: [
+                {
+                  uuid: '123e4567-e89b-12d3-a456-426614174000',
+                  name: '와플스튜디오',
+                  status: 'APPROVED',
+                  image_uri: 'https://cdn.allclear.com/temp/upload_123.jpg',
+                  created_at: '2026-04-01T10:00:00Z',
+                },
+                {
+                  uuid: '234f5678-f90c-23e4-b567-537725285111',
+                  name: '쿠킹마스터',
+                  status: 'PENDING',
+                  image_uri: 'https://cdn.allclear.com/temp/upload_456.jpg',
+                  created_at: '2026-04-03T14:30:00Z',
+                },
+              ],
+            },
+          },
         },
       },
     },
+    401: unauthorizedResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },
@@ -925,34 +1070,12 @@ registry.registerPath({
 })
 
 registry.registerPath({
-  method: 'get',
-  path: '/api/v1/managers/me/clubs/{uuid}/recruitments',
-  tags: ['Managers'],
-  summary: '관리 중인 동아리 모집공고 목록 조회',
-  security: [{ bearerAuth: [] }],
-  request: {
-    params: ClubRecruitmentParamsSchema,
-  },
-  responses: {
-    200: {
-      description: '조회 성공',
-      content: {
-        'application/json': {
-          schema: ClubRecruitmentsResponseSchema,
-        },
-      },
-    },
-    400: validationErrorResponse,
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
   method: 'post',
   path: '/api/v1/managers/me/clubs/{uuid}/recruitments',
   tags: ['Managers'],
   summary: '관리 중인 동아리 모집공고 생성',
+  description:
+    '동아리 관리자가 새 모집공고를 등록합니다. 공고 생성 시각 기준 year_month가 저장되며, 같은 동아리의 같은 월 공고가 이미 있으면 409를 반환합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubRecruitmentParamsSchema,
@@ -960,6 +1083,7 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: CreateClubRecruitmentSchema,
+          example: clubRecruitmentRequestExample,
         },
       },
     },
@@ -969,11 +1093,23 @@ registry.registerPath({
       description: '생성 성공',
       content: {
         'application/json': {
-          schema: ClubRecruitmentSchema,
+          schema: CreateRecruitmentResponseSchema,
+          example: {
+            success: true,
+            message: '모집 공고가 성공적으로 등록되었습니다.',
+            data: {
+              recruitment_id: 42,
+              club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+              year_month: '2026-03',
+              deadline: '2026-03-15T23:59:00Z',
+            },
+          },
         },
       },
     },
     400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
     404: notFoundResponse,
     409: conflictResponse,
     500: internalServerErrorResponse,
@@ -985,6 +1121,8 @@ registry.registerPath({
   path: '/api/v1/managers/me/clubs/{uuid}',
   tags: ['Managers'],
   summary: '관리 중인 동아리 수정',
+  description:
+    '동아리 관리자가 본인 동아리 정보를 수정합니다. 요청에 포함된 필드만 반영하며 수정 전후 스냅샷은 club_history에 기록됩니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -992,6 +1130,13 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: ManagedClubPatchSchema,
+          example: {
+            recruit_type: '상시',
+            min_activity_period: 2,
+            has_dongbang: true,
+            dongbang_location: '301동 3층',
+            sns: 'https://wafflestudio.com',
+          },
         },
       },
     },
@@ -1009,6 +1154,14 @@ registry.registerPath({
               updated_at: z.string(),
             }),
           }),
+          example: {
+            success: true,
+            message: '동아리 정보가 수정되었으며, 수정 이력이 기록되었습니다.',
+            data: {
+              club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+              updated_at: '2026-04-02T10:00:00Z',
+            },
+          },
         },
       },
     },
@@ -1025,6 +1178,8 @@ registry.registerPath({
   path: '/api/v1/managers/me/recruitments/{recruitmentId}',
   tags: ['Managers'],
   summary: '모집공고 삭제',
+  description:
+    '동아리 관리자가 본인이 관리하는 동아리의 모집공고를 삭제합니다. 실제 행은 제거하지 않고 deleted_at을 갱신합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: RecruitmentIdParamsSchema,
@@ -1043,6 +1198,8 @@ registry.registerPath({
   path: '/api/v1/managers/me/recruitments/{recruitmentId}',
   tags: ['Managers'],
   summary: '모집공고 수정',
+  description:
+    '동아리 관리자가 모집공고 내용을 부분 수정합니다. regular_meetings가 포함되면 기존 정기모임 목록을 요청 본문의 목록 전체로 교체합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: RecruitmentIdParamsSchema,
@@ -1050,6 +1207,15 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: UpdateClubRecruitmentSchema,
+          example: {
+            title: '2026 루키 모집 (기간 연장)',
+            deadline: '2026-03-20T23:59:00Z',
+            regular_meetings: [
+              { day_of_week: '화요일', start_time: '19:00', end_time: '21:00' },
+              { day_of_week: '목요일', start_time: '19:00', end_time: '21:00' },
+            ],
+            capacity_limit_text: '20명 내외로 증원',
+          },
         },
       },
     },
@@ -1060,6 +1226,17 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: UpdateRecruitmentResponseSchema,
+          example: {
+            success: true,
+            message: '모집 공고 수정이 완료되었습니다.',
+            data: {
+              recruitment_id: 105,
+              club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+              year_month: '2026-03',
+              deadline: '2026-03-20T23:59:00Z',
+              updated_at: '2026-03-10T15:00:00Z',
+            },
+          },
         },
       },
     },
@@ -1076,6 +1253,8 @@ registry.registerPath({
   path: '/api/v1/managers/me/clubs/{uuid}/verifications',
   tags: ['Managers'],
   summary: '총동연 공식 인증 요청',
+  description:
+    '동아리 관리자가 본인 동아리의 총동연 공식 인증을 요청합니다. 이미 공식 인증 상태이거나 승인 대기 요청이 있으면 409를 반환합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -1086,6 +1265,16 @@ registry.registerPath({
       content: {
         'application/json': {
           schema: CreateVerificationRequestResponseSchema,
+          example: {
+            success: true,
+            message: '총동연 공식 인증 요청이 완료되었습니다. 운영진 검토 후 반영됩니다.',
+            data: {
+              request_id: 5,
+              club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+              status: 'PENDING',
+              created_at: '2026-04-29T17:00:00Z',
+            },
+          },
         },
       },
     },

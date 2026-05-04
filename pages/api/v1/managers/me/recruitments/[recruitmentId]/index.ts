@@ -36,7 +36,7 @@ export default async function handler(
         success: true,
         message: '모집 공고 수정이 완료되었습니다.',
         data: {
-          recruitment_id: recruitment.id,
+          recruitment_id: Number(recruitment.id),
           club_uuid: recruitment.clubId,
           year_month: recruitment.yearMonth,
           deadline: recruitment.deadline,

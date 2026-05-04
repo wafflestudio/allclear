@@ -12,30 +12,18 @@ import {
 import {
   ClubRecruitmentParamsSchema,
   CreateClubRecruitmentSchema,
-  type ClubRecruitmentsResponse,
   type CreateRecruitmentResponse,
 } from 'src/lib/schemas/club-recruitments'
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ClubRecruitmentsResponse | CreateRecruitmentResponse | string | ZodIssue[]>,
+  res: NextApiResponse<CreateRecruitmentResponse | string | ZodIssue[]>,
 ) {
   try {
     const clubRecruitmentService = Provider.getService(ClubRecruitmentService)
     const userService = Provider.getService(UserService)
     const user = await userService.getUserByAccountId(req.headers.user as string)
     const { uuid: clubUuid } = ClubRecruitmentParamsSchema.parse(req.query)
-
-    if (req.method === 'GET') {
-      const recruitments = await clubRecruitmentService.findManagedRecruitmentsByClub(
-        clubUuid,
-        user.serviceUserId,
-      )
-      return res.status(200).json({
-        recruitments,
-        totalSize: recruitments.length,
-      })
-    }
 
     if (req.method === 'POST') {
       const body = CreateClubRecruitmentSchema.parse(req.body)
@@ -48,7 +36,7 @@ export default async function handler(
         success: true,
         message: '모집 공고가 성공적으로 등록되었습니다.',
         data: {
-          recruitment_id: recruitment.id,
+          recruitment_id: Number(recruitment.id),
           club_uuid: recruitment.clubId,
           year_month: recruitment.yearMonth,
           deadline: recruitment.deadline,

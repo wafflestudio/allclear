@@ -15,13 +15,18 @@ export class ClubRecruitmentService {
   @Inject(ClubAccessService)
   private readonly clubAccessService: ClubAccessService
 
-  async findPublicRecruitmentsByClub(clubUuid: string): Promise<ClubRecruitment[]> {
-    await this.clubAccessService.getPublicClub(clubUuid)
+  async findPublicRecruitmentsByClub(
+    clubUuid: string,
+  ): Promise<{ clubName: string; recruitments: ClubRecruitment[] }> {
+    const club = await this.clubAccessService.getPublicClub(clubUuid)
     const recruitments = await this.clubRecruitmentRepository.find({
       where: { clubId: clubUuid, deletedAt: IsNull() },
       order: { createdAt: 'DESC' },
     })
-    return recruitments.map((it) => toClubRecruitmentDomain(it))
+    return {
+      clubName: club.name,
+      recruitments: recruitments.map((it) => toClubRecruitmentDomain(it)),
+    }
   }
 
   async findPublicRepresentativeRecruitmentByClub(
@@ -36,11 +41,15 @@ export class ClubRecruitmentService {
   }
 
   async findPublicRecruitmentById(
-    clubUuid: string,
     recruitmentId: string,
   ): Promise<ClubRecruitment> {
-    await this.clubAccessService.getPublicClub(clubUuid)
-    const recruitment = await this.getRecruitmentEntity(clubUuid, recruitmentId)
+    const recruitment = await this.clubRecruitmentRepository.findOne({
+      where: { id: recruitmentId, deletedAt: IsNull() },
+    })
+    if (!recruitment) {
+      throw new NotFoundError('recruitment not found')
+    }
+    await this.clubAccessService.getPublicClub(recruitment.clubId)
     return toClubRecruitmentDomain(recruitment)
   }
 

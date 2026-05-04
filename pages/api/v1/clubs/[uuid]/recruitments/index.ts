@@ -5,22 +5,34 @@ import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
 import { NotFoundError } from 'server/domain/error'
 import {
   ClubRecruitmentParamsSchema,
-  type ClubRecruitmentsResponse,
+  type PublicClubRecruitmentsResponse,
 } from 'src/lib/schemas/club-recruitments'
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ClubRecruitmentsResponse | string | ZodIssue[]>,
+  res: NextApiResponse<PublicClubRecruitmentsResponse | string | ZodIssue[]>,
 ) {
   try {
     const clubRecruitmentService = Provider.getService(ClubRecruitmentService)
 
     if (req.method === 'GET') {
       const { uuid: clubUuid } = ClubRecruitmentParamsSchema.parse(req.query)
-      const recruitments = await clubRecruitmentService.findPublicRecruitmentsByClub(clubUuid)
+      const { clubName, recruitments } = await clubRecruitmentService.findPublicRecruitmentsByClub(
+        clubUuid,
+      )
       return res.status(200).json({
-        recruitments,
-        totalSize: recruitments.length,
+        success: true,
+        message: '해당 동아리의 공고 목록 조회가 완료되었습니다.',
+        data: {
+          club_name: clubName,
+          recruitments: recruitments.map((recruitment) => ({
+            id: Number(recruitment.id),
+            display_title: toDisplayTitle(recruitment.yearMonth),
+            title: recruitment.title,
+            deadline: recruitment.deadline,
+            is_active: new Date(recruitment.deadline).getTime() > Date.now(),
+          })),
+        },
       })
     }
   } catch (err) {
@@ -35,4 +47,9 @@ export default async function handler(
   }
 
   return res.status(405).end()
+}
+
+function toDisplayTitle(yearMonth: string): string {
+  const [year, month] = yearMonth.split('-')
+  return `${year}년 ${Number(month)}월 공고`
 }

@@ -57,13 +57,6 @@ export const ClubRecruitmentParamsSchema = z
   })
   .openapi('ClubRecruitmentParams')
 
-export const ClubRecruitmentIdParamsSchema = z
-  .object({
-    uuid: z.string().uuid(),
-    recruitmentId: z.string().regex(/^\d+$/),
-  })
-  .openapi('ClubRecruitmentIdParams')
-
 export const RecruitmentIdParamsSchema = z
   .object({
     recruitmentId: z.string().regex(/^\d+$/),
@@ -123,7 +116,7 @@ export const CreateRecruitmentResponseSchema = z
     success: z.boolean(),
     message: z.string(),
     data: z.object({
-      recruitment_id: z.string(),
+      recruitment_id: z.number().int(),
       club_uuid: z.string().uuid(),
       year_month: z.string().regex(/^\d{4}-\d{2}$/),
       deadline: z.string(),
@@ -138,7 +131,7 @@ export const UpdateRecruitmentResponseSchema = z
     success: z.boolean(),
     message: z.string(),
     data: z.object({
-      recruitment_id: z.string(),
+      recruitment_id: z.number().int(),
       club_uuid: z.string().uuid(),
       year_month: z.string().regex(/^\d{4}-\d{2}$/),
       deadline: z.string(),
@@ -186,3 +179,60 @@ export const ClubRecruitmentsResponseSchema = z
   .openapi('ClubRecruitmentsResponse')
 
 export type ClubRecruitmentsResponse = z.infer<typeof ClubRecruitmentsResponseSchema>
+
+export const PublicClubRecruitmentListItemSchema = z
+  .object({
+    id: z.number().int(),
+    display_title: z.string(),
+    title: z.string(),
+    deadline: z.string(),
+    is_active: z.boolean(),
+  })
+  .openapi('PublicClubRecruitmentListItem')
+
+export const PublicClubRecruitmentsResponseSchema = z
+  .object({
+    success: z.literal(true),
+    message: z.string(),
+    data: z.object({
+      club_name: z.string(),
+      recruitments: z.array(PublicClubRecruitmentListItemSchema),
+    }),
+  })
+  .openapi('PublicClubRecruitmentsResponse')
+
+export type PublicClubRecruitmentsResponse = z.infer<typeof PublicClubRecruitmentsResponseSchema>
+
+export const PublicClubRecruitmentDetailResponseSchema = z
+  .object({
+    success: z.literal(true),
+    data: z.object({
+      id: z.number().int(),
+      display_title: z.string(),
+      club_id: z.string().uuid(),
+      content: z.object({
+        title: z.string(),
+        deadline: z.string(),
+        is_mandatory: z.boolean(),
+        has_regular_meeting: z.boolean(),
+        regular_meetings: z.array(UpsertRegularMeetingSchema),
+        activity_location_type: z.enum(CLUB_RECRUITMENT_ACTIVITY_LOCATION_TYPES),
+        activity_location_text: z.string(),
+        has_eligibility: z.boolean(),
+        eligibility_text: z.string(),
+        has_capacity_limit: z.boolean(),
+        capacity_limit_text: z.string(),
+        has_membership_fee: z.boolean(),
+        membership_fee_text: z.string(),
+        application_url: z.string(),
+        application_process: z.string(),
+        full_recruitment_text: z.string().nullable(),
+        image_urls: z.array(z.string()),
+      }),
+    }),
+  })
+  .openapi('PublicClubRecruitmentDetailResponse')
+
+export type PublicClubRecruitmentDetailResponse = z.infer<
+  typeof PublicClubRecruitmentDetailResponseSchema
+>
