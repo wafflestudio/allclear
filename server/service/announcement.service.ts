@@ -3,6 +3,7 @@ import { Inject, InjectRepository, Service } from '../provider'
 import { AnnouncementDismissEntity, AnnouncementEntity } from '../infra/database/entities'
 import { UserService } from './user.service'
 import { Announcement, toAnnouncementDomain } from '../domain/model/Announcement'
+import { BadRequestError } from '../domain/error'
 
 @Service
 export class AnnouncementService {
@@ -40,5 +41,39 @@ export class AnnouncementService {
 
     const entities = await query.getMany()
     return entities.map(toAnnouncementDomain)
+  }
+
+  async dismissAnnouncements(accountId: string, announcementUuids: string[]): Promise<void> {
+    const user = await this.userService.getUserByAccountId(accountId)
+    const uniqueAnnouncementUuids = [...new Set(announcementUuids)]
+
+    const announcements = await this.announcementRepository.find({
+      where: uniqueAnnouncementUuids.map((uuid) => ({
+        uuid,
+        active: true,
+      })),
+    })
+
+    if (announcements.length !== uniqueAnnouncementUuids.length) {
+      throw new BadRequestError('invalid announcement uuids')
+    }
+
+    if (announcements.length === 0) {
+      return
+    }
+
+    await this.announcementDismissRepository
+      .createQueryBuilder()
+      .insert()
+      .into(AnnouncementDismissEntity)
+      .values(
+        announcements.map((announcement) => ({
+          announcementId: announcement.id,
+          userId: user.id,
+          dismissedAt: new Date().toISOString(),
+        })),
+      )
+      .orIgnore()
+      .execute()
   }
 }

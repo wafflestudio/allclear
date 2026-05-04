@@ -13,8 +13,11 @@ import {
   KakaoCallbackQuerySchema,
   KakaoNativeCallbackPayloadSchema,
 } from 'src/lib/schemas/auth'
-import { AnnouncementsResponseSchema } from 'src/lib/schemas/announcements'
-import { TermsResponseSchema } from 'src/lib/schemas/terms'
+import {
+  AnnouncementsResponseSchema,
+  DismissAnnouncementsSchema,
+} from 'src/lib/schemas/announcements'
+import { AgreeTermsSchema, TermsResponseSchema } from 'src/lib/schemas/terms'
 import {
   ClubCategoriesResponseSchema,
   ClubListByCategoryQuerySchema,
@@ -229,6 +232,29 @@ registry.registerPath({
 })
 
 registry.registerPath({
+  method: 'post',
+  path: '/api/v1/announcements/dismiss',
+  tags: ['Announcements'],
+  summary: '공지 숨김 처리',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: DismissAnnouncementsSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
   method: 'get',
   path: '/api/v1/terms',
   tags: ['Terms'],
@@ -244,6 +270,29 @@ registry.registerPath({
       },
     },
     401: unauthorizedResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/terms/agree',
+  tags: ['Terms'],
+  summary: '약관 동의 처리',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: AgreeTermsSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    404: notFoundResponse,
     500: internalServerErrorResponse,
   },
 })

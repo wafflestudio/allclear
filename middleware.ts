@@ -51,6 +51,8 @@ export const config = {
     '/api/v1/users/me/voices',
     '/api/v1/auth/leave',
     '/api/v1/terms',
+    '/api/v1/terms/:path*',
+    '/api/v1/announcements/dismiss',
     '/api/v1/clubs/:uuid?/reviews',
     '/api/v1/clubs/:uuid?/reviews/me',
     '/api/v1/clubs/:uuid?/saved',
