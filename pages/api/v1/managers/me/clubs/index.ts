@@ -8,8 +8,12 @@ import { SlackService } from '../../../../../../server/service/slack.service'
 import { ClubManagerRegisterRequestSchema } from 'src/lib/schemas/managers'
 
 type ResponseData = {
-  clubs: Club[]
-  totalSize: number
+  success: true
+  message: string
+  data: {
+    total_count: number
+    clubs: Club[]
+  }
 }
 
 // const app = new App({
@@ -29,8 +33,12 @@ export default async function handler(
     if (req.method == 'GET') {
       const clubs = await clubService.findAllManagedByUser(user.serviceUserId)
       return res.status(200).json({
-        clubs: clubs,
-        totalSize: clubs.length,
+        success: true,
+        message: '관리 중인 동아리 목록 및 신청 현황 조회가 완료되었습니다.',
+        data: {
+          total_count: clubs.length,
+          clubs: clubs,
+        },
       })
     }
     if (req.method === 'POST') {
@@ -60,9 +68,11 @@ export default async function handler(
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
-      return res.status(404).send('user not found')
+      return res.status(401).send('Unauthorized')
     }
     console.error('listClubsManagedByMe error: ', err)
     return res.status(500).send('Internal Server Error')
   }
+
+  return res.status(405).end()
 }

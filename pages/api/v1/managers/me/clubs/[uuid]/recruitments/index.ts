@@ -3,17 +3,22 @@ import { z, ZodIssue } from 'zod'
 import { Provider } from 'server/provider'
 import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
 import { UserService } from 'server/service/user.service'
-import { ConflictError, NotFoundError, UserNotFoundError } from 'server/domain/error'
+import {
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  UserNotFoundError,
+} from 'server/domain/error'
 import {
   ClubRecruitmentParamsSchema,
-  UpsertClubRecruitmentSchema,
-  type ClubRecruitmentDto,
+  CreateClubRecruitmentSchema,
   type ClubRecruitmentsResponse,
+  type CreateRecruitmentResponse,
 } from 'src/lib/schemas/club-recruitments'
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ClubRecruitmentsResponse | ClubRecruitmentDto | string | ZodIssue[]>,
+  res: NextApiResponse<ClubRecruitmentsResponse | CreateRecruitmentResponse | string | ZodIssue[]>,
 ) {
   try {
     const clubRecruitmentService = Provider.getService(ClubRecruitmentService)
@@ -33,13 +38,22 @@ export default async function handler(
     }
 
     if (req.method === 'POST') {
-      const body = UpsertClubRecruitmentSchema.parse(req.body)
+      const body = CreateClubRecruitmentSchema.parse(req.body)
       const recruitment = await clubRecruitmentService.createRecruitment(
         clubUuid,
         user.serviceUserId,
         body,
       )
-      return res.status(201).json(recruitment)
+      return res.status(201).json({
+        success: true,
+        message: '모집 공고가 성공적으로 등록되었습니다.',
+        data: {
+          recruitment_id: recruitment.id,
+          club_uuid: recruitment.clubId,
+          year_month: recruitment.yearMonth,
+          deadline: recruitment.deadline,
+        },
+      })
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
@@ -47,6 +61,9 @@ export default async function handler(
     }
     if (err instanceof NotFoundError) {
       return res.status(404).send('resource not found')
+    }
+    if (err instanceof ForbiddenError) {
+      return res.status(403).send('forbidden')
     }
     if (err instanceof ConflictError) {
       return res.status(409).send(err.message)

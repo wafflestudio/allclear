@@ -35,7 +35,6 @@ export class UserService {
   @InjectRepository(CollegeMajorEntity)
   private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
 
-  @InjectRepository(DeviceEntity)
   public async getUserByAccountId(accountId: string): Promise<User> {
     if (!accountId) {
       throw new UserNotFoundError(`User not found`)

@@ -1,24 +1,22 @@
-import { In, IsNull, Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
-import { ClubEntity } from '../infra/database/entities'
+import { In, Repository } from 'typeorm'
+import { Inject, InjectRepository, Service } from '../provider'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { ClubReviewKeywordCategoryEntity } from '../infra/database/entities/user-club-review-category.entity'
 import { ReviewKeywordCategory } from '../../src/lib/schemas/common'
 import { ClubRanking, MyReview } from '../../src/lib/schemas/clubs'
-import { NotFoundError } from '../domain/error'
-import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
+import { ClubAccessService } from './club-access.service'
 
 @Service
 export class ReviewService {
-  @InjectRepository(ClubEntity)
-  private readonly clubRepository: Repository<ClubEntity>
   @InjectRepository(ClubReviewKeywordEntity)
   private readonly clubReviewKeywordRepository: Repository<ClubReviewKeywordEntity>
   @InjectRepository(ClubReviewKeywordCategoryEntity)
   private readonly clubReviewKeywordCategoryRepository: Repository<ClubReviewKeywordCategoryEntity>
   @InjectRepository(UserClubReviewEntity)
   private readonly userClubReviewRepository: Repository<UserClubReviewEntity>
+  @Inject(ClubAccessService)
+  private readonly clubAccessService: ClubAccessService
 
   public async reviewClub(
     serviceUserId: string,
@@ -26,7 +24,7 @@ export class ReviewService {
     review: { rating?: number; reviewKeywordIds?: string[]; content?: string },
   ) {
     const { rating, reviewKeywordIds, content } = review
-    await this.assertPublicClubExists(clubId)
+    await this.clubAccessService.getPublicClub(clubId)
 
     const userClubReview = await this.userClubReviewRepository.findOneBy({
       serviceUserId,
@@ -72,7 +70,7 @@ export class ReviewService {
   }
 
   public async getMyReview(serviceUserId: string, clubId: string): Promise<MyReview | null> {
-    await this.assertPublicClubExists(clubId)
+    await this.clubAccessService.getPublicClub(clubId)
     const review = await this.userClubReviewRepository.findOneBy({
       clubId,
       serviceUserId,
@@ -142,16 +140,5 @@ LIMIT ${topk}
       .sort((a, b) => b[1] - a[1])
       .slice(0, topN)
       .map((it) => it[0])
-  }
-
-  private async assertPublicClubExists(clubId: string) {
-    const club = await this.clubRepository.findOneBy({
-      uuid: clubId,
-      status: PUBLIC_CLUB_STATUS,
-      deletedAt: IsNull(),
-    })
-    if (!club) {
-      throw new NotFoundError('club not found')
-    }
   }
 }

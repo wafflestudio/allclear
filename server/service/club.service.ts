@@ -1,6 +1,11 @@
 import { In, IsNull, Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
-import { ClubEntity, UserActivityLogEntity, UserActivityLogType } from '../infra/database/entities'
+import { Inject, InjectRepository, Service } from '../provider'
+import {
+  ClubEntity,
+  ClubHistoryEntity,
+  UserActivityLogEntity,
+  UserActivityLogType,
+} from '../infra/database/entities'
 import { ClubCategory } from '../domain/model/ClubCategory'
 import { CATEGORIES } from '../../src/fixtures/category'
 import { Club, ReviewKeyword, toClubDomain } from 'server/domain/model/Club'
@@ -11,19 +16,42 @@ import { ClubManagerEntity } from '../infra/database/entities/club-manager.entit
 import { UserSavedClubEntity } from '../infra/database/entities/user-saved-club.entity'
 import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
 import dayjs from 'dayjs'
-import { NotFoundError } from '../domain/error'
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { sortByPopularAndEachRandom } from '../util/club-sort'
-import { v4 as uuidv4 } from 'uuid'
 import {
   PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
 } from 'src/common/constants/club-status'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
-import type { ClubCreationDecision, CreateClubCreationRequest } from 'src/lib/schemas/managers'
+import type {
+  ClubCreationDecision,
+  ClubData,
+  ClubManagerRequest,
+  ClubRegisterRequest,
+  ManagedClubPatch,
+} from 'src/lib/schemas/managers'
+import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
+import { ClubAccessService } from './club-access.service'
 
 type ClubUuid = string
 type ReviewKeywordId = string
+
+const CLUB_ENTITY_FIELD_TO_COLUMN: Record<string, string> = {
+  name: 'name',
+  type: 'type',
+  imageUri: 'image_uri',
+  category: 'category',
+  shortDescription: 'short_description',
+  recruitType: 'recruit_type',
+  minActivityPeriod: 'min_activity_period',
+  hasDongbang: 'has_dongbang',
+  dongbangLocation: 'dongbang_location',
+  affiliationType: 'affiliation_type',
+  collegeMajorId: 'college_major_id',
+  sns: 'sns',
+  introduction: 'introduction',
+}
 
 @Service
 export class ClubService {
@@ -41,6 +69,12 @@ export class ClubService {
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
   @InjectRepository(ClubManagerRegisterRequestEntity)
   private readonly clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>
+  @InjectRepository(CollegeMajorEntity)
+  private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
+  @InjectRepository(ClubHistoryEntity)
+  private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
+  @Inject(ClubAccessService)
+  private readonly clubAccessService: ClubAccessService
 
   async findByUuid(uuid: string): Promise<Club> {
     this.userActivityLogRepository
@@ -49,7 +83,7 @@ export class ClubService {
         params: JSON.stringify({ uuid }),
       })
       .catch(console.error)
-    const club = await this.getClubEntityByUuid(uuid)
+    const club = await this.clubAccessService.getExistingClub(uuid)
     const clubReview = await this.getClubReviews([club.uuid])
     return toClubDomain(club, clubReview.get(club.uuid))
   }
@@ -61,7 +95,7 @@ export class ClubService {
         params: JSON.stringify({ uuid }),
       })
       .catch(console.error)
-    const club = await this.getPublicClubEntityByUuid(uuid)
+    const club = await this.clubAccessService.getPublicClub(uuid)
     const clubReview = await this.getClubReviews([club.uuid])
     return toClubDomain(club, clubReview.get(club.uuid))
   }
@@ -75,14 +109,8 @@ export class ClubService {
   }
 
   async getManagedClubByUuid(clubUuid: string, serviceUserId: string): Promise<Club> {
-    // check permission
-    await this.clubManagerRepository.findOneByOrFail({
-      clubId: clubUuid,
-      serviceUserId,
-    })
-    const club = await this.clubRepository.findOneByOrFail({
-      uuid: clubUuid,
-    })
+    await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
+    const club = await this.clubAccessService.getExistingClub(clubUuid)
     return toClubDomain(club)
   }
 
@@ -137,7 +165,7 @@ export class ClubService {
   }
 
   async saveClubToMyCollection(serviceUserId: string, clubId: string) {
-    await this.getPublicClubEntityByUuid(clubId)
+    await this.clubAccessService.getPublicClub(clubId)
     await this.userSavedClubRepository.insert({ serviceUserId, clubId })
   }
 
@@ -180,35 +208,16 @@ export class ClubService {
     return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
   }
 
-  async createClubCreationRequest(
-    serviceUserId: string,
-    club: CreateClubCreationRequest,
-  ): Promise<Club> {
-    const now = new Date().toISOString()
-    const createdClub = await this.clubRepository.manager.transaction(async (manager) => {
+  async registerClub(serviceUserId: string, body: ClubRegisterRequest): Promise<void> {
+    const { club_data: club, manager_data: managerData } = body
+    const clubPatch = await this.buildClubPatchFromClubData(club)
+
+    await this.clubRepository.manager.transaction(async (manager) => {
       const clubRepository = manager.getRepository(ClubEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
 
       const entity = clubRepository.create({
-        name: club.name,
-        fullName: club.fullName,
-        description: club.fullName,
-        shortDescription: club.shortDescription?.trim() ?? '',
-        type: club.type,
-        category: club.category,
-        college: club.college,
-        affiliationType: club.affiliationType,
-        collegeMajorId: club.collegeMajorId ?? null,
-        tags: club.tags,
-        article: club.detail ?? '',
-        articleUploadedAt: (club.detail ?? '').trim() ? now : null,
-        recruitType: normalizeClubRecruitType(club.recruitType),
-        dongbangLocation: club.dongbangLocation?.trim() ?? '',
-        minActivityPeriod: club.minActivityPeriod ?? 0,
-        activeMemberCount: club.activeMemberCount ?? 0,
-        sns: club.sns?.trim() ?? '',
-        introduction: club.introduction ?? '',
-        authkey: uuidv4(),
+        ...clubPatch,
         status: PENDING_CLUB_STATUS,
         approvedAt: null,
         rejectReason: '',
@@ -218,15 +227,53 @@ export class ClubService {
       await clubManagerRepository.insert({
         clubId: created.uuid,
         serviceUserId,
+        name: managerData.name,
+        phone: managerData.phone,
+        studentId: managerData.student_id,
       })
-      return created
     })
+  }
 
-    return toClubDomain(createdClub)
+  private async resolveClubAffiliation(
+    affiliation: string,
+  ): Promise<{ affiliationType: string; collegeMajorId: number | null }> {
+    if (['중앙동아리', '연합동아리', '기타'].includes(affiliation)) {
+      return {
+        affiliationType: affiliation,
+        collegeMajorId: null,
+      }
+    }
+
+    const major = await this.collegeMajorRepository.findOne({
+      where: {
+        major: affiliation,
+      },
+    })
+    if (major) {
+      return {
+        affiliationType: '소속동아리',
+        collegeMajorId: major.id,
+      }
+    }
+
+    const college = await this.collegeMajorRepository.findOne({
+      where: {
+        college: affiliation,
+        major: IsNull(),
+      },
+    })
+    if (college) {
+      return {
+        affiliationType: '소속동아리',
+        collegeMajorId: college.id,
+      }
+    }
+
+    throw new BadRequestError('유효하지 않은 동아리 소속입니다.')
   }
 
   async decideClubCreationRequest(clubUuid: string, decision: ClubCreationDecision): Promise<Club> {
-    await this.getClubEntityByUuid(clubUuid)
+    await this.clubAccessService.getExistingClub(clubUuid)
 
     await this.clubRepository.update(
       {
@@ -241,7 +288,7 @@ export class ClubService {
       },
     )
 
-    const club = await this.getClubEntityByUuid(clubUuid)
+    const club = await this.clubAccessService.getExistingClub(clubUuid)
     const clubReview = await this.getClubReviews([club.uuid])
     return toClubDomain(club, clubReview.get(club.uuid))
   }
@@ -394,6 +441,158 @@ export class ClubService {
     return !!updated.affected && updated.affected > 0
   }
 
+  async patchManagedClub(
+    clubUuid: string,
+    serviceUserId: string,
+    body: ManagedClubPatch,
+  ): Promise<{ clubUuid: string; updatedAt: string }> {
+    const patch = await this.buildClubPatchFromClubData(body)
+    if (Object.keys(patch).length === 0) {
+      throw new BadRequestError('수정할 필드가 없습니다.')
+    }
+
+    return this.clubRepository.manager.transaction(async (manager) => {
+      const clubRepository = manager.getRepository(ClubEntity)
+      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const clubHistoryRepository = manager.getRepository(ClubHistoryEntity)
+
+      const club = await clubRepository.findOneBy({
+        uuid: clubUuid,
+        deletedAt: IsNull(),
+      })
+      if (!club) {
+        throw new NotFoundError('club not found')
+      }
+
+      const clubManager = await clubManagerRepository.findOneBy({
+        clubId: clubUuid,
+        serviceUserId,
+      })
+      if (!clubManager) {
+        throw new ForbiddenError('club manager permission required')
+      }
+
+      const beforeData = this.toClubHistoryData(club)
+      await clubRepository.update(
+        {
+          uuid: clubUuid,
+          deletedAt: IsNull(),
+        },
+        patch,
+      )
+
+      const updatedClub = await clubRepository.findOneByOrFail({
+        uuid: clubUuid,
+        deletedAt: IsNull(),
+      })
+      const afterData = this.toClubHistoryData(updatedClub)
+      const changedFields = Object.keys(patch)
+        .map((key) => CLUB_ENTITY_FIELD_TO_COLUMN[key] ?? key)
+        .filter((key) => beforeData[key] !== afterData[key])
+
+      await clubHistoryRepository.insert({
+        clubId: clubUuid,
+        serviceUserId,
+        beforeData: beforeData as any,
+        afterData: afterData as any,
+        changedFields,
+      })
+
+      return {
+        clubUuid,
+        updatedAt: updatedClub.updatedAt,
+      }
+    })
+  }
+
+  private async buildClubPatchFromClubData(body: Partial<ClubData>): Promise<Partial<ClubEntity>> {
+    const patch: Partial<ClubEntity> = {}
+
+    if (body.name !== undefined) {
+      patch.name = body.name
+    }
+    if (body.type !== undefined) {
+      if (body.type === '교외') {
+        throw new BadRequestError('현재 교외 동아리는 등록 신청이 불가능합니다.')
+      }
+      patch.type = body.type
+    }
+    if (body.image_uri !== undefined) {
+      patch.imageUri = body.image_uri
+    }
+    if (body.category !== undefined) {
+      patch.category = body.category
+    }
+    if (body.affiliation !== undefined) {
+      const affiliation = await this.resolveClubAffiliation(body.affiliation)
+      patch.affiliationType = affiliation.affiliationType
+      patch.collegeMajorId = affiliation.collegeMajorId
+    }
+    if (body.short_description !== undefined) {
+      patch.shortDescription = body.short_description
+    }
+    if (body.recruit_type !== undefined) {
+      patch.recruitType = normalizeClubRecruitType(body.recruit_type)
+    }
+    if (body.min_activity_period !== undefined) {
+      patch.minActivityPeriod = body.min_activity_period
+    }
+    if (body.has_dongbang !== undefined) {
+      patch.hasDongbang = body.has_dongbang
+    }
+    if (body.dongbang_location !== undefined) {
+      patch.dongbangLocation = body.dongbang_location
+    }
+    if (body.sns !== undefined) {
+      patch.sns = body.sns
+    }
+    if (body.introduction !== undefined) {
+      patch.introduction = body.introduction
+    }
+
+    return patch
+  }
+
+  private toClubHistoryData(club: ClubEntity): Record<string, unknown> {
+    return {
+      uuid: club.uuid,
+      name: club.name,
+      full_name: club.fullName,
+      description: club.description,
+      short_description: club.shortDescription,
+      type: club.type,
+      category: club.category,
+      college: club.college,
+      affiliation_type: club.affiliationType,
+      college_major_id: club.collegeMajorId,
+      image_uri: club.imageUri,
+      thumbnail_uri: club.thumbnailUri,
+      tags: club.tags,
+      article: club.article,
+      article_uploaded_at: club.articleUploadedAt,
+      is_popular: club.isPopular,
+      has_dongbang: club.hasDongbang,
+      dongbang_location: club.dongbangLocation,
+      activity_cycle: club.activityCycle,
+      min_activity_period: club.minActivityPeriod,
+      active_member_count: club.activeMemberCount,
+      membership_fee: club.membershipFee,
+      recruit_type: club.recruitType,
+      is_official_verified: club.isOfficialVerified,
+      verified_at: club.verifiedAt,
+      sns: club.sns,
+      introduction: club.introduction,
+      blur_image: club.blurImage,
+      blur_hash: club.blurHash,
+      created_at: club.createdAt,
+      updated_at: club.updatedAt,
+      deleted_at: club.deletedAt,
+      approved_at: club.approvedAt,
+      status: club.status,
+      reject_reason: club.rejectReason,
+    }
+  }
+
   async clubManagerRegisterRequest(
     serviceUserId: string,
     {
@@ -403,7 +602,7 @@ export class ClubService {
       studentId,
     }: { clubId: string; name: string; phone: string; studentId: string },
   ) {
-    await this.getClubEntityByUuid(clubId)
+    await this.clubAccessService.getExistingClub(clubId)
     await this.clubManagerRegisterRequestRepository.insert({
       serviceUserId,
       clubId,
@@ -413,35 +612,44 @@ export class ClubService {
     })
   }
 
+  async createClubManagerRequest(
+    clubUuid: string,
+    serviceUserId: string,
+    request: ClubManagerRequest,
+  ): Promise<void> {
+    await this.clubAccessService.getExistingClub(clubUuid)
+
+    const existingManager = await this.clubManagerRepository.findOneBy({
+      clubId: clubUuid,
+    })
+    if (existingManager) {
+      throw new ConflictError('club already has a manager')
+    }
+
+    const pendingRequest = await this.clubManagerRegisterRequestRepository.findOneBy({
+      clubId: clubUuid,
+      serviceUserId,
+      status: 'PENDING',
+    })
+    if (pendingRequest) {
+      throw new ConflictError('pending manager request already exists')
+    }
+
+    await this.clubManagerRegisterRequestRepository.insert({
+      serviceUserId,
+      clubId: clubUuid,
+      name: request.name,
+      phone: request.phone,
+      studentId: request.student_id,
+    })
+  }
+
   async registerClubManager(serviceUserId: string, clubUuid: string) {
-    await this.getClubEntityByUuid(clubUuid)
+    await this.clubAccessService.getExistingClub(clubUuid)
     const exist = await this.clubManagerRepository.findOneBy({ serviceUserId, clubId: clubUuid })
     if (exist) {
       return
     }
     await this.clubManagerRepository.insert({ serviceUserId, clubId: clubUuid })
-  }
-
-  private async getClubEntityByUuid(uuid: string): Promise<ClubEntity> {
-    const club = await this.clubRepository.findOneBy({
-      uuid,
-      deletedAt: IsNull(),
-    })
-    if (!club) {
-      throw new NotFoundError('club not found')
-    }
-    return club
-  }
-
-  private async getPublicClubEntityByUuid(uuid: string): Promise<ClubEntity> {
-    const club = await this.clubRepository.findOneBy({
-      uuid,
-      status: PUBLIC_CLUB_STATUS,
-      deletedAt: IsNull(),
-    })
-    if (!club) {
-      throw new NotFoundError('club not found')
-    }
-    return club
   }
 }

@@ -1,13 +1,14 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { CollegeMajorEntity } from './college-major.entity'
 import type { ClubStatus } from 'src/common/constants/club-status'
+import { ClubTimeStampMixin } from './TimeStampMixin'
 
 @Entity('club')
 @Index('ux_club_uuid', ['uuid'])
 @Index('ux_club_authkey', ['authkey'])
 @Index('ix_club_category', ['category'])
 @Index('ix_club_ispopular', ['isPopular'])
-export class ClubEntity {
+export class ClubEntity extends ClubTimeStampMixin {
   @PrimaryGeneratedColumn('uuid', { name: 'uuid' })
   uuid: string
 
@@ -101,12 +102,6 @@ export class ClubEntity {
 
   @Column({ type: 'uuid', select: false, unique: true, name: 'authkey' })
   authkey: string
-
-  @Column({ type: 'timestamp with time zone', default: () => 'NOW()', name: 'created_at' })
-  createdAt: string
-
-  @Column({ type: 'timestamp with time zone', nullable: true, name: 'deleted_at' })
-  deletedAt: string | null
 
   @Column({ type: 'timestamp without time zone', nullable: true, name: 'approved_at' })
   approvedAt: string | null

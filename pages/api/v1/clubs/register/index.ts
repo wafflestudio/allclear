@@ -3,13 +3,17 @@ import { ZodIssue, z } from 'zod'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import { UserNotFoundError } from 'server/domain/error'
-import { Club } from 'server/domain/model/Club'
-import { CreateClubCreationRequestSchema } from 'src/lib/schemas/managers'
+import { BadRequestError, UserNotFoundError } from 'server/domain/error'
+import { ClubRegisterRequestSchema } from 'src/lib/schemas/managers'
+
+type ClubRegisterResponse = {
+  success: boolean
+  message: string
+}
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Club | string | ZodIssue[]>,
+  res: NextApiResponse<ClubRegisterResponse | string | ZodIssue[]>,
 ) {
   try {
     const clubService = Provider.getService(ClubService)
@@ -17,18 +21,28 @@ export default async function handler(
 
     if (req.method === 'POST') {
       const user = await userService.getUserByAccountId(req.headers.user as string)
-      const body = CreateClubCreationRequestSchema.parse(req.body)
-      const club = await clubService.createClubCreationRequest(user.serviceUserId, body)
-      return res.status(201).json(club)
+      const body = ClubRegisterRequestSchema.parse(req.body)
+      await clubService.registerClub(user.serviceUserId, body)
+
+      return res.status(201).json({
+        success: true,
+        message: '동아리 등록 신청이 완료되었습니다.',
+      })
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
-      return res.status(404).send('user not found')
+      return res.status(401).send('Unauthorized')
+    }
+    if (err instanceof BadRequestError) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      })
     }
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
     }
-    console.error('createClubCreationRequest error: ', err)
+    console.error('registerClub error: ', err)
     return res.status(500).send('Internal Server Error')
   }
 

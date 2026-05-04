@@ -43,6 +43,16 @@ export const ClubManagerRegisterRequestSchema = z
   })
   .openapi('ClubManagerRegisterRequest')
 
+export const ClubManagerRequestSchema = z
+  .object({
+    name: z.string().trim().nonempty(),
+    phone: z.string().trim().nonempty(),
+    student_id: z.string().trim().nonempty(),
+  })
+  .openapi('ClubManagerRequest')
+
+export type ClubManagerRequest = z.infer<typeof ClubManagerRequestSchema>
+
 const clubDraftShape = {
   name: z.string().nonempty().max(30),
   fullName: z.string().nonempty().max(50),
@@ -70,13 +80,45 @@ const clubDraftShape = {
   detail: z.string().max(5000).nullable().optional(),
 }
 
-export const CreateClubCreationRequestSchema = z
-  .object(clubDraftShape)
-  .openapi('CreateClubCreationRequest')
+const ClubDataSchema = z.object({
+  name: z.string().trim().nonempty().max(30),
+  type: z.enum(['교내', '교외']),
+  image_uri: z.string().trim().url(),
+  category: z.enum(CLUB_CATEGORIES),
+  affiliation: z.string().trim().nonempty(),
+  short_description: z.string().trim().nonempty(),
+  recruit_type: z.enum(CLUB_RECRUIT_TYPES),
+  min_activity_period: z.number().int().nonnegative(),
+  has_dongbang: z.boolean(),
+  dongbang_location: z.string().trim().optional(),
+  sns: z.string().trim().url(),
+  introduction: z.string().trim().nonempty(),
+})
 
-export type CreateClubCreationRequest = z.infer<typeof CreateClubCreationRequestSchema>
+export type ClubData = z.infer<typeof ClubDataSchema>
+
+export const ClubRegisterRequestSchema = z
+  .object({
+    club_data: ClubDataSchema,
+    manager_data: z.object({
+      name: z.string().trim().nonempty(),
+      phone: z.string().trim().nonempty(),
+      student_id: z.string().trim().nonempty(),
+    }),
+  })
+  .openapi('ClubRegisterRequest')
+
+export type ClubRegisterRequest = z.infer<typeof ClubRegisterRequestSchema>
 
 export const ManagedClubUpdateSchema = z.object(clubDraftShape).openapi('ManagedClubUpdate')
+
+export const ManagedClubPatchSchema = ClubDataSchema.partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field is required',
+  })
+  .openapi('ManagedClubPatch')
+
+export type ManagedClubPatch = z.infer<typeof ManagedClubPatchSchema>
 
 export const ClubCreationDecisionSchema = z
   .object({
@@ -98,8 +140,12 @@ export type ClubCreationDecision = z.infer<typeof ClubCreationDecisionSchema>
 
 export const ManagedClubsResponseSchema = z
   .object({
-    clubs: z.array(ClubSchema),
-    totalSize: z.number().int(),
+    success: z.literal(true),
+    message: z.string(),
+    data: z.object({
+      total_count: z.number().int(),
+      clubs: z.array(ClubSchema),
+    }),
   })
   .openapi('ManagedClubsResponse')
 
@@ -112,3 +158,20 @@ export const ClubImageUploadSchema = z
     }),
   })
   .openapi('ClubImageUpload')
+
+export const CreateVerificationRequestResponseSchema = z
+  .object({
+    success: z.literal(true),
+    message: z.string(),
+    data: z.object({
+      request_id: z.string(),
+      club_uuid: z.string().uuid(),
+      status: z.literal('PENDING'),
+      created_at: z.string(),
+    }),
+  })
+  .openapi('CreateVerificationRequestResponse')
+
+export type CreateVerificationRequestResponse = z.infer<
+  typeof CreateVerificationRequestResponseSchema
+>

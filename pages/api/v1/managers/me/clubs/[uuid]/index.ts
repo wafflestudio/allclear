@@ -3,67 +3,14 @@ import { z } from 'zod'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import type { ClubEntity } from 'server/infra/database/entities/club.entity'
-import { UserNotFoundError } from 'server/domain/error'
+import {
+  BadRequestError,
+  ForbiddenError,
+  NotFoundError,
+  UserNotFoundError,
+} from 'server/domain/error'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import { ManagedClubUpdateSchema } from 'src/lib/schemas/managers'
-import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
-
-type ManagedClubUpdate = z.infer<typeof ManagedClubUpdateSchema>
-
-function assignIfDefined<TKey extends keyof ClubEntity>(
-  patch: Partial<ClubEntity>,
-  key: TKey,
-  value: ClubEntity[TKey] | undefined,
-) {
-  if (value !== undefined) {
-    patch[key] = value
-  }
-}
-
-function normalizeManagedClubPatch(
-  body: ManagedClubUpdate,
-  currentArticle: string,
-): Partial<ClubEntity> {
-  const patch: Partial<ClubEntity> = {
-    name: body.name,
-    fullName: body.fullName,
-    description: body.fullName,
-    type: body.type,
-    category: body.category,
-    tags: body.tags,
-    college: body.college,
-    affiliationType: body.affiliationType,
-    collegeMajorId: body.collegeMajorId ?? null,
-    introduction: body.introduction ?? '',
-  }
-
-  assignIfDefined(
-    patch,
-    'shortDescription',
-    body.shortDescription === undefined ? undefined : body.shortDescription?.trim() ?? '',
-  )
-  assignIfDefined(
-    patch,
-    'recruitType',
-    body.recruitType === undefined ? undefined : normalizeClubRecruitType(body.recruitType),
-  )
-  assignIfDefined(
-    patch,
-    'dongbangLocation',
-    body.dongbangLocation === undefined ? undefined : body.dongbangLocation?.trim() ?? '',
-  )
-  assignIfDefined(patch, 'minActivityPeriod', body.minActivityPeriod)
-  assignIfDefined(patch, 'activeMemberCount', body.activeMemberCount)
-  assignIfDefined(patch, 'sns', body.sns === undefined ? undefined : body.sns?.trim() ?? '')
-
-  if ((body.detail ?? '') !== currentArticle) {
-    patch.article = body.detail ?? ''
-    patch.articleUploadedAt = new Date().toISOString()
-  }
-
-  return patch
-}
+import { ManagedClubPatchSchema } from 'src/lib/schemas/managers'
 
 const api: NextApiHandler = async (req, res) => {
   try {
@@ -77,16 +24,30 @@ const api: NextApiHandler = async (req, res) => {
       return res.status(200).json(club)
     }
 
-    if (req.method === 'PUT') {
-      const club = await clubService.getManagedClubByUuid(clubUuid, user.serviceUserId)
-
-      const body = ManagedClubUpdateSchema.parse(req.body)
-      await clubService.updateClub(club.uuid, normalizeManagedClubPatch(body, club.article))
-      return res.status(200).end()
+    if (req.method === 'PATCH') {
+      const body = ManagedClubPatchSchema.parse(req.body)
+      const result = await clubService.patchManagedClub(clubUuid, user.serviceUserId, body)
+      return res.status(200).json({
+        success: true,
+        message: '동아리 정보가 수정되었으며, 수정 이력이 기록되었습니다.',
+        data: {
+          club_uuid: result.clubUuid,
+          updated_at: result.updatedAt,
+        },
+      })
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
-      return res.status(404).send('user not found')
+      return res.status(401).send('Unauthorized')
+    }
+    if (err instanceof ForbiddenError) {
+      return res.status(403).send('Forbidden')
+    }
+    if (err instanceof NotFoundError) {
+      return res.status(404).send('Not Found')
+    }
+    if (err instanceof BadRequestError) {
+      return res.status(400).send(err.message)
     }
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
@@ -94,8 +55,8 @@ const api: NextApiHandler = async (req, res) => {
     console.error('editClub error: ', err)
     return res.status(500).send('Internal Server Error')
   }
-  // 다른 HTTP 메서드에 대한 처리 (예: POST, PUT, DELETE 등)
-  return res.status(405).end() // Method Not Allowed
+
+  return res.status(405).end()
 }
 
 export default api

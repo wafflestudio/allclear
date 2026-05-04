@@ -34,16 +34,21 @@ import {
   ClubRecruitmentParamsSchema,
   ClubRecruitmentSchema,
   ClubRecruitmentsResponseSchema,
-  UpsertClubRecruitmentSchema,
+  CreateClubRecruitmentSchema,
+  RecruitmentIdParamsSchema,
+  UpdateClubRecruitmentSchema,
+  UpdateRecruitmentResponseSchema,
 } from 'src/lib/schemas/club-recruitments'
 import {
   ClubImageUploadSchema,
   ClubCreationDecisionSchema,
+  ClubRegisterRequestSchema,
+  ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
-  CreateClubCreationRequestSchema,
+  ManagedClubPatchSchema,
   ManagedClubsResponseSchema,
-  ManagedClubUpdateSchema,
   ManagerClubParamsSchema,
+  CreateVerificationRequestResponseSchema,
 } from 'src/lib/schemas/managers'
 import {
   CollegeMajorsQuerySchema,
@@ -95,6 +100,15 @@ const unauthorizedResponse = {
   },
 }
 
+const forbiddenResponse = {
+  description: '권한이 없습니다.',
+  content: {
+    'text/plain': {
+      schema: ErrorMessageSchema,
+    },
+  },
+}
+
 const conflictResponse = {
   description: '리소스 제약 조건과 충돌합니다.',
   content: {
@@ -139,7 +153,7 @@ registry.registerPath({
         },
       },
     },
-    404: notFoundResponse,
+    401: unauthorizedResponse,
     500: internalServerErrorResponse,
   },
 })
@@ -442,6 +456,75 @@ registry.registerPath({
 })
 
 registry.registerPath({
+  method: 'post',
+  path: '/api/v1/clubs/register',
+  tags: ['Clubs'],
+  summary: '동아리 등록 신청',
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: ClubRegisterRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: '동아리 등록 신청 성공',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.literal(true),
+            message: z.string(),
+          }),
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/clubs/{uuid}/manager-requests',
+  tags: ['Clubs'],
+  summary: '동아리 관리 권한 신청',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: ClubManagerRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    201: {
+      description: '동아리 관리 권한 신청 성공',
+      content: {
+        'application/json': {
+          schema: z.object({
+            success: z.literal(true),
+            message: z.string(),
+          }),
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
   method: 'get',
   path: '/api/v1/clubs/{uuid}/recruitments',
   tags: ['Clubs'],
@@ -635,36 +718,6 @@ registry.registerPath({
         },
       },
     },
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
-  method: 'post',
-  path: '/api/v1/club-creation-requests',
-  tags: ['Managers'],
-  summary: '동아리 생성 요청',
-  security: [{ bearerAuth: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: CreateClubCreationRequestSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    201: {
-      description: '생성 요청 성공',
-      content: {
-        'application/json': {
-          schema: ClubSchema,
-        },
-      },
-    },
-    400: validationErrorResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },
@@ -906,7 +959,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: UpsertClubRecruitmentSchema,
+          schema: CreateClubRecruitmentSchema,
         },
       },
     },
@@ -928,7 +981,7 @@ registry.registerPath({
 })
 
 registry.registerPath({
-  method: 'put',
+  method: 'patch',
   path: '/api/v1/managers/me/clubs/{uuid}',
   tags: ['Managers'],
   summary: '관리 중인 동아리 수정',
@@ -938,57 +991,7 @@ registry.registerPath({
     body: {
       content: {
         'application/json': {
-          schema: ManagedClubUpdateSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: '수정 성공',
-    },
-    400: validationErrorResponse,
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
-  method: 'get',
-  path: '/api/v1/managers/me/clubs/{uuid}/recruitments/{recruitmentId}',
-  tags: ['Managers'],
-  summary: '관리 중인 동아리 모집공고 상세 조회',
-  security: [{ bearerAuth: [] }],
-  request: {
-    params: ClubRecruitmentIdParamsSchema,
-  },
-  responses: {
-    200: {
-      description: '조회 성공',
-      content: {
-        'application/json': {
-          schema: ClubRecruitmentSchema,
-        },
-      },
-    },
-    400: validationErrorResponse,
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
-  method: 'put',
-  path: '/api/v1/managers/me/clubs/{uuid}/recruitments/{recruitmentId}',
-  tags: ['Managers'],
-  summary: '관리 중인 동아리 모집공고 수정',
-  security: [{ bearerAuth: [] }],
-  request: {
-    params: ClubRecruitmentIdParamsSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: UpsertClubRecruitmentSchema,
+          schema: ManagedClubPatchSchema,
         },
       },
     },
@@ -998,30 +1001,98 @@ registry.registerPath({
       description: '수정 성공',
       content: {
         'application/json': {
-          schema: ClubRecruitmentSchema,
+          schema: z.object({
+            success: z.literal(true),
+            message: z.string(),
+            data: z.object({
+              club_uuid: z.string().uuid(),
+              updated_at: z.string(),
+            }),
+          }),
         },
       },
     },
     400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
     404: notFoundResponse,
-    409: conflictResponse,
     500: internalServerErrorResponse,
   },
 })
 
 registry.registerPath({
   method: 'delete',
-  path: '/api/v1/managers/me/clubs/{uuid}/recruitments/{recruitmentId}',
+  path: '/api/v1/managers/me/recruitments/{recruitmentId}',
   tags: ['Managers'],
-  summary: '관리 중인 동아리 모집공고 삭제',
+  summary: '모집공고 삭제',
   security: [{ bearerAuth: [] }],
   request: {
-    params: ClubRecruitmentIdParamsSchema,
+    params: RecruitmentIdParamsSchema,
   },
   responses: {
-    204: NoContentResponse,
-    400: validationErrorResponse,
+    204: { description: '삭제 성공' },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
     404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v1/managers/me/recruitments/{recruitmentId}',
+  tags: ['Managers'],
+  summary: '모집공고 수정',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: RecruitmentIdParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: UpdateClubRecruitmentSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '수정 성공',
+      content: {
+        'application/json': {
+          schema: UpdateRecruitmentResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v1/managers/me/clubs/{uuid}/verifications',
+  tags: ['Managers'],
+  summary: '총동연 공식 인증 요청',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    201: {
+      description: '인증 요청 성공',
+      content: {
+        'application/json': {
+          schema: CreateVerificationRequestResponseSchema,
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
     500: internalServerErrorResponse,
   },
 })

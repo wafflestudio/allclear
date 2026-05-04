@@ -46,7 +46,6 @@ export const config = {
   matcher: [
     '/api/v1/users/me',
     '/api/v1/users/me/clubs',
-    '/api/v1/club-creation-requests',
     '/api/v1/users/me/clubs/saved',
     '/api/v1/users/me/devices',
     '/api/v1/users/me/voices',
@@ -55,10 +54,14 @@ export const config = {
     '/api/v1/clubs/:uuid?/reviews',
     '/api/v1/clubs/:uuid?/reviews/me',
     '/api/v1/clubs/:uuid?/saved',
+    '/api/v1/clubs/register',
+    '/api/v1/clubs/:uuid?/manager-requests',
     '/api/v1/managers/me/clubs',
     '/api/v1/managers/me/clubs/:uuid?',
     '/api/v1/managers/me/clubs/:uuid?/recruitments',
     '/api/v1/managers/me/clubs/:uuid?/recruitments/:recruitmentId?',
     '/api/v1/managers/me/clubs/:uuid?/images',
+    '/api/v1/managers/me/clubs/:uuid?/verifications',
+    '/api/v1/managers/me/recruitments/:recruitmentId?',
   ],
 }
