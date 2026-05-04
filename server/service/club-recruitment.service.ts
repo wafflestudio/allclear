@@ -40,9 +40,7 @@ export class ClubRecruitmentService {
     return recruitment ? toClubRecruitmentDomain(recruitment) : null
   }
 
-  async findPublicRecruitmentById(
-    recruitmentId: string,
-  ): Promise<ClubRecruitment> {
+  async findPublicRecruitmentById(recruitmentId: string): Promise<ClubRecruitment> {
     const recruitment = await this.clubRecruitmentRepository.findOne({
       where: { id: recruitmentId, deletedAt: IsNull() },
     })

@@ -45,7 +45,6 @@ import {
 } from 'src/lib/schemas/club-recruitments'
 import {
   ClubImageUploadSchema,
-  ClubCreationDecisionSchema,
   ClubRegisterRequestSchema,
   ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
@@ -54,6 +53,13 @@ import {
   ManagerClubParamsSchema,
   CreateVerificationRequestResponseSchema,
 } from 'src/lib/schemas/managers'
+import {
+  AdminClubDetailResponseSchema,
+  AdminClubsQuerySchema,
+  AdminClubsResponseSchema,
+  AdminClubStatusUpdateResponseSchema,
+  AdminClubStatusUpdateSchema,
+} from 'src/lib/schemas/admin'
 import {
   CollegeMajorsQuerySchema,
   CollegeMajorsResponseSchema,
@@ -208,6 +214,84 @@ const publicRecruitmentDetailResponseExample = {
     display_title: '2026년 3월 공고',
     club_id: '123e4567-e89b-12d3-a456-426614174000',
     content: clubRecruitmentRequestExample,
+  },
+}
+
+const adminClubsResponseExample = {
+  success: true,
+  message: '동아리 목록 조회가 완료되었습니다.',
+  data: {
+    total_count: 2,
+    clubs: [
+      {
+        uuid: '123e4567-e89b-12d3-a456-426614174000',
+        name: '와플스튜디오',
+        status: 'PENDING',
+        category: '진로',
+        affiliation: '컴퓨터공학부',
+        short_description: '웹/앱 개발 동아리',
+        created_at: '2026-04-01T10:00:00Z',
+        manager: {
+          name: '홍길동',
+          phone: '010-1234-5678',
+          student_id: '2021-12345',
+        },
+      },
+      {
+        uuid: '234f5678-f90c-23e4-b567-537725285111',
+        name: '쿠킹마스터',
+        status: 'REJECTED',
+        category: '문화',
+        affiliation: '기타',
+        short_description: '요리를 함께 배우는 동아리',
+        created_at: '2026-04-03T09:30:00Z',
+        manager: {
+          name: '김요리',
+          phone: '010-9876-5432',
+          student_id: '2022-54321',
+        },
+      },
+    ],
+  },
+}
+
+const adminClubDetailResponseExample = {
+  success: true,
+  data: {
+    club_data: {
+      uuid: '123e4567-e89b-12d3-a456-426614174000',
+      status: 'APPROVED',
+      name: '와플스튜디오',
+      type: '교내',
+      category: '진로',
+      affiliation: '컴퓨터공학부',
+      college_major_id: 36,
+      short_description: '웹/앱 개발 동아리',
+      image_uri: 'https://cdn.allclear.com/temp/upload_123.jpg',
+      recruit_type: '정기',
+      min_activity_period: 1,
+      has_dongbang: true,
+      dongbang_location: '63동 619호',
+      sns: 'https://www.instagram.com/wafflestudio_official/',
+      introduction: '동아리 소개글',
+      created_at: '2026-04-01T10:00:00Z',
+    },
+    manager_data: {
+      name: '홍길동',
+      phone: '010-1234-5678',
+      student_id: '2021-12345',
+      service_user_id: '417bdb60-c70c-4dfa-bfd4-a5a55a0ae001',
+    },
+  },
+}
+
+const adminClubStatusUpdateResponseExample = {
+  success: true,
+  message: '상태 변경이 완료되었습니다.',
+  data: {
+    club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+    status: 'APPROVED',
+    processed_at: '2026-04-02T10:00:00Z',
   },
 }
 
@@ -997,36 +1081,6 @@ registry.registerPath({
 })
 
 registry.registerPath({
-  method: 'patch',
-  path: '/api/v1/club-creation-requests/{uuid}/decision',
-  tags: ['Managers'],
-  summary: '동아리 생성 요청 승인 또는 반려',
-  request: {
-    params: ClubUuidParamsSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: ClubCreationDecisionSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    200: {
-      description: '처리 성공',
-      content: {
-        'application/json': {
-          schema: ClubSchema,
-        },
-      },
-    },
-    400: validationErrorResponse,
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
   method: 'get',
   path: '/api/v1/managers/me/clubs',
   tags: ['Managers'],
@@ -1379,6 +1433,147 @@ registry.registerPath({
       description: '등록 성공',
     },
     400: validationErrorResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/admin/clubs',
+  tags: ['Admin'],
+  summary: '운영진 전용 동아리 목록 조회',
+  description:
+    '운영진 대시보드에서 동아리 목록을 조회합니다. `status` query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: AdminClubsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubsResponseSchema,
+          example: adminClubsResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    403: forbiddenResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/admin/clubs/{uuid}',
+  tags: ['Admin'],
+  summary: '운영진 전용 동아리 상세 조회',
+  description:
+    '운영진이 특정 동아리의 등록 신청 내용과 신청자 정보를 상세 조회합니다. PENDING뿐 아니라 APPROVED, REJECTED 상태의 동아리도 히스토리 확인 목적으로 조회할 수 있습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubDetailResponseSchema,
+          example: adminClubDetailResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v1/admin/clubs/{uuid}/status',
+  tags: ['Admin'],
+  summary: '운영진 전용 동아리 상태 변경',
+  description:
+    '운영진이 동아리 상태를 변경합니다. 현재 구현은 PENDING, APPROVED, REJECTED를 모두 허용하므로 반려된 동아리를 다시 PENDING으로 되돌릴 수 있습니다. REJECTED로 변경할 때는 reject_reason이 필요합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: AdminClubStatusUpdateSchema,
+          examples: {
+            approve: {
+              summary: '승인 및 공식 인증 부여',
+              value: {
+                status: 'APPROVED',
+                reject_reason: '',
+                is_official_verified: true,
+              },
+            },
+            reject: {
+              summary: '반려',
+              value: {
+                status: 'REJECTED',
+                reject_reason: '동아리 소개와 활동 정보가 부족합니다.',
+                is_official_verified: false,
+              },
+            },
+            reopen: {
+              summary: '대기 상태로 되돌리기',
+              value: {
+                status: 'PENDING',
+                reject_reason: '',
+                is_official_verified: false,
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '처리 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubStatusUpdateResponseSchema,
+          examples: {
+            approved: {
+              summary: '승인 처리 완료',
+              value: adminClubStatusUpdateResponseExample,
+            },
+            rejected: {
+              summary: '반려 처리 완료',
+              value: {
+                ...adminClubStatusUpdateResponseExample,
+                data: {
+                  ...adminClubStatusUpdateResponseExample.data,
+                  status: 'REJECTED',
+                },
+              },
+            },
+            pending: {
+              summary: '대기 상태로 변경 완료',
+              value: {
+                ...adminClubStatusUpdateResponseExample,
+                data: {
+                  ...adminClubStatusUpdateResponseExample.data,
+                  status: 'PENDING',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    400: validationErrorResponse,
+    403: forbiddenResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },

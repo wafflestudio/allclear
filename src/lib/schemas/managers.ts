@@ -4,7 +4,6 @@ import {
   CLUB_COLLEGES,
   CLUB_RECRUIT_TYPES,
 } from 'src/fixtures/club-options'
-import { CLUB_DECISION_STATUSES, REJECTED_CLUB_STATUS } from 'src/common/constants/club-status'
 import { z } from 'src/lib/schemas/zod'
 import { ClubSchema } from 'src/lib/schemas/common'
 
@@ -119,24 +118,6 @@ export const ManagedClubPatchSchema = ClubDataSchema.partial()
   .openapi('ManagedClubPatch')
 
 export type ManagedClubPatch = z.infer<typeof ManagedClubPatchSchema>
-
-export const ClubCreationDecisionSchema = z
-  .object({
-    status: z.enum(CLUB_DECISION_STATUSES),
-    rejectReason: z.string().trim().max(300).optional(),
-  })
-  .superRefine(({ status, rejectReason }, ctx) => {
-    if (status === REJECTED_CLUB_STATUS && !rejectReason?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['rejectReason'],
-        message: 'rejectReason is required when status is REJECTED',
-      })
-    }
-  })
-  .openapi('ClubCreationDecision')
-
-export type ClubCreationDecision = z.infer<typeof ClubCreationDecisionSchema>
 
 export const ManagedClubsResponseSchema = z
   .object({

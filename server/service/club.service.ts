@@ -21,11 +21,9 @@ import { sortByPopularAndEachRandom } from '../util/club-sort'
 import {
   PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
-  REJECTED_CLUB_STATUS,
 } from 'src/common/constants/club-status'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
 import type {
-  ClubCreationDecision,
   ClubData,
   ClubManagerRequest,
   ClubRegisterRequest,
@@ -270,27 +268,6 @@ export class ClubService {
     }
 
     throw new BadRequestError('유효하지 않은 동아리 소속입니다.')
-  }
-
-  async decideClubCreationRequest(clubUuid: string, decision: ClubCreationDecision): Promise<Club> {
-    await this.clubAccessService.getExistingClub(clubUuid)
-
-    await this.clubRepository.update(
-      {
-        uuid: clubUuid,
-        deletedAt: IsNull(),
-      },
-      {
-        status: decision.status,
-        approvedAt: decision.status === PUBLIC_CLUB_STATUS ? new Date().toISOString() : null,
-        rejectReason:
-          decision.status === REJECTED_CLUB_STATUS ? decision.rejectReason?.trim() ?? '' : '',
-      },
-    )
-
-    const club = await this.clubAccessService.getExistingClub(clubUuid)
-    const clubReview = await this.getClubReviews([club.uuid])
-    return toClubDomain(club, clubReview.get(club.uuid))
   }
 
   async getCategories(): Promise<ClubCategory[]> {

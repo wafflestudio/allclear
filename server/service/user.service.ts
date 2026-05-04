@@ -11,7 +11,8 @@ import {
   UserVoiceEntity,
 } from '../infra/database/entities'
 import { User } from '../domain/model/User'
-import { UserNotFoundError } from '../domain/error'
+import { ForbiddenError, UserNotFoundError } from '../domain/error'
+import { UserRole } from '../infra/database/entities/user-role.enum'
 import { UpdateProfileDto } from '../../src/lib/schemas/users'
 import { CollegeMajor } from '../domain/model/CollegeMajor'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
@@ -73,6 +74,16 @@ export class UserService {
       major: accountUser.user.serviceUser.major,
       admissionClass: accountUser.user.serviceUser.admissionClass,
       grade: accountUser.user.serviceUser.grade,
+    }
+  }
+
+  public async assertAdminRole(accountId: string): Promise<void> {
+    const accountUser = await this.accountUserRepository.findOne({
+      where: { accountId },
+      relations: ['user'],
+    })
+    if (accountUser?.user?.role !== UserRole.ADMIN) {
+      throw new ForbiddenError('admin role required')
     }
   }
 
