@@ -44,15 +44,15 @@ const tfidf = (givenTokens: string[], documentTokens: string[][]): string[] => {
 
 export const findSimilarDoc = (given: string, documents: string[], topN = 2) => {
   const givenTokens = tokenize(given)
-  // const documentTokens = documents.map((doc) => tokenize(doc))
+  const documentTokens = documents.map((doc) => tokenize(doc))
 
   const corpus = [given, ...documents]
   const uniqueWords = fit(corpus)
-  // const wordCounts = transform(documents, uniqueWords)
+  const wordCounts = transform(documents, uniqueWords)
 
   // Get TF-IDF vectors
-  // const targetVector: number[] = []
-  // const docVector: number[] = []
+  const targetVector: number[] = []
+  const docVector: number[] = []
 
   // for (const term of terms) {
   //   targetVector.push(tfidf.tfidfs(term, documents.length))
