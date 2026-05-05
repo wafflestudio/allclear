@@ -55,6 +55,18 @@ import {
 } from 'src/lib/schemas/managers'
 import {
   AdminClubDetailResponseSchema,
+  AdminClubHistoriesQuerySchema,
+  AdminClubHistoriesResponseSchema,
+  AdminClubManagerRequestStatusParamsSchema,
+  AdminClubManagerRequestStatusUpdateResponseSchema,
+  AdminClubManagerRequestStatusUpdateSchema,
+  AdminClubManagerRequestsQuerySchema,
+  AdminClubManagerRequestsResponseSchema,
+  AdminClubVerificationRequestStatusParamsSchema,
+  AdminClubVerificationRequestStatusUpdateResponseSchema,
+  AdminClubVerificationRequestStatusUpdateSchema,
+  AdminClubVerificationRequestsQuerySchema,
+  AdminClubVerificationRequestsResponseSchema,
   AdminClubsQuerySchema,
   AdminClubsResponseSchema,
   AdminClubStatusUpdateResponseSchema,
@@ -292,6 +304,136 @@ const adminClubStatusUpdateResponseExample = {
     club_uuid: '123e4567-e89b-12d3-a456-426614174000',
     status: 'APPROVED',
     processed_at: '2026-04-02T10:00:00Z',
+  },
+}
+
+const adminClubHistoriesResponseExample = {
+  success: true,
+  message: '동아리 수정 이력 조회가 완료되었습니다.',
+  data: {
+    total_count: 120,
+    histories: [
+      {
+        id: 501,
+        club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+        club_name: '와플스튜디오',
+        updated_by: {
+          service_user_id: '417bdb60-c70c-4dfa-bfd4-a5a55a0ae001',
+          name: '홍길동',
+        },
+        changed_fields: ['short_description', 'sns'],
+        before_data: {
+          uuid: '123e4567-e89b-12d3-a456-426614174000',
+          name: '와플스튜디오',
+          short_description: '개발 동아리',
+          category: '진로',
+          sns: 'https://old-link.com',
+          affiliation_type: '소속동아리',
+          college_major_id: 36,
+          has_dongbang: true,
+          dongbang_location: '63동 619호',
+          updated_at: '2026-03-01T10:00:00Z',
+        },
+        after_data: {
+          uuid: '123e4567-e89b-12d3-a456-426614174000',
+          name: '와플스튜디오',
+          short_description: '서울대 최대 규모 개발 동아리',
+          category: '진로',
+          sns: 'https://new-link.com',
+          affiliation_type: '소속동아리',
+          college_major_id: 36,
+          has_dongbang: true,
+          dongbang_location: '63동 619호',
+          updated_at: '2026-04-02T15:00:00Z',
+        },
+        created_at: '2026-04-02T15:00:00Z',
+      },
+    ],
+  },
+}
+
+const adminClubManagerRequestsResponseExample = {
+  success: true,
+  message: '매핑 신청 목록 조회가 완료되었습니다.',
+  data: {
+    total_count: 15,
+    requests: [
+      {
+        id: 12,
+        club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+        club_name: '와플스튜디오',
+        applicant: {
+          service_user_id: '417bdb60-c70c-4dfa-bfd4-a5a55a0ae001',
+          name: '홍길동',
+          phone: '010-1234-5678',
+          student_id: '2021-12345',
+        },
+        status: 'PENDING',
+        created_at: '2026-04-29T14:00:00Z',
+      },
+      {
+        id: 11,
+        club_uuid: '234f5678-f90c-23e4-b567-537725285111',
+        club_name: '쿠킹마스터',
+        applicant: {
+          service_user_id: '528cec71-d81d-5egb-cgf5-b6b66b1bf112',
+          name: '김요리',
+          phone: '010-9876-5432',
+          student_id: '2022-54321',
+        },
+        status: 'APPROVED',
+        created_at: '2026-04-28T09:30:00Z',
+      },
+    ],
+  },
+}
+
+const adminClubVerificationRequestsResponseExample = {
+  success: true,
+  message: '공식 인증 요청 목록 조회가 완료되었습니다.',
+  data: {
+    total_count: 8,
+    requests: [
+      {
+        id: 5,
+        club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+        club_name: '와플스튜디오',
+        category: '진로',
+        status: 'PENDING',
+        created_at: '2026-04-29T17:00:00Z',
+      },
+      {
+        id: 3,
+        club_uuid: '234f5678-f90c-23e4-b567-537725285111',
+        club_name: '쿠킹마스터',
+        category: '문화',
+        status: 'APPROVED',
+        created_at: '2026-04-25T11:20:00Z',
+      },
+    ],
+  },
+}
+
+const adminClubManagerRequestStatusUpdateResponseExample = {
+  success: true,
+  message: '매핑 신청 처리가 완료되었습니다.',
+  data: {
+    request_id: 12,
+    club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+    status: 'APPROVED',
+    processed_at: '2026-04-29T16:00:00Z',
+  },
+}
+
+const adminClubVerificationRequestStatusUpdateResponseExample = {
+  success: true,
+  message: '공식 인증 요청 처리가 완료되었습니다.',
+  data: {
+    request_id: 5,
+    club_uuid: '123e4567-e89b-12d3-a456-426614174000',
+    status: 'APPROVED',
+    is_official_verified: true,
+    processed_at: '2026-04-29T18:00:00Z',
   },
 }
 
@@ -1461,6 +1603,196 @@ registry.registerPath({
     },
     400: validationErrorResponse,
     403: forbiddenResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/admin/clubs/histories',
+  tags: ['Admin'],
+  summary: '운영진 전용 동아리 수정 이력 조회',
+  description:
+    '이미 승인된 동아리의 정보가 수정되었을 때 기록된 before_data와 after_data를 조회합니다. club_uuid로 특정 동아리의 이력만 필터링할 수 있으며, query로 동아리명 또는 수정한 관리자 이름을 검색할 수 있고, offset/limit으로 페이지네이션할 수 있습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: AdminClubHistoriesQuerySchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubHistoriesResponseSchema,
+          example: adminClubHistoriesResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/admin/clubs/manager-requests',
+  tags: ['Admin'],
+  summary: '운영진 전용 매핑 신청 목록 조회',
+  description:
+    '기존 동아리에 대해 관리자 권한을 요청한 유저들의 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: AdminClubManagerRequestsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubManagerRequestsResponseSchema,
+          example: adminClubManagerRequestsResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v1/admin/clubs/verifications',
+  tags: ['Admin'],
+  summary: '운영진 전용 공식 인증 요청 목록 조회',
+  description:
+    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    query: AdminClubVerificationRequestsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubVerificationRequestsResponseSchema,
+          example: adminClubVerificationRequestsResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v1/admin/clubs/manager-requests/{id}/status',
+  tags: ['Admin'],
+  summary: '운영진 전용 매핑 신청 승인 및 반려',
+  description:
+    '운영진이 특정 동아리 관리 권한 신청 건을 승인 또는 반려합니다. 승인 시 신청 유저가 club_manager에 등록됩니다. 이미 처리된 요청은 다시 수정할 수 없습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: AdminClubManagerRequestStatusParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: AdminClubManagerRequestStatusUpdateSchema,
+          examples: {
+            approve: {
+              summary: '승인',
+              value: {
+                status: 'APPROVED',
+                reject_reason: '',
+              },
+            },
+            reject: {
+              summary: '반려',
+              value: {
+                status: 'REJECTED',
+                reject_reason: '관리자 증빙 정보가 부족합니다.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '처리 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubManagerRequestStatusUpdateResponseSchema,
+          example: adminClubManagerRequestStatusUpdateResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v1/admin/clubs/verifications/{id}/status',
+  tags: ['Admin'],
+  summary: '운영진 전용 공식 인증 요청 승인 및 반려',
+  description:
+    '운영진이 특정 동아리의 공식 인증 요청 건을 승인 또는 반려합니다. 승인 시 해당 동아리의 is_official_verified가 true로 변경됩니다. 이미 처리된 요청은 다시 수정할 수 없습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: AdminClubVerificationRequestStatusParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: AdminClubVerificationRequestStatusUpdateSchema,
+          examples: {
+            approve: {
+              summary: '승인',
+              value: {
+                status: 'APPROVED',
+                reject_reason: '',
+              },
+            },
+            reject: {
+              summary: '반려',
+              value: {
+                status: 'REJECTED',
+                reject_reason: '공식 인증 기준을 충족하지 못했습니다.',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '처리 성공',
+      content: {
+        'application/json': {
+          schema: AdminClubVerificationRequestStatusUpdateResponseSchema,
+          example: adminClubVerificationRequestStatusUpdateResponseExample,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
     500: internalServerErrorResponse,
   },
 })

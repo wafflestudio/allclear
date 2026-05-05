@@ -1,14 +1,24 @@
 import { FindOptionsWhere, In, IsNull, Repository } from 'typeorm'
 import { InjectRepository, Service } from '../provider'
-import { ClubEntity } from '../infra/database/entities'
+import { ClubEntity, ClubHistoryEntity, ServiceUserEntity, UserEntity } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
+import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import {
   ClubStatus,
+  PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
 } from 'src/common/constants/club-status'
-import { NotFoundError } from 'server/domain/error'
-import type { AdminClubStatusUpdate } from 'src/lib/schemas/admin'
+import { ConflictError, NotFoundError } from 'server/domain/error'
+import type {
+  AdminClubHistoriesQuery,
+  AdminClubManagerRequestStatusUpdate,
+  AdminClubManagerRequestsQuery,
+  AdminClubStatusUpdate,
+  AdminClubVerificationRequestStatusUpdate,
+  AdminClubVerificationRequestsQuery,
+} from 'src/lib/schemas/admin'
 
 export type AdminClubItem = {
   uuid: string
@@ -52,6 +62,43 @@ export type AdminClubDetail = {
   }
 }
 
+export type AdminClubHistoryItem = {
+  id: number
+  club_uuid: string
+  club_name: string
+  updated_by: {
+    service_user_id: string
+    name: string
+  }
+  changed_fields: string[]
+  before_data: Record<string, unknown>
+  after_data: Record<string, unknown>
+  created_at: string
+}
+
+export type AdminClubManagerRequestItem = {
+  id: number
+  club_uuid: string
+  club_name: string
+  applicant: {
+    service_user_id: string
+    name: string
+    phone: string
+    student_id: string
+  }
+  status: ClubStatus
+  created_at: string
+}
+
+export type AdminClubVerificationRequestItem = {
+  id: number
+  club_uuid: string
+  club_name: string
+  category: string
+  status: ClubStatus
+  created_at: string
+}
+
 @Service
 export class AdminClubService {
   @InjectRepository(ClubEntity)
@@ -59,6 +106,15 @@ export class AdminClubService {
 
   @InjectRepository(ClubManagerEntity)
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
+
+  @InjectRepository(ClubHistoryEntity)
+  private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
+
+  @InjectRepository(ClubManagerRegisterRequestEntity)
+  private readonly clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>
+
+  @InjectRepository(ClubVerificationRequestEntity)
+  private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
 
   async getAdminClubs(status?: ClubStatus): Promise<AdminClubItem[]> {
     const where: FindOptionsWhere<ClubEntity> = {
@@ -183,5 +239,285 @@ export class AdminClubService {
       status: decision.status,
       processed_at: processedAt,
     }
+  }
+
+  async getAdminClubHistories({
+    club_uuid: clubUuid,
+    query,
+    offset,
+    limit,
+  }: AdminClubHistoriesQuery): Promise<{ total_count: number; histories: AdminClubHistoryItem[] }> {
+    const trimmedQuery = query?.trim()
+    const baseQuery = this.clubHistoryRepository
+      .createQueryBuilder('history')
+      .leftJoin(ClubEntity, 'club', 'club.uuid = history.club_id')
+      .leftJoin(
+        ClubManagerEntity,
+        'manager',
+        'manager.club_id = history.club_id AND manager.service_user_id = history.service_user_id',
+      )
+      .leftJoin(ServiceUserEntity, 'service_user', 'service_user.id = history.service_user_id')
+      .leftJoin(UserEntity, 'app_user', 'app_user.id = service_user.user_id')
+
+    if (clubUuid) {
+      baseQuery.andWhere('history.club_id = :clubUuid', { clubUuid })
+    }
+
+    if (trimmedQuery) {
+      baseQuery.andWhere(
+        '(club.name ILIKE :query OR manager.name ILIKE :query OR app_user.name ILIKE :query)',
+        {
+          query: `%${trimmedQuery}%`,
+        },
+      )
+    }
+
+    const totalCount = await baseQuery.getCount()
+    const histories = await baseQuery
+      .clone()
+      .select([
+        'history.id AS id',
+        'history.club_id AS club_uuid',
+        "COALESCE(club.name, '') AS club_name",
+        'history.service_user_id AS service_user_id',
+        "COALESCE(NULLIF(manager.name, ''), NULLIF(app_user.name, ''), '') AS updated_by_name",
+        'history.changed_fields AS changed_fields',
+        'history.before_data AS before_data',
+        'history.after_data AS after_data',
+        'history.created_at AS created_at',
+      ])
+      .orderBy('history.created_at', 'DESC')
+      .offset(offset)
+      .limit(limit)
+      .getRawMany<{
+        id: string
+        club_uuid: string
+        club_name: string
+        service_user_id: string
+        updated_by_name: string
+        changed_fields: string[]
+        before_data: Record<string, unknown>
+        after_data: Record<string, unknown>
+        created_at: string
+      }>()
+
+    return {
+      total_count: totalCount,
+      histories: histories.map((history) => ({
+        id: Number(history.id),
+        club_uuid: history.club_uuid,
+        club_name: history.club_name,
+        updated_by: {
+          service_user_id: history.service_user_id,
+          name: history.updated_by_name,
+        },
+        changed_fields: history.changed_fields,
+        before_data: history.before_data,
+        after_data: history.after_data,
+        created_at: history.created_at,
+      })),
+    }
+  }
+
+  async getAdminClubManagerRequests({
+    status,
+  }: AdminClubManagerRequestsQuery): Promise<AdminClubManagerRequestItem[]> {
+    const query = this.clubManagerRegisterRequestRepository
+      .createQueryBuilder('manager_request')
+      .leftJoin(ClubEntity, 'club', 'club.uuid = manager_request.club_id')
+      .select([
+        'manager_request.id AS id',
+        'manager_request.club_id AS club_uuid',
+        "COALESCE(club.name, '') AS club_name",
+        'manager_request.service_user_id AS service_user_id',
+        'manager_request.name AS applicant_name',
+        'manager_request.phone AS applicant_phone',
+        'manager_request.student_id AS applicant_student_id',
+        'manager_request.status AS status',
+        'manager_request.created_at AS created_at',
+      ])
+      .orderBy('manager_request.created_at', 'DESC')
+
+    if (status) {
+      query.where('manager_request.status = :status', { status })
+    }
+
+    const requests = await query.getRawMany<{
+      id: string
+      club_uuid: string
+      club_name: string
+      service_user_id: string
+      applicant_name: string
+      applicant_phone: string
+      applicant_student_id: string
+      status: ClubStatus
+      created_at: string
+    }>()
+
+    return requests.map((request) => ({
+      id: Number(request.id),
+      club_uuid: request.club_uuid,
+      club_name: request.club_name,
+      applicant: {
+        service_user_id: request.service_user_id,
+        name: request.applicant_name,
+        phone: request.applicant_phone,
+        student_id: request.applicant_student_id,
+      },
+      status: request.status,
+      created_at: request.created_at,
+    }))
+  }
+
+  async getAdminClubVerificationRequests({
+    status,
+  }: AdminClubVerificationRequestsQuery): Promise<AdminClubVerificationRequestItem[]> {
+    const query = this.clubVerificationRequestRepository
+      .createQueryBuilder('verification_request')
+      .leftJoin(ClubEntity, 'club', 'club.uuid = verification_request.club_id')
+      .select([
+        'verification_request.id AS id',
+        'verification_request.club_id AS club_uuid',
+        "COALESCE(club.name, '') AS club_name",
+        "COALESCE(club.category, '') AS category",
+        'verification_request.status AS status',
+        'verification_request.created_at AS created_at',
+      ])
+      .orderBy('verification_request.created_at', 'DESC')
+
+    if (status) {
+      query.where('verification_request.status = :status', { status })
+    }
+
+    const requests = await query.getRawMany<{
+      id: string
+      club_uuid: string
+      club_name: string
+      category: string
+      status: ClubStatus
+      created_at: string
+    }>()
+
+    return requests.map((request) => ({
+      id: Number(request.id),
+      club_uuid: request.club_uuid,
+      club_name: request.club_name,
+      category: request.category,
+      status: request.status,
+      created_at: request.created_at,
+    }))
+  }
+
+  async updateAdminClubManagerRequestStatus(
+    requestId: number,
+    decision: AdminClubManagerRequestStatusUpdate,
+  ): Promise<{
+    request_id: number
+    club_uuid: string
+    status: AdminClubManagerRequestStatusUpdate['status']
+    processed_at: string
+  }> {
+    return this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
+      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+
+      const request = await managerRequestRepository.findOneBy({ id: String(requestId) })
+      if (!request) {
+        throw new NotFoundError('manager request not found')
+      }
+
+      if (request.status !== PENDING_CLUB_STATUS) {
+        throw new ConflictError('manager request already processed')
+      }
+
+      const processedAt = new Date().toISOString()
+      const isApproved = decision.status === PUBLIC_CLUB_STATUS
+      const isRejected = decision.status === REJECTED_CLUB_STATUS
+
+      if (isApproved) {
+        const existingManager = await clubManagerRepository.findOneBy({ clubId: request.clubId })
+        if (existingManager) {
+          throw new ConflictError('club already has a manager')
+        }
+
+        await clubManagerRepository.insert({
+          clubId: request.clubId,
+          serviceUserId: request.serviceUserId,
+          name: request.name,
+          phone: request.phone,
+          studentId: request.studentId,
+        })
+      }
+
+      await managerRequestRepository.update(
+        { id: request.id },
+        {
+          status: decision.status,
+          rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
+        },
+      )
+
+      return {
+        request_id: requestId,
+        club_uuid: request.clubId,
+        status: decision.status,
+        processed_at: processedAt,
+      }
+    })
+  }
+
+  async updateAdminClubVerificationRequestStatus(
+    requestId: number,
+    decision: AdminClubVerificationRequestStatusUpdate,
+  ): Promise<{
+    request_id: number
+    club_uuid: string
+    status: AdminClubVerificationRequestStatusUpdate['status']
+    is_official_verified: boolean
+    processed_at: string
+  }> {
+    return this.clubVerificationRequestRepository.manager.transaction(async (manager) => {
+      const verificationRequestRepository = manager.getRepository(ClubVerificationRequestEntity)
+      const clubRepository = manager.getRepository(ClubEntity)
+
+      const request = await verificationRequestRepository.findOneBy({ id: String(requestId) })
+      if (!request) {
+        throw new NotFoundError('verification request not found')
+      }
+
+      if (request.status !== PENDING_CLUB_STATUS) {
+        throw new ConflictError('verification request already processed')
+      }
+
+      const processedAt = new Date().toISOString()
+      const isApproved = decision.status === PUBLIC_CLUB_STATUS
+      const isRejected = decision.status === REJECTED_CLUB_STATUS
+
+      if (isApproved) {
+        await clubRepository.update(
+          { uuid: request.clubId },
+          {
+            isOfficialVerified: true,
+            verifiedAt: processedAt,
+          },
+        )
+      }
+
+      await verificationRequestRepository.update(
+        { id: request.id },
+        {
+          status: decision.status,
+          rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
+        },
+      )
+
+      return {
+        request_id: requestId,
+        club_uuid: request.clubId,
+        status: decision.status,
+        is_official_verified: isApproved,
+        processed_at: processedAt,
+      }
+    })
   }
 }
