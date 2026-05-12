@@ -14,7 +14,7 @@ export const ENV = {
   KAKAO: {
     CLIENT_ID: process.env.KAKAO_CLIENT_ID ?? '',
     CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET ?? '',
-    REDIRECT_URI: `${SERVER_BASE_URL}/v1/auth/kakao/callback`,
+    REDIRECT_URI: `${SERVER_BASE_URL}/v2/auth/kakao/callback`,
   },
   JWT: {
     SECRET_KEY: process.env.JWT_SECRET_KEY ?? '',

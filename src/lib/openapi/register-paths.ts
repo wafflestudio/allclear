@@ -439,7 +439,7 @@ const adminClubVerificationRequestStatusUpdateResponseExample = {
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/announcements',
+  path: '/api/v2/announcements',
   tags: ['Announcements'],
   summary: '노출할 공지 목록 조회',
   security: [{}, { bearerAuth: [] }],
@@ -459,7 +459,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/announcements/dismiss',
+  path: '/api/v2/announcements/dismiss',
   tags: ['Announcements'],
   summary: '공지 숨김 처리',
   security: [{ bearerAuth: [] }],
@@ -482,7 +482,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/terms',
+  path: '/api/v2/terms',
   tags: ['Terms'],
   summary: '미동의 약관 목록 조회',
   security: [{ bearerAuth: [] }],
@@ -502,7 +502,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/terms/agree',
+  path: '/api/v2/terms/agree',
   tags: ['Terms'],
   summary: '약관 동의 처리',
   security: [{ bearerAuth: [] }],
@@ -542,7 +542,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/auth/kakao',
+  path: '/api/v2/auth/kakao',
   tags: ['Auth'],
   summary: '카카오 로그인 시작',
   responses: {
@@ -555,7 +555,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/auth/kakao/callback',
+  path: '/api/v2/auth/kakao/callback',
   tags: ['Auth'],
   summary: '카카오 웹 로그인 콜백',
   request: {
@@ -578,7 +578,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/auth/kakao/native/callback',
+  path: '/api/v2/auth/kakao/native/callback',
   tags: ['Auth'],
   summary: '카카오 네이티브 로그인 콜백',
   request: {
@@ -607,7 +607,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/auth/apple/callback',
+  path: '/api/v2/auth/apple/callback',
   tags: ['Auth'],
   summary: '애플 로그인 콜백',
   request: {
@@ -636,7 +636,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/auth/leave',
+  path: '/api/v2/auth/leave',
   tags: ['Auth'],
   summary: '회원 탈퇴',
   security: [{ bearerAuth: [] }],
@@ -649,7 +649,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs',
+  path: '/api/v2/clubs',
   tags: ['Clubs'],
   summary: '카테고리별 동아리 목록',
   request: {
@@ -678,7 +678,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/latest',
+  path: '/api/v2/clubs/latest',
   tags: ['Clubs'],
   summary: '최신 등록 동아리 목록',
   responses: {
@@ -696,7 +696,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/popular',
+  path: '/api/v2/clubs/popular',
   tags: ['Clubs'],
   summary: '인기 동아리 목록',
   responses: {
@@ -714,7 +714,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/search',
+  path: '/api/v2/clubs/search',
   tags: ['Clubs'],
   summary: '동아리 검색',
   request: {
@@ -743,7 +743,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/categories',
+  path: '/api/v2/clubs/categories',
   tags: ['Clubs'],
   summary: '동아리 카테고리 목록',
   responses: {
@@ -761,7 +761,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/rankings',
+  path: '/api/v2/clubs/rankings',
   tags: ['Reviews'],
   summary: '리뷰 기반 동아리 랭킹',
   request: {
@@ -782,7 +782,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/reviews/keywords',
+  path: '/api/v2/clubs/reviews/keywords',
   tags: ['Reviews'],
   summary: '리뷰 키워드 카테고리 목록',
   responses: {
@@ -800,7 +800,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/{uuid}',
+  path: '/api/v2/clubs/{uuid}',
   tags: ['Clubs'],
   summary: '동아리 상세 조회',
   request: {
@@ -822,7 +822,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/clubs/register',
+  path: '/api/v2/clubs/register',
   tags: ['Clubs'],
   summary: '동아리 등록 신청',
   description:
@@ -870,7 +870,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/clubs/{uuid}/manager-requests',
+  path: '/api/v2/clubs/{uuid}/manager-requests',
   tags: ['Clubs'],
   summary: '동아리 관리 권한 신청',
   description:
@@ -914,7 +914,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/{uuid}/recruitments',
+  path: '/api/v2/clubs/{uuid}/recruitments',
   tags: ['Clubs'],
   summary: '동아리 모집공고 목록 조회',
   description:
@@ -940,7 +940,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/{uuid}/recruitments/representative',
+  path: '/api/v2/clubs/{uuid}/recruitments/representative',
   tags: ['Clubs'],
   summary: '동아리 대표 모집공고 조회',
   request: {
@@ -963,7 +963,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/recruitments/{recruitmentId}',
+  path: '/api/v2/recruitments/{recruitmentId}',
   tags: ['Clubs'],
   summary: '동아리 모집공고 상세 조회',
   description:
@@ -989,7 +989,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/clubs/{uuid}/reviews',
+  path: '/api/v2/clubs/{uuid}/reviews',
   tags: ['Reviews'],
   summary: '동아리 리뷰 작성 또는 수정',
   security: [{ bearerAuth: [] }],
@@ -1013,7 +1013,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/clubs/{uuid}/reviews/me',
+  path: '/api/v2/clubs/{uuid}/reviews/me',
   tags: ['Reviews'],
   summary: '내 동아리 리뷰 조회',
   security: [{ bearerAuth: [] }],
@@ -1038,7 +1038,7 @@ registry.registerPath({
 for (const method of ['post', 'delete'] as const) {
   registry.registerPath({
     method,
-    path: '/api/v1/clubs/{uuid}/saved',
+    path: '/api/v2/clubs/{uuid}/saved',
     tags: ['Clubs'],
     summary: method === 'post' ? '동아리 저장' : '동아리 저장 해제',
     security: [{ bearerAuth: [] }],
@@ -1056,7 +1056,7 @@ for (const method of ['post', 'delete'] as const) {
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/users/me',
+  path: '/api/v2/users/me',
   tags: ['Users'],
   summary: '내 프로필 조회',
   security: [{ bearerAuth: [] }],
@@ -1076,7 +1076,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'put',
-  path: '/api/v1/users/me',
+  path: '/api/v2/users/me',
   tags: ['Users'],
   summary: '내 프로필 수정',
   security: [{ bearerAuth: [] }],
@@ -1099,7 +1099,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/users/me/clubs',
+  path: '/api/v2/users/me/clubs',
   tags: ['Users'],
   summary: '내가 리뷰한 동아리 목록',
   security: [{ bearerAuth: [] }],
@@ -1119,7 +1119,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/users/me/clubs/saved',
+  path: '/api/v2/users/me/clubs/saved',
   tags: ['Users'],
   summary: '내가 저장한 동아리 목록',
   security: [{ bearerAuth: [] }],
@@ -1139,7 +1139,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'put',
-  path: '/api/v1/users/me/devices',
+  path: '/api/v2/users/me/devices',
   tags: ['Users'],
   summary: '디바이스 정보 갱신',
   security: [{ bearerAuth: [] }],
@@ -1162,7 +1162,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/users/me/voices',
+  path: '/api/v2/users/me/voices',
   tags: ['Users'],
   summary: '사용자 의견 제출',
   security: [{ bearerAuth: [] }],
@@ -1185,7 +1185,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/users/majors',
+  path: '/api/v2/users/majors',
   tags: ['Users'],
   summary: '학과 목록 조회',
   request: {
@@ -1206,7 +1206,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/users/download/app',
+  path: '/api/v2/users/download/app',
   tags: ['Users'],
   summary: '앱 다운로드 페이지 진입 로그',
   request: {
@@ -1224,7 +1224,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/managers/me/clubs',
+  path: '/api/v2/managers/me/clubs',
   tags: ['Managers'],
   summary: '내가 관리하는 동아리 목록',
   description:
@@ -1270,7 +1270,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/managers/me/clubs',
+  path: '/api/v2/managers/me/clubs',
   tags: ['Managers'],
   summary: '동아리 관리자 등록 요청',
   security: [{ bearerAuth: [] }],
@@ -1292,7 +1292,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/managers/me/clubs/{uuid}',
+  path: '/api/v2/managers/me/clubs/{uuid}',
   tags: ['Managers'],
   summary: '관리 중인 동아리 상세 조회',
   security: [{ bearerAuth: [] }],
@@ -1316,7 +1316,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/managers/me/clubs/{uuid}/recruitments',
+  path: '/api/v2/managers/me/clubs/{uuid}/recruitments',
   tags: ['Managers'],
   summary: '관리 중인 동아리 모집공고 생성',
   description:
@@ -1363,7 +1363,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'patch',
-  path: '/api/v1/managers/me/clubs/{uuid}',
+  path: '/api/v2/managers/me/clubs/{uuid}',
   tags: ['Managers'],
   summary: '관리 중인 동아리 수정',
   description:
@@ -1420,7 +1420,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'delete',
-  path: '/api/v1/managers/me/recruitments/{recruitmentId}',
+  path: '/api/v2/managers/me/recruitments/{recruitmentId}',
   tags: ['Managers'],
   summary: '모집공고 삭제',
   description:
@@ -1440,7 +1440,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'patch',
-  path: '/api/v1/managers/me/recruitments/{recruitmentId}',
+  path: '/api/v2/managers/me/recruitments/{recruitmentId}',
   tags: ['Managers'],
   summary: '모집공고 수정',
   description:
@@ -1495,7 +1495,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/managers/me/clubs/{uuid}/verifications',
+  path: '/api/v2/managers/me/clubs/{uuid}/verifications',
   tags: ['Managers'],
   summary: '총동연 공식 인증 요청',
   description:
@@ -1533,7 +1533,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/managers/me/clubs/{uuid}/images',
+  path: '/api/v2/managers/me/clubs/{uuid}/images',
   tags: ['Managers'],
   summary: '관리 중인 동아리 이미지 업로드',
   security: [{ bearerAuth: [] }],
@@ -1564,7 +1564,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/v1/managers/{serviceUserId}/clubs/{uuid}',
+  path: '/api/v2/managers/{serviceUserId}/clubs/{uuid}',
   tags: ['Managers'],
   summary: '관리자 권한으로 동아리 매니저 등록',
   request: {
@@ -1582,7 +1582,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/admin/clubs',
+  path: '/api/v2/admin/clubs',
   tags: ['Admin'],
   summary: '운영진 전용 동아리 목록 조회',
   description:
@@ -1609,7 +1609,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/admin/clubs/histories',
+  path: '/api/v2/admin/clubs/histories',
   tags: ['Admin'],
   summary: '운영진 전용 동아리 수정 이력 조회',
   description:
@@ -1637,7 +1637,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/admin/clubs/manager-requests',
+  path: '/api/v2/admin/clubs/manager-requests',
   tags: ['Admin'],
   summary: '운영진 전용 매핑 신청 목록 조회',
   description:
@@ -1665,7 +1665,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/admin/clubs/verifications',
+  path: '/api/v2/admin/clubs/verifications',
   tags: ['Admin'],
   summary: '운영진 전용 공식 인증 요청 목록 조회',
   description:
@@ -1693,7 +1693,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'patch',
-  path: '/api/v1/admin/clubs/manager-requests/{id}/status',
+  path: '/api/v2/admin/clubs/manager-requests/{id}/status',
   tags: ['Admin'],
   summary: '운영진 전용 매핑 신청 승인 및 반려',
   description:
@@ -1746,7 +1746,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'patch',
-  path: '/api/v1/admin/clubs/verifications/{id}/status',
+  path: '/api/v2/admin/clubs/verifications/{id}/status',
   tags: ['Admin'],
   summary: '운영진 전용 공식 인증 요청 승인 및 반려',
   description:
@@ -1799,7 +1799,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/v1/admin/clubs/{uuid}',
+  path: '/api/v2/admin/clubs/{uuid}',
   tags: ['Admin'],
   summary: '운영진 전용 동아리 상세 조회',
   description:
@@ -1827,7 +1827,7 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'patch',
-  path: '/api/v1/admin/clubs/{uuid}/status',
+  path: '/api/v2/admin/clubs/{uuid}/status',
   tags: ['Admin'],
   summary: '운영진 전용 동아리 상태 변경',
   description:

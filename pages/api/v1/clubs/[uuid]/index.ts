@@ -1,26 +1,25 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ClubService } from 'server/service/club.service'
-import { Club } from 'server/domain/model/Club'
+import { ClubServiceV1 } from 'server/service/v1/club.service'
+import { V1Club } from 'server/service/v1/club.service'
 import { z, ZodIssue } from 'zod'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import { NotFoundError } from 'server/domain/error'
+
+const QueryValidator = z.object({
+  uuid: z.string().uuid(),
+})
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Club | string | ZodIssue[]>,
+  res: NextApiResponse<V1Club | string | ZodIssue[]>,
 ) {
   try {
-    const clubService = Provider.getService(ClubService)
+    const clubService = Provider.getService(ClubServiceV1)
     if (req.method == 'GET') {
-      const { uuid: ClubUuid } = ClubUuidParamsSchema.parse(req.query)
-      const club = await clubService.findPublicByUuid(ClubUuid)
+      const { uuid: ClubUuid } = QueryValidator.parse(req.query)
+      const club = await clubService.findByUuid(ClubUuid)
       return res.status(200).json(club)
     }
   } catch (err) {
-    if (err instanceof NotFoundError) {
-      return res.status(404).send('club not found')
-    }
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
     }

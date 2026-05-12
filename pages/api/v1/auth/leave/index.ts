@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { AuthService } from 'server/service/auth.service'
-import { UserService } from 'server/service/user.service'
+import { AuthServiceV1 } from 'server/service/v1/auth.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
 
 type ResponseData = {
   token: string
@@ -13,8 +13,8 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const authService = Provider.getService(AuthService)
-    const userService = Provider.getService(UserService)
+    const authService = Provider.getService(AuthServiceV1)
+    const userService = Provider.getService(UserServiceV1)
 
     if (req.method == 'POST') {
       try {

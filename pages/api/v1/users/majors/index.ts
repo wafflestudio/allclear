@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { UserService } from 'server/service/user.service'
-import { CollegeMajor } from 'server/domain/model/CollegeMajor'
+import { UserServiceV1 } from 'server/service/v1/user.service'
+import { V1CollegeMajor } from 'server/service/v1/user.service'
 
 type ResponseData = {
-  majors: CollegeMajor[]
+  majors: V1CollegeMajor[]
   totalSize: number
 }
 
@@ -13,18 +13,10 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const userService = Provider.getService(UserService)
-
-    const isTrueQueryValue = (value: string | string[] | undefined) => {
-      if (Array.isArray(value)) {
-        return value[0] === 'true'
-      }
-      return value === 'true'
-    }
+    const userService = Provider.getService(UserServiceV1)
 
     if (req.method == 'GET') {
-      const includeNullMajor = isTrueQueryValue(req.query.includeNullMajor)
-      const collegeMajors = await userService.getCollegeMajors({ includeNullMajor })
+      const collegeMajors = await userService.getCollegeMajors()
       return res.status(200).json({
         majors: collegeMajors,
         totalSize: collegeMajors.length,

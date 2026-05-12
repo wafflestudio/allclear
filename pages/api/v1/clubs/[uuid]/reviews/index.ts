@@ -1,27 +1,32 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ReviewService } from 'server/service/review.service'
-import { UserService } from 'server/service/user.service'
+import { ReviewServiceV1 } from 'server/service/v1/review.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
 import { z } from 'zod'
-import { NotFoundError, UserNotFoundError } from 'server/domain/error'
-import { ClubUuidParamsSchema, UpdateClubReviewSchema } from 'src/lib/schemas/clubs'
+import { UserNotFoundError } from 'server/domain/error'
+
+const UpdateClubReviewValidator = z.object({
+  rating: z.number().min(0).max(5).optional(),
+  reviewKeywordIds: z.array(z.string().uuid()).optional(),
+  content: z.string().trim().nonempty().max(100).optional(),
+})
+const QueryValidator = z.object({
+  uuid: z.string().uuid(),
+})
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const userService = Provider.getService(UserService)
-    const reviewService = Provider.getService(ReviewService)
+    const userService = Provider.getService(UserServiceV1)
+    const reviewService = Provider.getService(ReviewServiceV1)
 
     if (req.method == 'POST') {
-      const { uuid: clubUuid } = ClubUuidParamsSchema.parse(req.query)
+      const { uuid: clubUuid } = QueryValidator.parse(req.query)
       const user = await userService.getUserByAccountId(req.headers.user as string)
-      const body = UpdateClubReviewSchema.parse(req.body)
+      const body = UpdateClubReviewValidator.parse(req.body)
       await reviewService.reviewClub(user.serviceUserId, clubUuid, body)
       return res.status(204).send(null)
     }
   } catch (err) {
-    if (err instanceof NotFoundError) {
-      return res.status(404).send('club not found')
-    }
     if (err instanceof UserNotFoundError) {
       return res.status(404).send('user not found')
     }

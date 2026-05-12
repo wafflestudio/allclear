@@ -2,16 +2,15 @@ import { NextApiRequest, NextApiResponse, PageConfig } from 'next'
 import { v4 as uuidv4 } from 'uuid'
 import Busboy from 'busboy'
 import { Provider } from 'server/provider'
-import { ClubService } from 'server/service/club.service'
+import { ClubServiceV1 } from 'server/service/v1/club.service'
 import { z } from 'zod'
-import { UserService } from 'server/service/user.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
 import { UserNotFoundError } from 'server/domain/error'
 import { uploadClubImageStream } from 'server/infra/client/s3'
 import { ENV } from '../../../../../../../../server/ENV'
 import fetch from 'node-fetch'
 import sharp from 'sharp'
 import { encode } from 'blurhash'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 
 export const maxDuration = 300 // 5 minutes (maximum for Vercel Pro)
 
@@ -58,21 +57,25 @@ async function r(
     req.pipe(busboy)
   })
 }
+
+const QueryValidator = z.object({
+  uuid: z.string().uuid(),
+})
 export default async function imageUploadHandler(req: NextApiRequest, res: NextApiResponse) {
   try {
-    const clubService = Provider.getService(ClubService)
-    const userService = Provider.getService(UserService)
+    const clubService = Provider.getService(ClubServiceV1)
+    const userService = Provider.getService(UserServiceV1)
 
     if (req.method == 'POST') {
       const user = await userService.getUserByAccountId(req.headers.user as string)
-      const { uuid: clubUuid } = ClubUuidParamsSchema.parse(req.query)
+      const { uuid: clubUuid } = QueryValidator.parse(req.query)
       const club = await clubService.getManagedClubByUuid(clubUuid, user.serviceUserId)
 
       const persist = (clubId: string, imageUri: string, blurHash: string) =>
         clubService.updateClub(clubId, { imageUri, blurHash })
       await r(req, club.uuid, persist)
 
-      res.status(200).end(JSON.stringify({ ok: true }))
+      return res.status(200).end(JSON.stringify({ ok: true }))
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {

@@ -1,8 +1,8 @@
 import { Provider } from 'server/provider'
-import { UserService } from 'server/service/user.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
 
 const logApiCall = async (req) => {
-  const userService = Provider.getService(UserService)
+  const userService = Provider.getService(UserServiceV1)
 
   const device = req.query['userAgent']
   let ip = req.ip ?? req.headers['x-real-ip'] ?? ''

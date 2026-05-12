@@ -1,11 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import jwt from 'jsonwebtoken'
-import { z } from 'zod'
-import type { ZodIssue } from 'zod'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
-import { AuthService } from 'server/service/auth.service'
-import { KakaoCallbackQuerySchema } from 'src/lib/schemas/auth'
+import { AuthServiceV1 } from 'server/service/v1/auth.service'
 
 type ResponseData = {
   token: string
@@ -13,13 +10,13 @@ type ResponseData = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ResponseData | string | ZodIssue[]>,
+  res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const authService = Provider.getService(AuthService)
+    const authService = Provider.getService(AuthServiceV1)
 
     if (req.method == 'GET') {
-      const { code: authcode } = KakaoCallbackQuerySchema.parse(req.query)
+      const authcode = req.query.code as string
       if (!authcode) {
         return res.status(401).send('unauthorized')
       }
@@ -40,9 +37,6 @@ export default async function handler(
     }
     return res.status(405).send('method not allowed')
   } catch (err) {
-    if (err instanceof z.ZodError) {
-      return res.status(400).json(err.errors)
-    }
     console.error('kakaoLoginCallback error: ', err)
     return res.status(500).send('Internal Server Error')
   }

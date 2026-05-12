@@ -59,7 +59,7 @@ export type ClubRepository = {
 
 export const getClubRepository = (): ClubRepository => ({
   updateManageClub: async (req) => {
-    await fetch(`/api/v1/managers/me/clubs/${req.uuid}`, {
+    await fetch(`/api/v2/managers/me/clubs/${req.uuid}`, {
       method: 'PUT',
       headers: {
         'x-authorization': req.authorization,
@@ -80,7 +80,7 @@ export const getClubRepository = (): ClubRepository => ({
     const formData = new FormData()
     formData.append('file', req.image)
 
-    await fetch(`/api/v1/managers/me/clubs/${req.uuid}/images`, {
+    await fetch(`/api/v2/managers/me/clubs/${req.uuid}/images`, {
       headers: {
         'x-authorization': req.authorization,
       },
@@ -90,7 +90,7 @@ export const getClubRepository = (): ClubRepository => ({
   },
 
   getManageClub: async (req) => {
-    const response = await fetch(`/api/v1/managers/me/clubs/${req.uuid}`, {
+    const response = await fetch(`/api/v2/managers/me/clubs/${req.uuid}`, {
       headers: {
         'x-authorization': req.authorization,
       },

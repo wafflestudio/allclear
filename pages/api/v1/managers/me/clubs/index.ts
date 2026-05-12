@@ -1,19 +1,20 @@
-import { Club } from 'server/domain/model/Club'
+import { V1Club } from 'server/service/v1/club.service'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ClubService } from 'server/service/club.service'
+import { ClubServiceV1 } from 'server/service/v1/club.service'
 import { UserNotFoundError } from 'server/domain/error'
-import { UserService } from 'server/service/user.service'
-import { SlackService } from '../../../../../../server/service/slack.service'
-import { ClubManagerRegisterRequestSchema } from 'src/lib/schemas/managers'
+import { UserServiceV1 } from 'server/service/v1/user.service'
+import { z } from 'zod'
+import { SlackServiceV1 } from 'server/service/v1/slack.service'
+
+const ClubManagerRegisterRequestValidator = z.object({
+  clubId: z.string().uuid().optional(),
+  clubName: z.string().nonempty().optional(),
+})
 
 type ResponseData = {
-  success: true
-  message: string
-  data: {
-    total_count: number
-    clubs: Club[]
-  }
+  clubs: V1Club[]
+  totalSize: number
 }
 
 // const app = new App({
@@ -25,54 +26,50 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string | null>,
 ) {
   try {
-    const clubService = Provider.getService(ClubService)
-    const userService = Provider.getService(UserService)
-    const slackService = Provider.getService(SlackService)
+    const clubService = Provider.getService(ClubServiceV1)
+    const userService = Provider.getService(UserServiceV1)
+    const slackService = Provider.getService(SlackServiceV1)
 
     const user = await userService.getUserByAccountId(req.headers.user as string)
     if (req.method == 'GET') {
       const clubs = await clubService.findAllManagedByUser(user.serviceUserId)
       return res.status(200).json({
-        success: true,
-        message: '관리 중인 동아리 목록 및 신청 현황 조회가 완료되었습니다.',
-        data: {
-          total_count: clubs.length,
-          clubs: clubs,
-        },
+        clubs: clubs,
+        totalSize: clubs.length,
       })
     }
     if (req.method === 'POST') {
-      const { clubId, name, phone, studentId } = ClubManagerRegisterRequestSchema.parse(req.body)
-      const requestName = name || user.name || user.nickname
-      const requestPhone = phone || user.phone
-      const requestStudentId = studentId || String(user.admissionClass ?? '')
+      const { clubId, clubName } = ClubManagerRegisterRequestValidator.parse(req.body)
       await clubService.clubManagerRegisterRequest(user.serviceUserId, {
         clubId,
-        name: requestName,
-        phone: requestPhone,
-        studentId: requestStudentId,
+        clubName,
       })
-      const clubs: Club[] = [await clubService.findByUuid(clubId)]
+      let clubs: V1Club[] = []
+      if (clubId) {
+        clubs = [await clubService.findByUuid(clubId)]
+      } else {
+        clubs = await clubService.findCandidatesByName(clubName)
+      }
       const clubDetails = clubs.map((club) => `- ${club.name} (ID: \`${club.id}\`)`).join('\n')
       await slackService.sendMessage(
         'DRAGONITE',
         'C0AEQRLAGMU',
         `*행운의 망나뇽이 동아리 관리자 등록 요청을 들고왔어요*
 유저: ${user.name || user.nickname} (Service User ID: ${user.serviceUserId})
-신청자명: ${requestName}
-연락처: ${requestPhone}
-학번: ${requestStudentId}
-동아리:\n${clubDetails}`,
+연락처: ${user.phone}
+동아리명: ${clubName}${
+          clubs.length
+            ? `\n\n망나뇽이 올클 DB에 있는 유사한 이름의 동아리를 물어왔어요\n${clubDetails}`
+            : ''
+        }`,
       )
       return res.status(204).send(null)
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
-      return res.status(401).send('Unauthorized')
+      return res.status(404).send('user not found')
     }
     console.error('listClubsManagedByMe error: ', err)
     return res.status(500).send('Internal Server Error')
   }
-
-  return res.status(405).end()
 }

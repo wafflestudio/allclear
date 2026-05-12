@@ -26,7 +26,7 @@ type CollegeMajorsResponse = {
 }
 
 const fetchManageClub = async (uuid: Club['uuid'], authorization: string): Promise<Club> => {
-  const response = await fetch(`/api/v1/managers/me/clubs/${uuid}`, {
+  const response = await fetch(`/api/v2/managers/me/clubs/${uuid}`, {
     headers: { 'x-authorization': authorization },
   }).then((res) => {
     if (!res.ok) throw new Error('Error fetching club by key')
@@ -37,7 +37,7 @@ const fetchManageClub = async (uuid: Club['uuid'], authorization: string): Promi
 }
 
 const fetchCollegeMajors = async (): Promise<ClubCollegeMajor[]> => {
-  const response = await fetch('/api/v1/users/majors?includeNullMajor=true').then((res) => {
+  const response = await fetch('/api/v2/users/majors?includeNullMajor=true').then((res) => {
     if (!res.ok) throw new Error('Error fetching college majors')
 
     return res.json() as Promise<CollegeMajorsResponse>

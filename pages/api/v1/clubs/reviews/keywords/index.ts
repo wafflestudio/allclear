@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ReviewService } from '../../../../../../server/service/review.service'
+import { ReviewServiceV1 } from '../../../../../../server/service/v1/review.service'
 
 type ResponseData = {
   categories: ReviewKeywordCategory[]
@@ -25,7 +25,7 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const reviewService = Provider.getService(ReviewService)
+    const reviewService = Provider.getService(ReviewServiceV1)
 
     if (req.method == 'GET') {
       const keywordCategories = await reviewService.getKeywords()

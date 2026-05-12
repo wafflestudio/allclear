@@ -28,7 +28,7 @@ const checkMobile = (): 'ios' | 'android' | 'other' | '' => {
 }
 
 const accessLog = (params: Record<string, string> = {}) => {
-  return fetch(`/api/v1/users/download/app?${qs.stringify(params)}`, {
+  return fetch(`/api/v2/users/download/app?${qs.stringify(params)}`, {
     method: 'POST',
   })
 }

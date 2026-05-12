@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
 import { ClubCategory } from 'server/domain/model/ClubCategory'
-import { ClubService } from 'server/service/club.service'
+import { ClubServiceV1 } from 'server/service/v1/club.service'
 
 type ResponseData = {
   categories: ClubCategory[]
@@ -13,7 +13,7 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const clubService = Provider.getService(ClubService)
+    const clubService = Provider.getService(ClubServiceV1)
 
     if (req.method == 'GET') {
       const categories = await clubService.getCategories()

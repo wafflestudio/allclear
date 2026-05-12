@@ -1,11 +1,26 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { User } from 'server/domain/model/User'
 import { Provider } from 'server/provider'
-import { UserService } from 'server/service/user.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
 import { UserNotFoundError } from '../../../../../server/domain/error'
 import { z, ZodIssue } from 'zod'
 import { bearerToken } from '../../../../../server/util/token'
-import { UpdateProfileSchema } from 'src/lib/schemas/users'
+
+const UpdateProfile = z.object({
+  nickname: z.string().max(32).optional(),
+  name: z.string().max(32).optional(),
+  email: z.string().max(80).optional(),
+  gender: z.enum(['F', 'M']).optional(),
+  birthDate: z.string().max(10).nullable().optional(),
+  birthYear: z.string().min(4).max(4).optional(),
+  college: z.string().max(40).optional(),
+  major: z.string().max(40).optional(),
+  collegeMajorId: z.number().nullable().optional(),
+  admissionClass: z.number().nullable().optional(),
+  grade: z.number().nullable().optional(),
+})
+
+export type UpdateProfileDto = z.infer<typeof UpdateProfile>
 
 type ResponseData = {
   profile: User
@@ -16,7 +31,7 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string | ZodIssue[]>,
 ) {
   try {
-    const userService = Provider.getService(UserService)
+    const userService = Provider.getService(UserServiceV1)
     if (req.method === 'GET') {
       const user = await userService.getUserByAccountId(req.headers.user as string)
 
@@ -35,7 +50,7 @@ export default async function handler(
     }
     if (req.method === 'PUT') {
       const user = await userService.getUserByAccountId(req.headers.user as string)
-      const updateProfileDto = UpdateProfileSchema.parse(req.body)
+      const updateProfileDto = UpdateProfile.parse(req.body)
       await userService.updateProfile(user, updateProfileDto)
       return res.status(204).end()
     }

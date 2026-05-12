@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ClubService } from 'server/service/club.service'
-import { Club } from 'server/domain/model/Club'
+import { ClubServiceV1 } from 'server/service/v1/club.service'
+import { V1Club } from 'server/service/v1/club.service'
 
 type ResponseData = {
-  clubs: Club[]
+  clubs: V1Club[]
   totalSize: number
 }
 
@@ -13,7 +13,7 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const clubService = Provider.getService(ClubService)
+    const clubService = Provider.getService(ClubServiceV1)
 
     if (req.method == 'GET') {
       const clubs = await clubService.findPopular()
