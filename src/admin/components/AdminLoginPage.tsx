@@ -25,7 +25,7 @@ export const AdminLoginPage = ({ onLogin }: { onLogin: (token: string) => void }
     setIsLoggingIn(true)
 
     const popup = window.open(
-      '/api/v1/auth/kakao',
+      '/api/v2/auth/kakao',
       'allclear-kakao-login',
       'width=460,height=680,menubar=no,toolbar=no,location=no,status=no',
     )

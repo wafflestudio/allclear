@@ -32,29 +32,29 @@ export const request = async <T>(url: string, init?: FetchOptions): Promise<T> =
 
 export const fetchClubs = (status: StatusFilter) =>
   request<AdminClubsResponse>(
-    `/api/v1/admin/clubs${buildQuery({ status: status === 'ALL' ? undefined : status })}`,
+    `/api/v2/admin/clubs${buildQuery({ status: status === 'ALL' ? undefined : status })}`,
   )
 
 export const fetchClubDetail = (uuid: string) =>
-  request<AdminClubDetailResponse>(`/api/v1/admin/clubs/${uuid}`)
+  request<AdminClubDetailResponse>(`/api/v2/admin/clubs/${uuid}`)
 
 export const fetchManagerRequests = (status: StatusFilter) =>
   request<AdminClubManagerRequestsResponse>(
-    `/api/v1/admin/clubs/manager-requests${buildQuery({
+    `/api/v2/admin/clubs/manager-requests${buildQuery({
       status: status === 'ALL' ? undefined : status,
     })}`,
   )
 
 export const fetchVerificationRequests = (status: StatusFilter) =>
   request<AdminClubVerificationRequestsResponse>(
-    `/api/v1/admin/clubs/verifications${buildQuery({
+    `/api/v2/admin/clubs/verifications${buildQuery({
       status: status === 'ALL' ? undefined : status,
     })}`,
   )
 
 export const fetchHistories = (query: string) =>
   request<AdminClubHistoriesResponse>(
-    `/api/v1/admin/clubs/histories${buildQuery({ query, limit: 30 })}`,
+    `/api/v2/admin/clubs/histories${buildQuery({ query, limit: 30 })}`,
   )
 
 export const updateClubStatus = (payload: {
@@ -63,7 +63,7 @@ export const updateClubStatus = (payload: {
   reject_reason?: string
   is_official_verified: boolean
 }) =>
-  request(`/api/v1/admin/clubs/${payload.uuid}/status`, {
+  request(`/api/v2/admin/clubs/${payload.uuid}/status`, {
     method: 'PATCH',
     body: JSON.stringify({
       status: payload.status,
@@ -77,7 +77,7 @@ export const updateManagerRequestStatus = (payload: {
   status: DecisionStatus
   reject_reason?: string
 }) =>
-  request(`/api/v1/admin/clubs/manager-requests/${payload.id}/status`, {
+  request(`/api/v2/admin/clubs/manager-requests/${payload.id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({
       status: payload.status,
@@ -90,7 +90,7 @@ export const updateVerificationStatus = (payload: {
   status: DecisionStatus
   reject_reason?: string
 }) =>
-  request(`/api/v1/admin/clubs/verifications/${payload.id}/status`, {
+  request(`/api/v2/admin/clubs/verifications/${payload.id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({
       status: payload.status,
