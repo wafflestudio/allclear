@@ -65,3 +65,23 @@ export const CollegeMajorsResponseSchema = z
     totalSize: z.number().int(),
   })
   .openapi('CollegeMajorsResponse')
+
+export const GuestIdHeaderSchema = z
+  .object({
+    'x-guest-id': z.string().uuid().optional(),
+  })
+  .openapi('GuestIdHeader')
+
+export const RecentSearchSchema = z
+  .object({
+    query: z.string(),
+    searchedAt: z.string(),
+  })
+  .openapi('RecentSearch')
+
+export const RecentSearchesResponseSchema = z
+  .object({
+    recentSearches: z.array(RecentSearchSchema),
+    totalSize: z.number().int(),
+  })
+  .openapi('RecentSearchesResponse')

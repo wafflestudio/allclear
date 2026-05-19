@@ -76,12 +76,20 @@ import {
   CollegeMajorsQuerySchema,
   CollegeMajorsResponseSchema,
   DownloadAppLogQuerySchema,
+  GuestIdHeaderSchema,
+  RecentSearchesResponseSchema,
   UpdateDeviceSchema,
   UpdateProfileSchema,
   UserClubsResponseSchema,
   UserProfileResponseSchema,
   UserVoiceSchema,
 } from 'src/lib/schemas/users'
+import {
+  TestGuestRecentSearchDebugQuerySchema,
+  TestGuestRecentSearchDebugResponseSchema,
+  TestLoginResponseSchema,
+  TestLoginSchema,
+} from 'src/lib/schemas/test'
 
 const ErrorMessageSchema = z.string()
 const NoContentResponse = { description: '성공적으로 처리되었습니다.' }
@@ -115,6 +123,15 @@ const notFoundResponse = {
 
 const unauthorizedResponse = {
   description: '인증이 필요합니다.',
+  content: {
+    'text/plain': {
+      schema: ErrorMessageSchema,
+    },
+  },
+}
+
+const badRequestTextResponse = {
+  description: '잘못된 요청입니다.',
   content: {
     'text/plain': {
       schema: ErrorMessageSchema,
@@ -636,6 +653,68 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
+  path: '/api/test/auth/login',
+  tags: ['Test'],
+  summary: '테스트 로그인',
+  description:
+    'Test-only API입니다. production NODE_ENV에서는 404로 비활성화됩니다. username 기준으로 테스트 계정을 생성하거나 재사용하고, Swagger 테스트에 사용할 bearer token을 발급합니다.',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: TestLoginSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '테스트 로그인 성공',
+      content: {
+        'application/json': {
+          schema: TestLoginResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    404: notFoundResponse,
+    405: {
+      description: '허용되지 않은 메서드입니다.',
+    },
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/test/redis/recent-searches',
+  tags: ['Test'],
+  summary: '비회원 최근 검색어 Redis 디버그',
+  description:
+    'Test-only API입니다. production NODE_ENV에서는 404로 비활성화됩니다. guest recent-search Redis key의 TTL, raw sorted-set 값, API 응답 형태를 확인합니다.',
+  request: {
+    query: TestGuestRecentSearchDebugQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Redis 디버그 조회 성공',
+      content: {
+        'application/json': {
+          schema: TestGuestRecentSearchDebugResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    404: notFoundResponse,
+    405: {
+      description: '허용되지 않은 메서드입니다.',
+    },
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
   path: '/api/v2/auth/leave',
   tags: ['Auth'],
   summary: '회원 탈퇴',
@@ -717,8 +796,12 @@ registry.registerPath({
   path: '/api/v2/clubs/search',
   tags: ['Clubs'],
   summary: '동아리 검색',
+  description:
+    '동아리를 검색합니다. query는 필수이며, 검색 결과에 필터 조건을 추가로 적용할 수 있습니다. boolean 필터는 "true" 또는 "false" 문자열로 전달하고, min_activity_period는 0, 1, 2, 3_plus 중 하나 이상을 반복 query parameter로 전달합니다. 검색 성공 후 최근 검색어 저장을 best-effort로 시도합니다. bearer token이 있으면 회원 DB에 저장하고, token이 없으면 valid x-guest-id header 기준으로 비회원 Redis 저장소에 저장합니다.',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
   request: {
     query: ClubSearchQuerySchema,
+    headers: GuestIdHeaderSchema,
   },
   responses: {
     200: {
@@ -730,13 +813,14 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'query 쿼리가 필요합니다.',
+      description: 'query, 필터 query string, 또는 비회원 x-guest-id header가 잘못되었습니다.',
       content: {
         'text/plain': {
           schema: ErrorMessageSchema,
         },
       },
     },
+    401: unauthorizedResponse,
     500: internalServerErrorResponse,
   },
 })
@@ -1155,6 +1239,53 @@ registry.registerPath({
   responses: {
     204: NoContentResponse,
     400: validationErrorResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v2/users/me/recent-searches',
+  tags: ['Users'],
+  summary: '내 최근 검색어 목록 조회',
+  description:
+    '최근 검색어를 최신순으로 최대 8개 반환합니다. bearer token이 있으면 회원 DB에서 조회하고, token이 없으면 x-guest-id header 기준으로 Redis에서 비회원 최근 검색어를 조회합니다.',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
+  request: {
+    headers: GuestIdHeaderSchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: RecentSearchesResponseSchema,
+        },
+      },
+    },
+    400: badRequestTextResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/v2/users/me/recent-searches',
+  tags: ['Users'],
+  summary: '내 최근 검색어 전체 삭제',
+  description:
+    '최근 검색어를 전체 삭제합니다. bearer token이 있으면 회원 DB에서 삭제하고, token이 없으면 x-guest-id header 기준으로 Redis 비회원 최근 검색어를 삭제합니다. 개별 삭제는 지원하지 않습니다.',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
+  request: {
+    headers: GuestIdHeaderSchema,
+  },
+  responses: {
+    204: NoContentResponse,
+    400: badRequestTextResponse,
+    401: unauthorizedResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },

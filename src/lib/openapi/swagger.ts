@@ -8,6 +8,12 @@ registry.registerComponent('securitySchemes', 'bearerAuth', {
   bearerFormat: 'JWT',
 })
 
+registry.registerComponent('securitySchemes', 'guestIdAuth', {
+  type: 'apiKey',
+  in: 'header',
+  name: 'x-guest-id',
+})
+
 export function generateOpenApiDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions)
 

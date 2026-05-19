@@ -1,5 +1,6 @@
 const HOST = process.env.HOST ?? 'http://localhost:3000'
 const SERVER_BASE_URL = `${HOST}/api`
+const REDIS_URL = process.env.REDIS_URL ? `redis://${process.env.REDIS_URL}` : ''
 
 export const ENV = {
   HOST,
@@ -18,6 +19,9 @@ export const ENV = {
   },
   JWT: {
     SECRET_KEY: process.env.JWT_SECRET_KEY ?? '',
+  },
+  REDIS: {
+    URL: REDIS_URL,
   },
   R2: {
     ACCOUNT_ID: process.env.R2_ACCOUNT_ID ?? '',

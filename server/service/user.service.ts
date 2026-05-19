@@ -8,6 +8,7 @@ import {
   UserActivityLogEntity,
   UserActivityLogType,
   UserEntity,
+  UserRecentSearchEntity,
   UserVoiceEntity,
 } from '../infra/database/entities'
 import { User } from '../domain/model/User'
@@ -16,6 +17,8 @@ import { UserRole } from '../infra/database/entities/user-role.enum'
 import { UpdateProfileDto } from '../../src/lib/schemas/users'
 import { CollegeMajor } from '../domain/model/CollegeMajor'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
+
+const RECENT_SEARCH_LIMIT = 8
 
 @Service
 export class UserService {
@@ -35,6 +38,8 @@ export class UserService {
   private readonly userActivityLogRepository: Repository<UserActivityLogEntity>
   @InjectRepository(CollegeMajorEntity)
   private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
+  @InjectRepository(UserRecentSearchEntity)
+  private readonly userRecentSearchRepository: Repository<UserRecentSearchEntity>
 
   public async getUserByAccountId(accountId: string): Promise<User> {
     if (!accountId) {
@@ -189,5 +194,49 @@ export class UserService {
     if (!resource) {
       throw new UserNotFoundError(`User not found`)
     }
+  }
+
+  async findRecentSearches(
+    serviceUserId: string,
+    limit: number = RECENT_SEARCH_LIMIT,
+  ): Promise<UserRecentSearchEntity[]> {
+    return this.userRecentSearchRepository.find({
+      where: { serviceUserId },
+      order: { updatedAt: 'DESC' },
+      take: limit,
+    })
+  }
+
+  async saveRecentSearch(
+    serviceUserId: string,
+    query: string,
+    limit: number = RECENT_SEARCH_LIMIT,
+  ): Promise<void> {
+    const normalizedQuery = query.trim()
+    const manager = this.userRecentSearchRepository.manager
+
+    await manager.query(
+      `INSERT INTO user_recent_search (service_user_id, query)
+       VALUES ($1, $2)
+       ON CONFLICT (service_user_id, query)
+       DO UPDATE SET updated_at = CURRENT_TIMESTAMP(6)`,
+      [serviceUserId, normalizedQuery],
+    )
+
+    await manager.query(
+      `DELETE FROM user_recent_search
+       WHERE service_user_id = $1
+         AND id NOT IN (
+           SELECT id FROM user_recent_search
+           WHERE service_user_id = $1
+           ORDER BY updated_at DESC
+           LIMIT $2
+         )`,
+      [serviceUserId, limit],
+    )
+  }
+
+  async deleteRecentSearches(serviceUserId: string): Promise<void> {
+    await this.userRecentSearchRepository.delete({ serviceUserId })
   }
 }

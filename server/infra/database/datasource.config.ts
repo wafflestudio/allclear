@@ -27,6 +27,7 @@ import { ClubManagerRegisterRequestEntity } from './entities/club-manager-regist
 import { ClubManagerRegisterRequestEntityV1 } from './entities/v1/club-manager-register-request.entity'
 import { ClubHistoryEntity } from './entities/club-history.entity'
 import { ClubVerificationRequestEntity } from './entities/club-verification-request.entity'
+import { UserRecentSearchEntity } from './entities/user-recent-search.entity'
 
 export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
   type: 'postgres',
@@ -56,6 +57,7 @@ export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
     TermsEntity,
     TermsAgreementEntity,
     UserVoiceEntity,
+    UserRecentSearchEntity,
     CollegeMajorEntity,
   ],
   username: ENV.DB.USERNAME,

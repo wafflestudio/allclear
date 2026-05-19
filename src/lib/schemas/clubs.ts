@@ -13,9 +13,20 @@ export const ClubListByCategoryQuerySchema = z
   })
   .openapi('ClubListByCategoryQuery')
 
+export const MinActivityPeriodFilterSchema = z.enum(['0', '1', '2', '3_plus'])
+
 export const ClubSearchQuerySchema = z
   .object({
     query: z.string(),
+    affiliation_type: z.enum(['전체', '중앙동아리', '학과/단과대동아리']).optional(),
+    is_recruiting: z.string().optional(),
+    recruit_type: z.enum(['정기', '상시']).optional(),
+    has_membership_fee: z.string().optional(),
+    has_dongbang: z.string().optional(),
+    is_official_verified: z.string().optional(),
+    min_activity_period: z
+      .union([MinActivityPeriodFilterSchema, z.array(MinActivityPeriodFilterSchema)])
+      .optional(),
   })
   .openapi('ClubSearchQuery')
 
