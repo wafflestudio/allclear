@@ -18,10 +18,7 @@ import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/clu
 import dayjs from 'dayjs'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { sortByPopularAndEachRandom } from '../util/club-sort'
-import {
-  PENDING_CLUB_STATUS,
-  PUBLIC_CLUB_STATUS,
-} from 'src/common/constants/club-status'
+import { PENDING_CLUB_STATUS, PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
 import type {
   ClubData,
@@ -202,6 +199,19 @@ export class ClubService {
       },
       take: topN,
     })
+    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
+    return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
+  }
+
+  async findRandomRecommendations(limit = 5): Promise<Club[]> {
+    const entities = await this.clubRepository
+      .createQueryBuilder('club')
+      .where('club.status = :status', { status: PUBLIC_CLUB_STATUS })
+      .andWhere('club.deleted_at IS NULL')
+      .orderBy('RANDOM()')
+      .take(limit)
+      .getMany()
+
     const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
     return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
   }

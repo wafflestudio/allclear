@@ -793,6 +793,25 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
+  path: '/api/v2/clubs/recommendations/random',
+  tags: ['Clubs'],
+  summary: '랜덤 추천 동아리 목록',
+  description: '검색 결과가 없을 때 노출할 공개 상태 동아리를 랜덤으로 최대 5개 추천합니다.',
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: ClubsResponseSchema,
+        },
+      },
+    },
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
   path: '/api/v2/clubs/search',
   tags: ['Clubs'],
   summary: '동아리 검색',
