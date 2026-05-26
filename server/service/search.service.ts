@@ -66,6 +66,6 @@ export class SearchService {
   private async runSearch(query: string, options: SearchOptions): Promise<Club[]> {
     const entities: ClubEntity[] = await this.searchQueryService.search(query, options.filters)
     const clubs = await this.hydratorService.toClubs(entities)
-    return this.sortService.sort(clubs, options.sort ?? DEFAULT_SEARCH_SORT)
+    return this.sortService.sort(clubs, query, options.sort ?? DEFAULT_SEARCH_SORT)
   }
 }
