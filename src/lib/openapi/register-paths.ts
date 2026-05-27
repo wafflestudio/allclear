@@ -90,6 +90,12 @@ import {
   TestLoginResponseSchema,
   TestLoginSchema,
 } from 'src/lib/schemas/test'
+import {
+  AppVersionCheckResponseSchema,
+  AppVersionCheckSchema,
+  AppVersionPolicyResponseSchema,
+  AppVersionPolicyUpdateSchema,
+} from 'src/lib/schemas/app-versions'
 
 const ErrorMessageSchema = z.string()
 const NoContentResponse = { description: '성공적으로 처리되었습니다.' }
@@ -1373,6 +1379,35 @@ registry.registerPath({
 })
 
 registry.registerPath({
+  method: 'post',
+  path: '/api/v2/app/version/check',
+  tags: ['App'],
+  summary: '앱 강제 업데이트 필요 여부 확인',
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: AppVersionCheckSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '확인 성공',
+      content: {
+        'application/json': {
+          schema: AppVersionCheckResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
   method: 'get',
   path: '/api/v2/managers/me/clubs',
   tags: ['Managers'],
@@ -1726,6 +1761,38 @@ registry.registerPath({
     },
     400: validationErrorResponse,
     404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v2/app/version-policies',
+  tags: ['App'],
+  summary: '앱 버전 정책 저장',
+  description:
+    'clientType별 최소 지원 버전을 저장합니다. 저장 후 해당 clientType의 Redis 캐시를 만료합니다.',
+  security: [{ internalApiKeyAuth: [] }],
+  request: {
+    body: {
+      content: {
+        'application/json': {
+          schema: AppVersionPolicyUpdateSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '저장 성공',
+      content: {
+        'application/json': {
+          schema: AppVersionPolicyResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
     500: internalServerErrorResponse,
   },
 })

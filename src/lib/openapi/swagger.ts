@@ -14,6 +14,12 @@ registry.registerComponent('securitySchemes', 'guestIdAuth', {
   name: 'x-guest-id',
 })
 
+registry.registerComponent('securitySchemes', 'internalApiKeyAuth', {
+  type: 'apiKey',
+  in: 'header',
+  name: 'x-internal-api-key',
+})
+
 export function generateOpenApiDocument() {
   const generator = new OpenApiGeneratorV3(registry.definitions)
 

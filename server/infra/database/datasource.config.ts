@@ -3,6 +3,7 @@ import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
 import {
   AccountEntity,
   AccountUserEntity,
+  AppVersionPolicyEntity,
   AnnouncementDismissEntity,
   AnnouncementEntity,
   ClubEntity,
@@ -39,6 +40,7 @@ export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
     AccountUserEntity,
     ServiceUserEntity,
     DeviceEntity,
+    AppVersionPolicyEntity,
     AnnouncementEntity,
     AnnouncementDismissEntity,
     UserActivityLogEntity,
