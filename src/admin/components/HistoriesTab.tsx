@@ -51,6 +51,7 @@ export const HistoriesTab = ({
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h3 className="text-base font-bold">{history.club_name}</h3>
+                  <p className="break-all text-xs text-slate-400">{history.club_uuid}</p>
                   <p className="mt-1 text-sm text-slate-600">
                     {history.updated_by.name || history.updated_by.service_user_id} ·{' '}
                     {formatDate(history.created_at)}

@@ -1,8 +1,15 @@
 import React, { useState } from 'react'
 import { useClubDetail } from 'src/admin/hooks'
 import { formatDate, statusLabels } from 'src/admin/constants'
-import type { AdminClub, AdminClubDetail, DecisionStatus } from 'src/admin/types'
+import type { AdminClub, AdminClubDetail, ClubStatus } from 'src/admin/types'
 import { DetailItem, ErrorState, LoadingRows, EmptyState, StatusBadge } from './ui'
+
+type DecidePayload = {
+  uuid: string
+  status: ClubStatus
+  reject_reason?: string
+  is_official_verified: boolean
+}
 
 export const ClubsTab = ({
   clubs,
@@ -15,12 +22,7 @@ export const ClubsTab = ({
   isLoading: boolean
   error: unknown
   isMutating: boolean
-  onDecide: (payload: {
-    uuid: string
-    status: DecisionStatus
-    reject_reason?: string
-    is_official_verified: boolean
-  }) => void
+  onDecide: (payload: DecidePayload) => void
 }) => {
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null)
   const detailQuery = useClubDetail(selectedUuid)
@@ -111,142 +113,239 @@ const ClubDetailDialog = ({
   error: unknown
   isMutating: boolean
   onClose: () => void
-  onDecide: (payload: {
-    uuid: string
-    status: DecisionStatus
-    reject_reason?: string
-    is_official_verified: boolean
-  }) => void
+  onDecide: (payload: DecidePayload) => void
 }) => {
   const [officialVerified, setOfficialVerified] = useState(true)
   const [rejectReason, setRejectReason] = useState('')
+  const [rejectReasonError, setRejectReasonError] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<{
+    payload: DecidePayload
+    message: string
+  } | null>(null)
+
+  const requestConfirm = (payload: DecidePayload, message: string) => {
+    if (payload.status === 'REJECTED' && !rejectReason.trim()) {
+      setRejectReasonError(true)
+      return
+    }
+    setRejectReasonError(false)
+    setConfirmAction({ payload, message })
+  }
+
+  const handleConfirm = () => {
+    if (confirmAction) {
+      onDecide(confirmAction.payload)
+      setConfirmAction(null)
+    }
+  }
+
+  const isPending = detail?.club_data.status === 'PENDING'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-4xl overflow-y-auto rounded-md bg-white shadow-xl">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
-          <div>
-            <p className="text-sm font-medium text-slate-500">동아리 상세 검토</p>
-            <h2 className="text-xl font-bold">{detail?.club_data.name ?? '불러오는 중'}</h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-10 w-10 rounded-md border border-slate-200 text-lg font-bold hover:bg-slate-100"
-            aria-label="닫기"
-          >
-            ×
-          </button>
-        </header>
-
-        <div className="p-5">
-          {isLoading && <LoadingRows />}
-          {Boolean(error) && <ErrorState error={error} />}
-          {detail && (
-            <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
-              <div>
-                <img
-                  src={detail.club_data.image_uri || '/images/share-logo.png'}
-                  alt={`${detail.club_data.name} 대표 이미지`}
-                  className="mb-5 aspect-[16/9] w-full rounded-md border border-slate-200 object-cover"
-                />
-                <dl className="grid gap-3 sm:grid-cols-2">
-                  <DetailItem label="상태" value={statusLabels[detail.club_data.status]} />
-                  <DetailItem label="유형" value={detail.club_data.type} />
-                  <DetailItem label="카테고리" value={detail.club_data.category} />
-                  <DetailItem label="소속" value={detail.club_data.affiliation} />
-                  <DetailItem label="한줄소개" value={detail.club_data.short_description} wide />
-                  <DetailItem label="모집 형태" value={detail.club_data.recruit_type ?? '-'} />
-                  <DetailItem
-                    label="최소 활동 기간"
-                    value={`${detail.club_data.min_activity_period}학기`}
-                  />
-                  <DetailItem
-                    label="동방"
-                    value={
-                      detail.club_data.has_dongbang
-                        ? detail.club_data.dongbang_location || '있음'
-                        : '없음'
-                    }
-                  />
-                  <DetailItem label="SNS" value={detail.club_data.sns || '-'} wide />
-                  <DetailItem label="소개" value={detail.club_data.introduction ?? '-'} wide />
-                </dl>
-              </div>
-
-              <aside className="rounded-md border border-slate-200 bg-slate-50 p-4">
-                <h3 className="text-base font-bold">신청자</h3>
-                <div className="mt-3 space-y-2 text-sm text-slate-700">
-                  <p>
-                    <span className="font-semibold text-slate-950">이름</span>{' '}
-                    {detail.manager_data.name}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-950">연락처</span>{' '}
-                    {detail.manager_data.phone}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-slate-950">학번</span>{' '}
-                    {detail.manager_data.student_id}
-                  </p>
-                  <p className="break-all text-xs text-slate-500">
-                    {detail.manager_data.service_user_id}
-                  </p>
-                </div>
-
-                <div className="mt-5 border-t border-slate-200 pt-4">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
-                    <input
-                      type="checkbox"
-                      checked={officialVerified}
-                      onChange={(event) => setOfficialVerified(event.target.checked)}
-                      className="h-4 w-4"
-                    />
-                    승인 시 공식 인증 부여
-                  </label>
-                  <textarea
-                    value={rejectReason}
-                    onChange={(event) => setRejectReason(event.target.value)}
-                    className="mt-3 min-h-[92px] w-full resize-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-primary-600"
-                    placeholder="반려 사유"
-                  />
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      disabled={isMutating}
-                      onClick={() =>
-                        onDecide({
-                          uuid: detail.club_data.uuid,
-                          status: 'REJECTED',
-                          reject_reason: rejectReason,
-                          is_official_verified: false,
-                        })
-                      }
-                      className="min-h-[40px] rounded-md border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 disabled:opacity-50"
-                    >
-                      반려
-                    </button>
-                    <button
-                      type="button"
-                      disabled={isMutating}
-                      onClick={() =>
-                        onDecide({
-                          uuid: detail.club_data.uuid,
-                          status: 'APPROVED',
-                          is_official_verified: officialVerified,
-                        })
-                      }
-                      className="min-h-[40px] rounded-md bg-slate-950 text-sm font-semibold text-white disabled:opacity-50"
-                    >
-                      승인
-                    </button>
-                  </div>
-                </div>
-              </aside>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+        <section className="max-h-full w-full max-w-4xl overflow-y-auto rounded-md bg-white shadow-xl">
+          <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+            <div>
+              <p className="text-sm font-medium text-slate-500">동아리 상세 검토</p>
+              <h2 className="text-xl font-bold">{detail?.club_data.name ?? '불러오는 중'}</h2>
             </div>
-          )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-10 w-10 rounded-md border border-slate-200 text-lg font-bold hover:bg-slate-100"
+              aria-label="닫기"
+            >
+              ×
+            </button>
+          </header>
+
+          <div className="p-5">
+            {isLoading && <LoadingRows />}
+            {Boolean(error) && <ErrorState error={error} />}
+            {detail && (
+              <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+                <div>
+                  <img
+                    src={detail.club_data.image_uri || '/images/share-logo.png'}
+                    alt={`${detail.club_data.name} 대표 이미지`}
+                    className="mb-5 aspect-[16/9] w-full rounded-md border border-slate-200 object-cover"
+                  />
+                  <dl className="grid gap-3 sm:grid-cols-2">
+                    <DetailItem label="상태" value={statusLabels[detail.club_data.status]} />
+                    <DetailItem label="유형" value={detail.club_data.type} />
+                    <DetailItem label="카테고리" value={detail.club_data.category} />
+                    <DetailItem label="소속" value={detail.club_data.affiliation} />
+                    <DetailItem label="한줄소개" value={detail.club_data.short_description} wide />
+                    <DetailItem label="모집 형태" value={detail.club_data.recruit_type ?? '-'} />
+                    <DetailItem
+                      label="최소 활동 기간"
+                      value={`${detail.club_data.min_activity_period}학기`}
+                    />
+                    <DetailItem
+                      label="동방"
+                      value={
+                        detail.club_data.has_dongbang
+                          ? detail.club_data.dongbang_location || '있음'
+                          : '없음'
+                      }
+                    />
+                    <DetailItem label="SNS" value={detail.club_data.sns || '-'} wide />
+                    <DetailItem label="소개" value={detail.club_data.introduction ?? '-'} wide />
+                  </dl>
+                  <p className="mt-3 break-all text-xs text-slate-400">{detail.club_data.uuid}</p>
+                </div>
+
+                <aside className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="text-base font-bold">신청자</h3>
+                  <div className="mt-3 space-y-2 text-sm text-slate-700">
+                    <p>
+                      <span className="font-semibold text-slate-950">이름</span>{' '}
+                      {detail.manager_data.name}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-950">연락처</span>{' '}
+                      {detail.manager_data.phone}
+                    </p>
+                    <p>
+                      <span className="font-semibold text-slate-950">학번</span>{' '}
+                      {detail.manager_data.student_id}
+                    </p>
+                    <p className="break-all text-xs text-slate-500">
+                      {detail.manager_data.service_user_id}
+                    </p>
+                  </div>
+
+                  <div className="mt-5 border-t border-slate-200 pt-4">
+                    {isPending ? (
+                      <>
+                        <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                          <input
+                            type="checkbox"
+                            checked={officialVerified}
+                            onChange={(event) => setOfficialVerified(event.target.checked)}
+                            className="h-4 w-4"
+                          />
+                          승인 시 공식 인증 부여
+                        </label>
+                        <textarea
+                          value={rejectReason}
+                          onChange={(event) => {
+                            setRejectReason(event.target.value)
+                            if (event.target.value.trim()) setRejectReasonError(false)
+                          }}
+                          className={`mt-3 min-h-[92px] w-full resize-none rounded-md border bg-white px-3 py-2 text-sm outline-none ${
+                            rejectReasonError
+                              ? 'border-rose-400 focus:border-rose-500'
+                              : 'border-slate-300 focus:border-primary-600'
+                          }`}
+                          placeholder="반려 사유"
+                        />
+                        {rejectReasonError && (
+                          <p className="mt-1 text-xs font-medium text-rose-600">
+                            반려 사유를 입력해 주세요.
+                          </p>
+                        )}
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            disabled={isMutating}
+                            onClick={() =>
+                              requestConfirm(
+                                {
+                                  uuid: detail.club_data.uuid,
+                                  status: 'REJECTED',
+                                  reject_reason: rejectReason,
+                                  is_official_verified: false,
+                                },
+                                '반려 처리하시겠습니까?',
+                              )
+                            }
+                            className="min-h-[40px] rounded-md border border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 disabled:opacity-50"
+                          >
+                            반려
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isMutating}
+                            onClick={() =>
+                              requestConfirm(
+                                {
+                                  uuid: detail.club_data.uuid,
+                                  status: 'APPROVED',
+                                  is_official_verified: officialVerified,
+                                },
+                                '승인 처리하시겠습니까?',
+                              )
+                            }
+                            className="min-h-[40px] rounded-md bg-slate-950 text-sm font-semibold text-white disabled:opacity-50"
+                          >
+                            승인
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {detail.club_data.status === 'REJECTED' &&
+                          detail.club_data.reject_reason && (
+                            <div className="mb-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
+                              <p className="text-xs font-semibold text-rose-600">반려 사유</p>
+                              <p className="mt-1 text-sm text-rose-800">
+                                {detail.club_data.reject_reason}
+                              </p>
+                            </div>
+                          )}
+                        <button
+                          type="button"
+                          disabled={isMutating}
+                          onClick={() =>
+                            requestConfirm(
+                              {
+                                uuid: detail.club_data.uuid,
+                                status: 'PENDING',
+                                is_official_verified: false,
+                              },
+                              '대기 상태로 변경하시겠습니까?',
+                            )
+                          }
+                          className="w-full min-h-[40px] rounded-md border border-slate-300 bg-white text-sm font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                        >
+                          대기로 변경
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </aside>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      {confirmAction && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 px-4">
+          <div className="w-full max-w-sm rounded-md bg-white p-5 shadow-xl">
+            <p className="text-base font-semibold text-slate-900">{confirmAction.message}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmAction(null)}
+                className="min-h-[40px] rounded-md border border-slate-300 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={isMutating}
+                onClick={handleConfirm}
+                className="min-h-[40px] rounded-md bg-slate-950 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                확인
+              </button>
+            </div>
+          </div>
         </div>
-      </section>
-    </div>
+      )}
+    </>
   )
 }

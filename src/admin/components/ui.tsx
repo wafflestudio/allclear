@@ -1,4 +1,5 @@
 import React from 'react'
+import { useClubDetail } from 'src/admin/hooks'
 import { statusClassNames, statusLabels, STATUS_FILTERS } from 'src/admin/constants'
 import type { ClubStatus, DecisionStatus, StatusFilter } from 'src/admin/types'
 
@@ -148,3 +149,66 @@ export const EmptyState = ({ title }: { title: string }) => (
     <p className="text-base font-semibold text-slate-700">{title}</p>
   </div>
 )
+
+export const ClubInfoModal = ({ clubUuid, onClose }: { clubUuid: string; onClose: () => void }) => {
+  const { data, isLoading, error } = useClubDetail(clubUuid)
+  const detail = data?.data
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+      <section className="max-h-full w-full max-w-2xl overflow-y-auto rounded-md bg-white shadow-xl">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+          <div>
+            <p className="text-sm font-medium text-slate-500">동아리 상세 정보</p>
+            <h2 className="text-xl font-bold">{detail?.club_data.name ?? '불러오는 중'}</h2>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-10 w-10 rounded-md border border-slate-200 text-lg font-bold hover:bg-slate-100"
+            aria-label="닫기"
+          >
+            ×
+          </button>
+        </header>
+
+        <div className="p-5">
+          {isLoading && <LoadingRows />}
+          {Boolean(error) && <ErrorState error={error} />}
+          {detail && (
+            <>
+              <img
+                src={detail.club_data.image_uri || '/images/share-logo.png'}
+                alt={`${detail.club_data.name} 대표 이미지`}
+                className="mb-5 aspect-[16/9] w-full rounded-md border border-slate-200 object-cover"
+              />
+              <dl className="grid gap-3 sm:grid-cols-2">
+                <DetailItem label="상태" value={statusLabels[detail.club_data.status]} />
+                <DetailItem label="유형" value={detail.club_data.type} />
+                <DetailItem label="카테고리" value={detail.club_data.category} />
+                <DetailItem label="소속" value={detail.club_data.affiliation} />
+                <DetailItem label="한줄소개" value={detail.club_data.short_description} wide />
+                <DetailItem label="모집 형태" value={detail.club_data.recruit_type ?? '-'} />
+                <DetailItem
+                  label="최소 활동 기간"
+                  value={`${detail.club_data.min_activity_period}학기`}
+                />
+                <DetailItem
+                  label="동방"
+                  value={
+                    detail.club_data.has_dongbang
+                      ? detail.club_data.dongbang_location || '있음'
+                      : '없음'
+                  }
+                />
+                <DetailItem label="SNS" value={detail.club_data.sns || '-'} wide />
+                <DetailItem label="소개" value={detail.club_data.introduction ?? '-'} wide />
+              </dl>
+              <p className="mt-3 break-all text-xs text-slate-400">{detail.club_data.uuid}</p>
+            </>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}

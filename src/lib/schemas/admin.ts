@@ -1,9 +1,5 @@
 import { z } from 'src/lib/schemas/zod'
-import {
-  CLUB_DECISION_STATUSES,
-  CLUB_STATUSES,
-  REJECTED_CLUB_STATUS,
-} from 'src/common/constants/club-status'
+import { CLUB_STATUSES, REJECTED_CLUB_STATUS } from 'src/common/constants/club-status'
 
 const AdminClubManagerSchema = z.object({
   name: z.string(),
@@ -63,6 +59,7 @@ const AdminClubDetailClubSchema = z
     sns: z.string(),
     introduction: z.string().nullable(),
     created_at: z.string(),
+    reject_reason: z.string().nullable(),
   })
   .openapi('AdminClubDetailClub')
 
@@ -189,6 +186,7 @@ const AdminClubManagerRequestSchema = z
       student_id: z.string(),
     }),
     status: z.enum(CLUB_STATUSES),
+    reject_reason: z.string().nullable(),
     created_at: z.string(),
   })
   .openapi('AdminClubManagerRequest')
@@ -225,6 +223,7 @@ const AdminClubVerificationRequestSchema = z
     club_name: z.string(),
     category: z.string(),
     status: z.enum(CLUB_STATUSES),
+    reject_reason: z.string().nullable(),
     created_at: z.string(),
   })
   .openapi('AdminClubVerificationRequest')
@@ -256,7 +255,7 @@ export type AdminClubManagerRequestStatusParams = z.infer<
 
 export const AdminClubManagerRequestStatusUpdateSchema = z
   .object({
-    status: z.enum(CLUB_DECISION_STATUSES),
+    status: z.enum(CLUB_STATUSES),
     reject_reason: z.string().trim().max(300).optional(),
   })
   .superRefine(({ status, reject_reason }, ctx) => {
@@ -281,7 +280,7 @@ export const AdminClubManagerRequestStatusUpdateResponseSchema = z
     data: z.object({
       request_id: z.number().int(),
       club_uuid: z.string().uuid(),
-      status: z.enum(CLUB_DECISION_STATUSES),
+      status: z.enum(CLUB_STATUSES),
       processed_at: z.string(),
     }),
   })
@@ -303,17 +302,8 @@ export type AdminClubVerificationRequestStatusParams = z.infer<
 
 export const AdminClubVerificationRequestStatusUpdateSchema = z
   .object({
-    status: z.enum(CLUB_DECISION_STATUSES),
+    status: z.enum(CLUB_STATUSES),
     reject_reason: z.string().trim().max(300).optional(),
-  })
-  .superRefine(({ status, reject_reason }, ctx) => {
-    if (status === REJECTED_CLUB_STATUS && !reject_reason?.trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['reject_reason'],
-        message: 'reject_reason is required when status is REJECTED',
-      })
-    }
   })
   .openapi('AdminClubVerificationRequestStatusUpdate')
 
@@ -328,7 +318,7 @@ export const AdminClubVerificationRequestStatusUpdateResponseSchema = z
     data: z.object({
       request_id: z.number().int(),
       club_uuid: z.string().uuid(),
-      status: z.enum(CLUB_DECISION_STATUSES),
+      status: z.enum(CLUB_STATUSES),
       is_official_verified: z.boolean(),
       processed_at: z.string(),
     }),
