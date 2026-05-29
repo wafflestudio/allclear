@@ -16,7 +16,7 @@ const extractTokenFromPopupText = (rawText: string): string | null => {
   return jwtToken?.[0] ?? null
 }
 
-export const AdminLoginPage = ({ onLogin }: { onLogin: (token: string) => void }) => {
+export const AdminLoginPage = ({ onLogin }: { onLogin: (token: string) => Promise<void> }) => {
   const [errorMessage, setErrorMessage] = useState('')
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
@@ -37,7 +37,7 @@ export const AdminLoginPage = ({ onLogin }: { onLogin: (token: string) => void }
     }
 
     const startedAt = Date.now()
-    const timer = window.setInterval(() => {
+    const timer = window.setInterval(async () => {
       if (popup.closed) {
         window.clearInterval(timer)
         setIsLoggingIn(false)
@@ -69,8 +69,14 @@ export const AdminLoginPage = ({ onLogin }: { onLogin: (token: string) => void }
 
         window.clearInterval(timer)
         popup.close()
-        setIsLoggingIn(false)
-        onLogin(token)
+
+        try {
+          await onLogin(token)
+          setIsLoggingIn(false)
+        } catch {
+          setIsLoggingIn(false)
+          setErrorMessage('운영진 권한이 없습니다. 올클 운영진 계정으로 로그인해주세요.')
+        }
       } catch (err) {
         // Kakao 도메인에 머무르는 동안에는 same-origin 접근이 막힌다.
       }

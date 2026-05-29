@@ -9,6 +9,7 @@ import {
   updateClubStatus,
   updateManagerRequestStatus,
   updateVerificationStatus,
+  verifyAdminRole,
 } from 'src/admin/api'
 import { ADMIN_AUTH_TOKEN_KEY } from 'src/admin/constants'
 import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
@@ -20,6 +21,22 @@ export const useAdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('clubs')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('PENDING')
   const [submittedHistoryQuery, setSubmittedHistoryQuery] = useState('')
+  const [toasts, setToasts] = useState<
+    { id: number; message: string; type: 'error' | 'success' }[]
+  >([])
+
+  const addError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : '오류가 발생했습니다.'
+    setToasts((prev) => [...prev, { id: Date.now(), message, type: 'error' }])
+  }
+
+  const addSuccess = (message: string) => {
+    setToasts((prev) => [...prev, { id: Date.now(), message, type: 'success' }])
+  }
+
+  const dismissToast = (id: number) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }
 
   useEffect(() => {
     setAuthToken(window.localStorage.getItem(ADMIN_AUTH_TOKEN_KEY))
@@ -39,23 +56,57 @@ export const useAdminDashboard = () => {
     () => fetchVerificationRequests(statusFilter),
     { enabled: activeTab === 'verificationRequests' && !!authToken },
   )
+
+  const clubsPendingQuery = useQuery(['admin-clubs-pending-count'], () => fetchClubs('PENDING'), {
+    enabled: !!authToken,
+    refetchInterval: 30_000,
+  })
+  const managerRequestsPendingQuery = useQuery(
+    ['admin-manager-requests-pending-count'],
+    () => fetchManagerRequests('PENDING'),
+    { enabled: !!authToken, refetchInterval: 30_000 },
+  )
+  const verificationsPendingQuery = useQuery(
+    ['admin-verifications-pending-count'],
+    () => fetchVerificationRequests('PENDING'),
+    { enabled: !!authToken, refetchInterval: 30_000 },
+  )
   const historiesQuery = useQuery(
     ['admin-club-histories', submittedHistoryQuery],
     () => fetchHistories(submittedHistoryQuery),
     { enabled: activeTab === 'histories' && !!authToken },
   )
 
+  const STATUS_TEXT: Record<string, string> = {
+    APPROVED: '승인',
+    REJECTED: '반려',
+    PENDING: '대기로 변경',
+  }
+
   const clubStatusMutation = useMutation(updateClubStatus, {
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      addSuccess(`${STATUS_TEXT[variables.status] ?? '처리'} 완료`)
       queryClient.invalidateQueries('admin-clubs')
       queryClient.invalidateQueries('admin-club-detail')
+      queryClient.invalidateQueries('admin-clubs-pending-count')
     },
+    onError: addError,
   })
   const managerRequestMutation = useMutation(updateManagerRequestStatus, {
-    onSuccess: () => queryClient.invalidateQueries('admin-manager-requests'),
+    onSuccess: (_, variables) => {
+      addSuccess(`${STATUS_TEXT[variables.status] ?? '처리'} 완료`)
+      queryClient.invalidateQueries('admin-manager-requests')
+      queryClient.invalidateQueries('admin-manager-requests-pending-count')
+    },
+    onError: addError,
   })
   const verificationMutation = useMutation(updateVerificationStatus, {
-    onSuccess: () => queryClient.invalidateQueries('admin-verification-requests'),
+    onSuccess: (_, variables) => {
+      addSuccess(`${STATUS_TEXT[variables.status] ?? '처리'} 완료`)
+      queryClient.invalidateQueries('admin-verification-requests')
+      queryClient.invalidateQueries('admin-verifications-pending-count')
+    },
+    onError: addError,
   })
 
   const totalCount = useMemo(() => {
@@ -72,7 +123,8 @@ export const useAdminDashboard = () => {
     verificationRequestsQuery.data,
   ])
 
-  const handleLogin = (token: string) => {
+  const handleLogin = async (token: string) => {
+    await verifyAdminRole(token)
     window.localStorage.setItem(ADMIN_AUTH_TOKEN_KEY, token)
     setAuthToken(token)
     queryClient.invalidateQueries()
@@ -111,6 +163,13 @@ export const useAdminDashboard = () => {
     statusFilter,
     setStatusFilter,
     totalCount,
+    toasts,
+    dismissToast,
+    pendingCounts: {
+      clubs: clubsPendingQuery.data?.data.total_count ?? 0,
+      managerRequests: managerRequestsPendingQuery.data?.data.total_count ?? 0,
+      verificationRequests: verificationsPendingQuery.data?.data.total_count ?? 0,
+    },
     handleLogin,
     handleLogout,
     clubs: {

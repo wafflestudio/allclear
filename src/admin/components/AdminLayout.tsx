@@ -3,10 +3,17 @@ import { TABS } from 'src/admin/constants'
 import type { AdminTab, StatusFilter } from 'src/admin/types'
 import { StatusBadge, StatusFilterBar } from './ui'
 
+type PendingCounts = {
+  clubs: number
+  managerRequests: number
+  verificationRequests: number
+}
+
 export const AdminLayout = ({
   activeTab,
   onTabChange,
   totalCount,
+  pendingCounts,
   statusFilter,
   onLogout,
   children,
@@ -14,6 +21,7 @@ export const AdminLayout = ({
   activeTab: AdminTab
   onTabChange: (tab: AdminTab) => void
   totalCount: number
+  pendingCounts: PendingCounts
   statusFilter: StatusFilter
   onLogout: () => void
   children: React.ReactNode
@@ -27,20 +35,28 @@ export const AdminLayout = ({
             <h1 className="mt-2 text-2xl font-bold tracking-normal">운영진 대시보드</h1>
           </div>
           <nav className="space-y-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => onTabChange(tab.value)}
-                className={`w-full rounded-md px-3 py-2 text-left text-sm font-semibold transition ${
-                  activeTab === tab.value
-                    ? 'bg-slate-950 text-white'
-                    : 'text-slate-600 hover:bg-white hover:text-slate-950'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {TABS.map((tab) => {
+              const count = pendingCounts[tab.value as keyof PendingCounts] ?? 0
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => onTabChange(tab.value)}
+                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-semibold transition ${
+                    activeTab === tab.value
+                      ? 'bg-slate-950 text-white'
+                      : 'text-slate-600 hover:bg-white hover:text-slate-950'
+                  }`}
+                >
+                  {tab.label}
+                  {count > 0 && (
+                    <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </nav>
         </div>
         <p className="text-xs leading-5 text-slate-500">
@@ -56,20 +72,28 @@ export const AdminLayout = ({
 
         <div className="mb-5 overflow-x-auto rounded-md border border-slate-200 bg-white p-1 lg:hidden">
           <div className="flex min-w-max gap-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => onTabChange(tab.value)}
-                className={`rounded px-3 py-2 text-sm font-semibold ${
-                  activeTab === tab.value
-                    ? 'bg-slate-950 text-white'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+            {TABS.map((tab) => {
+              const count = pendingCounts[tab.value as keyof PendingCounts] ?? 0
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => onTabChange(tab.value)}
+                  className={`flex items-center gap-1.5 rounded px-3 py-2 text-sm font-semibold ${
+                    activeTab === tab.value
+                      ? 'bg-slate-950 text-white'
+                      : 'text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {tab.label}
+                  {count > 0 && (
+                    <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-xs font-bold text-white">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -105,11 +129,13 @@ export const TabFilterBar = ({
   activeTab,
   statusFilter,
   onStatusChange,
+  pendingCount,
 }: {
   activeTab: AdminTab
   statusFilter: StatusFilter
   onStatusChange: (status: StatusFilter) => void
+  pendingCount: number
 }) => {
   if (activeTab === 'histories') return null
-  return <StatusFilterBar value={statusFilter} onChange={onStatusChange} />
+  return <StatusFilterBar value={statusFilter} onChange={onStatusChange} pendingCount={pendingCount} />
 }

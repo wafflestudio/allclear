@@ -7,6 +7,7 @@ import { ClubsTab } from 'src/admin/components/ClubsTab'
 import { HistoriesTab } from 'src/admin/components/HistoriesTab'
 import { ManagerRequestsTab } from 'src/admin/components/ManagerRequestsTab'
 import { VerificationRequestsTab } from 'src/admin/components/VerificationRequestsTab'
+import { ToastContainer } from 'src/admin/components/ui'
 
 const AdminDashboardPage = () => {
   const {
@@ -17,6 +18,9 @@ const AdminDashboardPage = () => {
     statusFilter,
     setStatusFilter,
     totalCount,
+    pendingCounts,
+    toasts,
+    dismissToast,
     handleLogin,
     handleLogout,
     clubs,
@@ -51,6 +55,7 @@ const AdminDashboardPage = () => {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         totalCount={totalCount}
+        pendingCounts={pendingCounts}
         statusFilter={statusFilter}
         onLogout={handleLogout}
       >
@@ -58,6 +63,7 @@ const AdminDashboardPage = () => {
           activeTab={activeTab}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
+          pendingCount={pendingCounts[activeTab as keyof typeof pendingCounts] ?? 0}
         />
         {activeTab === 'clubs' && (
           <ClubsTab
@@ -95,6 +101,7 @@ const AdminDashboardPage = () => {
           />
         )}
       </AdminLayout>
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>
   )
 }

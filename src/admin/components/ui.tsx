@@ -1,7 +1,7 @@
 import React from 'react'
 import { useClubDetail } from 'src/admin/hooks'
 import { statusClassNames, statusLabels, STATUS_FILTERS } from 'src/admin/constants'
-import type { ClubStatus, DecisionStatus, StatusFilter } from 'src/admin/types'
+import type { AdminClubDetail, ClubStatus, DecisionStatus, StatusFilter } from 'src/admin/types'
 
 export const StatusBadge = ({ status }: { status?: ClubStatus }) => {
   if (!status) {
@@ -23,24 +23,29 @@ export const StatusBadge = ({ status }: { status?: ClubStatus }) => {
 export const StatusFilterBar = ({
   value,
   onChange,
+  pendingCount = 0,
 }: {
   value: StatusFilter
   onChange: (status: StatusFilter) => void
+  pendingCount?: number
 }) => (
   <div className="mb-5 overflow-x-auto">
-    <div className="flex min-w-max gap-2">
+    <div className="flex min-w-max gap-2 pb-1 pl-px pr-1 pt-1">
       {STATUS_FILTERS.map((filter) => (
         <button
           key={filter.value}
           type="button"
           onClick={() => onChange(filter.value)}
-          className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${
+          className={`relative rounded-md border px-3 py-2 text-sm font-semibold transition ${
             value === filter.value
               ? 'border-slate-950 bg-slate-950 text-white'
               : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
           }`}
         >
           {filter.label}
+          {filter.value === 'PENDING' && pendingCount > 0 && (
+            <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-rose-500" />
+          )}
         </button>
       ))}
     </div>
@@ -150,17 +155,91 @@ export const EmptyState = ({ title }: { title: string }) => (
   </div>
 )
 
-export const ClubInfoModal = ({ clubUuid, onClose }: { clubUuid: string; onClose: () => void }) => {
+const Toast = ({
+  id,
+  message,
+  type,
+  onDismiss,
+}: {
+  id: number
+  message: string
+  type: 'error' | 'success'
+  onDismiss: (id: number) => void
+}) => {
+  React.useEffect(() => {
+    const timer = setTimeout(() => onDismiss(id), 3000)
+    return () => clearTimeout(timer)
+  }, [id, onDismiss])
+
+  const styles =
+    type === 'error'
+      ? 'border-rose-200 bg-rose-50 text-rose-700 [&_button]:text-rose-400 [&_button:hover]:text-rose-600'
+      : 'border-emerald-200 bg-emerald-50 text-emerald-700 [&_button]:text-emerald-400 [&_button:hover]:text-emerald-600'
+
+  return (
+    <div
+      className={`flex max-w-sm items-start gap-3 rounded-md border px-4 py-3 shadow-lg ${styles}`}
+    >
+      <p className="flex-1 text-sm font-semibold">{message}</p>
+      <button
+        type="button"
+        onClick={() => onDismiss(id)}
+        className="shrink-0 text-lg leading-none"
+        aria-label="닫기"
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
+export const ToastContainer = ({
+  toasts,
+  onDismiss,
+}: {
+  toasts: { id: number; message: string; type: 'error' | 'success' }[]
+  onDismiss: (id: number) => void
+}) => {
+  if (!toasts.length) return null
+  return (
+    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2">
+      {toasts.map((t) => (
+        <Toast key={t.id} {...t} onDismiss={onDismiss} />
+      ))}
+    </div>
+  )
+}
+
+export const ClubDetailModal = ({
+  clubUuid,
+  onClose,
+  subtitle = '동아리 상세 정보',
+  sidebar,
+}: {
+  clubUuid: string
+  onClose: () => void
+  subtitle?: string
+  sidebar: (detail: AdminClubDetail) => React.ReactNode
+}) => {
   const { data, isLoading, error } = useClubDetail(clubUuid)
   const detail = data?.data
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-      <section className="max-h-full w-full max-w-2xl overflow-y-auto rounded-md bg-white shadow-xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6"
+      onClick={onClose}
+    >
+      <section
+        className="max-h-full w-full max-w-4xl overflow-y-auto rounded-md bg-white shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
           <div>
-            <p className="text-sm font-medium text-slate-500">동아리 상세 정보</p>
+            <p className="text-sm font-medium text-slate-500">{subtitle}</p>
             <h2 className="text-xl font-bold">{detail?.club_data.name ?? '불러오는 중'}</h2>
+            {detail && (
+              <p className="mt-0.5 break-all text-xs text-slate-400">{detail.club_data.uuid}</p>
+            )}
           </div>
           <button
             type="button"
@@ -176,36 +255,42 @@ export const ClubInfoModal = ({ clubUuid, onClose }: { clubUuid: string; onClose
           {isLoading && <LoadingRows />}
           {Boolean(error) && <ErrorState error={error} />}
           {detail && (
-            <>
-              <img
-                src={detail.club_data.image_uri || '/images/share-logo.png'}
-                alt={`${detail.club_data.name} 대표 이미지`}
-                className="mb-5 aspect-[16/9] w-full rounded-md border border-slate-200 object-cover"
-              />
-              <dl className="grid gap-3 sm:grid-cols-2">
-                <DetailItem label="상태" value={statusLabels[detail.club_data.status]} />
-                <DetailItem label="유형" value={detail.club_data.type} />
-                <DetailItem label="카테고리" value={detail.club_data.category} />
-                <DetailItem label="소속" value={detail.club_data.affiliation} />
-                <DetailItem label="한줄소개" value={detail.club_data.short_description} wide />
-                <DetailItem label="모집 형태" value={detail.club_data.recruit_type ?? '-'} />
-                <DetailItem
-                  label="최소 활동 기간"
-                  value={`${detail.club_data.min_activity_period}학기`}
-                />
-                <DetailItem
-                  label="동방"
-                  value={
-                    detail.club_data.has_dongbang
-                      ? detail.club_data.dongbang_location || '있음'
-                      : '없음'
-                  }
-                />
-                <DetailItem label="SNS" value={detail.club_data.sns || '-'} wide />
-                <DetailItem label="소개" value={detail.club_data.introduction ?? '-'} wide />
-              </dl>
-              <p className="mt-3 break-all text-xs text-slate-400">{detail.club_data.uuid}</p>
-            </>
+            <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
+              <div>
+                <div className="flex gap-4">
+                  <img
+                    src={detail.club_data.image_uri || '/images/share-logo.png'}
+                    alt={`${detail.club_data.name} 대표 이미지`}
+                    className="h-40 w-40 flex-shrink-0 rounded-md border border-slate-200 object-cover"
+                  />
+                  <dl className="grid flex-1 content-start gap-3 sm:grid-cols-2">
+                    <DetailItem label="상태" value={statusLabels[detail.club_data.status]} />
+                    <DetailItem label="유형" value={detail.club_data.type} />
+                    <DetailItem label="카테고리" value={detail.club_data.category} />
+                    <DetailItem label="소속" value={detail.club_data.affiliation} />
+                    <DetailItem label="한줄소개" value={detail.club_data.short_description} wide />
+                    <DetailItem label="모집 형태" value={detail.club_data.recruit_type ?? '-'} />
+                    <DetailItem
+                      label="최소 활동 기간"
+                      value={`${detail.club_data.min_activity_period}학기`}
+                    />
+                    <DetailItem
+                      label="동방"
+                      value={
+                        detail.club_data.has_dongbang
+                          ? detail.club_data.dongbang_location || '있음'
+                          : '없음'
+                      }
+                    />
+                    <DetailItem label="SNS" value={detail.club_data.sns || '-'} wide />
+                    <DetailItem label="소개" value={detail.club_data.introduction ?? '-'} wide />
+                  </dl>
+                </div>
+              </div>
+              <aside className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                {sidebar(detail)}
+              </aside>
+            </div>
           )}
         </div>
       </section>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { formatDate } from 'src/admin/constants'
 import type { ClubStatus, ManagerRequest } from 'src/admin/types'
-import { ClubInfoModal, EmptyState, ErrorState, LoadingRows, StatusBadge } from './ui'
+import { ClubDetailModal, EmptyState, ErrorState, LoadingRows, StatusBadge } from './ui'
 
 type DecidePayload = {
   id: number
@@ -169,7 +169,36 @@ const ManagerRequestCard = ({
       </article>
 
       {showClubDetail && (
-        <ClubInfoModal clubUuid={item.club_uuid} onClose={() => setShowClubDetail(false)} />
+        <ClubDetailModal
+          clubUuid={item.club_uuid}
+          onClose={() => setShowClubDetail(false)}
+          sidebar={(detail) => (
+            <>
+              <h3 className="text-base font-bold">현재 관리자</h3>
+              {detail.manager_data.name ? (
+                <div className="mt-3 space-y-2 text-sm text-slate-700">
+                  <p>
+                    <span className="font-semibold text-slate-950">이름</span>{' '}
+                    {detail.manager_data.name}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-950">연락처</span>{' '}
+                    {detail.manager_data.phone}
+                  </p>
+                  <p>
+                    <span className="font-semibold text-slate-950">학번</span>{' '}
+                    {detail.manager_data.student_id}
+                  </p>
+                  <p className="break-all text-xs text-slate-500">
+                    {detail.manager_data.service_user_id}
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-slate-400">없음</p>
+              )}
+            </>
+          )}
+        />
       )}
 
       {confirmAction && (

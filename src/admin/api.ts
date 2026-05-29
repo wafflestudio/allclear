@@ -30,6 +30,13 @@ export const request = async <T>(url: string, init?: FetchOptions): Promise<T> =
   return response.json() as Promise<T>
 }
 
+export const verifyAdminRole = async (token: string): Promise<void> => {
+  const res = await fetch('/api/v2/admin/me', {
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) throw new Error('admin role required')
+}
+
 export const fetchClubs = (status: StatusFilter) =>
   request<AdminClubsResponse>(
     `/api/v2/admin/clubs${buildQuery({ status: status === 'ALL' ? undefined : status })}`,
