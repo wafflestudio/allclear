@@ -1547,6 +1547,44 @@ registry.registerPath({
 })
 
 registry.registerPath({
+  method: 'post',
+  path: '/api/v2/managers/me/clubs/{uuid}/recruitments/images',
+  tags: ['Managers'],
+  summary: '모집공고 이미지 업로드',
+  description:
+    '동아리 관리자가 모집공고에 첨부할 이미지를 업로드합니다. 업로드된 이미지는 CDN에 저장되며, 반환된 url을 모집공고 등록 시 image_urls에 포함하여 사용합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubRecruitmentParamsSchema,
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: z.object({ file: z.instanceof(File) }).openapi('RecruitmentImageUploadRequest'),
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '업로드 성공',
+      content: {
+        'application/json': {
+          schema: z.object({ url: z.string() }).openapi('RecruitmentImageUploadResponse'),
+          example: {
+            url: 'https://cdn.all-clear.cc/club%2Fxxxx-xxxx-xxxx.png',
+          },
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
   method: 'patch',
   path: '/api/v2/managers/me/clubs/{uuid}',
   tags: ['Managers'],
