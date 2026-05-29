@@ -4,6 +4,17 @@ import { CollegeMajor } from './CollegeMajor'
 import type { ClubStatus } from 'src/common/constants/club-status'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
 
+export type ClubManager = {
+  serviceUserId: string
+  name: string
+  phone: string
+  studentId: string
+}
+
+export type ManagedClubDetail = Club & {
+  managers: ClubManager[]
+}
+
 export type ReviewKeyword = {
   id: string
   title: string

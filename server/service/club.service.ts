@@ -8,7 +8,7 @@ import {
 } from '../infra/database/entities'
 import { ClubCategory } from '../domain/model/ClubCategory'
 import { CATEGORIES } from '../../src/fixtures/category'
-import { Club, ReviewKeyword, toClubDomain } from 'server/domain/model/Club'
+import { Club, ManagedClubDetail, ReviewKeyword, toClubDomain } from 'server/domain/model/Club'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import { groupBy, round, toPairs } from 'lodash-es'
@@ -103,10 +103,21 @@ export class ClubService {
     return toClubDomain(club)
   }
 
-  async getManagedClubByUuid(clubUuid: string, serviceUserId: string): Promise<Club> {
+  async getManagedClubByUuid(clubUuid: string, serviceUserId: string): Promise<ManagedClubDetail> {
     await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
-    const club = await this.clubAccessService.getExistingClub(clubUuid)
-    return toClubDomain(club)
+    const [club, managers] = await Promise.all([
+      this.clubAccessService.getExistingClub(clubUuid),
+      this.clubManagerRepository.findBy({ clubId: clubUuid }),
+    ])
+    return {
+      ...toClubDomain(club),
+      managers: managers.map((m) => ({
+        serviceUserId: m.serviceUserId,
+        name: m.name,
+        phone: m.phone,
+        studentId: m.studentId,
+      })),
+    }
   }
 
   async findByCategory(category: string): Promise<Club[]> {

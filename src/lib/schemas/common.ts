@@ -145,3 +145,16 @@ export const ClubSchema = z
     latestComment: z.string(),
   })
   .openapi('Club')
+
+export const ClubManagerSchema = z
+  .object({
+    serviceUserId: z.string().uuid(),
+    name: z.string(),
+    phone: z.string(),
+    studentId: z.string(),
+  })
+  .openapi('ClubManager')
+
+export const ManagedClubDetailSchema = ClubSchema.extend({
+  managers: z.array(ClubManagerSchema),
+}).openapi('ManagedClubDetail')

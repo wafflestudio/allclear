@@ -11,6 +11,7 @@ import {
 } from 'server/domain/error'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { ManagedClubPatchSchema } from 'src/lib/schemas/managers'
+import { ManagedClubDetail } from 'server/domain/model/Club'
 
 const api: NextApiHandler = async (req, res) => {
   try {

@@ -6,6 +6,7 @@ import {
   TokenResponseSchema,
   UserSchema,
   ClubSchema,
+  ManagedClubDetailSchema,
   ValidationIssueSchema,
 } from 'src/lib/schemas/common'
 import {
@@ -1489,11 +1490,13 @@ registry.registerPath({
       description: '조회 성공',
       content: {
         'application/json': {
-          schema: ClubSchema,
+          schema: ManagedClubDetailSchema,
         },
       },
     },
     400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },
