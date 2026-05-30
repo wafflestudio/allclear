@@ -137,5 +137,7 @@ export const TabFilterBar = ({
   pendingCount: number
 }) => {
   if (activeTab === 'histories') return null
-  return <StatusFilterBar value={statusFilter} onChange={onStatusChange} pendingCount={pendingCount} />
+  return (
+    <StatusFilterBar value={statusFilter} onChange={onStatusChange} pendingCount={pendingCount} />
+  )
 }
