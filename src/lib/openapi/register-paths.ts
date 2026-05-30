@@ -101,6 +101,22 @@ import {
 const ErrorMessageSchema = z.string()
 const NoContentResponse = { description: '성공적으로 처리되었습니다.' }
 
+const RecruitmentImageUploadRequestSchema = z
+  .object({
+    file: z.string().openapi({
+      type: 'string',
+      format: 'binary',
+      description: '업로드할 모집공고 이미지 파일',
+    }),
+  })
+  .openapi('RecruitmentImageUploadRequest')
+
+const RecruitmentImageUploadResponseSchema = z
+  .object({
+    url: z.string(),
+  })
+  .openapi('RecruitmentImageUploadResponse')
+
 const validationErrorResponse = {
   description: '잘못된 요청입니다.',
   content: {
@@ -1562,7 +1578,7 @@ registry.registerPath({
     body: {
       content: {
         'multipart/form-data': {
-          schema: z.object({ file: z.instanceof(File) }).openapi('RecruitmentImageUploadRequest'),
+          schema: RecruitmentImageUploadRequestSchema,
         },
       },
     },
@@ -1572,7 +1588,7 @@ registry.registerPath({
       description: '업로드 성공',
       content: {
         'application/json': {
-          schema: z.object({ url: z.string() }).openapi('RecruitmentImageUploadResponse'),
+          schema: RecruitmentImageUploadResponseSchema,
           example: {
             url: 'https://cdn.all-clear.cc/club%2Fxxxx-xxxx-xxxx.png',
           },
