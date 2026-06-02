@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
 import { SearchService } from 'server/service/search.service'
+import { UserService } from 'server/service/user.service'
 import { Club } from 'server/domain/model/Club'
 import { MinActivityPeriodFilter, SearchFilters } from 'server/service/search/search.types'
 import { BadRequestError, UnauthorizedError } from 'server/domain/error'
@@ -30,6 +31,14 @@ export default async function handler(
 
     if (req.method == 'GET') {
       const auth = await resolveOptionalAuth(req)
+      const userService = Provider.getService(UserService)
+      const serviceUserId =
+        auth.type === 'member'
+          ? await userService
+              .getUserByAccountId(auth.accountId)
+              .then((u) => u.serviceUserId)
+              .catch(() => null)
+          : null
       const query = req.query.query as string
       if (!query) {
         return res.status(400).send('query is required')
@@ -46,7 +55,7 @@ export default async function handler(
       }
 
       const { clubs, correctedQuery, isTypoCorrected } =
-        await searchService.searchWithTypoCorrection(query, { filters })
+        await searchService.searchWithTypoCorrection(query, { filters }, serviceUserId)
       await saveRecentSearchBestEffort(auth, query)
       return res.status(200).json({
         clubs: clubs,

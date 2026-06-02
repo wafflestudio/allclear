@@ -71,7 +71,7 @@ export class ClubService {
   @Inject(ClubAccessService)
   private readonly clubAccessService: ClubAccessService
 
-  async findByUuid(uuid: string): Promise<Club> {
+  async findByUuid(uuid: string, serviceUserId: string | null = null): Promise<Club> {
     this.userActivityLogRepository
       .insert({
         type: UserActivityLogType.CALL_GET_CLUB_API,
@@ -79,11 +79,14 @@ export class ClubService {
       })
       .catch(console.error)
     const club = await this.clubAccessService.getExistingClub(uuid)
-    const clubReview = await this.getClubReviews([club.uuid])
-    return toClubDomain(club, clubReview.get(club.uuid))
+    const [clubReview, savedSet] = await Promise.all([
+      this.getClubReviews([club.uuid]),
+      this.getSavedClubIdSet(serviceUserId, [club.uuid]),
+    ])
+    return toClubDomain(club, clubReview.get(club.uuid), savedSet.has(club.uuid))
   }
 
-  async findPublicByUuid(uuid: string): Promise<Club> {
+  async findPublicByUuid(uuid: string, serviceUserId: string | null = null): Promise<Club> {
     this.userActivityLogRepository
       .insert({
         type: UserActivityLogType.CALL_GET_CLUB_API,
@@ -91,8 +94,11 @@ export class ClubService {
       })
       .catch(console.error)
     const club = await this.clubAccessService.getPublicClub(uuid)
-    const clubReview = await this.getClubReviews([club.uuid])
-    return toClubDomain(club, clubReview.get(club.uuid))
+    const [clubReview, savedSet] = await Promise.all([
+      this.getClubReviews([club.uuid]),
+      this.getSavedClubIdSet(serviceUserId, [club.uuid]),
+    ])
+    return toClubDomain(club, clubReview.get(club.uuid), savedSet.has(club.uuid))
   }
 
   async findByAuthKey(authkey: string): Promise<Club> {
@@ -120,7 +126,7 @@ export class ClubService {
     }
   }
 
-  async findByCategory(category: string): Promise<Club[]> {
+  async findByCategory(category: string, serviceUserId: string | null = null): Promise<Club[]> {
     this.userActivityLogRepository
       .insert({
         type: UserActivityLogType.CALL_LIST_CLUBS_OF_CATEGORY_API,
@@ -132,8 +138,14 @@ export class ClubService {
       status: PUBLIC_CLUB_STATUS,
       deletedAt: IsNull(),
     })
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
-    const clubs = entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
+    const uuids = entities.map((it) => it.uuid)
+    const [clubReview, savedSet] = await Promise.all([
+      this.getClubReviews(uuids),
+      this.getSavedClubIdSet(serviceUserId, uuids),
+    ])
+    const clubs = entities.map((it) =>
+      toClubDomain(it, clubReview.get(it.uuid), savedSet.has(it.uuid)),
+    )
     return sortByPopularAndEachRandom(clubs)
   }
 
@@ -159,6 +171,15 @@ export class ClubService {
     return club.map((it) => toClubDomain(it))
   }
 
+  async getSavedClubIdSet(serviceUserId: string | null, clubUuids: string[]): Promise<Set<string>> {
+    if (!serviceUserId || clubUuids.length === 0) return new Set()
+    const saved = await this.userSavedClubRepository.find({
+      where: { serviceUserId, clubId: In(clubUuids) },
+      select: ['clubId'],
+    })
+    return new Set(saved.map((it) => it.clubId))
+  }
+
   async findMySavedClubs(serviceUserId: string): Promise<Club[]> {
     const savedClubs = await this.userSavedClubRepository.findBy({ serviceUserId })
     const clubIds = Array.from(new Set(savedClubs.map((it) => it.clubId)))
@@ -167,7 +188,7 @@ export class ClubService {
       status: PUBLIC_CLUB_STATUS,
       deletedAt: IsNull(),
     })
-    return club.map((it) => toClubDomain(it))
+    return club.map((it) => toClubDomain(it, undefined, true))
   }
 
   async saveClubToMyCollection(serviceUserId: string, clubId: string) {
@@ -179,7 +200,7 @@ export class ClubService {
     await this.userSavedClubRepository.delete({ serviceUserId, clubId })
   }
 
-  async findPopular(): Promise<Club[]> {
+  async findPopular(serviceUserId: string | null = null): Promise<Club[]> {
     this.userActivityLogRepository
       .insert({
         type: UserActivityLogType.CALL_LIST_POPULAR_CLUBS_API,
@@ -191,12 +212,18 @@ export class ClubService {
       status: PUBLIC_CLUB_STATUS,
       deletedAt: IsNull(),
     })
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
-    const clubs = entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
+    const uuids = entities.map((it) => it.uuid)
+    const [clubReview, savedSet] = await Promise.all([
+      this.getClubReviews(uuids),
+      this.getSavedClubIdSet(serviceUserId, uuids),
+    ])
+    const clubs = entities.map((it) =>
+      toClubDomain(it, clubReview.get(it.uuid), savedSet.has(it.uuid)),
+    )
     return sortByPopularAndEachRandom(clubs)
   }
 
-  async findLatestUploaded(topN = 20): Promise<Club[]> {
+  async findLatestUploaded(topN = 20, serviceUserId: string | null = null): Promise<Club[]> {
     const entities = await this.clubRepository.find({
       where: {
         status: PUBLIC_CLUB_STATUS,
@@ -210,11 +237,15 @@ export class ClubService {
       },
       take: topN,
     })
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
-    return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
+    const uuids = entities.map((it) => it.uuid)
+    const [clubReview, savedSet] = await Promise.all([
+      this.getClubReviews(uuids),
+      this.getSavedClubIdSet(serviceUserId, uuids),
+    ])
+    return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid), savedSet.has(it.uuid)))
   }
 
-  async findRandomRecommendations(limit = 5): Promise<Club[]> {
+  async findRandomRecommendations(limit = 5, serviceUserId: string | null = null): Promise<Club[]> {
     const entities = await this.clubRepository
       .createQueryBuilder('club')
       .where('club.status = :status', { status: PUBLIC_CLUB_STATUS })
@@ -223,8 +254,12 @@ export class ClubService {
       .take(limit)
       .getMany()
 
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
-    return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
+    const uuids = entities.map((it) => it.uuid)
+    const [clubReview, savedSet] = await Promise.all([
+      this.getClubReviews(uuids),
+      this.getSavedClubIdSet(serviceUserId, uuids),
+    ])
+    return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid), savedSet.has(it.uuid)))
   }
 
   async registerClub(serviceUserId: string, body: ClubRegisterRequest): Promise<void> {

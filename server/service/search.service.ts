@@ -32,10 +32,11 @@ export class SearchService {
   async searchWithTypoCorrection(
     query: string,
     options: SearchOptions = { filters: {} },
+    serviceUserId: string | null = null,
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
 
-    const clubs = await this.runSearch(query, options)
+    const clubs = await this.runSearch(query, options, serviceUserId)
     if (clubs.length > 0) {
       return {
         clubs,
@@ -46,7 +47,7 @@ export class SearchService {
 
     const correctedQuery = await this.typoCorrectionService.findCorrectedQuery(query)
     if (correctedQuery && correctedQuery !== query) {
-      const correctedClubs = await this.runSearch(correctedQuery, options)
+      const correctedClubs = await this.runSearch(correctedQuery, options, serviceUserId)
       if (correctedClubs.length > 0) {
         return {
           clubs: correctedClubs,
@@ -63,9 +64,13 @@ export class SearchService {
     }
   }
 
-  private async runSearch(query: string, options: SearchOptions): Promise<Club[]> {
+  private async runSearch(
+    query: string,
+    options: SearchOptions,
+    serviceUserId: string | null = null,
+  ): Promise<Club[]> {
     const entities: ClubEntity[] = await this.searchQueryService.search(query, options.filters)
-    const clubs = await this.hydratorService.toClubs(entities)
+    const clubs = await this.hydratorService.toClubs(entities, serviceUserId)
     return this.sortService.sort(clubs, query, options.sort ?? DEFAULT_SEARCH_SORT)
   }
 }

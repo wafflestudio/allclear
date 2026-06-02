@@ -754,8 +754,10 @@ registry.registerPath({
   path: '/api/v2/clubs',
   tags: ['Clubs'],
   summary: '카테고리별 동아리 목록',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
   request: {
     query: ClubListByCategoryQuerySchema,
+    headers: GuestIdHeaderSchema,
   },
   responses: {
     200: {
@@ -767,7 +769,7 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'category 쿼리가 필요합니다.',
+      description: 'category 쿼리가 필요하거나 비회원 x-guest-id header가 잘못되었습니다.',
       content: {
         'text/plain': {
           schema: ErrorMessageSchema,
@@ -783,6 +785,10 @@ registry.registerPath({
   path: '/api/v2/clubs/latest',
   tags: ['Clubs'],
   summary: '최신 등록 동아리 목록',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
+  request: {
+    headers: GuestIdHeaderSchema,
+  },
   responses: {
     200: {
       description: '조회 성공',
@@ -791,6 +797,10 @@ registry.registerPath({
           schema: ClubsResponseSchema,
         },
       },
+    },
+    400: {
+      description: '비회원 x-guest-id header가 잘못되었습니다.',
+      content: { 'text/plain': { schema: ErrorMessageSchema } },
     },
     500: internalServerErrorResponse,
   },
@@ -801,6 +811,10 @@ registry.registerPath({
   path: '/api/v2/clubs/popular',
   tags: ['Clubs'],
   summary: '인기 동아리 목록',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
+  request: {
+    headers: GuestIdHeaderSchema,
+  },
   responses: {
     200: {
       description: '조회 성공',
@@ -809,6 +823,10 @@ registry.registerPath({
           schema: ClubsResponseSchema,
         },
       },
+    },
+    400: {
+      description: '비회원 x-guest-id header가 잘못되었습니다.',
+      content: { 'text/plain': { schema: ErrorMessageSchema } },
     },
     500: internalServerErrorResponse,
   },
@@ -820,6 +838,10 @@ registry.registerPath({
   tags: ['Clubs'],
   summary: '랜덤 추천 동아리 목록',
   description: '검색 결과가 없을 때 노출할 공개 상태 동아리를 랜덤으로 최대 5개 추천합니다.',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
+  request: {
+    headers: GuestIdHeaderSchema,
+  },
   responses: {
     200: {
       description: '조회 성공',
@@ -828,6 +850,10 @@ registry.registerPath({
           schema: ClubsResponseSchema,
         },
       },
+    },
+    400: {
+      description: '비회원 x-guest-id header가 잘못되었습니다.',
+      content: { 'text/plain': { schema: ErrorMessageSchema } },
     },
     500: internalServerErrorResponse,
   },
@@ -929,8 +955,10 @@ registry.registerPath({
   path: '/api/v2/clubs/{uuid}',
   tags: ['Clubs'],
   summary: '동아리 상세 조회',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
+    headers: GuestIdHeaderSchema,
   },
   responses: {
     200: {
