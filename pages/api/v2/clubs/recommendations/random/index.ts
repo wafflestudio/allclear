@@ -28,7 +28,7 @@ export default async function handler(
               .then((u) => u.serviceUserId)
               .catch(() => null)
           : null
-      const clubs = await clubService.findRandomRecommendations(5, serviceUserId)
+      const clubs = await clubService.findRandomRecommendations(10, serviceUserId)
       return res.status(200).json({
         clubs: clubs,
         totalSize: clubs.length,
