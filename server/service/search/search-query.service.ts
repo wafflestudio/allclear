@@ -1,9 +1,9 @@
 import { FindOptionsWhere, ILike, IsNull, Repository, SelectQueryBuilder } from 'typeorm'
-import { Inject, InjectRepository, Service } from 'server/provider'
+import { InjectRepository, Service } from 'server/provider'
 import { ClubEntity } from 'server/infra/database/entities'
 import { CollegeMajorEntity } from 'server/infra/database/entities/college-major.entity'
 import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
-import { SearchFilterService } from './search-filter.service'
+import { applySearchFilters } from './search-filter'
 import { SearchFilters } from './search.types'
 
 @Service
@@ -13,9 +13,6 @@ export class SearchQueryService {
 
   @InjectRepository(CollegeMajorEntity)
   private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
-
-  @Inject(SearchFilterService)
-  private readonly searchFilterService: SearchFilterService
 
   async search(query: string, filters: SearchFilters = {}): Promise<ClubEntity[]> {
     const [textMatchedEntities, collegeMajorMatchedEntities] = await Promise.all([
@@ -32,14 +29,11 @@ export class SearchQueryService {
       query: `%${query}%`,
     })
 
-    this.searchFilterService.apply(qb, filters)
+    applySearchFilters(qb, filters)
     return qb.getMany()
   }
 
-  private async findByCollegeMajor(
-    query: string,
-    filters: SearchFilters,
-  ): Promise<ClubEntity[]> {
+  private async findByCollegeMajor(query: string, filters: SearchFilters): Promise<ClubEntity[]> {
     const majorIds = await this.findMatchingCollegeMajorIds(query)
     if (majorIds.length === 0) {
       return []
@@ -48,7 +42,7 @@ export class SearchQueryService {
     const qb = this.buildBaseQuery()
     qb.andWhere('club.college_major_id IN (:...majorIds)', { majorIds })
 
-    this.searchFilterService.apply(qb, filters)
+    applySearchFilters(qb, filters)
     return qb.getMany()
   }
 
