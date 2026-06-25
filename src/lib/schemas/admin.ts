@@ -1,5 +1,6 @@
 import { z } from 'src/lib/schemas/zod'
 import { CLUB_STATUSES, REJECTED_CLUB_STATUS } from 'src/common/constants/club-status'
+import { UserRole } from 'server/infra/database/entities/user-role.enum'
 
 const AdminClubManagerSchema = z.object({
   name: z.string(),
@@ -328,3 +329,32 @@ export const AdminClubVerificationRequestStatusUpdateResponseSchema = z
 export type AdminClubVerificationRequestStatusUpdateResponse = z.infer<
   typeof AdminClubVerificationRequestStatusUpdateResponseSchema
 >
+
+export const AdminUserRoleUpdateParamsSchema = z
+  .object({
+    userId: z.string().uuid(),
+  })
+  .openapi('AdminUserRoleUpdateParams')
+
+export type AdminUserRoleUpdateParams = z.infer<typeof AdminUserRoleUpdateParamsSchema>
+
+export const AdminUserRoleUpdateSchema = z
+  .object({
+    role: z.enum([UserRole.ADMIN, UserRole.USER]),
+  })
+  .openapi('AdminUserRoleUpdate')
+
+export type AdminUserRoleUpdate = z.infer<typeof AdminUserRoleUpdateSchema>
+
+export const AdminUserRoleUpdateResponseSchema = z
+  .object({
+    success: z.literal(true),
+    message: z.string(),
+    data: z.object({
+      user_id: z.string().uuid(),
+      role: z.string(),
+    }),
+  })
+  .openapi('AdminUserRoleUpdateResponse')
+
+export type AdminUserRoleUpdateResponse = z.infer<typeof AdminUserRoleUpdateResponseSchema>

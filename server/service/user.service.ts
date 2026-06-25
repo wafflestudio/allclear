@@ -82,6 +82,14 @@ export class UserService {
     }
   }
 
+  public async updateUserRole(userId: string, role: UserRole): Promise<void> {
+    const user = await this.userRepository.findOneBy({ id: userId })
+    if (!user) {
+      throw new UserNotFoundError(`User not found`)
+    }
+    await this.userRepository.update(userId, { role })
+  }
+
   public async assertAdminRole(accountId: string): Promise<void> {
     const accountUser = await this.accountUserRepository.findOne({
       where: { accountId },

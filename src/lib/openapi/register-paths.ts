@@ -72,6 +72,9 @@ import {
   AdminClubsResponseSchema,
   AdminClubStatusUpdateResponseSchema,
   AdminClubStatusUpdateSchema,
+  AdminUserRoleUpdateParamsSchema,
+  AdminUserRoleUpdateResponseSchema,
+  AdminUserRoleUpdateSchema,
 } from 'src/lib/schemas/admin'
 import {
   CollegeMajorsQuerySchema,
@@ -2208,6 +2211,58 @@ registry.registerPath({
     },
     400: validationErrorResponse,
     403: forbiddenResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v2/admin/users/{userId}/role',
+  tags: ['Admin'],
+  summary: '사용자 권한 변경',
+  description:
+    '내부 API 키 인증을 통해 특정 사용자의 권한을 admin 또는 user로 변경합니다. x-internal-api-key 헤더에 발급된 키를 포함해야 합니다.',
+  security: [{ internalApiKeyAuth: [] }],
+  request: {
+    params: AdminUserRoleUpdateParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: AdminUserRoleUpdateSchema,
+          examples: {
+            grant_admin: {
+              summary: 'admin 권한 부여',
+              value: { role: 'admin' },
+            },
+            revoke_admin: {
+              summary: 'user로 권한 변경',
+              value: { role: 'user' },
+            },
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '권한 변경 성공',
+      content: {
+        'application/json': {
+          schema: AdminUserRoleUpdateResponseSchema,
+          example: {
+            success: true,
+            message: '사용자 권한이 변경되었습니다.',
+            data: {
+              user_id: '123e4567-e89b-12d3-a456-426614174000',
+              role: 'admin',
+            },
+          },
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },

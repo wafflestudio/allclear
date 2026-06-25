@@ -26,6 +26,7 @@ export const ENV = {
   APP_VERSION_POLICY: {
     API_KEY: process.env.APP_VERSION_POLICY_API_KEY ?? '',
   },
+
   R2: {
     ACCOUNT_ID: process.env.R2_ACCOUNT_ID ?? '',
     ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID ?? '',
