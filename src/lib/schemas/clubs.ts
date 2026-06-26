@@ -63,10 +63,7 @@ export const ClubRankingSchema = z
     ranking: z.number().int(),
     clubId: z.string().uuid(),
     clubName: z.string(),
-    clubFullName: z.string(),
-    totalReviews: z.number().int(),
-    rating: z.number(),
-    keywords: z.array(z.string()),
+    category: z.string(),
   })
   .openapi('ClubRanking')
 
