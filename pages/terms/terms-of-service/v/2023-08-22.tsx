@@ -216,7 +216,6 @@ const TermsOfService: NextPage = () => {
           </div>
         </div>
       </footer>
-      ;
     </>
   )
 }
