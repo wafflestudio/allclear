@@ -60,7 +60,6 @@ export type Club = {
   totalReviews: number
   reviewKeywords: ReviewKeyword[]
   latestComment: string
-  isSaved: boolean
 }
 
 export const toClubDomain = (
@@ -71,7 +70,6 @@ export const toClubDomain = (
     reviewKeywords: ReviewKeyword[]
     latestComment: string
   },
-  isSaved?: boolean,
 ): Club => ({
   id: it.uuid,
   uuid: it.uuid,
@@ -114,7 +112,6 @@ export const toClubDomain = (
   totalReviews: review?.totalReviews ?? 0,
   reviewKeywords: review?.reviewKeywords ?? [],
   latestComment: review?.latestComment ?? '',
-  isSaved: isSaved ?? false,
 })
 
 function encode(imageUri: string | undefined): string {

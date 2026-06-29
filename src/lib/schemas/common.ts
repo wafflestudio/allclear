@@ -143,7 +143,6 @@ export const ClubSchema = z
     totalReviews: z.number().int(),
     reviewKeywords: z.array(ReviewKeywordSchema),
     latestComment: z.string(),
-    isSaved: z.boolean(),
   })
   .openapi('Club')
 
