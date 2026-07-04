@@ -26,11 +26,11 @@ const ManageClubRegistrationScreen = () => {
 	const nav = useNavigation()
 
 	useEffect(() => {
-		const parent = (nav as any).getParent?.()
-		parent?.setOptions?.({ tabBarStyle: { display: 'none' } })
+		const parent = nav.getParent()
+		parent?.setOptions({ tabBarStyle: { display: 'none' } })
 
 		return () => {
-			parent?.setOptions?.({ tabBarStyle: undefined })
+			parent?.setOptions({ tabBarStyle: undefined })
 		}
 	}, [nav])
 	const [formStep, setFormStep] = useState<'form' | 'clubSearch'>('form')
@@ -63,7 +63,7 @@ const ManageClubRegistrationScreen = () => {
 		}, 500)
 
 		return () => clearTimeout(timer)
-	}, [clubSearchQuery])
+	}, [clubSearchQuery, clubService])
 
 	useEffect(() => {
 		if (selectedClubId && !searchResults.some(club => club.uuid === selectedClubId)) {
@@ -174,7 +174,7 @@ const ManageClubRegistrationScreen = () => {
 					nextDisabled={!isFormFieldsValid}
 				/>
 			}>
-			<Text style={styles.title}>운영진 기본 정보를{"\n"}입력해주세요</Text>
+			<Text style={styles.title}>운영진 기본 정보를{'\n'}입력해주세요</Text>
 
 			<View style={styles.formFieldGroup}>
 				<Text style={styles.formFieldLabel}>이름</Text>
@@ -183,7 +183,7 @@ const ManageClubRegistrationScreen = () => {
 					placeholder="홍길동"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					value={adminForm.name}
-					onChangeText={(text) => {
+					onChangeText={text => {
 						setAdminForm(prev => ({ ...prev, name: text }))
 						if (adminFormErrors.name) {
 							setAdminFormErrors(prev => ({ ...prev, name: undefined }))
@@ -201,7 +201,7 @@ const ManageClubRegistrationScreen = () => {
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					keyboardType="phone-pad"
 					value={adminForm.phone}
-					onChangeText={(text) => {
+					onChangeText={text => {
 						setAdminForm(prev => ({ ...prev, phone: text }))
 						if (adminFormErrors.phone) {
 							setAdminFormErrors(prev => ({ ...prev, phone: undefined }))
@@ -218,14 +218,16 @@ const ManageClubRegistrationScreen = () => {
 					placeholder="1970-12345"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					value={adminForm.studentId}
-					onChangeText={(text) => {
+					onChangeText={text => {
 						setAdminForm(prev => ({ ...prev, studentId: text }))
 						if (adminFormErrors.studentId) {
 							setAdminFormErrors(prev => ({ ...prev, studentId: undefined }))
 						}
 					}}
 				/>
-				{adminFormErrors.studentId && <Text style={styles.formErrorText}>{adminFormErrors.studentId}</Text>}
+				{adminFormErrors.studentId && (
+					<Text style={styles.formErrorText}>{adminFormErrors.studentId}</Text>
+				)}
 			</View>
 		</FlowScreenLayout>
 	)
@@ -239,7 +241,7 @@ const ManageClubRegistrationScreen = () => {
 					rightSlot={<View style={styles.footerSpacer} />}
 				/>
 			}>
-			<Text style={styles.title}>운영진 권한을 요청할{"\n"}동아리를 선택해주세요</Text>
+			<Text style={styles.title}>운영진 권한을 요청할{'\n'}동아리를 선택해주세요</Text>
 
 			<View style={styles.searchInputContainer}>
 				<TextInput
@@ -261,10 +263,11 @@ const ManageClubRegistrationScreen = () => {
 								selectedClubId === club.uuid && styles.clubResultItemSelected,
 							]}
 							onPress={() => handleClubSelect(club.uuid)}>
-							{club.imageUri
-							? <Image source={{ uri: club.imageUri }} style={styles.clubIconPlaceholder} />
-							: <View style={styles.clubIconPlaceholder} />
-						}
+							{club.imageUri ? (
+								<Image source={{ uri: club.imageUri }} style={styles.clubIconPlaceholder} />
+							) : (
+								<View style={styles.clubIconPlaceholder} />
+							)}
 							<View style={styles.clubInfo}>
 								<Text style={styles.clubName} numberOfLines={1}>
 									{club.name}
@@ -307,7 +310,9 @@ const ManageClubRegistrationScreen = () => {
 				visible={isErrorModalVisible}
 				onClose={() => setIsErrorModalVisible(false)}
 				title={'실행이 완료되지 않았어요'}
-				description={'네트워크 문제로 실행이 완료되지 않았어요\n네트워크 상태를 확인한 후, 다시 시도해주세요'}
+				description={
+					'네트워크 문제로 실행이 완료되지 않았어요\n네트워크 상태를 확인한 후, 다시 시도해주세요'
+				}
 				buttonLabel="확인"
 				onButtonPress={() => setIsErrorModalVisible(false)}
 				dismissOnBackdropPress={false}
