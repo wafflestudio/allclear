@@ -91,31 +91,29 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 	},
 	content: {
-		padding: s(20),
+		paddingHorizontal: s(20),
+		paddingTop: vs(20),
 		paddingBottom: vs(20),
-		gap: vs(32),
 	},
 	header: {
-		marginBottom: vs(32),
+		marginBottom: vs(20),
 	},
 	title: {
 		...typography.headerXXL,
 		color: Colors.BODYTEXT_MAIN,
 	},
 	form: {
-		gap: vs(24),
+		gap: vs(20),
 	},
-	fieldWrapper: {
-		gap: vs(4),
-	},
+	fieldWrapper: {},
 	label: {
 		...typography.headerXLSemibold,
 		color: Colors.BODYTEXT_SUB,
-		marginBottom: vs(4),
+		marginBottom: vs(10),
 	},
 	helperText: {
 		...typography.bodyMRegular,
 		color: Colors.POINTCOLOR,
-		marginTop: vs(4),
+		marginTop: vs(5),
 	},
 })
