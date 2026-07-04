@@ -21,6 +21,7 @@ import {
 	RequestClubmanagerRequest,
 	SearchClubsRequest,
 	SearchClubsResponse,
+	UpdateManagedClubRequest,
 } from '@/repositories/club'
 
 export type ClubService = {
@@ -30,6 +31,7 @@ export type ClubService = {
 	listClubs: (req: ListClubsRequest) => Promise<ListClubsResponse>
 	getClub: (req: GetClubRequest) => Promise<Club>
 	getManagedClubDetail: (req: GetManagedClubDetailRequest) => Promise<ManagedClubDetail>
+	updateManagedClub: (req: UpdateManagedClubRequest) => Promise<void>
 	listManageClubs: () => Promise<ListManageClubsResponse>
 	listClubRankings: (req: ListClubRankingsRequest) => Promise<ListClubRankingsResponse>
 	requestClubManager: (req: RequestClubmanagerRequest) => Promise<void>
@@ -52,6 +54,7 @@ export const getClubService = ({ repositories }: Deps): ClubService => ({
 	listClubs: req => repositories[0].listClubs(req),
 	getClub: req => repositories[0].getClub(req),
 	getManagedClubDetail: req => repositories[0].getManagedClubDetail(req),
+	updateManagedClub: req => repositories[0].updateManagedClub(req),
 	listManageClubs: () => repositories[0].listManageClubs(),
 	listClubRankings: req => repositories[0].listClubRankings(req),
 	requestClubManager: req => repositories[0].requestClubManager(req),
