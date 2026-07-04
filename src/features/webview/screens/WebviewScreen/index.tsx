@@ -5,13 +5,14 @@ import { navigation } from '@/shared/utils/navigation'
 import Header from '@/shared/components/BackHeader'
 import React, { useState } from 'react'
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 
 type WebviewType = NativeStackScreenProps<StackParamList, SCREEN_TYPE.WEBVIEW>
 
 const WebViewScreen = ({ route }: WebviewType) => {
 	const { uri, title = '', authorization } = route.params
+	const insets = useSafeAreaInsets()
 
 	const [isLoading, setLoading] = useState(true)
 
@@ -25,7 +26,16 @@ const WebViewScreen = ({ route }: WebviewType) => {
 	}
 
 	return (
-		<SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+		<View
+			style={[
+				styles.container,
+				{
+					paddingTop: insets.top,
+					paddingBottom: insets.bottom,
+					paddingLeft: insets.left,
+					paddingRight: insets.right,
+				},
+			]}>
 			<Header title={title} onBack={() => navigation.goBack()} />
 			{isLoading && (
 				<View style={styles.loadingContainer}>
@@ -50,7 +60,7 @@ const WebViewScreen = ({ route }: WebviewType) => {
 				bounces={false}
 				overScrollMode="never"
 			/>
-		</SafeAreaView>
+		</View>
 	)
 }
 

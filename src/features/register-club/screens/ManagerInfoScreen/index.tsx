@@ -7,6 +7,7 @@ import { s, vs } from '@/shared/utils/scale'
 import TextField from '@/shared/components/TextField'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
+import { isValidPhoneNumber, isValidStudentId } from '@/features/register-club/validation'
 
 type Props = {
 	formData: RegisterClubFormData
@@ -24,7 +25,9 @@ export const ManagerInfoScreen = ({
 	progress,
 }: Props) => {
 	const isComplete =
-		formData.managerName.trim() && formData.managerPhone.trim() && formData.studentId.trim()
+		formData.managerName.trim() !== '' &&
+		isValidPhoneNumber(formData.managerPhone) &&
+		isValidStudentId(formData.studentId)
 
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>

@@ -6,6 +6,7 @@ import { CategoryService } from '@/usecases/category'
 import { ClubService } from '@/usecases/club'
 import { EventLogService } from '@/usecases/eventLog'
 import { RecentSearchService } from '@/usecases/recentSearch'
+import { RecruitmentService } from '@/usecases/recruitment'
 import { ReviewService } from '@/usecases/review'
 import { TermService } from '@/usecases/term'
 import { UserService } from '@/usecases/user'
@@ -18,6 +19,7 @@ type ServiceContext = {
 	clubService: ClubService
 	eventLogService: EventLogService
 	recentSearchService: RecentSearchService
+	recruitmentService: RecruitmentService
 	reviewService: ReviewService
 	termService: TermService
 	userService: UserService

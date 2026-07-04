@@ -12,7 +12,7 @@ export type CategoryRepository = {
 
 export const getCategoryRepository = (): CategoryRepository => ({
 	listCategories: async () => {
-		const response = await apiConnector.get<ListCategoriesResponse>('/v1/clubs/categories')
+		const response = await apiConnector.get<ListCategoriesResponse>('/v2/clubs/categories')
 
 		return response
 	},

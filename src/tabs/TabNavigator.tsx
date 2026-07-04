@@ -2,6 +2,7 @@ import {
 	createBottomTabNavigator,
 	type BottomTabNavigationOptions,
 } from '@react-navigation/bottom-tabs'
+import { getFocusedRouteNameFromRoute, type RouteProp } from '@react-navigation/native'
 import { Colors } from '@/shared/constants/colors'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
 import { useProfile } from '@/shared/contexts/profileContext'
@@ -63,11 +64,21 @@ export function TabNavigator() {
 	const bottomInset = insets.bottom >= 40 ? insets.bottom : 0
 
 	const defaultTabBarStyle = {
-		height: vs(70) + bottomInset,
+		// 라벨 밑 ~ 하단바 끝까지의 여백을 16px 늘림 (height/paddingBottom 동시 +16)
+		height: vs(70) + vs(16) + bottomInset,
 		backgroundColor: Colors.BACKGROUND_SUB,
 		borderTopWidth: 0, // iOS 그림자 제거
 		elevation: 0, // Android 그림자 제거
-		paddingBottom: vs(10) + bottomInset,
+		paddingBottom: vs(10) + vs(16) + bottomInset,
+	}
+
+	// 웹뷰처럼 전체 화면으로 떠야 하는 nested 화면에서는 하단 탭바를 숨긴다.
+	const getTabBarStyle = (route: RouteProp<Record<string, object | undefined>, string>) => {
+		const focusedRouteName = getFocusedRouteNameFromRoute(route)
+		if (focusedRouteName === SCREEN_TYPE.WEBVIEW) {
+			return { display: 'none' as const }
+		}
+		return defaultTabBarStyle
 	}
 
 	const screenOptions: BottomTabNavigationOptions = {
@@ -91,9 +102,19 @@ export function TabNavigator() {
 				...screenOptions,
 				tabBarStyle: defaultTabBarStyle,
 			}}>
-			<Tab.Screen options={{ tabBarIcon: renderHomeTabIcon }} name="홈" component={HomeTab} />
 			<Tab.Screen
-				options={{ tabBarIcon: renderExploreTabIcon }}
+				options={({ route }) => ({
+					tabBarIcon: renderHomeTabIcon,
+					tabBarStyle: getTabBarStyle(route),
+				})}
+				name="홈"
+				component={HomeTab}
+			/>
+			<Tab.Screen
+				options={({ route }) => ({
+					tabBarIcon: renderExploreTabIcon,
+					tabBarStyle: getTabBarStyle(route),
+				})}
 				name="탐색"
 				component={SearchTab}
 			/>
@@ -103,7 +124,10 @@ export function TabNavigator() {
 				component={RegisterClubTab}
 			/>
 			<Tab.Screen
-				options={{ tabBarIcon: renderSavedTabIcon }}
+				options={({ route }) => ({
+					tabBarIcon: renderSavedTabIcon,
+					tabBarStyle: getTabBarStyle(route),
+				})}
 				name="저장"
 				component={SavedTab}
 				listeners={{
@@ -116,7 +140,10 @@ export function TabNavigator() {
 				}}
 			/>
 			<Tab.Screen
-				options={{ tabBarIcon: renderMyPageTabIcon }}
+				options={({ route }) => ({
+					tabBarIcon: renderMyPageTabIcon,
+					tabBarStyle: getTabBarStyle(route),
+				})}
 				name="마이"
 				component={MyPageTab}
 				listeners={({ navigation: tabNavigation }) => ({

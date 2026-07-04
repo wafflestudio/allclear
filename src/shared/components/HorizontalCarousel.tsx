@@ -1,5 +1,7 @@
 import React from 'react'
-import { FlatList, StyleSheet, View } from 'react-native'
+import { StyleSheet, View } from 'react-native'
+import { GestureDetector } from 'react-native-gesture-handler'
+import Animated from 'react-native-reanimated'
 
 import { Club } from '@/entities/club'
 import ClubPreviewCard from '@/shared/components/ClubPreviewCard'
@@ -14,29 +16,31 @@ type Props = {
 }
 
 const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
-	const { listRef, ...scrollEventProps } = useAutoScroll<Club>(clubs.length)
+	const { listRef, touchGesture, ...scrollEventProps } = useAutoScroll<Club>(clubs.length)
 
 	return (
-		<FlatList
-			ref={listRef}
-			{...scrollEventProps}
-			horizontal
-			showsHorizontalScrollIndicator={false}
-			style={styles.list}
-			contentContainerStyle={styles.contentContainer}
-			scrollEventThrottle={16}
-			data={clubs}
-			keyExtractor={item => item.id}
-			ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-			renderItem={({ item }) => (
-				<ClubPreviewCard
-					title={item.name}
-					description={item.description ?? ''}
-					imageSource={{ uri: item.imageUri }}
-					onPress={() => onPressClub(item)}
-				/>
-			)}
-		/>
+		<GestureDetector gesture={touchGesture}>
+			<Animated.FlatList
+				ref={listRef}
+				{...scrollEventProps}
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				style={styles.list}
+				contentContainerStyle={styles.contentContainer}
+				scrollEventThrottle={16}
+				data={clubs}
+				keyExtractor={item => item.id}
+				ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+				renderItem={({ item }) => (
+					<ClubPreviewCard
+						title={item.name}
+						description={item.description ?? ''}
+						imageSource={{ uri: item.imageUri }}
+						onPress={() => onPressClub(item)}
+					/>
+				)}
+			/>
+		</GestureDetector>
 	)
 }
 

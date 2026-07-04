@@ -4,7 +4,7 @@ import { useProfile } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { TermService } from '@/usecases/term'
 
-const useHomePendingTerms = () => {
+const usePendingTerms = () => {
 	const { termService } = useContext(serviceContext)
 	const { user, isLoading: isProfileLoading } = useProfile()
 	const queryClient = useQueryClient()
@@ -12,7 +12,7 @@ const useHomePendingTerms = () => {
 		data: pendingTerms = [],
 		isFetched: hasFetchedPendingTerms,
 		isError: hasPendingTermsError,
-	} = usePendingTerms(termService, !isProfileLoading && !!user)
+	} = usePendingTermsQuery(termService, !isProfileLoading && !!user)
 	const agreeTermsMutation = useAgreeTerms(termService, queryClient)
 	const shouldShowTermsModal = isProfileLoading
 		? null
@@ -30,9 +30,9 @@ const useHomePendingTerms = () => {
 	}
 }
 
-export default useHomePendingTerms
+export default usePendingTerms
 
-const usePendingTerms = (termService: TermService, enabled: boolean) => {
+const usePendingTermsQuery = (termService: TermService, enabled: boolean) => {
 	return useQuery({
 		queryKey: ['terms'],
 		queryFn: () => termService.listTerms(),

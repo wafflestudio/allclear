@@ -2,7 +2,7 @@ import { RouteProp, useFocusEffect } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Club } from '@/entities/club'
@@ -130,6 +130,16 @@ const SearchScreen = ({ navigation }: Props) => {
 		setIsFilterOverlayVisible(false)
 	}
 
+	const handleChangeFilters = useCallback((nextFilters: ClubSearchFilters) => {
+		Keyboard.dismiss()
+		setFilters(nextFilters)
+	}, [])
+
+	const handleToggleFilterOverlay = useCallback(() => {
+		Keyboard.dismiss()
+		setIsFilterOverlayVisible(prev => !prev)
+	}, [])
+
 	const handleSelectRecentSearch = (query: string) => {
 		setInputValue(query)
 		handleSubmitQuery(query)
@@ -167,8 +177,8 @@ const SearchScreen = ({ navigation }: Props) => {
 							) : null}
 							<SearchFilterBar
 								filters={filters}
-								onChange={setFilters}
-								onPressFilter={() => setIsFilterOverlayVisible(prev => !prev)}
+								onChange={handleChangeFilters}
+								onPressFilter={handleToggleFilterOverlay}
 							/>
 						</View>
 						<View style={styles.contentContainer}>
@@ -191,7 +201,7 @@ const SearchScreen = ({ navigation }: Props) => {
 							{isFilterOverlayVisible ? (
 								<SearchFilterOverlay
 									value={filters}
-									onChange={setFilters}
+									onChange={handleChangeFilters}
 									onReset={() => setFilters(resetClubSearchOverlayFilters(filters))}
 									onClose={() => setIsFilterOverlayVisible(false)}
 								/>

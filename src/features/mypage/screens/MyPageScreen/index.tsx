@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { LOGIN_TOKEN } from '@/shared/constants/localStorage'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
-import { useRegisterClubTypeBottomSheet } from '@/shared/contexts/registerClubTypeBottomSheet'
+import { Club } from '@/entities/club'
+import { useManageClubBottomSheet } from '@/shared/contexts/manageClubBottomSheet'
 import { useProfile } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { useUserVoiceBottomSheet } from '@/shared/contexts/userVoiceBottomSheetContext'
@@ -13,20 +14,36 @@ import { navigation } from '@/shared/utils/navigation'
 import { setToken } from '@/shared/utils/api'
 import AlertModal from '@/shared/components/AlertModal'
 import React, { useContext, useState } from 'react'
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import {
+	Image,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	TouchableOpacity,
+	View,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
 const MyPageScreen = () => {
-	const { authService } = useContext(serviceContext)
+	const { authService, clubService } = useContext(serviceContext)
 	const { openBottomSheet: openUserVoice } = useUserVoiceBottomSheet()
-	const { openBottomSheet: openRegisterClubType } = useRegisterClubTypeBottomSheet()
+	const { openBottomSheet: openManageClub } = useManageClubBottomSheet()
 	const queryClient = useQueryClient()
 	const { user, setUser } = useProfile()
 
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false)
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false)
+
+	const { data: manageClubsData } = useQuery({
+		queryKey: ['manageClubs'],
+		queryFn: () => clubService.listManageClubs(),
+		select: data => data.clubs,
+	})
+
+	const manageClubs = manageClubsData ?? []
 
 	const handleLeave = () => setLeaveModalVisible(true)
 
@@ -77,9 +94,18 @@ const MyPageScreen = () => {
 		})
 	}
 
+	const handleRegisterAnnouncement = (club: Club) => {
+		navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, { clubId: club.uuid })
+	}
+
+	const handleManageClub = (club: Club) => {
+		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid })
+	}
+
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
 			<ScrollView contentContainerStyle={styles.scrollContent}>
+				{/* 프로필 카드 */}
 				<View style={styles.card}>
 					<Pressable
 						style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
@@ -107,18 +133,73 @@ const MyPageScreen = () => {
 					</Text>
 				</View>
 
+				{/* 동아리 운영진이신가요? 카드 */}
 				<Pressable
-					style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-					onPress={openRegisterClubType}>
+					style={({ pressed }) => [styles.managerCard, pressed && styles.pressed]}
+					onPress={openManageClub}>
 					<View style={styles.managerRow}>
 						<View>
 							<Text style={styles.managerTitle}>동아리 운영진이신가요?</Text>
-							<Text style={styles.managerSub}>동아리 등록하기</Text>
+							<Text style={styles.managerSub}>신규 동아리 등록하기</Text>
 						</View>
 						<Icon name="chevron-right" color={Colors.POINTCOLOR} size={ms(20)} />
 					</View>
 				</Pressable>
 
+				{/* 관리 중인 동아리 가로 스크롤 */}
+				{manageClubs.length > 0 && (
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.manageClubsScroll}>
+						{manageClubs.map(club => (
+							<View key={club.uuid} style={styles.manageClubItem}>
+								{/* 동아리 정보 카드 */}
+								<View style={styles.manageClubInfoCard}>
+									<View style={styles.manageClubThumbnail}>
+										{club.imageUri ? (
+											<Image
+												source={{ uri: club.imageUri }}
+												style={styles.manageClubThumbnailImage}
+											/>
+										) : null}
+									</View>
+									<View style={styles.manageClubTexts}>
+										<Text style={styles.manageClubName} numberOfLines={1}>
+											{club.name}
+										</Text>
+										<View style={styles.manageClubSubTexts}>
+											<Text style={styles.manageClubSub} numberOfLines={1}>
+												{club.college}
+											</Text>
+											<Text style={styles.manageClubSub} numberOfLines={1}>
+												{club.description}
+											</Text>
+										</View>
+									</View>
+								</View>
+
+								{/* 버튼 행 */}
+								<View style={styles.manageClubButtons}>
+									<TouchableOpacity
+										style={styles.manageClubBtnOutline}
+										activeOpacity={0.7}
+										onPress={() => handleRegisterAnnouncement(club)}>
+										<Text style={styles.manageClubBtnOutlineText}>공고 등록</Text>
+									</TouchableOpacity>
+									<TouchableOpacity
+										style={styles.manageClubBtnFilled}
+										activeOpacity={0.7}
+										onPress={() => handleManageClub(club)}>
+										<Text style={styles.manageClubBtnFilledText}>동아리 관리</Text>
+									</TouchableOpacity>
+								</View>
+							</View>
+						))}
+					</ScrollView>
+				)}
+
+				{/* 기타 메뉴 */}
 				<View style={styles.card}>
 					<Pressable
 						style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}
@@ -191,6 +272,8 @@ const styles = StyleSheet.create({
 		padding: s(16),
 		gap: vs(12),
 	},
+
+	// 프로필 카드
 	card: {
 		backgroundColor: Colors.WHITE,
 		borderRadius: ms(12),
@@ -226,21 +309,131 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_SUB,
 		marginTop: vs(6),
 	},
+
+	// 운영진 카드
+	managerCard: {
+		backgroundColor: '#FAFAFA',
+		borderRadius: ms(12),
+		paddingHorizontal: s(24),
+		paddingVertical: vs(20),
+	},
 	managerRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
 	},
 	managerTitle: {
-		...typography.bodyMSemibold,
+		...typography.bodyMMedium,
 		color: Colors.POINTCOLOR,
+		letterSpacing: -0.02 * 14,
 	},
 	managerSub: {
 		...typography.bodySRegular,
 		color: Colors.POINTCOLOR,
-		opacity: 0.7,
+		opacity: 0.4,
 		marginTop: vs(4),
+		letterSpacing: -0.02 * 12,
 	},
+
+	// 관리 동아리 스크롤
+	manageClubsScroll: {
+		gap: s(10),
+		paddingRight: s(4),
+	},
+	manageClubItem: {
+		width: s(330),
+		gap: vs(10),
+	},
+	manageClubInfoCard: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingVertical: vs(20),
+		paddingLeft: s(30),
+		paddingRight: s(20),
+		gap: s(30),
+		backgroundColor: '#FAFAFA',
+		borderRadius: ms(10),
+		height: vs(120),
+	},
+	manageClubThumbnail: {
+		width: ms(75),
+		height: ms(75),
+		borderRadius: ms(10),
+		backgroundColor: '#D9D9D9',
+		overflow: 'hidden',
+		flexShrink: 0,
+	},
+	manageClubThumbnailImage: {
+		width: '100%',
+		height: '100%',
+	},
+	manageClubTexts: {
+		flex: 1,
+		gap: vs(10),
+	},
+	manageClubName: {
+		fontFamily: 'Pretendard',
+		fontWeight: '700',
+		fontSize: ms(17),
+		lineHeight: ms(24),
+		letterSpacing: -0.02 * 17,
+		color: '#202020',
+	},
+	manageClubSubTexts: {
+		gap: vs(5),
+	},
+	manageClubSub: {
+		fontFamily: 'Pretendard',
+		fontWeight: '400',
+		fontSize: ms(13),
+		lineHeight: ms(15),
+		letterSpacing: -0.02 * 13,
+		color: '#757474',
+	},
+
+	// 버튼 행
+	manageClubButtons: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: s(10),
+	},
+	manageClubBtnOutline: {
+		flex: 1,
+		height: vs(35),
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: 1,
+		borderColor: Colors.POINTCOLOR,
+		borderRadius: ms(8),
+	},
+	manageClubBtnOutlineText: {
+		fontFamily: 'Apple SD Gothic Neo',
+		fontWeight: '600',
+		fontSize: ms(14),
+		lineHeight: ms(24),
+		textAlign: 'center',
+		letterSpacing: -0.02 * 14,
+		color: Colors.POINTCOLOR,
+	},
+	manageClubBtnFilled: {
+		flex: 1,
+		height: vs(35),
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: Colors.POINTCOLOR,
+		borderRadius: ms(8),
+	},
+	manageClubBtnFilledText: {
+		fontFamily: 'Apple SD Gothic Neo',
+		fontWeight: '600',
+		fontSize: ms(14),
+		lineHeight: ms(24),
+		textAlign: 'center',
+		letterSpacing: -0.02 * 14,
+		color: Colors.WHITE,
+	},
+
+	// 메뉴
 	menuItem: {
 		paddingVertical: vs(10),
 	},

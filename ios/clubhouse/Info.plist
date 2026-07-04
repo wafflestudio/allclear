@@ -68,7 +68,9 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string/>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>동아리 대표 이미지를 등록하기 위해 사진 보관함 접근 권한이 필요해요</string>
+	<string>동아리 대표 이미지 및 공고 이미지를 등록하기 위해 사진 보관함 접근 권한이 필요해요</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>공고 이미지를 저장하기 위해 사진 라이브러리에 접근합니다.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>

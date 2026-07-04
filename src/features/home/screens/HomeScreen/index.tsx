@@ -1,11 +1,6 @@
-import { RouteProp, useIsFocused } from '@react-navigation/native'
+import { RouteProp } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { Club } from '@/entities/club'
-import { Term } from '@/entities/term'
-import AnnouncementModal from '@/features/home/components/AnnouncementModal'
-import TermsAgreementModal from '@/features/home/components/TermsAgreementModal'
-import useHomeAnnouncements from '@/features/home/hooks/useHomeAnnouncements'
-import useHomePendingTerms from '@/features/home/hooks/useHomePendingTerms'
 import { Colors } from '@/shared/constants/colors'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import WithViewEventLog from '@/shared/hocs/WithViewEventLog'
@@ -13,7 +8,7 @@ import useClickEventLog from '@/shared/hooks/useClickEventLog'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import CategorySection from '@/features/home/components/CategorySection'
 import LatestClubsSection from '@/features/home/components/LatestClubsSection'
-import { View, Text, Image, StyleSheet, Linking } from 'react-native'
+import { View, Text, Image, StyleSheet } from 'react-native'
 import { s, vs } from '@/shared/utils/scale'
 import { typography } from '@/shared/constants/typography'
 
@@ -26,12 +21,7 @@ type Props = {
 }
 
 const HomeScreen = ({ navigation }: Props) => {
-	const isFocused = useIsFocused()
 	const { logClickEvent } = useClickEventLog()
-	const { currentAnnouncement, handleCloseAnnouncement, handleHideAnnouncement } =
-		useHomeAnnouncements()
-	const { pendingTerms, isSubmitting, shouldShowTermsModal, handleAgreeTerms } =
-		useHomePendingTerms()
 
 	const handleMoveToDetailPage = (club: Club) => {
 		logClickEvent({
@@ -45,10 +35,6 @@ const HomeScreen = ({ navigation }: Props) => {
 			category: club.category,
 			entry_point: 'home',
 		})
-	}
-
-	const handlePressViewTerm = (term: Term) => {
-		void Linking.openURL(term.contentUrl)
 	}
 
 	return (
@@ -70,25 +56,6 @@ const HomeScreen = ({ navigation }: Props) => {
 					</Text>
 					<LatestClubsSection openDetailPage={handleMoveToDetailPage} />
 				</View>
-				{isFocused && shouldShowTermsModal === true && (
-					<TermsAgreementModal
-						visible
-						terms={pendingTerms}
-						isSubmitting={isSubmitting}
-						onPressView={handlePressViewTerm}
-						onAgree={termUuids => handleAgreeTerms({ termUuids })}
-					/>
-				)}
-				{isFocused && shouldShowTermsModal === false && currentAnnouncement && (
-					<AnnouncementModal
-						visible
-						announcementUuid={currentAnnouncement.uuid}
-						title={currentAnnouncement.title}
-						description={currentAnnouncement.description}
-						onHide={handleHideAnnouncement}
-						onClose={handleCloseAnnouncement}
-					/>
-				)}
 			</SafeAreaView>
 		</WithViewEventLog>
 	)

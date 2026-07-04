@@ -14,7 +14,7 @@ type Props = {
 const ReviewKeywordPill = ({ keyword, themeColor, backgroundColor }: Props) => {
 	return (
 		<View style={[styles.pill, { borderColor: themeColor, backgroundColor }]}>
-			<Text style={[styles.icon, styles.text]}>{keyword.iconUri?.trim()}</Text>
+			<Text style={[styles.text, styles.icon]}>{keyword.iconUri?.trim()}</Text>
 			<Text style={[styles.title, styles.text]} numberOfLines={1}>
 				{keyword.title}
 			</Text>
@@ -36,6 +36,7 @@ const styles = StyleSheet.create({
 	},
 	text: typography.bodyXSRegular,
 	icon: {
+		fontSize: ms(8.5),
 		marginRight: s(4),
 	},
 	title: {

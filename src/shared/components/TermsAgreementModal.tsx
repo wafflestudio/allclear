@@ -8,8 +8,10 @@ import {
 	useWindowDimensions,
 } from 'react-native'
 import { BlurView } from '@react-native-community/blur'
+import WebView from 'react-native-webview'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { useMemo, useState } from 'react'
+import BackHeader from '@/shared/components/BackHeader'
 import Button from '@/shared/components/Button'
 import Checkbox from '@/shared/components/Checkbox'
 import { Colors } from '@/shared/constants/colors'
@@ -22,15 +24,15 @@ type Props = {
 	visible: boolean
 	terms: Term[]
 	isSubmitting: boolean
-	onPressView: (term: Term) => void
 	onAgree: (termUuids: Term['uuid'][]) => void
 }
 
-const TermsAgreementModal = ({ visible, terms, isSubmitting, onPressView, onAgree }: Props) => {
+const TermsAgreementModal = ({ visible, terms, isSubmitting, onAgree }: Props) => {
 	const { height: windowHeight } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 	const modalHeight = Math.min(vs(500), windowHeight - insets.top - insets.bottom - vs(40))
 	const [checkedTermUuids, setCheckedTermUuids] = useState<Term['uuid'][]>([])
+	const [viewingTerm, setViewingTerm] = useState<Term | null>(null)
 
 	const mandatoryTermUuids = useMemo(
 		() => terms.filter(term => term.isMandatory).map(term => term.uuid),
@@ -108,7 +110,7 @@ const TermsAgreementModal = ({ visible, terms, isSubmitting, onPressView, onAgre
 											/>
 											<Pressable
 												hitSlop={8}
-												onPress={() => onPressView(term)}
+												onPress={() => setViewingTerm(term)}
 												style={({ pressed }) => [styles.viewButton, pressed && styles.pressed]}>
 												<Text style={styles.viewButtonText}>보기</Text>
 												<Icon name="chevron-right" size={ms(18)} color={Colors.BODYTEXT_SUB} />
@@ -124,8 +126,6 @@ const TermsAgreementModal = ({ visible, terms, isSubmitting, onPressView, onAgre
 								onPressIn={handleToggleAll}
 								textStyle={styles.allCheckboxLabel}
 							/>
-
-							<Text style={styles.caption}>상세 내용은 브라우저에서 확인할 수 있어요.</Text>
 						</View>
 					</View>
 
@@ -140,6 +140,32 @@ const TermsAgreementModal = ({ visible, terms, isSubmitting, onPressView, onAgre
 					</View>
 				</View>
 			</View>
+
+			<Modal
+				visible={!!viewingTerm}
+				animationType="slide"
+				onRequestClose={() => setViewingTerm(null)}>
+				<View
+					style={[
+						styles.webviewContainer,
+						{
+							paddingTop: insets.top,
+							paddingBottom: insets.bottom,
+							paddingLeft: insets.left,
+							paddingRight: insets.right,
+						},
+					]}>
+					<BackHeader title={viewingTerm?.title ?? ''} onBack={() => setViewingTerm(null)} />
+					{viewingTerm && (
+						<WebView
+							source={{ uri: viewingTerm.contentUrl }}
+							startInLoadingState
+							bounces={false}
+							overScrollMode="never"
+						/>
+					)}
+				</View>
+			</Modal>
 		</Modal>
 	)
 }
@@ -238,10 +264,6 @@ const styles = StyleSheet.create({
 		...typography.bodySMedium,
 		color: Colors.POINTCOLOR,
 	},
-	caption: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
-	},
 	footer: {
 		alignItems: 'center',
 	},
@@ -250,5 +272,9 @@ const styles = StyleSheet.create({
 	},
 	pressed: {
 		opacity: 0.7,
+	},
+	webviewContainer: {
+		flex: 1,
+		backgroundColor: Colors.WHITE,
 	},
 })

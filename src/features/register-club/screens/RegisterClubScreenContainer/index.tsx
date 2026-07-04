@@ -1,8 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import Toast from 'react-native-toast-message'
 import { useProfile } from '@/shared/contexts/profileContext'
 import { useLoginBottomSheet } from '@/shared/contexts/loginBottomSheetContext'
-import { useRegisterClubTypeBottomSheet } from '@/shared/contexts/registerClubTypeBottomSheet'
 import { useRegisterClub } from '@/features/register-club/hooks/useRegisterClub'
 import { ManagerInfoScreen } from '@/features/register-club/screens/ManagerInfoScreen'
 import { ClubBasicInfoScreen } from '@/features/register-club/screens/ClubBasicInfoScreen'
@@ -51,7 +50,6 @@ export const RegisterClubScreenContainer = () => {
 	const [showConfirm, setShowConfirm] = useState(false)
 	const { user } = useProfile()
 	const { openBottomSheet: openLoginSheet } = useLoginBottomSheet()
-	const { selectedKind } = useRegisterClubTypeBottomSheet()
 
 	const { mutate: registerClub, isLoading } = useRegisterClub({
 		onSuccess: message => {
@@ -76,12 +74,6 @@ export const RegisterClubScreenContainer = () => {
 			})
 		},
 	})
-
-	useEffect(() => {
-		if (selectedKind === '교내' || selectedKind === '교외') {
-			setFormData(prev => ({ ...prev, clubType: selectedKind }))
-		}
-	}, [selectedKind])
 
 	const handleFormDataChange = (data: Partial<RegisterClubFormData>) => {
 		setFormData(prev => ({ ...prev, ...data }))
