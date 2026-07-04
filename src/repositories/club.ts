@@ -58,10 +58,36 @@ export type ClubManager = {
 
 export type ManagedClubDetail = Club & {
 	managers: ClubManager[]
+	affiliation?: string
+	shortDescription?: string
+	dongbangLocation?: string
+	minActivityPeriod?: number
+	sns?: string
 }
 
 export type GetManagedClubDetailRequest = {
 	uuid: Club['uuid']
+}
+
+// PATCH /v2/managers/me/clubs/{uuid}
+export type ManagedClubPatch = {
+	name?: string
+	type?: string
+	image_uri?: string
+	category?: string
+	affiliation?: string
+	short_description?: string
+	recruit_type?: string
+	min_activity_period?: number
+	has_dongbang?: boolean
+	dongbang_location?: string
+	sns?: string
+	introduction?: string
+}
+
+export type UpdateManagedClubRequest = {
+	uuid: Club['uuid']
+	body: ManagedClubPatch
 }
 
 export type ListManageClubsResponse = {
@@ -151,6 +177,7 @@ export type ClubRepository = {
 	listClubs: (req: ListClubsRequest) => Promise<ListClubsResponse>
 	getClub: (req: GetClubRequest) => Promise<Club>
 	getManagedClubDetail: (req: GetManagedClubDetailRequest) => Promise<ManagedClubDetail>
+	updateManagedClub: (req: UpdateManagedClubRequest) => Promise<void>
 	listManageClubs: () => Promise<ListManageClubsResponse>
 	listClubRankings: (req: ListClubRankingsRequest) => Promise<ListClubRankingsResponse>
 	requestClubManager: (req: RequestClubmanagerRequest) => Promise<void>
@@ -224,6 +251,9 @@ export const getClubRepository = (): ClubRepository => ({
 	getManagedClubDetail: async req => {
 		const res = await apiConnector.get<ManagedClubDetail>(`/v2/managers/me/clubs/${req.uuid}`)
 		return res
+	},
+	updateManagedClub: async req => {
+		await apiConnector.patch<void>(`/v2/managers/me/clubs/${req.uuid}`, req.body)
 	},
 	listManageClubs: async () => {
 		const response = await apiConnector.get<ListManageClubsV2Response>('/v2/managers/me/clubs')
