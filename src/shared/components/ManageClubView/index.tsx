@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
 import { navigation } from '@/shared/utils/navigation'
 import { Colors } from '@/shared/constants/colors'
+import AlertModal from '@/shared/components/AlertModal'
 
 type Props = {
 	closeBottomSheet: () => void
@@ -10,6 +11,7 @@ type Props = {
 
 const ManageClubView = ({ closeBottomSheet }: Props) => {
 	const [selectedOption, setSelectedOption] = useState<string>('')
+	const [isCampusOnlyModalVisible, setIsCampusOnlyModalVisible] = useState(false)
 
 	const options = [
 		{ id: 'campus', label: '교내 동아리' },
@@ -30,7 +32,17 @@ const ManageClubView = ({ closeBottomSheet }: Props) => {
 			return
 		}
 
-		// TODO: Handle other club types
+		if (selectedOption === 'external') {
+			setIsCampusOnlyModalVisible(true)
+			return
+		}
+
+		// TODO: Handle campus club registration
+		closeBottomSheet()
+	}
+
+	const handleCampusOnlyConfirm = () => {
+		setIsCampusOnlyModalVisible(false)
 		closeBottomSheet()
 	}
 
@@ -43,13 +55,17 @@ const ManageClubView = ({ closeBottomSheet }: Props) => {
 					key={option.id}
 					style={[
 						styles.optionButton,
-						selectedOption === option.id ? styles.optionButtonSelected : styles.optionButtonUnselected,
+						selectedOption === option.id
+							? styles.optionButtonSelected
+							: styles.optionButtonUnselected,
 					]}
 					onPress={() => setSelectedOption(option.id)}>
 					<Text
 						style={[
 							styles.optionButtonText,
-							selectedOption === option.id ? styles.optionButtonTextSelected : styles.optionButtonTextUnselected,
+							selectedOption === option.id
+								? styles.optionButtonTextSelected
+								: styles.optionButtonTextUnselected,
 						]}>
 						{option.label}
 					</Text>
@@ -60,8 +76,20 @@ const ManageClubView = ({ closeBottomSheet }: Props) => {
 				style={[styles.button, !isSelectionValid && styles.buttonDisabled]}
 				onPress={handleSelectionNext}
 				disabled={!isSelectionValid}>
-				<Text style={[styles.buttonText, !isSelectionValid && styles.buttonTextDisabled]}>다음</Text>
+				<Text style={[styles.buttonText, !isSelectionValid && styles.buttonTextDisabled]}>
+					다음
+				</Text>
 			</TouchableOpacity>
+
+			<AlertModal
+				visible={isCampusOnlyModalVisible}
+				onClose={() => setIsCampusOnlyModalVisible(false)}
+				title={'현재 올클 서비스는 교내 동아리\n대상으로만 제공되고 있어요'}
+				description="확장 운영을 위해서 더 노력하는 올클이 될게요"
+				buttonLabel="확인"
+				onButtonPress={handleCampusOnlyConfirm}
+				dismissOnBackdropPress={false}
+			/>
 		</View>
 	)
 }

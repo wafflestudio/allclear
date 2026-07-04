@@ -8,5 +8,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:all-clear.cc</string>
+		<string>applinks:dev.all-clear.cc</string>
+	</array>
 </dict>
 </plist>

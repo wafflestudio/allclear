@@ -33,7 +33,7 @@ export const getUserRepository = (): UserRepository => ({
 			throw new Error('No token found')
 		}
 
-		const response = await apiConnector.get<GetUserResponse>('/v1/users/me')
+		const response = await apiConnector.get<GetUserResponse>('/v2/users/me')
 
 		return response.profile
 	},
@@ -44,7 +44,7 @@ export const getUserRepository = (): UserRepository => ({
 			throw new Error('No token found')
 		}
 
-		await apiConnector.put('/v1/users/me', request)
+		await apiConnector.put('/v2/users/me', request)
 	},
 	createUserVoice: async request => {
 		const token = await AsyncStorage.getItem(LOGIN_TOKEN)
@@ -53,10 +53,10 @@ export const getUserRepository = (): UserRepository => ({
 			throw new Error('No token found')
 		}
 
-		await apiConnector.post('/v1/users/me/voices', request)
+		await apiConnector.post('/v2/users/me/voices', request)
 	},
 	listCollegeMajors: async () => {
-		const response = await apiConnector.get<ListCollegeMajorsResponse>('/v1/users/majors')
+		const response = await apiConnector.get<ListCollegeMajorsResponse>('/v2/users/majors')
 
 		return response
 	},

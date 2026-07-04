@@ -39,5 +39,18 @@ post_install do |installer|
       config.build_settings['RCT_NEW_ARCH_ENABLED'] = '0'
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
     end
+
+  end
+
+  # fmt 11 + Xcode 16 Clang consteval 충돌 패치
+  fmt_base_h = "#{installer.sandbox.root}/fmt/include/fmt/base.h"
+  if File.exist?(fmt_base_h)
+    content = File.read(fmt_base_h)
+    patched = content.gsub(/define FMT_USE_CONSTEVAL 1/, 'define FMT_USE_CONSTEVAL 0')
+    if content != patched
+      File.chmod(0644, fmt_base_h)
+      File.write(fmt_base_h, patched)
+      Pod::UI.puts "✅ Patched fmt/base.h: FMT_USE_CONSTEVAL disabled for Xcode 16"
+    end
   end
 end

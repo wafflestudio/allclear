@@ -2,6 +2,7 @@
 
 #import <Firebase.h>
 #import <React/RCTBundleURLProvider.h>
+#import <React/RCTLinkingManager.h>
 #import "RNSplashScreen.h"
 #import <RNKakaoLogins.h>
 #import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
@@ -34,13 +35,24 @@
 #endif
 }
 
+// Custom scheme (allclear://) 및 카카오 로그인 처리
 - (BOOL)application:(UIApplication *)app
             openURL:(NSURL *)url
             options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
   if ([RNKakaoLogins isKakaoTalkLoginUrl:url]) {
     return [RNKakaoLogins handleOpenUrl:url];
   }
-  return NO;
+  return [RCTLinkingManager application:app openURL:url options:options];
+}
+
+// Universal Links (https://all-clear.cc) 처리
+- (BOOL)application:(UIApplication *)application
+    continueUserActivity:(NSUserActivity *)userActivity
+      restorationHandler:(void (^)(NSArray<id<UIUserActivityRestoring>> * _Nullable))restorationHandler
+{
+  return [RCTLinkingManager application:application
+                   continueUserActivity:userActivity
+                     restorationHandler:restorationHandler];
 }
 
 @end

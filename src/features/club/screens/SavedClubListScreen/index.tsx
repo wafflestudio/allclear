@@ -8,10 +8,10 @@ import React, { useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { navigation } from '@/shared/utils/navigation'
 import ClubList from '@/features/club/components/ClubList/ClubList'
-import Header from '@/features/club/components/ClubList/Header'
+import Header from '@/shared/components/BackHeader'
 
 const SavedClubListScreen = () => {
-	const { data: savedClubs } = useSavedClubs()
+	const { data: savedClubs, isLoading } = useSavedClubs()
 
 	const openDetailPage = (club: Club) => {
 		navigation.navigate(SCREEN_TYPE.CLUB_DETAIL, {
@@ -38,6 +38,7 @@ const SavedClubListScreen = () => {
 					clubs={savedClubs}
 					openDetailPage={openDetailPage}
 					emptyPlaceholder="저장한 동아리가 없어요"
+					isLoading={isLoading}
 				/>
 			</SafeAreaView>
 		</WithViewEventLog>
@@ -50,6 +51,7 @@ const useSavedClubs = () => {
 	const { clubService } = useContext(serviceContext)
 
 	return useQuery(['savedClubs'], () => clubService.listSavedClubs(), {
+		staleTime: Infinity,
 		select: data => data.clubs,
 	})
 }

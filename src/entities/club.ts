@@ -38,8 +38,5 @@ export type ClubRanking = {
 	ranking: number
 	clubId: Club['uuid']
 	clubName: Club['name']
-	clubFullName: Club['fullName']
-	totalReviews: number
-	rating: number
-	keywords: ReviewKeyword['title'][]
+	category: Club['category']
 }

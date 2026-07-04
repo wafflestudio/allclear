@@ -1,13 +1,28 @@
 import { Club, ClubRanking } from '@/entities/club'
 import { apiConnector } from '@/shared/utils/api'
 
+export type ClubSearchAffiliationType = '전체' | '중앙동아리' | '학과/단과대동아리'
+export type ClubSearchRecruitType = '정기' | '상시'
+export type ClubSearchBooleanString = 'true' | 'false'
+export type ClubSearchMinActivityPeriod = '0' | '1' | '2' | '3_plus'
+
 export type SearchClubsRequest = {
 	query: string
+	affiliation_type?: ClubSearchAffiliationType
+	is_recruiting?: ClubSearchBooleanString
+	recruit_type?: ClubSearchRecruitType
+	has_membership_fee?: ClubSearchBooleanString
+	has_dongbang?: ClubSearchBooleanString
+	is_official_verified?: ClubSearchBooleanString
+	min_activity_period?: ClubSearchMinActivityPeriod[]
 }
 
 export type SearchClubsResponse = {
 	clubs: Club[]
 	totalSize: number
+	query: string
+	correctedQuery: string | null
+	isTypoCorrected: boolean
 }
 
 export type ListPopularClubsResponse = {
@@ -73,8 +88,13 @@ export type ListMyClubsResponse = {
 	totalSize: number
 }
 
+export type ListRandomRecommendationsResponse = {
+	clubs: Club[]
+	totalSize: number
+}
+
 export type ClubRepository = {
-	searchClubs: (req: SearchClubsRequest) => Promise<SearchClubsResponse>
+	searchClubs: (req: SearchClubsRequest, signal?: AbortSignal) => Promise<SearchClubsResponse>
 	listPopularClubs: () => Promise<ListPopularClubsResponse>
 	listLatestClubs: () => Promise<ListLatestClubsResponse>
 	listClubs: (req: ListClubsRequest) => Promise<ListClubsResponse>
@@ -86,40 +106,62 @@ export type ClubRepository = {
 	createSavedClub: (req: CreateSavedClubRequest) => Promise<void>
 	removeSavedClub: (req: RemoveSavedClubRequest) => Promise<void>
 	listMyClubs: () => Promise<ListMyClubsResponse>
+	listRandomRecommendations: () => Promise<ListRandomRecommendationsResponse>
 }
 
 export const getClubRepository = (): ClubRepository => ({
-	searchClubs: async req => {
+	searchClubs: async (req, signal) => {
 		const searchParams = new URLSearchParams()
 		searchParams.append('query', req.query.toLowerCase().trim())
+		if (req.affiliation_type && req.affiliation_type !== '전체') {
+			searchParams.append('affiliation_type', req.affiliation_type)
+		}
+		if (req.is_recruiting) {
+			searchParams.append('is_recruiting', req.is_recruiting)
+		}
+		if (req.recruit_type) {
+			searchParams.append('recruit_type', req.recruit_type)
+		}
+		if (req.has_membership_fee) {
+			searchParams.append('has_membership_fee', req.has_membership_fee)
+		}
+		if (req.has_dongbang) {
+			searchParams.append('has_dongbang', req.has_dongbang)
+		}
+		if (req.is_official_verified) {
+			searchParams.append('is_official_verified', req.is_official_verified)
+		}
+		req.min_activity_period?.forEach(period => {
+			searchParams.append('min_activity_period', period)
+		})
 
-		console.log('[searchClubs] req:', req)
-		const response = await apiConnector.get<SearchClubsResponse>(`/v2/clubs/search`, searchParams)
-		console.log('[searchClubs] res: totalSize=%d, clubs=%o', response.totalSize, response.clubs.map(c => ({ uuid: c.uuid, name: c.name })))
+		const response = await apiConnector.get<SearchClubsResponse>(
+			'/v2/clubs/search',
+			searchParams,
+			signal,
+		)
 
 		return response
 	},
 	listPopularClubs: async () => {
-		const response = await apiConnector.get<ListPopularClubsResponse>('/v1/clubs/popular')
+		const response = await apiConnector.get<ListPopularClubsResponse>('/v2/clubs/popular')
 
 		return response
 	},
 	listLatestClubs: async () => {
-		const response = await apiConnector.get<ListLatestClubsResponse>('/v1/clubs/latest')
+		const response = await apiConnector.get<ListLatestClubsResponse>('/v2/clubs/latest')
 
 		return response
 	},
 	listClubs: async req => {
-		const searchParams = new URLSearchParams()
-		if (req.category) {
-			searchParams.append('category', req.category)
-		}
-		const response = await apiConnector.get<ListClubsResponse>(`/v1/clubs`, searchParams)
+		const response = await apiConnector.get<ListClubsResponse>('/v2/clubs', {
+			...(req.category && { category: req.category }),
+		})
 
 		return response
 	},
 	getClub: async req => {
-		const club = await apiConnector.get<Club>(`/v1/clubs/${req.uuid}`)
+		const club = await apiConnector.get<Club>(`/v2/clubs/${req.uuid}`)
 
 		if (!club) {
 			throw new Error('Club not found')
@@ -127,35 +169,40 @@ export const getClubRepository = (): ClubRepository => ({
 		return club
 	},
 	listManageClubs: async () => {
-		const response = await apiConnector.get<ListManageClubsResponse>('/v1/managers/me/clubs')
+		const response = await apiConnector.get<ListManageClubsResponse>('/v2/managers/me/clubs')
 
 		return response
 	},
 	listClubRankings: async req => {
 		const response = await apiConnector.get<ListClubRankingsResponse>(
-			`/v1/clubs/rankings?topk=${req.topK ?? 5}`,
+			`/v2/clubs/rankings?topk=${req.topK ?? 5}`,
 		)
 
 		return response
 	},
 	requestClubManager: async req => {
-		console.log('[requestClubManager] req:', req)
 		await apiConnector.post<void>('/v2/managers/me/clubs', req)
-		console.log('[requestClubManager] 204 success')
 	},
 	listSavedClubs: async () => {
-		const response = await apiConnector.get<ListSavedClubsResponse>('/v1/users/me/clubs/saved')
+		const response = await apiConnector.get<ListSavedClubsResponse>('/v2/users/me/clubs/saved')
 
 		return response
 	},
 	createSavedClub: async req => {
-		await apiConnector.post<void>(`/v1/clubs/${req.clubId}/saved`)
+		await apiConnector.post<void>(`/v2/clubs/${req.clubId}/saved`)
 	},
 	removeSavedClub: async req => {
-		await apiConnector.delete<void>(`/v1/clubs/${req.clubId}/saved`)
+		await apiConnector.delete<void>(`/v2/clubs/${req.clubId}/saved`)
 	},
 	listMyClubs: async () => {
-		const response = await apiConnector.get<ListMyClubsResponse>('/v1/users/me/clubs')
+		const response = await apiConnector.get<ListMyClubsResponse>('/v2/users/me/clubs')
+
+		return response
+	},
+	listRandomRecommendations: async () => {
+		const response = await apiConnector.get<ListRandomRecommendationsResponse>(
+			'/v2/clubs/recommendations/random',
+		)
 
 		return response
 	},

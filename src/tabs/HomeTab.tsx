@@ -4,7 +4,7 @@ import ClubDetailScreen from '@/features/club/screens/ClubDetailScreen'
 import ClubListScreen from '@/features/club/screens/ClubListScreen'
 import ClubReviewScreen from '@/features/club/screens/ClubReviewScreen'
 import HomeScreen from '@/features/home/screens/HomeScreen'
-import SearchResultClubListScreen from '@/features/club/screens/SearchResultClubListScreen'
+import WebViewScreen from '@/features/webview/screens/WebviewScreen'
 
 const Stack = createNativeStackNavigator<StackParamList>()
 
@@ -28,9 +28,9 @@ export function HomeTab() {
 				component={ClubReviewScreen}
 			/>
 			<Stack.Screen
-				key={SCREEN_TYPE.SEARCH_RESULT_CLUB_LIST}
-				name={SCREEN_TYPE.SEARCH_RESULT_CLUB_LIST}
-				component={SearchResultClubListScreen}
+				key={SCREEN_TYPE.WEBVIEW}
+				name={SCREEN_TYPE.WEBVIEW}
+				component={WebViewScreen}
 			/>
 		</Stack.Navigator>
 	)

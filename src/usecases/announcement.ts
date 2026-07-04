@@ -1,7 +1,12 @@
-import { AnnouncementRepository, ListAnnouncementsResponse } from '@/repositories/announcement'
+import {
+	AnnouncementRepository,
+	DismissAnnouncementsRequest,
+	ListAnnouncementsResponse,
+} from '@/repositories/announcement'
 
 export type AnnouncementService = {
 	listAnnouncements: () => Promise<ListAnnouncementsResponse>
+	dismissAnnouncements: (request: DismissAnnouncementsRequest) => Promise<void>
 }
 
 type Deps = {
@@ -10,4 +15,5 @@ type Deps = {
 
 export const getAnnouncementService = ({ repositories }: Deps): AnnouncementService => ({
 	listAnnouncements: repositories[0].listAnnouncements,
+	dismissAnnouncements: repositories[0].dismissAnnouncements,
 })

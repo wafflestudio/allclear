@@ -1,15 +1,15 @@
 export type SearchFilterToggleGroupOption = {
-  label: string
-  value: string
+	label: string
+	value: string
 }
 
 export type SearchFilterToggleGroupAllItem = {
-  label: string
+	label: string
 }
 
 export type SearchFilterToggleGroupSelectionMode = 'single' | 'multiple'
 
 export type SearchFilterToggleGroupSelection =
-  | { kind: 'all' }
-  | { kind: 'none' }
-  | { kind: 'values'; values: string[] }
+	| { kind: 'all' }
+	| { kind: 'none' }
+	| { kind: 'values'; values: string[] }

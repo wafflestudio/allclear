@@ -8,7 +8,7 @@ import { Club } from '@/entities/club'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import React, { useContext } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import Header from '@/features/club/components/ClubList/Header'
+import Header from '@/shared/components/BackHeader'
 import WithViewEventLog from '@/shared/hocs/WithViewEventLog'
 import ClubList from '@/features/club/components/ClubList/ClubList'
 import { Colors } from '@/shared/constants/colors'
@@ -23,7 +23,7 @@ type Props = {
 
 const ClubListScreen = ({ route, navigation }: Props) => {
 	const { name, category } = route.params
-	const { data: clubs } = useCategoryClubs({ name, category })
+	const { data: clubs, isLoading } = useCategoryClubs({ name, category })
 
 	if (!category) return null
 	const categoryDetail = CategoryMap[category]
@@ -56,6 +56,7 @@ const ClubListScreen = ({ route, navigation }: Props) => {
 					category={category}
 					openDetailPage={openDetailPage}
 					emptyPlaceholder="조건에 맞는 동아리가 없어요"
+					isLoading={isLoading}
 				/>
 			</SafeAreaView>
 		</WithViewEventLog>
@@ -77,8 +78,7 @@ const useCategoryClubs = ({ name, category }: UseCategoryClubsProps) => {
 		() => clubService.listClubs({ name, category }),
 		{
 			select: data => data.clubs,
-			staleTime: 60 * 1000,
-			cacheTime: 5 * 60 * 1000,
+			staleTime: Infinity,
 		},
 	)
 }

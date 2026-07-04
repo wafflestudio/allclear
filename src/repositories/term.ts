@@ -7,8 +7,13 @@ export type ListTermsResponse = {
 	data: Term[]
 }
 
+export type AgreeTermsRequest = {
+	termUuids: Term['uuid'][]
+}
+
 export type TermRepository = {
 	listTerms: () => Promise<ListTermsResponse>
+	agreeTerms: (request: AgreeTermsRequest) => Promise<void>
 }
 
 export const getTermRepository = (): TermRepository => ({
@@ -19,8 +24,17 @@ export const getTermRepository = (): TermRepository => ({
 			throw new Error('No token found')
 		}
 
-		const response = await apiConnector.get<ListTermsResponse>('/v1/terms')
+		const response = await apiConnector.get<ListTermsResponse>('/v2/terms')
 
 		return response
+	},
+	agreeTerms: async request => {
+		const token = await AsyncStorage.getItem(LOGIN_TOKEN)
+
+		if (!token) {
+			throw new Error('No token found')
+		}
+
+		await apiConnector.post('/v2/terms/agree', request)
 	},
 })

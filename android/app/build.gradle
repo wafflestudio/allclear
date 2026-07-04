@@ -79,7 +79,7 @@ def resolveVersionCode = { propertyName, defaultValue ->
     return value != null ? value.toString().toInteger() : defaultValue
 }
 
-def appVersionCode = resolveVersionCode("VERSION_CODE", 30)
+def appVersionCode = resolveVersionCode("VERSION_CODE", 31)
 def hasReleaseSigningProps =
     hasProperty("ALLCLEAR_UPLOAD_STORE_FILE") &&
     hasProperty("ALLCLEAR_UPLOAD_KEY_ALIAS") &&
@@ -105,7 +105,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode appVersionCode
-        versionName "2.1.4"
+        versionName "3.0.0"
         manifestPlaceholders = [kakaoScheme: kakaoScheme]
         resValue "string", "build_config_package", "com.padocorp.clubhouse"
         resValue "string", "app_name", "올클"

@@ -3,6 +3,7 @@ import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import SavedClubListScreen from '@/features/club/screens/SavedClubListScreen'
 import ClubReviewScreen from '@/features/club/screens/ClubReviewScreen'
 import ClubDetailScreen from '@/features/club/screens/ClubDetailScreen'
+import WebViewScreen from '@/features/webview/screens/WebviewScreen'
 
 const Stack = createNativeStackNavigator<StackParamList>()
 
@@ -23,6 +24,11 @@ export function SavedTab() {
 				key={SCREEN_TYPE.CLUB_REVIEW}
 				name={SCREEN_TYPE.CLUB_REVIEW}
 				component={ClubReviewScreen}
+			/>
+			<Stack.Screen
+				key={SCREEN_TYPE.WEBVIEW}
+				name={SCREEN_TYPE.WEBVIEW}
+				component={WebViewScreen}
 			/>
 		</Stack.Navigator>
 	)

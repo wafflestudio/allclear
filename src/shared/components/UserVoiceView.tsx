@@ -1,5 +1,4 @@
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet'
-import { Colors } from '@/shared/constants/colors'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import React, { useContext } from 'react'
 import { Keyboard, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
@@ -29,7 +28,7 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 			}, 1000)
 
 			setInput('')
-		} catch (error) {
+		} catch {
 			Toast.show({
 				type: 'info',
 				text1: `이런! 문제가 생겼어요!`,
@@ -64,7 +63,10 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 				<TouchableOpacity
 					disabled={!input}
 					onPress={handleSubmit}
-					style={[styles.button, { backgroundColor: '#3A3434' /* #deprecated color */, marginTop: 'auto' }]}>
+					style={[
+						styles.button,
+						{ backgroundColor: '#3A3434' /* #deprecated color */, marginTop: 'auto' },
+					]}>
 					<Text
 						style={{
 							color: '#FFFFFF', // #deprecated color

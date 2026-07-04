@@ -1,16 +1,26 @@
 import { useQuery } from '@tanstack/react-query'
 import { Colors } from '@/shared/constants/colors'
+import { typography } from '@/shared/constants/typography'
 import { useProfile } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
+import { ms, s, vs } from '@/shared/utils/scale'
+import { navigation } from '@/shared/utils/navigation'
+import Header from '@/shared/components/BackHeader'
 import React, { useContext, useState } from 'react'
-import { Keyboard, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import {
+	ActivityIndicator,
+	Keyboard,
+	Pressable,
+	StyleSheet,
+	Text,
+	TextInput,
+	View,
+} from 'react-native'
 import DropDownPicker from 'react-native-dropdown-picker'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import CommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { navigation } from '@/shared/utils/navigation'
-import Header from '@/features/mypage/screens/EditProfileScreen/Header'
-import Toast from 'react-native-toast-message'
 
 const EditProfileScreen = () => {
 	const { user, setUser } = useProfile()
@@ -20,21 +30,29 @@ const EditProfileScreen = () => {
 	const [name, setName] = useState(user?.nickname || '')
 	const [college, setCollege] = useState(user?.college || '')
 	const [major, setMajor] = useState(user?.major || '')
-	const [admissionClass, setAdmissionClass] = useState(user?.admissionClass || 24)
+	const [admissionClass, setAdmissionClass] = useState(user?.admissionClass ?? 26)
 
 	const [openCollegeDropDown, setOpenCollegeDropDown] = useState(false)
 	const [openMajorDropDown, setOpenMajorDropDown] = useState(false)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
+	const isFormValid = !!name && !!college && !!major
+	const hasChanges =
+		name !== (user?.nickname || '') ||
+		college !== (user?.college || '') ||
+		major !== (user?.major || '') ||
+		admissionClass !== (user?.admissionClass ?? 26)
+	const canSubmit = isFormValid && hasChanges
+
 	const colleges = collegeMajors?.reduce((acc, cur) => {
-		if (!acc.includes(cur.college)) {
+		if (cur.college && !acc.includes(cur.college)) {
 			acc.push(cur.college)
 		}
 		return acc
 	}, [] as string[])
 
 	const majors = collegeMajors?.reduce((acc, cur) => {
-		if (!acc.includes(cur.major) && cur.college === college) {
+		if (cur.major && !acc.includes(cur.major) && cur.college === college) {
 			acc.push(cur.major)
 		}
 		return acc
@@ -43,113 +61,56 @@ const EditProfileScreen = () => {
 	const handleSubmit = async () => {
 		try {
 			setIsSubmitting(true)
-			// validation
-			if (!name) {
-				Toast.show({
-					type: 'info',
-					text1: '이름을 입력해주세요',
-					position: 'bottom',
-				})
-				return
-			}
-
-			if (!college) {
-				Toast.show({
-					type: 'info',
-					text1: '단과대를 선택해주세요',
-					position: 'bottom',
-				})
-				return
-			}
-
-			if (!major) {
-				Toast.show({
-					type: 'info',
-					text1: '학과를 선택해주세요',
-					position: 'bottom',
-				})
-				return
-			}
 
 			const collegeMajorId = collegeMajors?.find(
 				cm => cm.college === college && cm.major === major,
 			)?.id
 
 			if (!collegeMajorId) {
-				Toast.show({
-					type: 'info',
-					text1: '단과대 및 학과를 다시 선택해주세요',
-					position: 'bottom',
-				})
+				Toast.show({ type: 'info', text1: '단과대 및 학과를 다시 선택해주세요' })
 				return
 			}
 
 			Keyboard.dismiss()
-			await userService.updateUser({
-				nickname: name,
-				collegeMajorId,
-				major,
-				admissionClass,
-			})
+			await userService.updateUser({ nickname: name, collegeMajorId, major, admissionClass })
 
 			const updatedUser = await userService.getUser()
 			setUser(updatedUser)
 			navigation.goBack()
 
-			Toast.show({
-				type: 'info',
-				text1: `프로필이 수정되었어요!`,
-				position: 'bottom',
-				visibilityTime: 2000,
-			})
-		} catch (err) {
-			Toast.show({
-				type: 'info',
-				text1: `이런! 문제가 생겼어요!`,
-				position: 'bottom',
-				visibilityTime: 2000,
-			})
+			Toast.show({ type: 'info', text1: '프로필이 수정되었어요!' })
+		} catch {
+			Toast.show({ type: 'info', text1: '이런! 문제가 생겼어요!' })
 		} finally {
 			setIsSubmitting(false)
 		}
 	}
 
+	const closeDropdowns = () => {
+		setOpenCollegeDropDown(false)
+		setOpenMajorDropDown(false)
+	}
+
 	return (
-		<SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: '#F5F4F0' }}>
-			<Header onBack={() => navigation.goBack()} />
-			<View style={{ padding: 16 }}>
-				<View style={{ marginBottom: 32 }}>
-					<Text
-						style={{
-							color: '#8F8686', // #deprecated color
-							fontWeight: 'bold',
-							marginBottom: 8,
-						}}>
-						이름
-					</Text>
+		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+			<Header title="프로필 수정" onBack={() => navigation.goBack()} />
+
+			<Pressable style={styles.formArea} onPress={closeDropdowns}>
+				<View style={styles.card}>
+					<Text style={styles.label}>이름</Text>
 					<TextInput
-						style={{
-							borderRadius: 12,
-							paddingHorizontal: 20,
-							paddingVertical: 16,
-							backgroundColor: '#FFFFFF', // #deprecated color
-						}}
+						style={styles.input}
 						value={name}
 						onChangeText={setName}
+						onFocus={closeDropdowns}
 						placeholder="이름을 입력하세요"
-						maxLength={10}
+						placeholderTextColor={Colors.BODYTEXT_DISABLED}
+						maxLength={20}
 					/>
 				</View>
 
-				<View style={{ marginBottom: 8, zIndex: 10, position: 'relative' }}>
-					<Text
-						style={{
-							color: '#8F8686', // #deprecated color
-							fontWeight: 'bold',
-							marginBottom: 8,
-						}}>
-						단과대 및 학과
-					</Text>
+				<View style={[styles.card, { zIndex: 10 }]}>
+					<Text style={styles.label}>단과대 및 학과</Text>
 					<DropDownPicker
 						open={openCollegeDropDown}
 						setOpen={val => {
@@ -158,30 +119,23 @@ const EditProfileScreen = () => {
 						}}
 						value={college}
 						setValue={setCollege}
+						onSelectItem={item => {
+							if (item.value !== college) setMajor('')
+						}}
 						items={colleges?.map(c => ({ label: c, value: c })) ?? []}
 						placeholder="단과대를 선택해주세요"
-						style={{
-							borderWidth: 0,
-							paddingHorizontal: 20,
-							paddingVertical: 12,
-							borderRadius: 12,
-						}}
-						dropDownContainerStyle={{
-							borderWidth: 0,
-							backgroundColor: '#FFFFFF', // #deprecated color
-							paddingHorizontal: 12,
-							paddingVertical: 4,
-							zIndex: 11,
-						}}
+						style={styles.picker}
+						dropDownContainerStyle={styles.pickerDropdown}
+						placeholderStyle={styles.pickerPlaceholder}
+						textStyle={styles.pickerText}
 						closeOnBackPressed
 						ArrowDownIconComponent={renderArrowDownIcon}
 						ArrowUpIconComponent={renderArrowUpIcon}
 					/>
-				</View>
-				<View style={{ marginBottom: 32, zIndex: 9, position: 'relative' }}>
+					<View style={styles.pickerGap} />
 					<DropDownPicker
 						disabled={!college}
-						disabledStyle={{ backgroundColor: '#E6E0DF' /* #deprecated color */ }}
+						disabledStyle={styles.pickerDisabled}
 						open={openMajorDropDown}
 						setOpen={val => {
 							setOpenCollegeDropDown(false)
@@ -191,81 +145,50 @@ const EditProfileScreen = () => {
 						setValue={setMajor}
 						items={majors?.map(c => ({ label: c, value: c })) ?? []}
 						placeholder="학과를 선택해주세요"
-						style={{
-							zIndex: -1,
-							borderWidth: 0,
-							paddingHorizontal: 20,
-							paddingVertical: 12,
-							borderRadius: 12,
-						}}
-						dropDownContainerStyle={{
-							borderWidth: 0,
-							backgroundColor: '#FFFFFF', // #deprecated color
-							paddingHorizontal: 12,
-							paddingVertical: 4,
-						}}
+						style={[styles.picker, { zIndex: -1 }]}
+						dropDownContainerStyle={styles.pickerDropdown}
+						placeholderStyle={styles.pickerPlaceholder}
+						textStyle={styles.pickerText}
 						closeOnBackPressed
 						ArrowDownIconComponent={renderArrowDownIcon}
 						ArrowUpIconComponent={renderArrowUpIcon}
 					/>
 				</View>
 
-				<View style={{ marginBottom: 40 }}>
-					<Text
-						style={{
-							color: '#8F8686', // #deprecated color
-							fontWeight: 'bold',
-							marginBottom: 8,
-						}}>
-						학번
-					</Text>
-					<View
-						style={{
-							backgroundColor: '#FFFFFF', // #deprecated color
-							borderWidth: 0,
-							borderRadius: 12,
-							paddingHorizontal: 20,
-							paddingVertical: 12,
-							flexDirection: 'row',
-							alignItems: 'center',
-							justifyContent: 'space-between',
-						}}>
-						<TouchableOpacity onPress={() => setAdmissionClass(Math.max(admissionClass - 1, 0))}>
-							<CommunityIcon name="minus" size={24} color={'#C5BBB8' /* #deprecated color */} />
-						</TouchableOpacity>
+				<View style={styles.card}>
+					<Text style={styles.label}>학번</Text>
+					<View style={styles.stepperRow}>
+						<Pressable
+							style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressed]}
+							onPress={() => setAdmissionClass(Math.max(admissionClass - 1, 0))}>
+							<CommunityIcon name="minus" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
+						</Pressable>
 						<Text
-							style={{
-								fontSize: 16,
-								fontWeight: 'bold',
-								color: '#3A3434', // #deprecated color
-							}}>{`${admissionClass}학번`}</Text>
-						<TouchableOpacity onPress={() => setAdmissionClass(Math.min(admissionClass + 1, 30))}>
-							<CommunityIcon name="plus" size={24} color={'#C5BBB8' /* #deprecated color */} />
-						</TouchableOpacity>
+							style={styles.stepperValue}>{`${String(admissionClass).padStart(2, '0')}학번`}</Text>
+						<Pressable
+							style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressed]}
+							onPress={() => setAdmissionClass(Math.min(admissionClass + 1, 30))}>
+							<CommunityIcon name="plus" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
+						</Pressable>
 					</View>
 				</View>
-			</View>
-			<View style={{ flex: 1, paddingHorizontal: 16 }}>
-				<TouchableOpacity
-					disabled={isSubmitting}
+			</Pressable>
+
+			<View style={styles.submitContainer}>
+				<Pressable
+					disabled={!canSubmit || isSubmitting}
 					onPress={handleSubmit}
-					style={{
-						padding: 16,
-						borderRadius: 12,
-						marginBottom: 12,
-						backgroundColor: '#3A3434', // #deprecated color
-						marginTop: 'auto',
-					}}>
-					<Text
-						style={{
-							color: '#FFFFFF', // #deprecated color
-							fontSize: 16,
-							textAlign: 'center',
-							fontWeight: 'bold',
-						}}>
-						저장
-					</Text>
-				</TouchableOpacity>
+					style={({ pressed }) => [
+						styles.submitButton,
+						(!canSubmit || isSubmitting) && styles.submitButtonDisabled,
+						pressed && canSubmit && styles.pressed,
+					]}>
+					{isSubmitting ? (
+						<ActivityIndicator color={Colors.WHITE} />
+					) : (
+						<Text style={styles.submitText}>저장</Text>
+					)}
+				</Pressable>
 			</View>
 		</SafeAreaView>
 	)
@@ -282,9 +205,96 @@ const useCollegeMajors = () => {
 }
 
 function renderArrowDownIcon() {
-	return <Icon name="keyboard-arrow-down" size={24} style={{ color: '#C5BBB8' /* #deprecated color */ }} />
+	return <Icon name="keyboard-arrow-down" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
 }
 
 function renderArrowUpIcon() {
-	return <Icon name="keyboard-arrow-up" size={24} style={{ color: '#C5BBB8' /* #deprecated color */ }} />
+	return <Icon name="keyboard-arrow-up" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
 }
+
+const styles = StyleSheet.create({
+	safeArea: {
+		flex: 1,
+		backgroundColor: Colors.BACKGROUND_SUB,
+	},
+	formArea: {
+		flex: 1,
+		padding: s(16),
+		gap: vs(12),
+	},
+	card: {
+		backgroundColor: Colors.WHITE,
+		borderRadius: ms(12),
+		paddingHorizontal: s(24),
+		paddingVertical: s(20),
+	},
+	label: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_SUB,
+		marginBottom: vs(8),
+	},
+	input: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_MAIN,
+	},
+	picker: {
+		borderWidth: 0,
+		paddingHorizontal: 0,
+		paddingVertical: vs(4),
+		backgroundColor: Colors.WHITE,
+		borderRadius: ms(12),
+	},
+	pickerDropdown: {
+		borderWidth: 0,
+		backgroundColor: Colors.WHITE,
+		paddingHorizontal: s(4),
+		paddingVertical: vs(4),
+	},
+	pickerPlaceholder: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_DISABLED,
+	},
+	pickerText: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_MAIN,
+	},
+	pickerDisabled: {
+		backgroundColor: Colors.TEXTBOX_UNSELECTED,
+		borderRadius: ms(12),
+	},
+	pickerGap: {
+		height: vs(8),
+	},
+	stepperRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+	},
+	stepperValue: {
+		...typography.bodyMSemibold,
+		color: Colors.BODYTEXT_MAIN,
+	},
+	stepperBtn: {
+		padding: s(4),
+	},
+	pressed: {
+		opacity: 0.5,
+	},
+	submitContainer: {
+		paddingHorizontal: s(16),
+		paddingBottom: vs(16),
+	},
+	submitButton: {
+		backgroundColor: Colors.BUTTON_SELECTED,
+		borderRadius: ms(12),
+		paddingVertical: vs(16),
+		alignItems: 'center',
+	},
+	submitButtonDisabled: {
+		opacity: 0.4,
+	},
+	submitText: {
+		...typography.bodyMSemibold,
+		color: Colors.WHITE,
+	},
+})

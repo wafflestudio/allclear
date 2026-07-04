@@ -10,7 +10,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "cp &quot;${PROJECT_DIR}/../.env.local&quot; &quot;${PROJECT_DIR}/../.env&quot;&#10;&#10;echo &#x201c;.env.local&#x201d; &gt; /tmp/envfile&#10;&#10;touch &quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildDotenvConfig.rb&quot;&#10;&quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb&quot; &quot;${PROJECT_DIR}/..&quot; &quot;${PROJECT_DIR}/tmp.xcconfig&quot;&#10;">
+               scriptText = "echo &quot;.env.local&quot; &gt; /tmp/envfile&#10;&#10;touch &quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildDotenvConfig.rb&quot;&#10;&quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb&quot; &quot;${PROJECT_DIR}/..&quot; &quot;${PROJECT_DIR}/tmp.xcconfig&quot;&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
@@ -63,7 +63,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "cp &quot;${PROJECT_DIR}/../.env.local&quot; &quot;${PROJECT_DIR}/../.env&quot;&#10;&#10;echo &#x201c;.env.local&#x201d; &gt; /tmp/envfile&#10;&#10;touch &quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildDotenvConfig.rb&quot;&#10;&quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb&quot; &quot;${PROJECT_DIR}/..&quot; &quot;${PROJECT_DIR}/tmp.xcconfig&quot;&#10;">
+               scriptText = "echo &quot;.env.local&quot; &gt; /tmp/envfile&#10;&#10;touch &quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildDotenvConfig.rb&quot;&#10;&quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb&quot; &quot;${PROJECT_DIR}/..&quot; &quot;${PROJECT_DIR}/tmp.xcconfig&quot;&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"

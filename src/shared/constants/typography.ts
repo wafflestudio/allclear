@@ -25,7 +25,7 @@ export const typography = {
 	// Header
 	headerXXLSemibold: base(25, '600'),
 	headerXL: base(20, '700'),
-	headerL: base(16, '700'),
+	headerL: base(16, '600'),
 	headerXXL: base(25, '700', 30),
 	headerXLSemibold: base(20, '600', 24),
 	// Body
@@ -39,4 +39,5 @@ export const typography = {
 	bodyMRegular: base(14, '400'),
 	bodyMSemibold: base(14, '600'),
 	bodyMMedium: base(14, '500'),
+	bodyMMedium13px: base(13, '500'),
 }

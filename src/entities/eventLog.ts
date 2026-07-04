@@ -17,7 +17,7 @@ export type EventLogParameter<T extends EventLogParameterType> = {
 type BaseParameter = {
 	screen_name:
 		| 'home_screen'
-		| 'search_result_screen'
+		| 'search_screen'
 		| 'club_list_screen'
 		| 'club_detail_screen'
 		| 'club_review_screen'

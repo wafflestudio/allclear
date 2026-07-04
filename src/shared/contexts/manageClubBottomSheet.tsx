@@ -4,7 +4,7 @@ import {
 	BottomSheetModal,
 } from '@gorhom/bottom-sheet'
 import React, { createContext, useCallback, useContext, useEffect, useRef } from 'react'
-import { BackHandler, Platform } from 'react-native'
+import { BackHandler } from 'react-native'
 import ManageClubView from '@/shared/components/ManageClubView'
 
 const ManageClubBottomSheetContext = createContext<{
@@ -67,20 +67,20 @@ export const ManageClubBottomSheetProvider = ({ children }: Props) => {
 				closeBottomSheet,
 			}}>
 			{children}
-				<BottomSheetModal
-					ref={bottomSheetModalRef}
-					index={0}
-					snapPoints={[370]}
-					onDismiss={() => {
-						isBottomSheetOpenRef.current = false
-					}}
-					backdropComponent={renderBackdrop}
-					// Remove the default handle visible on top of the sheet to match Figma
-					handleComponent={() => null}
-					enableHandlePanningGesture={false}
-					handleIndicatorStyle={{ height: 0 }}>
-					<ManageClubView closeBottomSheet={closeBottomSheet} />
-				</BottomSheetModal>
+			<BottomSheetModal
+				ref={bottomSheetModalRef}
+				index={0}
+				snapPoints={[370]}
+				onDismiss={() => {
+					isBottomSheetOpenRef.current = false
+				}}
+				backdropComponent={renderBackdrop}
+				// Remove the default handle visible on top of the sheet to match Figma
+				handleComponent={() => null}
+				enableHandlePanningGesture={false}
+				handleIndicatorStyle={{ height: 0 }}>
+				<ManageClubView closeBottomSheet={closeBottomSheet} />
+			</BottomSheetModal>
 		</ManageClubBottomSheetContext.Provider>
 	)
 }
