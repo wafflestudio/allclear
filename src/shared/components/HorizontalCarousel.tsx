@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React from 'react'
 import { StyleSheet, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 
@@ -18,61 +18,54 @@ const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
 	const { listRef, pauseAutoScroll, resumeAutoScroll, ...scrollEventProps } = useAutoScroll<Club>(
 		clubs.length,
 	)
-	const isUserDraggingRef = useRef(false)
-	const isMomentumScrollingRef = useRef(false)
 
 	const handleScrollBeginDrag = () => {
-		isUserDraggingRef.current = true
-		isMomentumScrollingRef.current = false
 		pauseAutoScroll()
 	}
 
 	const handleScrollEndDrag = () => {
-		isUserDraggingRef.current = false
 		resumeAutoScroll(350)
 	}
 
 	const handleMomentumScrollBegin = () => {
-		isMomentumScrollingRef.current = true
 		pauseAutoScroll()
 	}
 
 	const handleMomentumScrollEnd = () => {
-		isMomentumScrollingRef.current = false
 		resumeAutoScroll(450)
 	}
 
 	return (
-		<Animated.FlatList
-			ref={listRef}
-			{...scrollEventProps}
-			horizontal
-			decelerationRate="normal"
-			showsHorizontalScrollIndicator={false}
-			style={styles.list}
-			contentContainerStyle={styles.contentContainer}
-			scrollEventThrottle={16}
-			onScrollBeginDrag={handleScrollBeginDrag}
-			onScrollEndDrag={handleScrollEndDrag}
-			onMomentumScrollBegin={handleMomentumScrollBegin}
-			onMomentumScrollEnd={handleMomentumScrollEnd}
-			data={clubs}
-			keyExtractor={item => item.id}
-			ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-			renderItem={({ item }) => (
-				<ClubPreviewCard
-					title={item.name}
-					description={item.description ?? ''}
-					imageSource={{ uri: item.imageUri }}
-					onPress={() => onPressClub(item)}
-					onPressIn={pauseAutoScroll}
-					onPressOut={() => resumeAutoScroll(150)}
-					shouldHandleManualTap={() =>
-						!isUserDraggingRef.current && !isMomentumScrollingRef.current
-					}
-				/>
-			)}
-		/>
+		<View
+			onTouchStart={pauseAutoScroll}
+			onTouchEnd={() => resumeAutoScroll(300)}
+			onTouchCancel={() => resumeAutoScroll(300)}>
+			<Animated.FlatList
+				ref={listRef}
+				{...scrollEventProps}
+				horizontal
+				decelerationRate="normal"
+				showsHorizontalScrollIndicator={false}
+				style={styles.list}
+				contentContainerStyle={styles.contentContainer}
+				scrollEventThrottle={16}
+				onScrollBeginDrag={handleScrollBeginDrag}
+				onScrollEndDrag={handleScrollEndDrag}
+				onMomentumScrollBegin={handleMomentumScrollBegin}
+				onMomentumScrollEnd={handleMomentumScrollEnd}
+				data={clubs}
+				keyExtractor={item => item.id}
+				ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+				renderItem={({ item }) => (
+					<ClubPreviewCard
+						title={item.name}
+						description={item.description ?? ''}
+						imageSource={{ uri: item.imageUri }}
+						onPress={() => onPressClub(item)}
+					/>
+				)}
+			/>
+		</View>
 	)
 }
 
