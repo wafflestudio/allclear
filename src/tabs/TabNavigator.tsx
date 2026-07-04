@@ -11,6 +11,7 @@ import { Image, Pressable, type ImageSourcePropType } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { HomeTab } from '@/tabs/HomeTab'
 import { MyPageTab } from '@/tabs/MyPageTab'
+import { RegisterClubTab } from '@/tabs/RegisterClubTab'
 import { s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 import { SavedTab } from './SaveTab'
@@ -116,6 +117,11 @@ export function TabNavigator() {
 				})}
 				name="탐색"
 				component={SearchTab}
+			/>
+			<Tab.Screen
+				options={{ tabBarButton: () => null, tabBarStyle: { display: 'none' } }}
+				name="등록"
+				component={RegisterClubTab}
 			/>
 			<Tab.Screen
 				options={({ route }) => ({

@@ -37,8 +37,11 @@ const ManageClubView = ({ closeBottomSheet }: Props) => {
 			return
 		}
 
-		// TODO: Handle campus club registration
+		// 교내: close bottom sheet first, then launch the full-screen registration wizard
 		closeBottomSheet()
+		setTimeout(() => {
+			navigation.navigate('등록')
+		}, 300)
 	}
 
 	const handleCampusOnlyConfirm = () => {
