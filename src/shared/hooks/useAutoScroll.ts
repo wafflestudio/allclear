@@ -1,5 +1,5 @@
 import { useFocusEffect } from '@react-navigation/native'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import type { LayoutChangeEvent } from 'react-native'
 import { Gesture } from 'react-native-gesture-handler'
 import Animated, {
@@ -23,9 +23,9 @@ const useAutoScroll = <T>(itemCount: number) => {
 	const listRef = useAnimatedRef<Animated.FlatList<T>>()
 	const offset = useSharedValue(0)
 	const maxOffset = useSharedValue(0)
-	const contentWidth = useSharedValue(0)
-	const listWidth = useSharedValue(0)
 	const isInteracting = useSharedValue(false)
+	const latestContentWidth = useRef(0)
+	const latestListWidth = useRef(0)
 
 	useFrameCallback(() => {
 		'worklet'
@@ -66,16 +66,16 @@ const useAutoScroll = <T>(itemCount: number) => {
 	)
 
 	const updateMaxOffset = () => {
-		maxOffset.value = Math.max(contentWidth.value - listWidth.value, 0)
+		maxOffset.value = Math.max(latestContentWidth.current - latestListWidth.current, 0)
 	}
 
 	const handleLayout = (event: LayoutChangeEvent) => {
-		listWidth.value = event.nativeEvent.layout.width
+		latestListWidth.current = event.nativeEvent.layout.width
 		updateMaxOffset()
 	}
 
 	const handleContentSizeChange = (width: number) => {
-		contentWidth.value = width
+		latestContentWidth.current = width
 		updateMaxOffset()
 	}
 
