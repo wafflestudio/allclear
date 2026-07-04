@@ -24,16 +24,19 @@ const FlowScreenFooter = ({
 			<TouchableOpacity style={styles.backButton} onPress={onBack} hitSlop={8}>
 				<Text style={styles.backButtonText}>{backLabel}</Text>
 			</TouchableOpacity>
-			{rightSlot ?? (nextLabel && onNext ? (
-				<TouchableOpacity
-					style={[styles.nextButton, nextDisabled && styles.nextButtonDisabled]}
-					onPress={onNext}
-					disabled={nextDisabled}>
-					<Text style={[styles.nextButtonText, nextDisabled && styles.nextButtonTextDisabled]}>{nextLabel}</Text>
-				</TouchableOpacity>
-			) : (
-				<View style={styles.nextButtonSpacer} />
-			))}
+			{rightSlot ??
+				(nextLabel && onNext ? (
+					<TouchableOpacity
+						style={[styles.nextButton, nextDisabled && styles.nextButtonDisabled]}
+						onPress={onNext}
+						disabled={nextDisabled}>
+						<Text style={[styles.nextButtonText, nextDisabled && styles.nextButtonTextDisabled]}>
+							{nextLabel}
+						</Text>
+					</TouchableOpacity>
+				) : (
+					<View style={styles.nextButtonSpacer} />
+				))}
 		</View>
 	)
 }

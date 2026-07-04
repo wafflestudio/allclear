@@ -38,6 +38,8 @@ post_install do |installer|
     target.build_configurations.each do |config|
       config.build_settings['RCT_NEW_ARCH_ENABLED'] = '0'
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.0'
+      # Folly New.h + Xcode 26 clang sized-deallocation 충돌 패치
+      config.build_settings['OTHER_CPLUSPLUSFLAGS'] = '$(inherited) -fno-sized-deallocation'
     end
 
   end

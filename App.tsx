@@ -17,10 +17,15 @@ import { getAuthRepository } from '@/repositories/auth'
 import { getCategoryRepository } from '@/repositories/category'
 import { getClubRepository } from '@/repositories/club'
 import { getRecentSearchRepository } from '@/repositories/recentSearch'
+import { getRecruitmentRepository } from '@/repositories/recruitment'
 import { getReviewRepository } from '@/repositories/review'
 import { getTermRepository } from '@/repositories/term'
 import { getUserRepository } from '@/repositories/user'
 import { TabNavigator } from '@/tabs/TabNavigator'
+import { createNativeStackNavigator } from '@react-navigation/native-stack'
+import AnnouncementRegistrationScreen from '@/features/club/screens/AnnouncementRegistrationScreen'
+import AnnouncementEditScreen from '@/features/club/screens/AnnouncementEditScreen'
+import { SCREEN_TYPE } from '@/shared/constants/screen'
 import { getAnnouncementService } from '@/usecases/announcement'
 import { getAppVersionService } from '@/usecases/appVersion'
 import { getAuthService } from '@/usecases/auth'
@@ -28,6 +33,7 @@ import { getCategoryService } from '@/usecases/category'
 import { getClubService } from '@/usecases/club'
 import { getEventLogService } from '@/usecases/eventLog'
 import { getRecentSearchService } from '@/usecases/recentSearch'
+import { getRecruitmentService } from '@/usecases/recruitment'
 import { getReviewService } from '@/usecases/review'
 import { getTermService } from '@/usecases/term'
 import { getUserService } from '@/usecases/user'
@@ -39,6 +45,8 @@ import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
 import ForceUpdateGate from '@/shared/components/ForceUpdateGate'
 import AppModalManager from '@/shared/components/AppModalManager'
+
+const RootStack = createNativeStackNavigator()
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -58,6 +66,7 @@ function App(): React.JSX.Element {
 	const categoryRepository = getCategoryRepository()
 	const clubRepository = getClubRepository()
 	const recentSearchRepository = getRecentSearchRepository()
+	const recruitmentRepository = getRecruitmentRepository()
 	const reviewRepository = getReviewRepository()
 	const termRepository = getTermRepository()
 	const userRepository = getUserRepository()
@@ -69,6 +78,7 @@ function App(): React.JSX.Element {
 	const clubService = getClubService({ repositories: [clubRepository] })
 	const eventLogService = getEventLogService()
 	const recentSearchService = getRecentSearchService({ repositories: [recentSearchRepository] })
+	const recruitmentService = getRecruitmentService({ repositories: [recruitmentRepository] })
 	const reviewService = getReviewService({ repositories: [reviewRepository] })
 	const termService = getTermService({ repositories: [termRepository] })
 	const userService = getUserService({ repositories: [userRepository] })
@@ -81,6 +91,7 @@ function App(): React.JSX.Element {
 		clubService,
 		eventLogService,
 		recentSearchService,
+		recruitmentService,
 		reviewService,
 		termService,
 		userService,
@@ -116,7 +127,17 @@ function App(): React.JSX.Element {
 										<ManageClubBottomSheetProvider>
 											<ForceUpdateGate>
 												<NavigationContainer ref={_navigationRef} linking={linking}>
-													<TabNavigator />
+													<RootStack.Navigator screenOptions={{ headerShown: false }}>
+														<RootStack.Screen name="Main" component={TabNavigator} />
+														<RootStack.Screen
+															name={SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION}
+															component={AnnouncementRegistrationScreen}
+														/>
+														<RootStack.Screen
+															name={SCREEN_TYPE.ANNOUNCEMENT_EDIT}
+															component={AnnouncementEditScreen}
+														/>
+													</RootStack.Navigator>
 												</NavigationContainer>
 												<AppModalManager />
 											</ForceUpdateGate>

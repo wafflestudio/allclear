@@ -18,7 +18,9 @@ const FlowScreenLayout = ({
 }: Props) => {
 	return (
 		<View style={[styles.root, { backgroundColor }]}>
-			<KeyboardAvoidingView style={styles.keyboardAvoidingView} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+			<KeyboardAvoidingView
+				style={styles.keyboardAvoidingView}
+				behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<ScrollView
 					style={styles.scrollView}
 					contentContainerStyle={[
