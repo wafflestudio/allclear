@@ -79,7 +79,6 @@ const useCategoryClubs = ({ name, category }: UseCategoryClubsProps) => {
 		{
 			select: data => data.clubs,
 			staleTime: Infinity,
-			refetchOnMount: false,
 		},
 	)
 }

@@ -83,6 +83,8 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 				snapPoints={[Platform.OS === 'ios' ? vs(310) : vs(260)]}
 				onDismiss={() => {
 					isBottomSheetOpenRef.current = false
+					// 로그인 없이 닫힌 경우 stale 콜백이 다음 로그인에 잘못 실행되지 않도록 정리
+					onSuccessRef.current = undefined
 				}}
 				backdropComponent={renderBackdrop}>
 				<LoginView closeBottomSheet={closeBottomSheet} onSuccess={callOnSuccess} />

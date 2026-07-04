@@ -1,4 +1,3 @@
-import { useIsFocused } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Announcement } from '@/entities/announcement'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -14,9 +13,8 @@ type HomeAnnouncementModalItem = {
 
 let hasShownAnnouncementsThisSession = false
 
-const useHomeAnnouncements = () => {
+const useAnnouncementModals = () => {
 	const { announcementService } = useContext(serviceContext)
-	const isFocused = useIsFocused()
 	const queryClient = useQueryClient()
 	const [modalQueue, setModalQueue] = useState<HomeAnnouncementModalItem[]>([])
 	const { data: announcements = [], isSuccess: hasLoadedAnnouncements } =
@@ -24,13 +22,12 @@ const useHomeAnnouncements = () => {
 	const dismissAnnouncementsMutation = useDismissAnnouncements(announcementService, queryClient)
 
 	useEffect(() => {
-		if (!isFocused) return
 		if (!hasLoadedAnnouncements) return
 		if (hasShownAnnouncementsThisSession) return
 
 		setModalQueue(announcements.map(createAnnouncementModalItem))
 		hasShownAnnouncementsThisSession = true
-	}, [announcements, hasLoadedAnnouncements, isFocused])
+	}, [announcements, hasLoadedAnnouncements])
 
 	const handleCloseAnnouncement = () => {
 		setModalQueue(prev => prev.slice(1))
@@ -52,7 +49,7 @@ const useHomeAnnouncements = () => {
 	}
 }
 
-export default useHomeAnnouncements
+export default useAnnouncementModals
 
 const createAnnouncementModalItem = (announcement: Announcement): HomeAnnouncementModalItem => ({
 	key: `announcement-${announcement.uuid}`,

@@ -29,7 +29,7 @@ export type AuthRepository = {
 export const getAuthRepository = (): AuthRepository => ({
 	callbackKakaoAuth: async (request: CallbackKakaoAuthRequest) => {
 		const response = await apiConnector.post<CallbackKakaoAuthResponse>(
-			'/v1/auth/kakao/native/callback',
+			'/v2/auth/kakao/native/callback',
 			{
 				accessToken: request.accessToken,
 			},
@@ -40,7 +40,7 @@ export const getAuthRepository = (): AuthRepository => ({
 		}
 	},
 	callbackAppleAuth: async (request: CallbackAppleAuthRequest) => {
-		const response = await apiConnector.post<CallbackAppleAuthResponse>('/v1/auth/apple/callback', {
+		const response = await apiConnector.post<CallbackAppleAuthResponse>('/v2/auth/apple/callback', {
 			id_token: request.id_token,
 		})
 
@@ -57,7 +57,7 @@ export const getAuthRepository = (): AuthRepository => ({
 		}
 
 		await apiConnector.post(
-			'/v1/auth/leave',
+			'/v2/auth/leave',
 			{},
 			{
 				headers: {

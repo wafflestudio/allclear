@@ -88,8 +88,10 @@ export type ListClubRankingsResponse = {
 }
 
 export type RequestClubmanagerRequest = {
-	clubId?: Club['uuid']
-	clubName?: Club['name']
+	clubId: Club['uuid']
+	name: string
+	phone: string
+	studentId: string
 }
 
 export type ListSavedClubsResponse = {
@@ -167,24 +169,24 @@ export const getClubRepository = (): ClubRepository => ({
 		return response
 	},
 	listPopularClubs: async () => {
-		const response = await apiConnector.get<ListPopularClubsResponse>('/v1/clubs/popular')
+		const response = await apiConnector.get<ListPopularClubsResponse>('/v2/clubs/popular')
 
 		return response
 	},
 	listLatestClubs: async () => {
-		const response = await apiConnector.get<ListLatestClubsResponse>('/v1/clubs/latest')
+		const response = await apiConnector.get<ListLatestClubsResponse>('/v2/clubs/latest')
 
 		return response
 	},
 	listClubs: async req => {
-		const response = await apiConnector.get<ListClubsResponse>('/v1/clubs', {
+		const response = await apiConnector.get<ListClubsResponse>('/v2/clubs', {
 			...(req.category && { category: req.category }),
 		})
 
 		return response
 	},
 	getClub: async req => {
-		const club = await apiConnector.get<Club>(`/v1/clubs/${req.uuid}`)
+		const club = await apiConnector.get<Club>(`/v2/clubs/${req.uuid}`)
 
 		if (!club) {
 			throw new Error('Club not found')
@@ -204,27 +206,27 @@ export const getClubRepository = (): ClubRepository => ({
 	},
 	listClubRankings: async req => {
 		const response = await apiConnector.get<ListClubRankingsResponse>(
-			`/v1/clubs/rankings?topk=${req.topK ?? 5}`,
+			`/v2/clubs/rankings?topk=${req.topK ?? 5}`,
 		)
 
 		return response
 	},
 	requestClubManager: async req => {
-		await apiConnector.post<void>('/v1/managers/me/clubs', req)
+		await apiConnector.post<void>('/v2/managers/me/clubs', req)
 	},
 	listSavedClubs: async () => {
-		const response = await apiConnector.get<ListSavedClubsResponse>('/v1/users/me/clubs/saved')
+		const response = await apiConnector.get<ListSavedClubsResponse>('/v2/users/me/clubs/saved')
 
 		return response
 	},
 	createSavedClub: async req => {
-		await apiConnector.post<void>(`/v1/clubs/${req.clubId}/saved`)
+		await apiConnector.post<void>(`/v2/clubs/${req.clubId}/saved`)
 	},
 	removeSavedClub: async req => {
-		await apiConnector.delete<void>(`/v1/clubs/${req.clubId}/saved`)
+		await apiConnector.delete<void>(`/v2/clubs/${req.clubId}/saved`)
 	},
 	listMyClubs: async () => {
-		const response = await apiConnector.get<ListMyClubsResponse>('/v1/users/me/clubs')
+		const response = await apiConnector.get<ListMyClubsResponse>('/v2/users/me/clubs')
 
 		return response
 	},

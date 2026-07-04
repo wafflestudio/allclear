@@ -16,11 +16,11 @@ export type AnnouncementRepository = {
 
 export const getAnnouncementRepository = (): AnnouncementRepository => ({
 	listAnnouncements: async () => {
-		const response = await apiConnector.get<ListAnnouncementsResponse>('/v1/announcements')
+		const response = await apiConnector.get<ListAnnouncementsResponse>('/v2/announcements')
 
 		return response
 	},
 	dismissAnnouncements: async request => {
-		await apiConnector.post('/v1/announcements/dismiss', request)
+		await apiConnector.post('/v2/announcements/dismiss', request)
 	},
 })

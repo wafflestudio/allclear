@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import React, { useContext } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
-import { Club } from '@/entities/club'
+import { ClubRanking } from '@/entities/club'
 import { Colors } from '@/shared/constants/colors'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -20,23 +20,20 @@ const PLACEHOLDER_ITEMS = Array.from({ length: TOP_K }, (_, i) => ({
 }))
 
 const PopularClubs = () => {
-	const { clubService } = useContext(serviceContext)
 	const { data: clubRankings, isLoading } = useClubRankings()
 	const { logClickEvent } = useClickEventLog()
 
-	const handlePress = async (uuid: Club['uuid'], ranking: number) => {
-		const club = await clubService.getClub({ uuid })
-
+	const handlePress = ({ clubId, ranking, clubName, category }: ClubRanking) => {
 		logClickEvent({
 			screen_name: 'search_screen',
 			screen_component_name: 'popularClubs',
-			club_name: club.name,
+			club_name: clubName,
 			ranking: `${ranking}`,
 		})
 
 		navigation.navigate(SCREEN_TYPE.CLUB_DETAIL, {
-			uuid: club.uuid,
-			category: club.category,
+			uuid: clubId,
+			category,
 			entry_point: 'popular_clubs',
 		})
 	}
@@ -58,7 +55,7 @@ const PopularClubs = () => {
 						<Pressable
 							style={styles.item}
 							onPress={
-								isInteractive ? () => handlePress(item.clubId, item.ranking) : undefined
+								isInteractive && clubRankings ? () => handlePress(clubRankings[idx]) : undefined
 							}>
 							<Text style={styles.rank}>{item.ranking}</Text>
 							<Text style={styles.name}>{item.clubName}</Text>

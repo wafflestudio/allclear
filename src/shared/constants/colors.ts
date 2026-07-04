@@ -12,6 +12,7 @@ export const Colors = {
 	// Body Text
 	BODYTEXT_MAIN: '#202020',
 	BODYTEXT_SUB: '#757474',
+	BODYTEXT_SUB_2: '#BCBCBC',
 	BODYTEXT_DISABLED: '#C1C1C1',
 
 	// Button

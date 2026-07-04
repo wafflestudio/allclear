@@ -68,7 +68,10 @@ const MyPageScreen = () => {
 		await authService.logout().catch(() => {})
 		setToken(null)
 		setUser(null)
-		queryClient.clear()
+		queryClient.setQueryData(['savedClubs'], { clubs: [], totalSize: 0 })
+		queryClient.invalidateQueries(['recentSearches'])
+		queryClient.removeQueries(['manageClubs'])
+		queryClient.removeQueries(['myClubReview'])
 		navigation.navigate(SCREEN_TYPE.HOME)
 		Toast.show({ type: 'info', text1: '로그아웃 되었어요!' })
 	}

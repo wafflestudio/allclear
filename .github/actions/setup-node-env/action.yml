@@ -1,0 +1,28 @@
+name: Setup Node Environment
+description: Setup Node, Corepack, and install dependencies (with node_modules cache)
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v6.3.0
+      with:
+        node-version: 20
+        cache: yarn
+        cache-dependency-path: yarn.lock
+
+    - name: Enable Corepack
+      run: corepack enable
+      shell: bash
+
+    - name: Restore node_modules cache
+      id: cache_node_modules
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock', 'package.json', 'patches/**') }}
+
+    - name: Install dependencies
+      if: steps.cache_node_modules.outputs.cache-hit != 'true'
+      run: yarn install --frozen-lockfile --prefer-offline
+      shell: bash

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.1
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Typecheck
+        run: yarn typecheck
+
+  bundle:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [android, ios]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.1
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+
+      - name: Bundle (${{ matrix.platform }})
+        run: yarn bundle:${{ matrix.platform }}

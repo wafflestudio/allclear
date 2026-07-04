@@ -13,6 +13,7 @@ export enum SCREEN_TYPE {
 
 	MYPAGE = 'MyPage',
 	EDIT_PROFILE = 'EditProfile',
+	MANAGE_CLUB_REGISTRATION = 'ManageClubRegistration',
 
 	ANNOUNCEMENT_REGISTRATION = 'AnnouncementRegistration',
 	ANNOUNCEMENT_EDIT = 'AnnouncementEdit',
@@ -50,6 +51,7 @@ export type StackParamList = {
 
 	[SCREEN_TYPE.EDIT_PROFILE]: undefined
 	[SCREEN_TYPE.MYPAGE]: undefined
+	[SCREEN_TYPE.MANAGE_CLUB_REGISTRATION]: undefined
 
 	[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION]: { clubId: string }
 	[SCREEN_TYPE.ANNOUNCEMENT_EDIT]: { recruitmentId: number }

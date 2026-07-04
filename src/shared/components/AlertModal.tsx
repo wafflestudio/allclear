@@ -7,7 +7,7 @@ export type AlertModalProps = {
 	visible: boolean
 	onClose: () => void
 	title: string
-	description: string
+	description?: string
 	buttonLabel: string
 	onButtonPress: () => void
 	buttonVariant?: ButtonVariant
@@ -40,7 +40,7 @@ const AlertModal = ({
 				/>
 				<Pressable style={styles.container} onPress={e => e.stopPropagation()}>
 					<Text style={styles.title}>{title}</Text>
-					<Text style={styles.description}>{description}</Text>
+					{description ? <Text style={styles.description}>{description}</Text> : null}
 					<View style={styles.buttonArea}>
 						{hasCancel && (
 							<Button

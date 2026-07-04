@@ -1,7 +1,7 @@
 import { Category } from '@/entities/category'
 import { Club } from '@/entities/club'
 import { Image, StyleSheet, View, Text, useWindowDimensions } from 'react-native'
-import { FlatList, Pressable } from 'react-native-gesture-handler'
+import { FlatList } from 'react-native-gesture-handler'
 import ClubCard from './ClubCard'
 import ClubListSkeleton from './ClubListSkeleton'
 import { Colors } from '@/shared/constants/colors'
@@ -38,17 +38,10 @@ const ClubList = ({ clubs, category, openDetailPage, emptyPlaceholder, isLoading
 			style={styles.list}
 			contentContainerStyle={styles.listContent}
 			renderItem={({ item }) => (
-				<Pressable
-					style={({ pressed }) => ({
-						width,
-						paddingHorizontal: s(20),
-						opacity: pressed ? 0.5 : 1,
-					})}
-					onPress={() => openDetailPage(item)}>
-					<ClubCard club={item} category={category} />
-				</Pressable>
+				<View style={{ width, paddingHorizontal: s(20) }}>
+					<ClubCard club={item} category={category} onPress={() => openDetailPage(item)} />
+				</View>
 			)}
-			removeClippedSubviews={true}
 			initialNumToRender={6}
 			maxToRenderPerBatch={1}
 			updateCellsBatchingPeriod={100}
@@ -79,7 +72,8 @@ const styles = StyleSheet.create({
 	},
 	listContent: {
 		gap: vs(25),
-		paddingVertical: vs(8),
+		paddingTop: vs(8),
+		paddingBottom: vs(20),
 	},
 })
 

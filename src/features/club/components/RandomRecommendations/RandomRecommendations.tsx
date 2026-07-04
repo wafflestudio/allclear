@@ -1,8 +1,14 @@
 import React from 'react'
-import { ScrollView, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { Club } from '@/entities/club'
-import ClubPreviewCard from '@/shared/components/ClubPreviewCard'
+import HorizontalCarousel, {
+	HORIZONTAL_CAROUSEL_BOTTOM_PADDING,
+} from '@/shared/components/HorizontalCarousel'
+import {
+	CLUB_PREVIEW_CARD_HEIGHT,
+	ClubPreviewCardSkeleton,
+} from '@/shared/components/ClubPreviewCard'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { s, vs } from '@/shared/utils/scale'
@@ -12,6 +18,29 @@ type Props = {
 	onPressClub: (club: Club) => void
 }
 
+const SKELETON_CARD_COUNT = 3
+const RECOMMENDATION_CAROUSEL_HEIGHT = CLUB_PREVIEW_CARD_HEIGHT + HORIZONTAL_CAROUSEL_BOTTOM_PADDING
+
+const RandomRecommendationsHeader = () => (
+	<View style={styles.header}>
+		<Text style={styles.title}>이런 동아리는 어때요?</Text>
+		<Text style={styles.subtitle}>다양한 동아리를 추천해드려요</Text>
+	</View>
+)
+
+export const RandomRecommendationsSkeleton = () => (
+	<View style={styles.container}>
+		<RandomRecommendationsHeader />
+		<View style={styles.carouselSlot}>
+			<View style={styles.skeletonList}>
+				{Array.from({ length: SKELETON_CARD_COUNT }).map((_, index) => (
+					<ClubPreviewCardSkeleton key={index} />
+				))}
+			</View>
+		</View>
+	</View>
+)
+
 const RandomRecommendations = ({ clubs, onPressClub }: Props) => {
 	if (clubs.length === 0) {
 		return null
@@ -19,24 +48,10 @@ const RandomRecommendations = ({ clubs, onPressClub }: Props) => {
 
 	return (
 		<View style={styles.container}>
-			<View style={styles.header}>
-				<Text style={styles.title}>이런 동아리는 어때요?</Text>
-				<Text style={styles.subtitle}>다양한 동아리를 추천해드려요</Text>
+			<RandomRecommendationsHeader />
+			<View style={styles.carouselSlot}>
+				<HorizontalCarousel clubs={clubs} onPressClub={onPressClub} />
 			</View>
-			<ScrollView
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={styles.scrollContent}>
-				{clubs.map(club => (
-					<ClubPreviewCard
-						key={club.uuid}
-						title={club.name}
-						description={club.description ?? ''}
-						imageSource={{ uri: club.imageUri }}
-						onPress={() => onPressClub(club)}
-					/>
-				))}
-			</ScrollView>
 		</View>
 	)
 }
@@ -62,8 +77,16 @@ const styles = StyleSheet.create({
 		...typography.bodySRegular,
 		color: Colors.BODYTEXT_SUB,
 	},
-	scrollContent: {
+	carouselSlot: {
+		height: RECOMMENDATION_CAROUSEL_HEIGHT,
+		overflow: 'visible',
+	},
+	skeletonList: {
+		flexDirection: 'row',
+		height: '100%',
 		paddingHorizontal: s(20),
+		paddingBottom: s(2),
 		gap: s(10),
+		overflow: 'hidden',
 	},
 })

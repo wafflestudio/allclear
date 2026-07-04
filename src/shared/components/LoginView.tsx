@@ -24,7 +24,7 @@ type Props = {
 const LoginView = ({ closeBottomSheet, onSuccess }: Props) => {
 	const queryClient = useQueryClient()
 	const { setUser } = useProfile()
-	const { authService, userService } = useContext(serviceContext)
+	const { authService, userService, clubService, recentSearchService } = useContext(serviceContext)
 	const [isLoading, setIsLoading] = useState(false)
 
 	const handleLoginSuccess = async (token: string) => {
@@ -32,10 +32,17 @@ const LoginView = ({ closeBottomSheet, onSuccess }: Props) => {
 		setToken(token)
 		const user = await userService.getUser()
 		setUser(user)
+		// 저장한 동아리 및 최근 검색어는 prefetch하여 로그인 직후에 바로 보여줌
+		queryClient.invalidateQueries(['savedClubs'])
+		await Promise.all([
+			queryClient.prefetchQuery(['savedClubs'], () => clubService.listSavedClubs(), {
+				staleTime: Infinity,
+			}),
+			queryClient.prefetchQuery(['recentSearches'], () => recentSearchService.listRecentSearches()),
+		])
 		closeBottomSheet()
 		onSuccess?.()
 		queryClient.invalidateQueries(['manageClubs'])
-		queryClient.invalidateQueries(['recentSearches'])
 		Toast.show({ type: 'info', text1: '로그인 되었어요!' })
 	}
 

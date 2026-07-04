@@ -261,6 +261,9 @@ dist
 .expo
 __generated__
 
+# CI bundle check output
+.bundle-check/
+
 ### ReactNative.Android Stack ###
 # Gradle files
 .gradle/

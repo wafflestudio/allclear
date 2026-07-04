@@ -51,6 +51,7 @@ const useSavedClubs = () => {
 	const { clubService } = useContext(serviceContext)
 
 	return useQuery(['savedClubs'], () => clubService.listSavedClubs(), {
+		staleTime: Infinity,
 		select: data => data.clubs,
 	})
 }

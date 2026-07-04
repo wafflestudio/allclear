@@ -6,7 +6,7 @@ import { ManageClubBottomSheetProvider } from '@/shared/contexts/manageClubBotto
 import { ProfileProvider } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { UserVoiceBottomSheetProvider } from '@/shared/contexts/userVoiceBottomSheetContext'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -44,6 +44,7 @@ import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
 import ForceUpdateGate from '@/shared/components/ForceUpdateGate'
+import AppModalManager from '@/shared/components/AppModalManager'
 
 const RootStack = createNativeStackNavigator()
 
@@ -96,10 +97,23 @@ function App(): React.JSX.Element {
 		userService,
 	}
 
+	// 토큰을 메모리로 복원한 뒤에야 인증 요청을 하는 트리(ProfileProvider 등)를 마운트한다.
+	// 그렇지 않으면 _token이 채워지기 전에 /v2/users/me가 게스트로 나가 자동로그인이 깨진다.
+	const [isBootstrapped, setIsBootstrapped] = useState(false)
+
 	useEffect(() => {
-		setIsNavigationReady(true)
-		initToken()
+		const bootstrap = async () => {
+			await initToken()
+			setIsNavigationReady(true)
+			setIsBootstrapped(true)
+		}
+		bootstrap()
 	}, [])
+
+	// 부트스트랩 동안에는 네이티브 스플래시가 화면을 덮고 있어 사용자에겐 빈 화면이 보이지 않는다.
+	if (!isBootstrapped) {
+		return <View style={styles.bootstrapPlaceholder} />
+	}
 
 	return (
 		<ServiceProvider value={services}>
@@ -125,6 +139,7 @@ function App(): React.JSX.Element {
 														/>
 													</RootStack.Navigator>
 												</NavigationContainer>
+												<AppModalManager />
 											</ForceUpdateGate>
 										</ManageClubBottomSheetProvider>
 									</UserVoiceBottomSheetProvider>
@@ -140,6 +155,13 @@ function App(): React.JSX.Element {
 }
 
 export default App
+
+const styles = StyleSheet.create({
+	bootstrapPlaceholder: {
+		flex: 1,
+		backgroundColor: Colors.WHITE,
+	},
+})
 
 const toastConfig: ToastConfig = {
 	info: ({ text1 }) => (

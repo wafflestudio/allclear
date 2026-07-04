@@ -3,9 +3,6 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Colors } from '@/shared/constants/colors'
 import { serviceContext } from '@/shared/contexts/serviceContext'
-import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-import { CategoryMap } from '@/shared/constants/category'
 import { Club } from '@/entities/club'
 import { ReviewKeyword } from '@/entities/review'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
@@ -24,11 +21,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 import { navigation } from '@/shared/utils/navigation'
-import Header from '@/features/club/screens/ClubReviewScreen/Header'
+import BackHeader from '@/shared/components/BackHeader'
+import { Button } from '@/shared/components/Button'
+import BackgroundCard from '@/features/club/components/ClubDetail/BackgroundCard'
 import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
-
-dayjs.locale('ko')
 
 type DetailsScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.CLUB_REVIEW>
 type DetailsScreenNavigationProp = NativeStackNavigationProp<
@@ -75,7 +72,7 @@ const ClubReviewScreen = ({ route }: Props) => {
 
 	if (!category || !club) return null
 
-	const categoryDetail = CategoryMap[category]
+	const isSubmitDisabled = isSubmitting || selectedKeywordIds.length === 0
 
 	return (
 		<WithViewEventLog
@@ -85,79 +82,64 @@ const ClubReviewScreen = ({ route }: Props) => {
 				club_name: club?.name ?? '',
 				entry_point: 'club_detail',
 			}}>
-			<SafeAreaView
-				edges={['top']}
-				style={{ flex: 0, backgroundColor: categoryDetail.themeColor }}
-			/>
-			<SafeAreaView edges={['left', 'right']} style={{ flex: 1, padding: 0, overflow: 'scroll' }}>
-				<Header club={club} onBack={handleBackButton} />
+			<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+				<BackHeader title="활동 후기 남기기" onBack={handleBackButton} />
 				{isLoading && (
 					<View style={{ height: deviceHeight }}>
 						<ActivityIndicator
 							size="large"
-							color={categoryDetail.themeColor}
+							color={Colors.POINTCOLOR}
 							style={{ marginTop: deviceHeight * 0.3 }}
 						/>
 					</View>
 				)}
 				{club && (
-					<ScrollView style={styles.scrollView}>
-						<View style={styles.titleWrapper}>
+					<ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+						<BackgroundCard>
 							<Text style={styles.title}>{`${club.name} 에서의 경험을 공유해주세요 😀`}</Text>
-						</View>
-						<View style={styles.container}>
-							{reviewKeywordCategories?.map(kc => (
-								<View key={kc.id} style={styles.categoryContainer}>
+							{reviewKeywordCategories?.map((kc, index) => (
+								<View
+									key={kc.id}
+									style={[styles.categorySection, index > 0 && styles.categorySectionDivider]}>
 									<Text style={styles.categoryTitle}>{kc.title}</Text>
 									<View style={styles.keywordContainer}>
-										{kc.keywords.map(keyword => (
-											<TouchableOpacity
-												key={keyword.id}
-												onPress={() => {
-													setSelectedKeywordIds(
-														selectedKeywordIds.includes(keyword.id)
-															? selectedKeywordIds.filter(id => id !== keyword.id)
-															: [...selectedKeywordIds, keyword.id],
-													)
-												}}>
-												<View
-													style={[
-														styles.keyword,
-														selectedKeywordIds.includes(keyword.id)
-															? {
-																	backgroundColor: `${categoryDetail.themeColor}`,
-																	borderColor: `${categoryDetail.themeColor}`,
-																}
-															: null,
-													]}>
+										{kc.keywords.map(keyword => {
+											const isSelected = selectedKeywordIds.includes(keyword.id)
+											return (
+												<TouchableOpacity
+													key={keyword.id}
+													style={[styles.keyword, isSelected && styles.keywordSelected]}
+													onPress={() => {
+														setSelectedKeywordIds(
+															isSelected
+																? selectedKeywordIds.filter(id => id !== keyword.id)
+																: [...selectedKeywordIds, keyword.id],
+														)
+													}}>
 													<Text style={styles.keywordIcon}>{keyword.iconUri?.trim()}</Text>
 													<Text
 														style={[
 															styles.keywordTitle,
-															selectedKeywordIds.includes(keyword.id)
-																? styles.selectedKeywordTitle
-																: null,
+															isSelected && styles.keywordTitleSelected,
 														]}>
 														{keyword.title}
 													</Text>
-												</View>
-											</TouchableOpacity>
-										))}
+												</TouchableOpacity>
+											)
+										})}
 									</View>
 								</View>
 							))}
-						</View>
 
-						<TouchableOpacity
-							disabled={isSubmitting || selectedKeywordIds.length === 0}
-							style={[
-								styles.submitCta,
-								{ backgroundColor: categoryDetail.themeColor },
-								isSubmitting || selectedKeywordIds.length === 0 ? { opacity: 0.4 } : null,
-							]}
-							onPress={handleSaveReview}>
-							<Text style={styles.submitCtaText}>{'저장하기'}</Text>
-						</TouchableOpacity>
+							<View style={styles.submitWrapper}>
+								<Button
+									label="저장하기"
+									onPress={handleSaveReview}
+									variant="primary"
+									disabled={isSubmitDisabled}
+								/>
+							</View>
+						</BackgroundCard>
 					</ScrollView>
 				)}
 			</SafeAreaView>
@@ -219,47 +201,56 @@ const useCreateClubReview = ({
 }
 
 const styles = StyleSheet.create({
+	safeArea: {
+		flex: 1,
+		backgroundColor: Colors.BACKGROUND_MAIN,
+	},
 	scrollView: {
 		paddingHorizontal: s(16),
 	},
-	titleWrapper: {
-		marginLeft: s(12),
+	scrollContent: {
+		paddingVertical: vs(16),
 	},
-	container: {},
 	title: {
-		color: '#FFFFFF', // #deprecated color
 		...typography.headerXL,
-		marginVertical: vs(20),
+		color: Colors.BODYTEXT_MAIN,
+		marginBottom: vs(20),
 	},
-	categoryContainer: {
-		backgroundColor: Colors.TEXT_BUTTON_SELECTED,
-		borderRadius: ms(12),
-		padding: ms(16),
-		marginBottom: vs(16),
+	categorySection: {
+		marginTop: vs(16),
+	},
+	categorySectionDivider: {
+		borderTopWidth: 1,
+		borderTopColor: Colors.TEXTBOX_SELECTED,
+		paddingTop: vs(16),
 	},
 	categoryTitle: {
 		...typography.headerL,
-		color: '#494141',
+		color: Colors.BODYTEXT_MAIN,
 		marginBottom: vs(12),
 	},
 	keywordContainer: {
-		display: 'flex',
 		flexDirection: 'row',
 		flexWrap: 'wrap',
-		gap: ms(12),
+		justifyContent: 'space-between',
+		rowGap: vs(8),
 		marginTop: vs(8),
 	},
 	keyword: {
-		display: 'flex',
-		width: 'auto',
+		width: '48%',
 		flexDirection: 'row',
 		alignItems: 'center',
-		alignSelf: 'flex-start',
-		padding: ms(8),
+		justifyContent: 'center',
+		paddingVertical: vs(10),
 		paddingHorizontal: s(12),
 		borderRadius: ms(32),
 		borderWidth: 1,
-		borderColor: '#f1d9d9',
+		borderColor: Colors.BUTTON_UNSELECTED,
+		backgroundColor: Colors.WHITE,
+	},
+	keywordSelected: {
+		backgroundColor: Colors.POINTCOLOR,
+		borderColor: Colors.POINTCOLOR,
 	},
 	keywordIcon: {
 		...typography.bodyMRegular,
@@ -267,19 +258,14 @@ const styles = StyleSheet.create({
 	},
 	keywordTitle: {
 		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_MAIN,
 	},
-	selectedKeywordTitle: {
+	keywordTitleSelected: {
 		...typography.bodyMSemibold,
-		color: Colors.TEXT_BUTTON_SELECTED,
+		color: Colors.WHITE,
 	},
-	submitCta: {
-		padding: ms(16),
-		borderRadius: ms(12),
-		marginVertical: vs(16),
-	},
-	submitCtaText: {
-		...typography.headerL,
-		color: Colors.TEXT_BUTTON_SELECTED,
-		textAlign: 'center',
+	submitWrapper: {
+		flexDirection: 'row',
+		marginTop: vs(24),
 	},
 })

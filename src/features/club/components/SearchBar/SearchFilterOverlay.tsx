@@ -1,4 +1,3 @@
-import { BlurView } from '@react-native-community/blur'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 
@@ -75,15 +74,7 @@ const SearchFilterOverlay = ({ value, onChange, onReset, onClose }: Props) => {
 
 	return (
 		<View style={styles.wrapper}>
-			<Pressable onPress={onClose} style={styles.dim}>
-				<BlurView
-					style={styles.blur}
-					blurType="light"
-					blurAmount={1}
-					overlayColor="transparent"
-					reducedTransparencyFallbackColor="transparent"
-				/>
-			</Pressable>
+			<Pressable onPress={onClose} style={styles.dim} />
 			<View style={styles.container}>
 				<View style={styles.header}>
 					<Text style={styles.text}>더 자세한 검색을 위해 상세필터를 설정해보세요!</Text>
@@ -140,9 +131,6 @@ const styles = StyleSheet.create({
 	dim: {
 		...StyleSheet.absoluteFillObject,
 		backgroundColor: Colors.BACKGROUND_DIM,
-	},
-	blur: {
-		...StyleSheet.absoluteFillObject,
 	},
 	container: {
 		backgroundColor: Colors.BACKGROUND_MAIN,
