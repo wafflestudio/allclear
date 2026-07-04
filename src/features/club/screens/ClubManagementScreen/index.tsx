@@ -105,9 +105,12 @@ const ClubManagementScreen = () => {
 							<View style={styles.clubLogo}>
 								<Image source={snuLogo} style={styles.clubLogoImage} />
 							</View>
-							<View style={styles.editIconWrapper}>
-								<Icon name="edit" size={ms(20)} color="#8F8686" style={{ opacity: 0.5 }} />
-							</View>
+							<Pressable
+								style={styles.editIconWrapper}
+								hitSlop={8}
+								onPress={() => navigation.navigate(SCREEN_TYPE.EDIT_CLUB_INFO, { clubId })}>
+								<Icon name="edit" size={ms(20)} color="#8F8686" />
+							</Pressable>
 						</View>
 						<View style={styles.clubTexts}>
 							<Text style={styles.clubName} numberOfLines={1}>
