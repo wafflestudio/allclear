@@ -1,7 +1,4 @@
-import {
-	ListRecentSearchesResponse,
-	RecentSearchRepository,
-} from '@/repositories/recentSearch'
+import { ListRecentSearchesResponse, RecentSearchRepository } from '@/repositories/recentSearch'
 
 export type RecentSearchService = {
 	listRecentSearches: () => Promise<ListRecentSearchesResponse>

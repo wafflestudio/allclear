@@ -12,10 +12,7 @@ export type AppVersionRepository = {
 
 export const getAppVersionRepository = (): AppVersionRepository => ({
 	checkVersion: async request => {
-		const response = await apiConnector.post<VersionCheckResult>(
-			'/v2/app/version/check',
-			request,
-		)
+		const response = await apiConnector.post<VersionCheckResult>('/v2/app/version/check', request)
 		return response
 	},
 })

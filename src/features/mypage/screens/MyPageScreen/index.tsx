@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { ENV } from '@/config/ENV'
+import { Club } from '@/entities/club'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { LOGIN_TOKEN } from '@/shared/constants/localStorage'
@@ -15,6 +17,7 @@ import AlertModal from '@/shared/components/AlertModal'
 import React, { useContext, useState } from 'react'
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import SkeletonPlaceholder from 'react-native-skeleton-placeholder'
 import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
@@ -24,6 +27,7 @@ const MyPageScreen = () => {
 	const { openBottomSheet: openManageClub } = useManageClubBottomSheet()
 	const queryClient = useQueryClient()
 	const { user, setUser } = useProfile()
+	const { data: manageClubs, isLoading: isLoadingManageClubs } = useManageClubs()
 
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false)
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false)
@@ -57,6 +61,17 @@ const MyPageScreen = () => {
 		queryClient.removeQueries(['myClubReview'])
 		navigation.navigate(SCREEN_TYPE.HOME)
 		Toast.show({ type: 'info', text1: '로그아웃 되었어요!' })
+	}
+
+	const openManageClubDetailPage = async (club: Club) => {
+		const authorization = await AsyncStorage.getItem(LOGIN_TOKEN)
+
+		if (!authorization) return
+
+		navigation.navigate(SCREEN_TYPE.WEBVIEW, {
+			uri: ENV.WEB_URL + '/c/edit/' + club.uuid,
+			authorization,
+		})
 	}
 
 	const handleMoveEditProfilePage = () => {
@@ -106,6 +121,43 @@ const MyPageScreen = () => {
 							: '학번 정보가 없습니다'}
 					</Text>
 				</View>
+
+				{isLoadingManageClubs && (
+					<View style={styles.card}>
+						<SkeletonPlaceholder borderRadius={ms(4)}>
+							<SkeletonPlaceholder.Item flexDirection="row" alignItems="center">
+								<SkeletonPlaceholder.Item>
+									<SkeletonPlaceholder.Item width={220} height={16} />
+									<SkeletonPlaceholder.Item marginTop={8} width={180} height={12} />
+								</SkeletonPlaceholder.Item>
+							</SkeletonPlaceholder.Item>
+						</SkeletonPlaceholder>
+					</View>
+				)}
+
+				{manageClubs && manageClubs.length > 0 && (
+					<View style={styles.card}>
+						{manageClubs.map(club => (
+							<Pressable
+								key={club.uuid}
+								style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}
+								onPress={() => openManageClubDetailPage(club)}>
+								<View style={styles.managerRow}>
+									<Text style={styles.menuText}>{club.name}</Text>
+									<Icon name="chevron-right" color={Colors.BODYTEXT_SUB} size={ms(16)} />
+								</View>
+							</Pressable>
+						))}
+						<Pressable
+							style={({ pressed }) => [styles.menuItem, pressed && styles.pressed]}
+							onPress={openManageClub}>
+							<View style={styles.managerRow}>
+								<Text style={styles.menuText}>관리 중인 동아리 추가하기</Text>
+								<Icon name="add-circle-outline" color={Colors.BODYTEXT_SUB} size={ms(18)} />
+							</View>
+						</Pressable>
+					</View>
+				)}
 
 				<Pressable
 					style={({ pressed }) => [styles.card, pressed && styles.pressed]}
@@ -181,6 +233,16 @@ const MyPageScreen = () => {
 }
 
 export default MyPageScreen
+
+const useManageClubs = () => {
+	const { clubService } = useContext(serviceContext)
+
+	const query = useQuery(['manageClubs'], () => clubService.listManageClubs(), {
+		select: data => data.clubs,
+	})
+
+	return query
+}
 
 const styles = StyleSheet.create({
 	safeArea: {

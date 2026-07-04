@@ -55,9 +55,7 @@ const PopularClubs = () => {
 						<Pressable
 							style={styles.item}
 							onPress={
-								isInteractive && clubRankings
-									? () => handlePress(clubRankings[idx])
-									: undefined
+								isInteractive && clubRankings ? () => handlePress(clubRankings[idx]) : undefined
 							}>
 							<Text style={styles.rank}>{item.ranking}</Text>
 							<Text style={styles.name}>{item.clubName}</Text>

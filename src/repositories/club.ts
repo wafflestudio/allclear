@@ -64,8 +64,10 @@ export type ListClubRankingsResponse = {
 }
 
 export type RequestClubmanagerRequest = {
-	clubId?: Club['uuid']
-	clubName?: Club['name']
+	clubId: Club['uuid']
+	name: string
+	phone: string
+	studentId: string
 }
 
 export type ListSavedClubsResponse = {
