@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import {
 	Image,
 	ImageSourcePropType,
 	ImageStyle,
+	GestureResponderEvent,
 	Pressable,
+	PressableStateCallbackType,
 	StyleProp,
 	StyleSheet,
 	Text,
@@ -25,6 +27,9 @@ type Props = {
 	description: string
 	imageSource: ImageSourcePropType
 	onPress?: () => void
+	onPressIn?: () => void
+	onPressOut?: () => void
+	shouldHandleManualTap?: () => boolean
 	style?: StyleProp<ViewStyle>
 	imageStyle?: StyleProp<ImageStyle>
 }
@@ -32,25 +37,95 @@ type Props = {
 type ClubPreviewCardFrameProps = {
 	children: React.ReactNode
 	onPress?: () => void
+	onPressIn?: () => void
+	onPressOut?: () => void
+	shouldHandleManualTap?: () => boolean
 	style?: StyleProp<ViewStyle>
 }
 
-const ClubPreviewCardFrame = ({ children, onPress, style }: ClubPreviewCardFrameProps) => {
+const TAP_DURATION_THRESHOLD = 500
+
+const ClubPreviewCardFrame = ({
+	children,
+	onPress,
+	onPressIn,
+	onPressOut,
+	shouldHandleManualTap,
+	style,
+}: ClubPreviewCardFrameProps) => {
 	const content = <View style={styles.cardContainer}>{children}</View>
+	const pressStartAtRef = useRef<number | null>(null)
+	const nativePressHandledRef = useRef(false)
+	const manualTapTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+	useEffect(() => {
+		return () => {
+			if (!manualTapTimeoutRef.current) return
+
+			clearTimeout(manualTapTimeoutRef.current)
+			manualTapTimeoutRef.current = null
+		}
+	}, [])
 
 	if (!onPress) {
 		return <View style={[styles.shadowContainer, styles.cardWidth, style]}>{content}</View>
 	}
 
+	const getContainerStyle = ({ pressed }: PressableStateCallbackType) => [
+		styles.shadowContainer,
+		styles.cardWidth,
+		style,
+		pressed && styles.pressed,
+	]
+
+	const handlePressIn = (event: GestureResponderEvent) => {
+		if (manualTapTimeoutRef.current) {
+			clearTimeout(manualTapTimeoutRef.current)
+			manualTapTimeoutRef.current = null
+		}
+		nativePressHandledRef.current = false
+		pressStartAtRef.current = event.nativeEvent.timestamp
+		onPressIn?.()
+	}
+
+	const handlePressOut = (event: GestureResponderEvent) => {
+		const pressStartAt = pressStartAtRef.current
+		pressStartAtRef.current = null
+		onPressOut?.()
+
+		if (pressStartAt === null || nativePressHandledRef.current) return
+
+		const pressDuration = event.nativeEvent.timestamp - pressStartAt
+		const isTapDuration = pressDuration <= TAP_DURATION_THRESHOLD
+		const canHandleManualTap = shouldHandleManualTap?.() ?? true
+
+		if (!isTapDuration || !canHandleManualTap) return
+
+		manualTapTimeoutRef.current = setTimeout(() => {
+			manualTapTimeoutRef.current = null
+			if (nativePressHandledRef.current) return
+
+			nativePressHandledRef.current = true
+			onPress()
+		}, 0)
+	}
+
+	const handlePress = () => {
+		if (manualTapTimeoutRef.current) {
+			clearTimeout(manualTapTimeoutRef.current)
+			manualTapTimeoutRef.current = null
+		}
+		nativePressHandledRef.current = true
+		onPress()
+	}
+
 	return (
 		<Pressable
-			style={({ pressed }) => [
-				styles.shadowContainer,
-				styles.cardWidth,
-				style,
-				pressed && styles.pressed,
-			]}
-			onPress={onPress}>
+			style={getContainerStyle}
+			pressRetentionOffset={{ top: 40, right: 40, bottom: 40, left: 40 }}
+			onPress={handlePress}
+			onPressIn={handlePressIn}
+			onPressOut={handlePressOut}>
 			{content}
 		</Pressable>
 	)
@@ -61,11 +136,19 @@ const ClubPreviewCard = ({
 	description,
 	imageSource,
 	onPress,
+	onPressIn,
+	onPressOut,
+	shouldHandleManualTap,
 	style,
 	imageStyle,
 }: Props) => {
 	return (
-		<ClubPreviewCardFrame onPress={onPress} style={style}>
+		<ClubPreviewCardFrame
+			onPress={onPress}
+			onPressIn={onPressIn}
+			onPressOut={onPressOut}
+			shouldHandleManualTap={shouldHandleManualTap}
+			style={style}>
 			<View style={styles.imageWrapper}>
 				<Image source={imageSource} style={[styles.image, imageStyle]} resizeMode="cover" />
 			</View>

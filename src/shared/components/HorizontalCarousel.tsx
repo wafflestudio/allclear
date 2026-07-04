@@ -1,6 +1,5 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { StyleSheet, View } from 'react-native'
-import { GestureDetector } from 'react-native-gesture-handler'
 import Animated from 'react-native-reanimated'
 
 import { Club } from '@/entities/club'
@@ -16,31 +15,64 @@ type Props = {
 }
 
 const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
-	const { listRef, touchGesture, ...scrollEventProps } = useAutoScroll<Club>(clubs.length)
+	const { listRef, pauseAutoScroll, resumeAutoScroll, ...scrollEventProps } = useAutoScroll<Club>(
+		clubs.length,
+	)
+	const isUserDraggingRef = useRef(false)
+	const isMomentumScrollingRef = useRef(false)
+
+	const handleScrollBeginDrag = () => {
+		isUserDraggingRef.current = true
+		isMomentumScrollingRef.current = false
+		pauseAutoScroll()
+	}
+
+	const handleScrollEndDrag = () => {
+		isUserDraggingRef.current = false
+		resumeAutoScroll(350)
+	}
+
+	const handleMomentumScrollBegin = () => {
+		isMomentumScrollingRef.current = true
+		pauseAutoScroll()
+	}
+
+	const handleMomentumScrollEnd = () => {
+		isMomentumScrollingRef.current = false
+		resumeAutoScroll(450)
+	}
 
 	return (
-		<GestureDetector gesture={touchGesture}>
-			<Animated.FlatList
-				ref={listRef}
-				{...scrollEventProps}
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				style={styles.list}
-				contentContainerStyle={styles.contentContainer}
-				scrollEventThrottle={16}
-				data={clubs}
-				keyExtractor={item => item.id}
-				ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
-				renderItem={({ item }) => (
-					<ClubPreviewCard
-						title={item.name}
-						description={item.description ?? ''}
-						imageSource={{ uri: item.imageUri }}
-						onPress={() => onPressClub(item)}
-					/>
-				)}
-			/>
-		</GestureDetector>
+		<Animated.FlatList
+			ref={listRef}
+			{...scrollEventProps}
+			horizontal
+			decelerationRate="normal"
+			showsHorizontalScrollIndicator={false}
+			style={styles.list}
+			contentContainerStyle={styles.contentContainer}
+			scrollEventThrottle={16}
+			onScrollBeginDrag={handleScrollBeginDrag}
+			onScrollEndDrag={handleScrollEndDrag}
+			onMomentumScrollBegin={handleMomentumScrollBegin}
+			onMomentumScrollEnd={handleMomentumScrollEnd}
+			data={clubs}
+			keyExtractor={item => item.id}
+			ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
+			renderItem={({ item }) => (
+				<ClubPreviewCard
+					title={item.name}
+					description={item.description ?? ''}
+					imageSource={{ uri: item.imageUri }}
+					onPress={() => onPressClub(item)}
+					onPressIn={pauseAutoScroll}
+					onPressOut={() => resumeAutoScroll(150)}
+					shouldHandleManualTap={() =>
+						!isUserDraggingRef.current && !isMomentumScrollingRef.current
+					}
+				/>
+			)}
+		/>
 	)
 }
 

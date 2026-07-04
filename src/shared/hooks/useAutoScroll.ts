@@ -1,7 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 import type { LayoutChangeEvent } from 'react-native'
-import { Gesture } from 'react-native-gesture-handler'
 import Animated, {
 	scrollTo,
 	useAnimatedRef,
@@ -26,6 +25,7 @@ const useAutoScroll = <T>(itemCount: number) => {
 	const isInteracting = useSharedValue(false)
 	const latestContentWidth = useRef(0)
 	const latestListWidth = useRef(0)
+	const resumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	useFrameCallback(() => {
 		'worklet'
@@ -50,20 +50,31 @@ const useAutoScroll = <T>(itemCount: number) => {
 		},
 	})
 
-	// 터치다운 즉시(UI 스레드) 자동 스크롤을 멈춰 탭이 살아남게 한다.
-	// manualActivation으로 절대 활성화되지 않아 스크롤/탭을 가로채지 않고 관찰만 한다.
-	const touchGesture = useMemo(
-		() =>
-			Gesture.Pan()
-				.manualActivation(true)
-				.onBegin(() => {
-					isInteracting.value = true
-				})
-				.onFinalize(() => {
-					isInteracting.value = false
-				}),
-		[isInteracting],
-	)
+	const pauseAutoScroll = () => {
+		if (resumeTimeoutRef.current) {
+			clearTimeout(resumeTimeoutRef.current)
+			resumeTimeoutRef.current = null
+		}
+
+		isInteracting.value = true
+	}
+
+	const resumeAutoScroll = (delayMs = 0) => {
+		if (resumeTimeoutRef.current) {
+			clearTimeout(resumeTimeoutRef.current)
+			resumeTimeoutRef.current = null
+		}
+
+		if (delayMs > 0) {
+			resumeTimeoutRef.current = setTimeout(() => {
+				resumeTimeoutRef.current = null
+				resumeAutoScroll()
+			}, delayMs)
+			return
+		}
+
+		isInteracting.value = false
+	}
 
 	const updateMaxOffset = () => {
 		maxOffset.value = Math.max(latestContentWidth.current - latestListWidth.current, 0)
@@ -84,6 +95,10 @@ const useAutoScroll = <T>(itemCount: number) => {
 		useCallback(() => {
 			offset.value = 0
 			isInteracting.value = false
+			if (resumeTimeoutRef.current) {
+				clearTimeout(resumeTimeoutRef.current)
+				resumeTimeoutRef.current = null
+			}
 			listRef.current?.scrollToOffset({ offset: 0, animated: false })
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, []),
@@ -91,10 +106,11 @@ const useAutoScroll = <T>(itemCount: number) => {
 
 	return {
 		listRef,
-		touchGesture,
 		onScroll,
 		onLayout: handleLayout,
 		onContentSizeChange: handleContentSizeChange,
+		pauseAutoScroll,
+		resumeAutoScroll,
 	}
 }
 
