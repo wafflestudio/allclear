@@ -51,28 +51,17 @@ export const RegisterClubScreenContainer = () => {
 	const { user } = useProfile()
 	const { openBottomSheet: openLoginSheet } = useLoginBottomSheet()
 
+	// 등록 요청 후에는 성공/실패와 무관하게 폼을 초기화하고 마이페이지 메인으로 돌아간다.
+	const resetAndExit = () => {
+		setShowConfirm(false)
+		setFormData(initialFormData)
+		setCurrentStep(0)
+		navigation.navigate('마이')
+	}
+
 	const { mutate: registerClub, isLoading } = useRegisterClub({
-		onSuccess: message => {
-			Toast.show({
-				type: 'success',
-				text1: message,
-				position: 'top',
-				topOffset: 60,
-				visibilityTime: 2000,
-			})
-			setShowConfirm(false)
-			setFormData(initialFormData)
-			setCurrentStep(0)
-		},
-		onFailure: message => {
-			Toast.show({
-				type: 'error',
-				text1: message,
-				position: 'top',
-				topOffset: 60,
-				visibilityTime: 2000,
-			})
-		},
+		onSuccess: () => resetAndExit(),
+		onFailure: () => resetAndExit(),
 	})
 
 	const handleFormDataChange = (data: Partial<RegisterClubFormData>) => {
