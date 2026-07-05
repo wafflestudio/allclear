@@ -134,6 +134,42 @@ export type RegisterClubResponse = {
 	message: string
 }
 
+export type UpdateManagedClubRequest = {
+	uuid: Club['uuid']
+	name?: string
+	type?: string
+	image_uri?: string
+	category?: Club['category']
+	affiliation?: string
+	short_description?: string
+	recruit_type?: string
+	min_activity_period?: number
+	has_dongbang?: boolean
+	dongbang_location?: string
+	sns?: string
+	introduction?: string
+}
+
+export type UpdateManagedClubResponse = {
+	success: boolean
+	message: string
+	data: {
+		club_uuid: Club['uuid']
+		updated_at: string
+	}
+}
+
+export type UploadManagedClubImageRequest = {
+	clubId: Club['uuid']
+	uri: string
+	type: string
+	name: string
+}
+
+export type UploadManagedClubImageResponse = {
+	ok: boolean
+}
+
 export type ListMyClubsResponse = {
 	clubs: Club[]
 	totalSize: number
@@ -159,6 +195,10 @@ export type ClubRepository = {
 	removeSavedClub: (req: RemoveSavedClubRequest) => Promise<void>
 	listMyClubs: () => Promise<ListMyClubsResponse>
 	registerClub: (req: RegisterClubRequest) => Promise<RegisterClubResponse>
+	updateManagedClub: (req: UpdateManagedClubRequest) => Promise<UpdateManagedClubResponse>
+	uploadManagedClubImage: (
+		req: UploadManagedClubImageRequest,
+	) => Promise<UploadManagedClubImageResponse>
 	listRandomRecommendations: () => Promise<ListRandomRecommendationsResponse>
 }
 
@@ -267,6 +307,31 @@ export const getClubRepository = (): ClubRepository => ({
 	},
 	registerClub: async req => {
 		const response = await apiConnector.post<RegisterClubResponse>('/v2/clubs/register', req)
+
+		return response
+	},
+	updateManagedClub: async req => {
+		const { uuid, ...body } = req
+		const response = await apiConnector.patch<UpdateManagedClubResponse>(
+			`/v2/managers/me/clubs/${uuid}`,
+			body,
+		)
+
+		return response
+	},
+	uploadManagedClubImage: async req => {
+		const formData = new FormData()
+		formData.append('file', {
+			uri: req.uri,
+			type: req.type,
+			name: req.name,
+		} as unknown as Blob)
+
+		const response = await apiConnector.post<UploadManagedClubImageResponse>(
+			`/v2/managers/me/clubs/${req.clubId}/images`,
+			formData as unknown as object,
+			{ timeout: 60000, headers: { 'Content-Type': 'multipart/form-data' } },
+		)
 
 		return response
 	},
