@@ -1,6 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import ClubDetailScreen from '@/features/club/screens/ClubDetailScreen'
+import ClubInfoEditScreen from '@/features/club/screens/ClubInfoEditScreen'
 import ClubManagementScreen from '@/features/club/screens/ClubManagementScreen'
 import SavedClubListScreen from '@/features/club/screens/SavedClubListScreen'
 import EditProfileScreen from '@/features/mypage/screens/EditProfileScreen'
@@ -43,6 +44,11 @@ export function MyPageTab() {
 				key={SCREEN_TYPE.CLUB_MANAGEMENT}
 				name={SCREEN_TYPE.CLUB_MANAGEMENT}
 				component={ClubManagementScreen}
+			/>
+			<Stack.Screen
+				key={SCREEN_TYPE.CLUB_INFO_EDIT}
+				name={SCREEN_TYPE.CLUB_INFO_EDIT}
+				component={ClubInfoEditScreen}
 			/>
 		</Stack.Navigator>
 	)
