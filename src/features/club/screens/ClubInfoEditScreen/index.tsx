@@ -25,7 +25,7 @@ import TextField from '@/shared/components/TextField'
 import { CLUB_CATEGORIES } from '@/shared/constants/category'
 import { CLUB_RECRUIT_TYPES } from '@/shared/constants/club'
 import { Colors } from '@/shared/constants/colors'
-import { DEPARTMENTS } from '@/shared/constants/departments'
+import { buildDepartmentOptions, DEFAULT_DEPARTMENT_OPTIONS } from '@/shared/constants/departments'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import { typography } from '@/shared/constants/typography'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -211,7 +211,7 @@ const SuccessModal = ({ visible, onConfirm }: SuccessModalProps) => (
 const ClubInfoEditScreen = () => {
 	const route = useRoute<RouteProps>()
 	const { clubId } = route.params
-	const { clubService } = useContext(serviceContext)
+	const { clubService, userService } = useContext(serviceContext)
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
 
@@ -224,6 +224,11 @@ const ClubInfoEditScreen = () => {
 	const { data: club, isLoading } = useQuery({
 		queryKey: ['managedClub', clubId],
 		queryFn: () => clubService.getManagedClubDetail({ uuid: clubId }),
+	})
+	const { data: departmentOptions = DEFAULT_DEPARTMENT_OPTIONS } = useQuery({
+		queryKey: ['collegeMajors', 'clubAffiliation'],
+		queryFn: () => userService.listCollegeMajors({ includeNullMajor: true }),
+		select: data => buildDepartmentOptions(data.majors),
 	})
 
 	useEffect(() => {
@@ -459,7 +464,7 @@ const ClubInfoEditScreen = () => {
 
 								{showDepartmentDropdown && (
 									<View style={styles.dropdownMenu}>
-										{DEPARTMENTS.map(department => (
+										{departmentOptions.map(department => (
 											<Pressable
 												key={department}
 												style={[

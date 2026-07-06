@@ -21,6 +21,6 @@ export type User = {
 
 export type CollegeMajor = {
 	id: number
-	college: string
-	major: string
+	college: string | null
+	major: string | null
 }

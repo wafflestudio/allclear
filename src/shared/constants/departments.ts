@@ -1,10 +1,13 @@
-export const DEPARTMENTS = [
-	'중앙동아리',
-	'인문대학',
-	'국어국문학과',
-	'중어중문학과',
-	'영어영문학과',
-	'공과대학',
-	'컴퓨터공학과',
-	'기계공학과',
-]
+import { CollegeMajor } from '@/entities/user'
+
+const STATIC_DEPARTMENT_OPTIONS = ['중앙동아리']
+
+export const buildDepartmentOptions = (collegeMajors: CollegeMajor[] = []) => {
+	const dynamicDepartments = collegeMajors
+		.map(collegeMajor => collegeMajor.major || collegeMajor.college)
+		.filter((department): department is string => !!department)
+
+	return Array.from(new Set([...STATIC_DEPARTMENT_OPTIONS, ...dynamicDepartments, '기타']))
+}
+
+export const DEFAULT_DEPARTMENT_OPTIONS = buildDepartmentOptions()
