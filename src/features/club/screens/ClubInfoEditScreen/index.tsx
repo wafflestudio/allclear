@@ -29,12 +29,15 @@ import { buildDepartmentOptions, DEFAULT_DEPARTMENT_OPTIONS } from '@/shared/con
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import { typography } from '@/shared/constants/typography'
 import { serviceContext } from '@/shared/contexts/serviceContext'
+import {
+	decrementActivityCycleValue,
+	incrementActivityCycleValue,
+	type ActivityCycleMode,
+} from '@/shared/utils/activityCycle'
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 
 type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_INFO_EDIT>
-
-type ActivityCycleMode = 'none' | 'number'
 
 type ClubInfoEditFormData = {
 	clubImage: string | null
@@ -297,14 +300,15 @@ const ClubInfoEditScreen = () => {
 	}
 
 	const incrementActivityCycle = () => {
-		setActivityCycleMode('number')
-		setFormField('activityCycle', String(activitySemesters + 1))
+		const next = incrementActivityCycleValue(activitySemesters)
+		setActivityCycleMode(next.mode)
+		setFormField('activityCycle', next.value)
 	}
 
 	const decrementActivityCycle = () => {
-		if (activitySemesters > 0) {
-			setFormField('activityCycle', String(activitySemesters - 1))
-		}
+		const next = decrementActivityCycleValue(activitySemesters)
+		setActivityCycleMode(next.mode)
+		setFormField('activityCycle', next.value)
 	}
 
 	const handleSetHasDongbang = (value: boolean) => {

@@ -8,6 +8,11 @@ import { s, vs } from '@/shared/utils/scale'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
 import { isValidUrl } from '@/features/register-club/validation'
+import {
+	decrementActivityCycleValue,
+	incrementActivityCycleValue,
+	type ActivityCycleMode,
+} from '@/shared/utils/activityCycle'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 
 type Props = {
@@ -27,7 +32,7 @@ export const ClubDetailsScreen = ({
 	isLoading = false,
 	progress,
 }: Props) => {
-	const [activityCycleMode, setActivityCycleMode] = useState<'none' | 'number'>(
+	const [activityCycleMode, setActivityCycleMode] = useState<ActivityCycleMode>(
 		formData.activityCycle ? 'number' : 'none',
 	)
 
@@ -37,7 +42,7 @@ export const ClubDetailsScreen = ({
 		onFormDataChange(value ? { hasDongbang: true } : { hasDongbang: false, dongbangLocation: '' })
 	}
 
-	const handleActivityCycleModeChange = (mode: 'none' | 'number') => {
+	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
 		setActivityCycleMode(mode)
 		if (mode === 'none') {
 			onFormDataChange({ activityCycle: '' })
@@ -45,14 +50,15 @@ export const ClubDetailsScreen = ({
 	}
 
 	const incrementActivityCycle = () => {
-		setActivityCycleMode('number')
-		onFormDataChange({ activityCycle: (activitySemesters + 1).toString() })
+		const next = incrementActivityCycleValue(activitySemesters)
+		setActivityCycleMode(next.mode)
+		onFormDataChange({ activityCycle: next.value })
 	}
 
 	const decrementActivityCycle = () => {
-		if (activitySemesters > 0) {
-			onFormDataChange({ activityCycle: (activitySemesters - 1).toString() })
-		}
+		const next = decrementActivityCycleValue(activitySemesters)
+		setActivityCycleMode(next.mode)
+		onFormDataChange({ activityCycle: next.value })
 	}
 
 	const isComplete =
