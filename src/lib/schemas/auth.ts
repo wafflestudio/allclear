@@ -10,6 +10,7 @@ export const AppleLoginCallbackPayloadSchema = z
 export const KakaoCallbackQuerySchema = z
   .object({
     code: z.string(),
+    state: z.string().optional(),
   })
   .openapi('KakaoCallbackQuery')
 

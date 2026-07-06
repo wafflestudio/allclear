@@ -21,7 +21,6 @@ const AdminDashboardPage = () => {
     pendingCounts,
     toasts,
     dismissToast,
-    handleLogin,
     handleLogout,
     clubs,
     managerRequests,
@@ -43,7 +42,7 @@ const AdminDashboardPage = () => {
   }
 
   if (!authToken) {
-    return <AdminLoginPage onLogin={handleLogin} />
+    return <AdminLoginPage />
   }
 
   return (

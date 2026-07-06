@@ -11,6 +11,9 @@ type ResponseData = {
   token: string
 }
 
+const buildAdminLoginCallbackPath = (token: string) =>
+  `/admin/auth/callback#token=${encodeURIComponent(token)}`
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string | ZodIssue[]>,
@@ -19,7 +22,7 @@ export default async function handler(
     const authService = Provider.getService(AuthService)
 
     if (req.method == 'GET') {
-      const { code: authcode } = KakaoCallbackQuerySchema.parse(req.query)
+      const { code: authcode, state } = KakaoCallbackQuerySchema.parse(req.query)
       if (!authcode) {
         return res.status(401).send('unauthorized')
       }
@@ -30,6 +33,11 @@ export default async function handler(
           algorithm: 'HS256',
           expiresIn: '1y',
         })
+
+        if (state === 'admin') {
+          return res.redirect(302, buildAdminLoginCallbackPath(token))
+        }
+
         return res.status(200).json({
           token,
         })
