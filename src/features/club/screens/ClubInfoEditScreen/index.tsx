@@ -90,11 +90,20 @@ const initialFormData: ClubInfoEditFormData = {
 	clubDescription: '',
 }
 
+const getClubDepartment = (club: ManagedClubDetail): string => {
+	const collegeDepartment = club.collegeMajor?.major || club.collegeMajor?.college || club.college
+	if (collegeDepartment) {
+		return collegeDepartment
+	}
+
+	return club.affiliationType && club.affiliationType !== '소속동아리' ? club.affiliationType : ''
+}
+
 const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => ({
 	clubImage: club.imageUri || null,
 	clubName: club.name ?? '',
 	category: club.category ?? '',
-	department: club.collegeMajor?.major || club.collegeMajor?.college || club.college || '',
+	department: getClubDepartment(club),
 	shortIntro: club.shortDescription || club.description || '',
 	recruitType: CLUB_RECRUIT_TYPES.includes(club.recruitType) ? club.recruitType : '',
 	activityCycle:
@@ -426,7 +435,7 @@ const ClubInfoEditScreen = () => {
 									value={formData.clubName}
 									placeholder="와플스튜디오"
 									onChangeText={text => setFormField('clubName', text)}
-									maxLength={100}
+									maxLength={30}
 								/>
 							</View>
 
