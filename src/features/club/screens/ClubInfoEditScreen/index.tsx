@@ -927,7 +927,7 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 	},
 	descriptionInput: {
-		minHeight: vs(120),
+		minHeight: vs(60),
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_MAIN,
 		paddingHorizontal: s(16),

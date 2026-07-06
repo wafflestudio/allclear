@@ -229,6 +229,8 @@ export const ClubDetailsScreen = ({
 							value={formData.clubDescription}
 							onChangeText={text => onFormDataChange({ clubDescription: text })}
 							maxLength={500}
+							multiline
+							textAlignVertical="top"
 						/>
 						<Text style={styles.validationText}>동아리 추가 설명은 필수 입력 정보예요.</Text>
 					</View>
@@ -358,10 +360,11 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 	},
 	descriptionInput: {
+		minHeight: vs(60),
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_MAIN,
 		paddingHorizontal: s(16),
-		paddingVertical: vs(8),
+		paddingVertical: vs(12),
 		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
 		borderRadius: 8,
