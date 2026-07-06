@@ -2,14 +2,13 @@ import React, { useState } from 'react'
 import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Colors } from '@/shared/constants/colors'
+import { CLUB_RECRUIT_TYPES } from '@/shared/constants/club'
 import { typography } from '@/shared/constants/typography'
 import { s, vs } from '@/shared/utils/scale'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
 import { isValidUrl } from '@/features/register-club/validation'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
-
-const RECRUIT_TYPES = ['정기', '상시', '미정']
 
 type Props = {
 	formData: RegisterClubFormData
@@ -80,7 +79,7 @@ export const ClubDetailsScreen = ({
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.fieldLabel}>모집 형태</Text>
 						<View style={styles.buttonGroup}>
-							{RECRUIT_TYPES.map(type => (
+							{CLUB_RECRUIT_TYPES.map(type => (
 								<Pressable
 									key={type}
 									style={[

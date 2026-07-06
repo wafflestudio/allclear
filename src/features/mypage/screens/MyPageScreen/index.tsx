@@ -13,7 +13,8 @@ import { s, vs, ms } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 import { setToken } from '@/shared/utils/api'
 import AlertModal from '@/shared/components/AlertModal'
-import React, { useContext, useState } from 'react'
+import React, { useCallback, useContext, useState } from 'react'
+import { useFocusEffect } from '@react-navigation/native'
 import {
 	Image,
 	Pressable,
@@ -37,11 +38,17 @@ const MyPageScreen = () => {
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false)
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false)
 
-	const { data: manageClubsData } = useQuery({
+	const { data: manageClubsData, refetch: refetchManageClubs } = useQuery({
 		queryKey: ['manageClubs'],
 		queryFn: () => clubService.listManageClubs(),
 		select: data => data.clubs,
 	})
+
+	useFocusEffect(
+		useCallback(() => {
+			refetchManageClubs()
+		}, [refetchManageClubs]),
+	)
 
 	const manageClubs = manageClubsData ?? []
 

@@ -3,22 +3,12 @@ import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { Colors } from '@/shared/constants/colors'
+import { DEPARTMENTS } from '@/shared/constants/departments'
 import { typography } from '@/shared/constants/typography'
 import { s, vs } from '@/shared/utils/scale'
 import TextField from '@/shared/components/TextField'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
-
-const DEPARTMENTS = [
-	'중앙동아리',
-	'인문대학',
-	'국어국문학과',
-	'중어중문학과',
-	'영어영문학과',
-	'공과대학',
-	'컴퓨터공학과',
-	'기계공학과',
-]
 
 type Props = {
 	formData: RegisterClubFormData
