@@ -1,6 +1,5 @@
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import { GestureDetector } from 'react-native-gesture-handler'
 import Animated from 'react-native-reanimated'
 
 import { Club } from '@/entities/club'
@@ -16,18 +15,44 @@ type Props = {
 }
 
 const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
-	const { listRef, touchGesture, ...scrollEventProps } = useAutoScroll<Club>(clubs.length)
+	const { listRef, pauseAutoScroll, resumeAutoScroll, ...scrollEventProps } = useAutoScroll<Club>(
+		clubs.length,
+	)
+
+	const handleScrollBeginDrag = () => {
+		pauseAutoScroll()
+	}
+
+	const handleScrollEndDrag = () => {
+		resumeAutoScroll(350)
+	}
+
+	const handleMomentumScrollBegin = () => {
+		pauseAutoScroll()
+	}
+
+	const handleMomentumScrollEnd = () => {
+		resumeAutoScroll(450)
+	}
 
 	return (
-		<GestureDetector gesture={touchGesture}>
+		<View
+			onTouchStart={pauseAutoScroll}
+			onTouchEnd={() => resumeAutoScroll(300)}
+			onTouchCancel={() => resumeAutoScroll(300)}>
 			<Animated.FlatList
 				ref={listRef}
 				{...scrollEventProps}
 				horizontal
+				decelerationRate="normal"
 				showsHorizontalScrollIndicator={false}
 				style={styles.list}
 				contentContainerStyle={styles.contentContainer}
 				scrollEventThrottle={16}
+				onScrollBeginDrag={handleScrollBeginDrag}
+				onScrollEndDrag={handleScrollEndDrag}
+				onMomentumScrollBegin={handleMomentumScrollBegin}
+				onMomentumScrollEnd={handleMomentumScrollEnd}
 				data={clubs}
 				keyExtractor={item => item.id}
 				ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
@@ -40,7 +65,7 @@ const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
 					/>
 				)}
 			/>
-		</GestureDetector>
+		</View>
 	)
 }
 

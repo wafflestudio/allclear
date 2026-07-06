@@ -3,13 +3,14 @@ import {
 	Image,
 	ImageSourcePropType,
 	ImageStyle,
-	Pressable,
+	PressableStateCallbackType,
 	StyleProp,
 	StyleSheet,
 	Text,
 	View,
 	ViewStyle,
 } from 'react-native'
+import { Pressable } from 'react-native-gesture-handler'
 import SkeletonPlaceholder from 'react-native-skeleton-placeholder'
 
 import { Colors } from '@/shared/constants/colors'
@@ -42,14 +43,17 @@ const ClubPreviewCardFrame = ({ children, onPress, style }: ClubPreviewCardFrame
 		return <View style={[styles.shadowContainer, styles.cardWidth, style]}>{content}</View>
 	}
 
+	const getContainerStyle = ({ pressed }: PressableStateCallbackType) => [
+		styles.shadowContainer,
+		styles.cardWidth,
+		style,
+		pressed && styles.pressed,
+	]
+
 	return (
 		<Pressable
-			style={({ pressed }) => [
-				styles.shadowContainer,
-				styles.cardWidth,
-				style,
-				pressed && styles.pressed,
-			]}
+			style={getContainerStyle}
+			pressRetentionOffset={{ top: 12, right: 12, bottom: 12, left: 12 }}
 			onPress={onPress}>
 			{content}
 		</Pressable>

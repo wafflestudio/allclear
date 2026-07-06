@@ -9,14 +9,17 @@ import { ms, s, vs } from '@/shared/utils/scale'
 type Props = {
 	title: string
 	onBack: () => void
+	showBackButton?: boolean
 }
 
-const Header = ({ title, onBack }: Props) => {
+const Header = ({ title, onBack, showBackButton = true }: Props) => {
 	return (
 		<View style={styles.container}>
-			<Pressable style={styles.backButton} onPress={onBack}>
-				<Icon name="chevron-left" size={ms(28)} color={Colors.BODYTEXT_SUB} />
-			</Pressable>
+			{showBackButton && (
+				<Pressable style={styles.backButton} onPress={onBack}>
+					<Icon name="chevron-left" size={ms(28)} color={Colors.BODYTEXT_SUB} />
+				</Pressable>
+			)}
 
 			<View style={styles.titleWrapper}>
 				<Text style={styles.title} numberOfLines={1}>

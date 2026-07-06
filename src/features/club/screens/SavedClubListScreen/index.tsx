@@ -33,7 +33,7 @@ const SavedClubListScreen = () => {
 			<SafeAreaView
 				edges={['top', 'left', 'right']}
 				style={{ flex: 1, backgroundColor: Colors.BACKGROUND_MAIN, overflow: 'scroll' }}>
-				<Header title="저장한 동아리" onBack={handleBack} />
+				<Header title="저장한 동아리" onBack={handleBack} showBackButton={false} />
 				<ClubList
 					clubs={savedClubs}
 					openDetailPage={openDetailPage}
