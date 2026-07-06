@@ -1,24 +1,16 @@
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import { useQuery } from '@tanstack/react-query'
 import { Colors } from '@/shared/constants/colors'
+import { buildDepartmentOptions, DEFAULT_DEPARTMENT_OPTIONS } from '@/shared/constants/departments'
 import { typography } from '@/shared/constants/typography'
 import { s, vs } from '@/shared/utils/scale'
 import TextField from '@/shared/components/TextField'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
-
-const DEPARTMENTS = [
-	'중앙동아리',
-	'인문대학',
-	'국어국문학과',
-	'중어중문학과',
-	'영어영문학과',
-	'공과대학',
-	'컴퓨터공학과',
-	'기계공학과',
-]
+import { serviceContext } from '@/shared/contexts/serviceContext'
 
 type Props = {
 	formData: RegisterClubFormData
@@ -35,8 +27,14 @@ export const ClubAffiliationScreen = ({
 	onPrevious,
 	progress,
 }: Props) => {
+	const { userService } = useContext(serviceContext)
 	const [showDropdown, setShowDropdown] = useState(false)
 	const isComplete = formData.department.trim() && formData.shortIntro.trim()
+	const { data: departmentOptions = DEFAULT_DEPARTMENT_OPTIONS } = useQuery({
+		queryKey: ['collegeMajors', 'clubAffiliation'],
+		queryFn: () => userService.listCollegeMajors({ includeNullMajor: true }),
+		select: data => buildDepartmentOptions(data.majors),
+	})
 
 	const handleSelectDepartment = (dept: string) => {
 		onFormDataChange({ department: dept })
@@ -74,7 +72,7 @@ export const ClubAffiliationScreen = ({
 
 					{showDropdown && (
 						<View style={styles.dropdownMenu}>
-							{DEPARTMENTS.map(dept => (
+							{departmentOptions.map(dept => (
 								<Pressable
 									key={dept}
 									style={[

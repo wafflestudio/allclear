@@ -21,6 +21,10 @@ import {
 	RequestClubmanagerRequest,
 	SearchClubsRequest,
 	SearchClubsResponse,
+	UpdateManagedClubRequest,
+	UpdateManagedClubResponse,
+	UploadManagedClubImageRequest,
+	UploadManagedClubImageResponse,
 } from '@/repositories/club'
 
 export type ClubService = {
@@ -38,6 +42,10 @@ export type ClubService = {
 	removeSavedClub: (req: RemoveSavedClubRequest) => Promise<void>
 	listMyClubs: () => Promise<ListMyClubsResponse>
 	registerClub: (req: RegisterClubRequest) => Promise<RegisterClubResponse>
+	updateManagedClub: (req: UpdateManagedClubRequest) => Promise<UpdateManagedClubResponse>
+	uploadManagedClubImage: (
+		req: UploadManagedClubImageRequest,
+	) => Promise<UploadManagedClubImageResponse>
 	listRandomRecommendations: () => Promise<ListRandomRecommendationsResponse>
 }
 
@@ -60,5 +68,7 @@ export const getClubService = ({ repositories }: Deps): ClubService => ({
 	removeSavedClub: req => repositories[0].removeSavedClub(req),
 	listMyClubs: () => repositories[0].listMyClubs(),
 	registerClub: req => repositories[0].registerClub(req),
+	updateManagedClub: req => repositories[0].updateManagedClub(req),
+	uploadManagedClubImage: req => repositories[0].uploadManagedClubImage(req),
 	listRandomRecommendations: () => repositories[0].listRandomRecommendations(),
 })

@@ -18,6 +18,7 @@ export enum SCREEN_TYPE {
 	ANNOUNCEMENT_REGISTRATION = 'AnnouncementRegistration',
 	ANNOUNCEMENT_EDIT = 'AnnouncementEdit',
 	CLUB_MANAGEMENT = 'ClubManagement',
+	CLUB_INFO_EDIT = 'ClubInfoEdit',
 
 	WEBVIEW = 'WebView',
 }
@@ -56,6 +57,7 @@ export type StackParamList = {
 	[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION]: { clubId: string }
 	[SCREEN_TYPE.ANNOUNCEMENT_EDIT]: { recruitmentId: number }
 	[SCREEN_TYPE.CLUB_MANAGEMENT]: { clubId: string }
+	[SCREEN_TYPE.CLUB_INFO_EDIT]: { clubId: string }
 
 	[SCREEN_TYPE.WEBVIEW]: { uri: string; title?: string; authorization?: string }
 }

@@ -18,11 +18,15 @@ export type ListCollegeMajorsResponse = {
 	totalSize: number
 }
 
+export type ListCollegeMajorsRequest = {
+	includeNullMajor?: boolean
+}
+
 export type UserRepository = {
 	getUser: () => Promise<User>
 	updateUser: (request: UpdateUserRequest) => Promise<void>
 	createUserVoice: (request: CreateUserVoiceRequest) => Promise<void>
-	listCollegeMajors: () => Promise<ListCollegeMajorsResponse>
+	listCollegeMajors: (request?: ListCollegeMajorsRequest) => Promise<ListCollegeMajorsResponse>
 }
 
 export const getUserRepository = (): UserRepository => ({
@@ -55,8 +59,11 @@ export const getUserRepository = (): UserRepository => ({
 
 		await apiConnector.post('/v2/users/me/voices', request)
 	},
-	listCollegeMajors: async () => {
-		const response = await apiConnector.get<ListCollegeMajorsResponse>('/v2/users/majors')
+	listCollegeMajors: async request => {
+		const response = await apiConnector.get<ListCollegeMajorsResponse>(
+			'/v2/users/majors',
+			request?.includeNullMajor ? { includeNullMajor: 'true' } : undefined,
+		)
 
 		return response
 	},

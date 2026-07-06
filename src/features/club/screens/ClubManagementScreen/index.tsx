@@ -40,6 +40,7 @@ const ClubManagementScreen = () => {
 	const [showMore, setShowMore] = useState(false)
 	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
 	const [deletedTitle, setDeletedTitle] = useState<string | null>(null)
+	const [showEditConfirm, setShowEditConfirm] = useState(false)
 
 	const { data: club } = useQuery({
 		queryKey: ['managedClub', clubId],
@@ -105,9 +106,12 @@ const ClubManagementScreen = () => {
 							<View style={styles.clubLogo}>
 								<Image source={snuLogo} style={styles.clubLogoImage} />
 							</View>
-							<View style={styles.editIconWrapper}>
+							<Pressable
+								style={styles.editIconWrapper}
+								onPress={() => setShowEditConfirm(true)}
+								hitSlop={8}>
 								<Icon name="edit" size={ms(20)} color="#8F8686" style={{ opacity: 0.5 }} />
-							</View>
+							</Pressable>
 						</View>
 						<View style={styles.clubTexts}>
 							<Text style={styles.clubName} numberOfLines={1}>
@@ -281,6 +285,48 @@ const ClubManagementScreen = () => {
 					</View>
 				</View>
 			</ScrollView>
+
+			{/* 동아리 정보 수정 확인 모달 */}
+			<Modal
+				visible={showEditConfirm}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setShowEditConfirm(false)}>
+				<Pressable style={styles.modalOverlay} onPress={() => setShowEditConfirm(false)}>
+					<BlurView
+						style={StyleSheet.absoluteFillObject}
+						blurType="light"
+						blurAmount={1}
+						overlayColor="transparent"
+						reducedTransparencyFallbackColor="transparent"
+					/>
+					<Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
+						<View style={styles.modalContents}>
+							<Text style={styles.modalTitle}>동아리 정보를 수정할까요?</Text>
+							<Text style={styles.modalDesc}>
+								동아리 정보는 동아리 관리 → 수정 탭에서{'\n'}언제든 수정 가능해요
+							</Text>
+						</View>
+						<View style={styles.modalActions}>
+							<TouchableOpacity
+								style={styles.modalCancelBtn}
+								onPress={() => setShowEditConfirm(false)}
+								activeOpacity={0.6}>
+								<Text style={styles.modalCancelText}>취소</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={styles.modalConfirmBtn}
+								onPress={() => {
+									setShowEditConfirm(false)
+									navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, { clubId })
+								}}
+								activeOpacity={0.6}>
+								<Text style={styles.modalConfirmText}>수정</Text>
+							</TouchableOpacity>
+						</View>
+					</Pressable>
+				</Pressable>
+			</Modal>
 
 			{/* 삭제 확인 모달 */}
 			<Modal

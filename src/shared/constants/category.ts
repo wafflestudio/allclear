@@ -9,6 +9,18 @@ export type CategoryDetail = {
 	icon: ImageSourcePropType
 }
 
+export const CLUB_CATEGORIES: Category['name'][] = [
+	'학술',
+	'종교',
+	'봉사',
+	'공연',
+	'운동',
+	'홍보',
+	'취미',
+	'문화',
+	'진로',
+]
+
 export const CategoryMap: Record<Category['name'], CategoryDetail> = {
 	학술: {
 		name: '학술',

@@ -1,24 +1,13 @@
 import React from 'react'
 import { View, Text, ScrollView, StyleSheet, Pressable, Dimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { Category } from '@/entities/category'
+import { CLUB_CATEGORIES } from '@/shared/constants/category'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { s, vs } from '@/shared/utils/scale'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
-import { Category } from '@/entities/category'
-
-const CATEGORIES: Category['name'][] = [
-	'학술',
-	'종교',
-	'봉사',
-	'공연',
-	'운동',
-	'홍보',
-	'취미',
-	'문화',
-	'진로',
-]
 
 const TILE_SIZE = (Dimensions.get('window').width - s(20) * 2 - s(12) * 2) / 3
 
@@ -60,7 +49,7 @@ export const CategorySelectionScreen = ({
 				</View>
 
 				<View style={styles.categoryGrid}>
-					{CATEGORIES.map(category => {
+					{CLUB_CATEGORIES.map(category => {
 						const isSelected = formData.selectedCategories.includes(category)
 						return (
 							<Pressable
