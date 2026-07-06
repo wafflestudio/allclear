@@ -8,9 +8,6 @@ import { UserService } from 'server/service/user.service'
 import { UserNotFoundError } from 'server/domain/error'
 import { uploadClubImageStream } from 'server/infra/client/s3'
 import { ENV } from '../../../../../../../../server/ENV'
-import fetch from 'node-fetch'
-import sharp from 'sharp'
-import { encode } from 'blurhash'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 
 export const maxDuration = 300 // 5 minutes (maximum for Vercel Pro)
@@ -21,43 +18,49 @@ export const config: PageConfig = {
   },
 }
 
-async function r(
+async function uploadAndPersistImage(
   req: NextApiRequest,
   clubId: string,
-  persist: (clubId: string, imageUri: string, blurHash: string) => Promise<boolean>,
+  persist: (clubId: string, imageUri: string) => Promise<boolean>,
 ) {
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const busboy = Busboy({ headers: req.headers })
+    let hasFile = false
 
     busboy.on('file', (fieldname, file, { filename, mimeType }) => {
-      const ext = filename.split('.').pop()
+      hasFile = true
+      const ext = filename.split('.').pop() || 'jpg'
       const newFilename = `${uuidv4()}.${ext}`
       const imageUri = ENV.R2.GET_CLUB_IMAGE_PATH(newFilename)
       const fileKey = `club/${newFilename}`
 
-      // upload to r2 storage
-      uploadClubImageStream(fileKey, file, mimeType).then(async () => {
-        try {
-          const res = await fetch(imageUri)
-          const buffer = await res.arrayBuffer()
-          const { data: pixels, info: metadata } = await sharp(buffer)
-            .ensureAlpha()
-            .raw()
-            .toBuffer({ resolveWithObject: true })
-          const clamped = new Uint8ClampedArray(pixels)
-          const blurhash = encode(clamped, metadata.width, metadata.height, 4, 4)
-
-          await persist(clubId, imageUri, blurhash)
-          resolve(1)
-        } catch (err) {
+      uploadClubImageStream(fileKey, file, mimeType)
+        .then(async () => {
+          const persisted = await persist(clubId, imageUri)
+          if (!persisted) {
+            throw new Error('failed to update club image')
+          }
+          resolve()
+        })
+        .catch((err) => {
           reject(err)
-        }
-      })
+        })
+    })
+
+    busboy.on('finish', () => {
+      if (!hasFile) {
+        reject(new Error('file is required'))
+      }
+    })
+
+    busboy.on('error', (err) => {
+      reject(err)
     })
 
     req.pipe(busboy)
   })
 }
+
 export default async function imageUploadHandler(req: NextApiRequest, res: NextApiResponse) {
   try {
     const clubService = Provider.getService(ClubService)
@@ -68,11 +71,11 @@ export default async function imageUploadHandler(req: NextApiRequest, res: NextA
       const { uuid: clubUuid } = ClubUuidParamsSchema.parse(req.query)
       const club = await clubService.getManagedClubByUuid(clubUuid, user.serviceUserId)
 
-      const persist = (clubId: string, imageUri: string, blurHash: string) =>
-        clubService.updateClub(clubId, { imageUri, blurHash })
-      await r(req, club.uuid, persist)
+      const persist = (clubId: string, imageUri: string) =>
+        clubService.updateClub(clubId, { imageUri })
+      await uploadAndPersistImage(req, club.uuid, persist)
 
-      return res.status(200).end(JSON.stringify({ ok: true }))
+      return res.status(200).json({ ok: true })
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {

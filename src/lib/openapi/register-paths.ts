@@ -1781,6 +1781,8 @@ registry.registerPath({
   path: '/api/v2/managers/me/clubs/{uuid}/images',
   tags: ['Managers'],
   summary: '관리 중인 동아리 이미지 업로드',
+  description:
+    '동아리 관리자가 대표 이미지를 업로드합니다. 업로드된 이미지는 CDN에 저장되며, 동아리의 image_uri가 갱신됩니다. blurhash는 생성하지 않습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
