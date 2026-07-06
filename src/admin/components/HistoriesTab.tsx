@@ -103,11 +103,16 @@ const Snapshot = ({
       {fields.map((field) => (
         <div key={field}>
           <dt className="text-xs font-semibold text-slate-500">{field}</dt>
-          <dd className="mt-1 break-words rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-800">
-            {String(data[field] ?? '-')}
+          <dd className="mt-1 min-h-[30px] break-words rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-800">
+            {formatSnapshotValue(data[field])}
           </dd>
         </div>
       ))}
     </dl>
   </div>
 )
+
+const formatSnapshotValue = (value: unknown) => {
+  if (value == null || value === '') return '-'
+  return String(value)
+}

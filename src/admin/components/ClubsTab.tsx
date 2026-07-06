@@ -107,7 +107,7 @@ const ClubDecisionSidebar = ({
   isMutating: boolean
   onDecide: (payload: DecidePayload) => void
 }) => {
-  const [officialVerified, setOfficialVerified] = useState(true)
+  const [officialVerified, setOfficialVerified] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
   const [rejectReasonError, setRejectReasonError] = useState(false)
   const [confirmAction, setConfirmAction] = useState<{
