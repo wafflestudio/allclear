@@ -20,15 +20,12 @@ export default async function handler(
 
     if (req.method === 'GET') {
       const query = AdminClubManagerRequestsQuerySchema.parse(req.query)
-      const requests = await adminClubService.getAdminClubManagerRequests(query)
+      const result = await adminClubService.getAdminClubManagerRequests(query)
 
       return res.status(200).json({
         success: true,
         message: '매핑 신청 목록 조회가 완료되었습니다.',
-        data: {
-          total_count: requests.length,
-          requests,
-        },
+        data: result,
       })
     }
   } catch (err) {

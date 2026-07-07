@@ -8,9 +8,27 @@ const AdminClubManagerSchema = z.object({
   student_id: z.string(),
 })
 
+const AdminPaginationQueryFields = {
+  offset: z
+    .preprocess(
+      (value) => (value === undefined ? undefined : Number(value)),
+      z.number().int().min(0),
+    )
+    .optional()
+    .default(0),
+  limit: z
+    .preprocess(
+      (value) => (value === undefined ? undefined : Number(value)),
+      z.number().int().min(1).max(100),
+    )
+    .optional()
+    .default(20),
+}
+
 export const AdminClubsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
+    ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubsQuery')
 
@@ -117,20 +135,7 @@ export const AdminClubHistoriesQuerySchema = z
   .object({
     club_uuid: z.string().uuid().optional(),
     query: z.string().trim().optional(),
-    offset: z
-      .preprocess(
-        (value) => (value === undefined ? undefined : Number(value)),
-        z.number().int().min(0),
-      )
-      .optional()
-      .default(0),
-    limit: z
-      .preprocess(
-        (value) => (value === undefined ? undefined : Number(value)),
-        z.number().int().min(1).max(100),
-      )
-      .optional()
-      .default(20),
+    ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubHistoriesQuery')
 
@@ -170,6 +175,7 @@ export type AdminClubHistoriesResponse = z.infer<typeof AdminClubHistoriesRespon
 export const AdminClubManagerRequestsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
+    ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubManagerRequestsQuery')
 
@@ -210,6 +216,7 @@ export type AdminClubManagerRequestsResponse = z.infer<
 export const AdminClubVerificationRequestsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
+    ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubVerificationRequestsQuery')
 

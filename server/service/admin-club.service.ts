@@ -17,6 +17,7 @@ import {
 } from 'src/common/constants/club-status'
 import { ConflictError, NotFoundError } from 'server/domain/error'
 import type {
+  AdminClubsQuery,
   AdminClubHistoriesQuery,
   AdminClubManagerRequestStatusUpdate,
   AdminClubManagerRequestsQuery,
@@ -107,6 +108,10 @@ export type AdminClubVerificationRequestItem = {
   created_at: string
 }
 
+type AdminPaginatedList<TItemsKey extends string, TItem> = {
+  total_count: number
+} & Record<TItemsKey, TItem[]>
+
 @Service
 export class AdminClubService {
   @InjectRepository(ClubEntity)
@@ -124,7 +129,11 @@ export class AdminClubService {
   @InjectRepository(ClubVerificationRequestEntity)
   private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
 
-  async getAdminClubs(status?: ClubStatus): Promise<AdminClubItem[]> {
+  async getAdminClubs({
+    status,
+    offset,
+    limit,
+  }: AdminClubsQuery): Promise<AdminPaginatedList<'clubs', AdminClubItem>> {
     const where: FindOptionsWhere<ClubEntity> = {
       deletedAt: IsNull(),
     }
@@ -132,38 +141,48 @@ export class AdminClubService {
       where.status = status
     }
 
-    const clubs = await this.clubRepository.find({
+    const [clubs, totalCount] = await this.clubRepository.findAndCount({
       where,
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'DESC', uuid: 'ASC' },
+      skip: offset,
+      take: limit,
     })
 
-    if (clubs.length === 0) return []
+    if (clubs.length === 0) {
+      return {
+        total_count: totalCount,
+        clubs: [],
+      }
+    }
 
     const managers = await this.clubManagerRepository.findBy({
       clubId: In(clubs.map((c) => c.uuid)),
     })
     const managerMap = new Map(managers.map((m) => [m.clubId, m]))
 
-    return clubs.map((club) => {
-      const manager = managerMap.get(club.uuid)
-      return {
-        uuid: club.uuid,
-        name: club.name,
-        status: club.status,
-        category: club.category,
-        affiliation:
-          club.affiliationType === '소속동아리'
-            ? club.collegeMajor?.major ?? club.collegeMajor?.college ?? ''
-            : club.affiliationType,
-        short_description: club.shortDescription,
-        created_at: club.createdAt,
-        manager: {
-          name: manager?.name ?? '',
-          phone: manager?.phone ?? '',
-          student_id: manager?.studentId ?? '',
-        },
-      }
-    })
+    return {
+      total_count: totalCount,
+      clubs: clubs.map((club) => {
+        const manager = managerMap.get(club.uuid)
+        return {
+          uuid: club.uuid,
+          name: club.name,
+          status: club.status,
+          category: club.category,
+          affiliation:
+            club.affiliationType === '소속동아리'
+              ? club.collegeMajor?.major ?? club.collegeMajor?.college ?? ''
+              : club.affiliationType,
+          short_description: club.shortDescription,
+          created_at: club.createdAt,
+          manager: {
+            name: manager?.name ?? '',
+            phone: manager?.phone ?? '',
+            student_id: manager?.studentId ?? '',
+          },
+        }
+      }),
+    }
   }
 
   async getAdminClubDetail(clubUuid: string): Promise<AdminClubDetail> {
@@ -296,6 +315,7 @@ export class AdminClubService {
         'history.created_at AS created_at',
       ])
       .orderBy('history.created_at', 'DESC')
+      .addOrderBy('history.id', 'DESC')
       .offset(offset)
       .limit(limit)
       .getRawMany<{
@@ -330,10 +350,22 @@ export class AdminClubService {
 
   async getAdminClubManagerRequests({
     status,
-  }: AdminClubManagerRequestsQuery): Promise<AdminClubManagerRequestItem[]> {
-    const query = this.clubManagerRegisterRequestRepository
+    offset,
+    limit,
+  }: AdminClubManagerRequestsQuery): Promise<
+    AdminPaginatedList<'requests', AdminClubManagerRequestItem>
+  > {
+    const baseQuery = this.clubManagerRegisterRequestRepository
       .createQueryBuilder('manager_request')
       .leftJoin(ClubEntity, 'club', 'club.uuid = manager_request.club_id')
+
+    if (status) {
+      baseQuery.andWhere('manager_request.status = :status', { status })
+    }
+
+    const totalCount = await baseQuery.getCount()
+    const requests = await baseQuery
+      .clone()
       .select([
         'manager_request.id AS id',
         'manager_request.club_id AS club_uuid',
@@ -347,46 +379,59 @@ export class AdminClubService {
         'manager_request.created_at AS created_at',
       ])
       .orderBy('manager_request.created_at', 'DESC')
+      .addOrderBy('manager_request.id', 'DESC')
+      .offset(offset)
+      .limit(limit)
+      .getRawMany<{
+        id: string
+        club_uuid: string
+        club_name: string
+        service_user_id: string
+        applicant_name: string
+        applicant_phone: string
+        applicant_student_id: string
+        status: ClubStatus
+        reject_reason: string | null
+        created_at: string
+      }>()
 
-    if (status) {
-      query.where('manager_request.status = :status', { status })
+    return {
+      total_count: totalCount,
+      requests: requests.map((request) => ({
+        id: Number(request.id),
+        club_uuid: request.club_uuid,
+        club_name: request.club_name,
+        applicant: {
+          service_user_id: request.service_user_id,
+          name: request.applicant_name,
+          phone: request.applicant_phone,
+          student_id: request.applicant_student_id,
+        },
+        status: request.status,
+        reject_reason: request.reject_reason,
+        created_at: request.created_at,
+      })),
     }
-
-    const requests = await query.getRawMany<{
-      id: string
-      club_uuid: string
-      club_name: string
-      service_user_id: string
-      applicant_name: string
-      applicant_phone: string
-      applicant_student_id: string
-      status: ClubStatus
-      reject_reason: string | null
-      created_at: string
-    }>()
-
-    return requests.map((request) => ({
-      id: Number(request.id),
-      club_uuid: request.club_uuid,
-      club_name: request.club_name,
-      applicant: {
-        service_user_id: request.service_user_id,
-        name: request.applicant_name,
-        phone: request.applicant_phone,
-        student_id: request.applicant_student_id,
-      },
-      status: request.status,
-      reject_reason: request.reject_reason,
-      created_at: request.created_at,
-    }))
   }
 
   async getAdminClubVerificationRequests({
     status,
-  }: AdminClubVerificationRequestsQuery): Promise<AdminClubVerificationRequestItem[]> {
-    const query = this.clubVerificationRequestRepository
+    offset,
+    limit,
+  }: AdminClubVerificationRequestsQuery): Promise<
+    AdminPaginatedList<'requests', AdminClubVerificationRequestItem>
+  > {
+    const baseQuery = this.clubVerificationRequestRepository
       .createQueryBuilder('verification_request')
       .leftJoin(ClubEntity, 'club', 'club.uuid = verification_request.club_id')
+
+    if (status) {
+      baseQuery.andWhere('verification_request.status = :status', { status })
+    }
+
+    const totalCount = await baseQuery.getCount()
+    const requests = await baseQuery
+      .clone()
       .select([
         'verification_request.id AS id',
         'verification_request.club_id AS club_uuid',
@@ -397,30 +442,31 @@ export class AdminClubService {
         'verification_request.created_at AS created_at',
       ])
       .orderBy('verification_request.created_at', 'DESC')
+      .addOrderBy('verification_request.id', 'DESC')
+      .offset(offset)
+      .limit(limit)
+      .getRawMany<{
+        id: string
+        club_uuid: string
+        club_name: string
+        category: string
+        status: ClubStatus
+        reject_reason: string | null
+        created_at: string
+      }>()
 
-    if (status) {
-      query.where('verification_request.status = :status', { status })
+    return {
+      total_count: totalCount,
+      requests: requests.map((request) => ({
+        id: Number(request.id),
+        club_uuid: request.club_uuid,
+        club_name: request.club_name,
+        category: request.category,
+        status: request.status,
+        reject_reason: request.reject_reason,
+        created_at: request.created_at,
+      })),
     }
-
-    const requests = await query.getRawMany<{
-      id: string
-      club_uuid: string
-      club_name: string
-      category: string
-      status: ClubStatus
-      reject_reason: string | null
-      created_at: string
-    }>()
-
-    return requests.map((request) => ({
-      id: Number(request.id),
-      club_uuid: request.club_uuid,
-      club_name: request.club_name,
-      category: request.category,
-      status: request.status,
-      reject_reason: request.reject_reason,
-      created_at: request.created_at,
-    }))
   }
 
   async updateAdminClubManagerRequestStatus(

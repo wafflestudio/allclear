@@ -20,15 +20,12 @@ export default async function handler(
 
     if (req.method === 'GET') {
       const query = AdminClubVerificationRequestsQuerySchema.parse(req.query)
-      const requests = await adminClubService.getAdminClubVerificationRequests(query)
+      const result = await adminClubService.getAdminClubVerificationRequests(query)
 
       return res.status(200).json({
         success: true,
         message: '공식 인증 요청 목록 조회가 완료되었습니다.',
-        data: {
-          total_count: requests.length,
-          requests,
-        },
+        data: result,
       })
     }
   } catch (err) {

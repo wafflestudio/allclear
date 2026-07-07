@@ -2,6 +2,7 @@ import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
 import type { ClubCollegeMajor } from 'src/entities/club'
 
 export const ADMIN_AUTH_TOKEN_KEY = 'allclear:admin-auth-token'
+export const ADMIN_PAGE_SIZE = 20
 
 export const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
   { label: '전체', value: 'ALL' },

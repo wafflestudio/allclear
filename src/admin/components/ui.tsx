@@ -155,6 +155,87 @@ export const EmptyState = ({ title }: { title: string }) => (
   </div>
 )
 
+const getVisiblePageNumbers = (page: number, totalPages: number) => {
+  const maxVisiblePages = 5
+  if (totalPages <= maxVisiblePages) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1)
+  }
+
+  const halfWindow = Math.floor(maxVisiblePages / 2)
+  const start = Math.min(Math.max(1, page - halfWindow), totalPages - maxVisiblePages + 1)
+  return Array.from({ length: maxVisiblePages }, (_, index) => start + index)
+}
+
+export const PaginationBar = ({
+  page,
+  pageSize,
+  totalCount,
+  isFetching,
+  onPageChange,
+}: {
+  page: number
+  pageSize: number
+  totalCount: number
+  isFetching?: boolean
+  onPageChange: (page: number) => void
+}) => {
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  if (totalPages <= 1) return null
+
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+  const firstItem = (currentPage - 1) * pageSize + 1
+  const lastItem = Math.min(totalCount, currentPage * pageSize)
+  const visiblePages = getVisiblePageNumbers(currentPage, totalPages)
+
+  const buttonClassName =
+    'h-9 min-w-[36px] rounded-md border px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-45'
+
+  return (
+    <nav
+      className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between"
+      aria-label="페이지네이션"
+    >
+      <p className="text-sm font-medium text-slate-500">
+        {firstItem.toLocaleString()}-{lastItem.toLocaleString()} / {totalCount.toLocaleString()}건
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1 || isFetching}
+          className={`${buttonClassName} border-slate-300 bg-white text-slate-700 hover:bg-slate-100`}
+        >
+          이전
+        </button>
+        {visiblePages.map((pageNumber) => (
+          <button
+            key={pageNumber}
+            type="button"
+            onClick={() => onPageChange(pageNumber)}
+            disabled={pageNumber === currentPage || isFetching}
+            aria-current={pageNumber === currentPage ? 'page' : undefined}
+            className={`${buttonClassName} ${
+              pageNumber === currentPage
+                ? 'border-slate-950 bg-slate-950 text-white'
+                : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100'
+            }`}
+          >
+            {pageNumber}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages || isFetching}
+          className={`${buttonClassName} border-slate-300 bg-white text-slate-700 hover:bg-slate-100`}
+        >
+          다음
+        </button>
+      </div>
+    </nav>
+  )
+}
+
 const Toast = ({
   id,
   message,

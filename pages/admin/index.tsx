@@ -7,7 +7,7 @@ import { ClubsTab } from 'src/admin/components/ClubsTab'
 import { HistoriesTab } from 'src/admin/components/HistoriesTab'
 import { ManagerRequestsTab } from 'src/admin/components/ManagerRequestsTab'
 import { VerificationRequestsTab } from 'src/admin/components/VerificationRequestsTab'
-import { ToastContainer } from 'src/admin/components/ui'
+import { PaginationBar, ToastContainer } from 'src/admin/components/ui'
 
 const AdminDashboardPage = () => {
   const {
@@ -18,6 +18,7 @@ const AdminDashboardPage = () => {
     statusFilter,
     setStatusFilter,
     totalCount,
+    pagination,
     pendingCounts,
     toasts,
     dismissToast,
@@ -100,6 +101,7 @@ const AdminDashboardPage = () => {
             onSearch={histories.onSearch}
           />
         )}
+        <PaginationBar {...pagination} />
       </AdminLayout>
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </>

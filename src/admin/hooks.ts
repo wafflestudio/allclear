@@ -12,8 +12,22 @@ import {
   updateVerificationStatus,
   verifyAdminRole,
 } from 'src/admin/api'
-import { ADMIN_AUTH_TOKEN_KEY, formatCollegeMajorLabel } from 'src/admin/constants'
+import { ADMIN_AUTH_TOKEN_KEY, ADMIN_PAGE_SIZE, formatCollegeMajorLabel } from 'src/admin/constants'
 import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
+
+const INITIAL_PAGE_BY_TAB: Record<AdminTab, number> = {
+  clubs: 1,
+  managerRequests: 1,
+  verificationRequests: 1,
+  histories: 1,
+}
+
+const PENDING_COUNT_PAGINATION = {
+  offset: 0,
+  limit: 1,
+}
+
+const getPageOffset = (page: number) => (page - 1) * ADMIN_PAGE_SIZE
 
 export const useAdminDashboard = () => {
   const queryClient = useQueryClient()
@@ -21,6 +35,7 @@ export const useAdminDashboard = () => {
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<AdminTab>('clubs')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('PENDING')
+  const [pageByTab, setPageByTab] = useState<Record<AdminTab, number>>(INITIAL_PAGE_BY_TAB)
   const [submittedHistoryQuery, setSubmittedHistoryQuery] = useState('')
   const [toasts, setToasts] = useState<
     { id: number; message: string; type: 'error' | 'success' }[]
@@ -44,37 +59,71 @@ export const useAdminDashboard = () => {
     setAuthReady(true)
   }, [])
 
-  const clubsQuery = useQuery(['admin-clubs', statusFilter], () => fetchClubs(statusFilter), {
-    enabled: activeTab === 'clubs' && !!authToken,
-  })
+  const setTabPage = (tab: AdminTab, page: number) => {
+    const nextPage = Math.max(1, Math.floor(page))
+    setPageByTab((prev) => (prev[tab] === nextPage ? prev : { ...prev, [tab]: nextPage }))
+  }
+
+  const clubsPage = pageByTab.clubs
+  const managerRequestsPage = pageByTab.managerRequests
+  const verificationRequestsPage = pageByTab.verificationRequests
+  const historiesPage = pageByTab.histories
+
+  const clubsQuery = useQuery(
+    ['admin-clubs', statusFilter, clubsPage, ADMIN_PAGE_SIZE],
+    () =>
+      fetchClubs(statusFilter, {
+        offset: getPageOffset(clubsPage),
+        limit: ADMIN_PAGE_SIZE,
+      }),
+    {
+      enabled: activeTab === 'clubs' && !!authToken,
+    },
+  )
   const managerRequestsQuery = useQuery(
-    ['admin-manager-requests', statusFilter],
-    () => fetchManagerRequests(statusFilter),
+    ['admin-manager-requests', statusFilter, managerRequestsPage, ADMIN_PAGE_SIZE],
+    () =>
+      fetchManagerRequests(statusFilter, {
+        offset: getPageOffset(managerRequestsPage),
+        limit: ADMIN_PAGE_SIZE,
+      }),
     { enabled: activeTab === 'managerRequests' && !!authToken },
   )
   const verificationRequestsQuery = useQuery(
-    ['admin-verification-requests', statusFilter],
-    () => fetchVerificationRequests(statusFilter),
+    ['admin-verification-requests', statusFilter, verificationRequestsPage, ADMIN_PAGE_SIZE],
+    () =>
+      fetchVerificationRequests(statusFilter, {
+        offset: getPageOffset(verificationRequestsPage),
+        limit: ADMIN_PAGE_SIZE,
+      }),
     { enabled: activeTab === 'verificationRequests' && !!authToken },
   )
 
-  const clubsPendingQuery = useQuery(['admin-clubs-pending-count'], () => fetchClubs('PENDING'), {
-    enabled: !!authToken,
-    refetchInterval: 30_000,
-  })
+  const clubsPendingQuery = useQuery(
+    ['admin-clubs-pending-count'],
+    () => fetchClubs('PENDING', PENDING_COUNT_PAGINATION),
+    {
+      enabled: !!authToken,
+      refetchInterval: 30_000,
+    },
+  )
   const managerRequestsPendingQuery = useQuery(
     ['admin-manager-requests-pending-count'],
-    () => fetchManagerRequests('PENDING'),
+    () => fetchManagerRequests('PENDING', PENDING_COUNT_PAGINATION),
     { enabled: !!authToken, refetchInterval: 30_000 },
   )
   const verificationsPendingQuery = useQuery(
     ['admin-verifications-pending-count'],
-    () => fetchVerificationRequests('PENDING'),
+    () => fetchVerificationRequests('PENDING', PENDING_COUNT_PAGINATION),
     { enabled: !!authToken, refetchInterval: 30_000 },
   )
   const historiesQuery = useQuery(
-    ['admin-club-histories', submittedHistoryQuery],
-    () => fetchHistories(submittedHistoryQuery),
+    ['admin-club-histories', submittedHistoryQuery, historiesPage, ADMIN_PAGE_SIZE],
+    () =>
+      fetchHistories(submittedHistoryQuery, {
+        offset: getPageOffset(historiesPage),
+        limit: ADMIN_PAGE_SIZE,
+      }),
     { enabled: activeTab === 'histories' && !!authToken },
   )
   const collegeMajorsQuery = useQuery(['admin-college-majors'], fetchCollegeMajors, {
@@ -114,12 +163,12 @@ export const useAdminDashboard = () => {
     onError: addError,
   })
 
-  const totalCount = useMemo(() => {
-    if (activeTab === 'clubs') return clubsQuery.data?.data.total_count ?? 0
-    if (activeTab === 'managerRequests') return managerRequestsQuery.data?.data.total_count ?? 0
+  const activeTotalCount = useMemo(() => {
+    if (activeTab === 'clubs') return clubsQuery.data?.data.total_count
+    if (activeTab === 'managerRequests') return managerRequestsQuery.data?.data.total_count
     if (activeTab === 'verificationRequests')
-      return verificationRequestsQuery.data?.data.total_count ?? 0
-    return historiesQuery.data?.data.total_count ?? 0
+      return verificationRequestsQuery.data?.data.total_count
+    return historiesQuery.data?.data.total_count
   }, [
     activeTab,
     clubsQuery.data,
@@ -127,6 +176,25 @@ export const useAdminDashboard = () => {
     managerRequestsQuery.data,
     verificationRequestsQuery.data,
   ])
+
+  const totalCount = activeTotalCount ?? 0
+  const activeIsFetching =
+    activeTab === 'clubs'
+      ? clubsQuery.isFetching
+      : activeTab === 'managerRequests'
+      ? managerRequestsQuery.isFetching
+      : activeTab === 'verificationRequests'
+      ? verificationRequestsQuery.isFetching
+      : historiesQuery.isFetching
+
+  useEffect(() => {
+    if (activeTotalCount === undefined) return
+
+    const pageCount = Math.max(1, Math.ceil(activeTotalCount / ADMIN_PAGE_SIZE))
+    setPageByTab((prev) =>
+      prev[activeTab] > pageCount ? { ...prev, [activeTab]: pageCount } : prev,
+    )
+  }, [activeTab, activeTotalCount])
 
   const collegeMajorLabels = useMemo(
     () =>
@@ -148,6 +216,25 @@ export const useAdminDashboard = () => {
     window.localStorage.removeItem(ADMIN_AUTH_TOKEN_KEY)
     setAuthToken(null)
     queryClient.clear()
+  }
+
+  const handleTabChange = (tab: AdminTab) => {
+    setActiveTab(tab)
+  }
+
+  const handleStatusFilterChange = (status: StatusFilter) => {
+    setStatusFilter(status)
+    setPageByTab((prev) => ({
+      ...prev,
+      clubs: 1,
+      managerRequests: 1,
+      verificationRequests: 1,
+    }))
+  }
+
+  const handleHistorySearch = (query: string) => {
+    setSubmittedHistoryQuery(query)
+    setTabPage('histories', 1)
   }
 
   const handleClubDecide = (payload: {
@@ -173,10 +260,17 @@ export const useAdminDashboard = () => {
     authReady,
     authToken,
     activeTab,
-    setActiveTab,
+    setActiveTab: handleTabChange,
     statusFilter,
-    setStatusFilter,
+    setStatusFilter: handleStatusFilterChange,
     totalCount,
+    pagination: {
+      page: pageByTab[activeTab],
+      pageSize: ADMIN_PAGE_SIZE,
+      totalCount,
+      isFetching: activeIsFetching,
+      onPageChange: (page: number) => setTabPage(activeTab, page),
+    },
     toasts,
     dismissToast,
     pendingCounts: {
@@ -212,7 +306,7 @@ export const useAdminDashboard = () => {
       isLoading: historiesQuery.isLoading,
       error: historiesQuery.error,
       collegeMajorLabels,
-      onSearch: setSubmittedHistoryQuery,
+      onSearch: handleHistorySearch,
     },
   }
 }

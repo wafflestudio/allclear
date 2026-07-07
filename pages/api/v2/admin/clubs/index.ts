@@ -16,15 +16,12 @@ export default async function handler(
     await userService.assertAdminRole(req.headers.user as string)
 
     if (req.method === 'GET') {
-      const { status } = AdminClubsQuerySchema.parse(req.query)
-      const clubs = await adminClubService.getAdminClubs(status)
+      const query = AdminClubsQuerySchema.parse(req.query)
+      const result = await adminClubService.getAdminClubs(query)
       return res.status(200).json({
         success: true,
         message: '동아리 목록 조회가 완료되었습니다.',
-        data: {
-          total_count: clubs.length,
-          clubs,
-        },
+        data: result,
       })
     }
   } catch (err) {

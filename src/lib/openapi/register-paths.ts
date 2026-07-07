@@ -1906,7 +1906,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 동아리 목록 조회',
   description:
-    '운영진 대시보드에서 동아리 목록을 조회합니다. `status` query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다.',
+    '운영진 대시보드에서 동아리 목록을 조회합니다. `status` query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubsQuerySchema,
@@ -1961,7 +1961,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 매핑 신청 목록 조회',
   description:
-    '기존 동아리에 대해 관리자 권한을 요청한 유저들의 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다.',
+    '기존 동아리에 대해 관리자 권한을 요청한 유저들의 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubManagerRequestsQuerySchema,
@@ -1989,7 +1989,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 공식 인증 요청 목록 조회',
   description:
-    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다.',
+    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubVerificationRequestsQuerySchema,

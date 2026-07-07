@@ -10,6 +10,10 @@ import type { ClubStatus, StatusFilter } from 'src/admin/types'
 import type { ClubCollegeMajor } from 'src/entities/club'
 
 type FetchOptions = NonNullable<Parameters<typeof fetch>[1]>
+type PaginationParams = {
+  offset?: number
+  limit?: number
+}
 type CollegeMajorsResponse = {
   majors: ClubCollegeMajor[]
   totalSize: number
@@ -42,31 +46,39 @@ export const verifyAdminRole = async (token: string): Promise<void> => {
   if (!res.ok) throw new Error('admin role required')
 }
 
-export const fetchClubs = (status: StatusFilter) =>
+export const fetchClubs = (status: StatusFilter, pagination: PaginationParams = {}) =>
   request<AdminClubsResponse>(
-    `/api/v2/admin/clubs${buildQuery({ status: status === 'ALL' ? undefined : status })}`,
+    `/api/v2/admin/clubs${buildQuery({
+      status: status === 'ALL' ? undefined : status,
+      ...pagination,
+    })}`,
   )
 
 export const fetchClubDetail = (uuid: string) =>
   request<AdminClubDetailResponse>(`/api/v2/admin/clubs/${uuid}`)
 
-export const fetchManagerRequests = (status: StatusFilter) =>
+export const fetchManagerRequests = (status: StatusFilter, pagination: PaginationParams = {}) =>
   request<AdminClubManagerRequestsResponse>(
     `/api/v2/admin/clubs/manager-requests${buildQuery({
       status: status === 'ALL' ? undefined : status,
+      ...pagination,
     })}`,
   )
 
-export const fetchVerificationRequests = (status: StatusFilter) =>
+export const fetchVerificationRequests = (
+  status: StatusFilter,
+  pagination: PaginationParams = {},
+) =>
   request<AdminClubVerificationRequestsResponse>(
     `/api/v2/admin/clubs/verifications${buildQuery({
       status: status === 'ALL' ? undefined : status,
+      ...pagination,
     })}`,
   )
 
-export const fetchHistories = (query: string) =>
+export const fetchHistories = (query: string, pagination: PaginationParams = {}) =>
   request<AdminClubHistoriesResponse>(
-    `/api/v2/admin/clubs/histories${buildQuery({ query, limit: 30 })}`,
+    `/api/v2/admin/clubs/histories${buildQuery({ query, ...pagination })}`,
   )
 
 export const fetchCollegeMajors = async () => {
