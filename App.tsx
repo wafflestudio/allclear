@@ -7,7 +7,7 @@ import { ProfileProvider } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { UserVoiceBottomSheetProvider } from '@/shared/contexts/userVoiceBottomSheetContext'
 import React, { useEffect, useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StatusBar, StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import Toast, { ToastConfig } from 'react-native-toast-message'
@@ -117,6 +117,7 @@ function App(): React.JSX.Element {
 
 	return (
 		<ServiceProvider value={services}>
+			<StatusBar barStyle="dark-content" backgroundColor={Colors.WHITE} translucent={false} />
 			<QueryClientProvider client={queryClient}>
 				<ProfileProvider>
 					<SafeAreaProvider>
