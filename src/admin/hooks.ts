@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import {
   fetchClubDetail,
+  fetchCollegeMajors,
   fetchClubs,
   fetchHistories,
   fetchManagerRequests,
@@ -11,7 +12,7 @@ import {
   updateVerificationStatus,
   verifyAdminRole,
 } from 'src/admin/api'
-import { ADMIN_AUTH_TOKEN_KEY } from 'src/admin/constants'
+import { ADMIN_AUTH_TOKEN_KEY, formatCollegeMajorLabel } from 'src/admin/constants'
 import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
 
 export const useAdminDashboard = () => {
@@ -76,6 +77,10 @@ export const useAdminDashboard = () => {
     () => fetchHistories(submittedHistoryQuery),
     { enabled: activeTab === 'histories' && !!authToken },
   )
+  const collegeMajorsQuery = useQuery(['admin-college-majors'], fetchCollegeMajors, {
+    enabled: activeTab === 'histories' && !!authToken,
+    staleTime: 5 * 60 * 1000,
+  })
 
   const STATUS_TEXT: Record<string, string> = {
     APPROVED: '승인',
@@ -122,6 +127,15 @@ export const useAdminDashboard = () => {
     managerRequestsQuery.data,
     verificationRequestsQuery.data,
   ])
+
+  const collegeMajorLabels = useMemo(
+    () =>
+      (collegeMajorsQuery.data ?? []).reduce<Record<string, string>>((labels, collegeMajor) => {
+        labels[String(collegeMajor.id)] = formatCollegeMajorLabel(collegeMajor)
+        return labels
+      }, {}),
+    [collegeMajorsQuery.data],
+  )
 
   const handleLogin = async (token: string) => {
     await verifyAdminRole(token)
@@ -197,6 +211,7 @@ export const useAdminDashboard = () => {
       data: historiesQuery.data?.data.histories ?? [],
       isLoading: historiesQuery.isLoading,
       error: historiesQuery.error,
+      collegeMajorLabels,
       onSearch: setSubmittedHistoryQuery,
     },
   }

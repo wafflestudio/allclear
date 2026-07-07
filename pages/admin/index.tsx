@@ -96,6 +96,7 @@ const AdminDashboardPage = () => {
             histories={histories.data}
             isLoading={histories.isLoading}
             error={histories.error}
+            collegeMajorLabels={histories.collegeMajorLabels}
             onSearch={histories.onSearch}
           />
         )}

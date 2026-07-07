@@ -7,11 +7,13 @@ export const HistoriesTab = ({
   histories,
   isLoading,
   error,
+  collegeMajorLabels,
   onSearch,
 }: {
   histories: ClubHistory[]
   isLoading: boolean
   error: unknown
+  collegeMajorLabels: Record<string, string>
   onSearch: (query: string) => void
 }) => {
   const [query, setQuery] = useState('')
@@ -73,11 +75,13 @@ export const HistoriesTab = ({
                   title="변경 전"
                   data={history.before_data}
                   fields={history.changed_fields}
+                  collegeMajorLabels={collegeMajorLabels}
                 />
                 <Snapshot
                   title="변경 후"
                   data={history.after_data}
                   fields={history.changed_fields}
+                  collegeMajorLabels={collegeMajorLabels}
                 />
               </div>
             </article>
@@ -92,10 +96,12 @@ const Snapshot = ({
   title,
   data,
   fields,
+  collegeMajorLabels,
 }: {
   title: string
   data: Record<string, unknown>
   fields: string[]
+  collegeMajorLabels: Record<string, string>
 }) => (
   <div className="rounded-md bg-slate-100 p-3">
     <h4 className="mb-2 text-sm font-bold">{title}</h4>
@@ -104,7 +110,7 @@ const Snapshot = ({
         <div key={field}>
           <dt className="text-xs font-semibold text-slate-500">{field}</dt>
           <dd className="mt-1 min-h-[30px] break-words rounded border border-slate-200 bg-white px-2 py-1 text-sm text-slate-800">
-            {formatSnapshotValue(data[field])}
+            {formatSnapshotValue(field, data[field], collegeMajorLabels)}
           </dd>
         </div>
       ))}
@@ -112,7 +118,16 @@ const Snapshot = ({
   </div>
 )
 
-const formatSnapshotValue = (value: unknown) => {
+const formatSnapshotValue = (
+  field: string,
+  value: unknown,
+  collegeMajorLabels: Record<string, string>,
+) => {
   if (value == null || value === '') return '-'
-  return String(value)
+
+  const formattedValue = String(value)
+  if (field !== 'college_major_id') return formattedValue
+
+  const collegeMajorLabel = collegeMajorLabels[formattedValue]
+  return collegeMajorLabel ? `${formattedValue} (${collegeMajorLabel})` : formattedValue
 }

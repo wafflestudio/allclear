@@ -7,8 +7,13 @@ import type {
 } from 'src/lib/schemas/admin'
 import { ADMIN_AUTH_TOKEN_KEY, buildQuery } from 'src/admin/constants'
 import type { ClubStatus, StatusFilter } from 'src/admin/types'
+import type { ClubCollegeMajor } from 'src/entities/club'
 
 type FetchOptions = NonNullable<Parameters<typeof fetch>[1]>
+type CollegeMajorsResponse = {
+  majors: ClubCollegeMajor[]
+  totalSize: number
+}
 
 export const request = async <T>(url: string, init?: FetchOptions): Promise<T> => {
   const token =
@@ -63,6 +68,13 @@ export const fetchHistories = (query: string) =>
   request<AdminClubHistoriesResponse>(
     `/api/v2/admin/clubs/histories${buildQuery({ query, limit: 30 })}`,
   )
+
+export const fetchCollegeMajors = async () => {
+  const response = await request<CollegeMajorsResponse>(
+    `/api/v2/users/majors${buildQuery({ includeNullMajor: 'true' })}`,
+  )
+  return response.majors
+}
 
 export const updateClubStatus = (payload: {
   uuid: string

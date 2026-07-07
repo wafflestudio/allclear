@@ -1,4 +1,5 @@
 import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
+import type { ClubCollegeMajor } from 'src/entities/club'
 
 export const ADMIN_AUTH_TOKEN_KEY = 'allclear:admin-auth-token'
 
@@ -47,3 +48,6 @@ export const buildQuery = (params: Record<string, string | number | undefined>) 
   const queryString = searchParams.toString()
   return queryString ? `?${queryString}` : ''
 }
+
+export const formatCollegeMajorLabel = (collegeMajor: ClubCollegeMajor) =>
+  collegeMajor.major ?? collegeMajor.college ?? ''
