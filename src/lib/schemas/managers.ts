@@ -26,6 +26,11 @@ const NonnegativeIntInputSchema = z
   }, z.number().int().nonnegative())
   .optional()
 
+const OptionalUrlStringSchema = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.string().trim().url().optional(),
+)
+
 export const ManagerClubParamsSchema = z
   .object({
     serviceUserId: z.string().uuid(),
@@ -82,7 +87,7 @@ const clubDraftShape = {
 const ClubDataSchema = z.object({
   name: z.string().trim().nonempty().max(30),
   type: z.enum(['교내', '교외']),
-  image_uri: z.string().trim().url(),
+  image_uri: OptionalUrlStringSchema,
   category: z.enum(CLUB_CATEGORIES),
   affiliation: z.string().trim().nonempty(),
   short_description: z.string().trim().nonempty(),
@@ -108,6 +113,18 @@ export const ClubRegisterRequestSchema = z
   .openapi('ClubRegisterRequest')
 
 export type ClubRegisterRequest = z.infer<typeof ClubRegisterRequestSchema>
+
+export const ClubRegisterResponseSchema = z
+  .object({
+    success: z.literal(true),
+    message: z.string(),
+    data: z.object({
+      club: ClubSchema,
+    }),
+  })
+  .openapi('ClubRegisterResponse')
+
+export type ClubRegisterResponse = z.infer<typeof ClubRegisterResponseSchema>
 
 export const ManagedClubUpdateSchema = z.object(clubDraftShape).openapi('ManagedClubUpdate')
 

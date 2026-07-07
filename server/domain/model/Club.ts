@@ -2,6 +2,7 @@ import { ClubEntity } from '../../infra/database/entities'
 import { ENV } from '../../ENV'
 import { CollegeMajor } from './CollegeMajor'
 import type { ClubStatus } from 'src/common/constants/club-status'
+import type { ClubRecruitType } from 'src/common/constants/club-recruit-type'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
 
 export type ClubManager = {
@@ -38,7 +39,7 @@ export type Club = {
   affiliationType: string
   collegeMajorId: number | null
   collegeMajor: CollegeMajor | null
-  recruitType: string
+  recruitType: ClubRecruitType
   isOfficialVerified: boolean
   verifiedAt: string | null
   isPopular: boolean

@@ -47,6 +47,7 @@ import {
 import {
   ClubImageUploadSchema,
   ClubRegisterRequestSchema,
+  ClubRegisterResponseSchema,
   ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
   ManagedClubPatchSchema,
@@ -197,7 +198,6 @@ const clubRegisterRequestExample = {
   club_data: {
     name: '와플스튜디오',
     type: '교내',
-    image_uri: 'https://cdn.allclear.com/temp/upload_123.jpg',
     category: '진로',
     affiliation: '컴퓨터공학부',
     short_description: '웹/앱 개발 동아리',
@@ -212,6 +212,50 @@ const clubRegisterRequestExample = {
     name: '홍길동',
     phone: '010-1234-5678',
     student_id: '2021-12345',
+  },
+}
+
+const clubRegisterResponseExample = {
+  success: true,
+  message: '동아리 등록 신청이 완료되었습니다.',
+  data: {
+    club: {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      uuid: '123e4567-e89b-12d3-a456-426614174000',
+      name: '와플스튜디오',
+      fullName: '',
+      description: '',
+      shortDescription: '웹/앱 개발 동아리',
+      introduction: '동아리 소개글',
+      type: '교내',
+      category: '진로',
+      college: '',
+      affiliationType: '소속동아리',
+      collegeMajorId: 1,
+      collegeMajor: null,
+      recruitType: '정기',
+      isOfficialVerified: false,
+      verifiedAt: null,
+      isPopular: false,
+      hasDongbang: true,
+      dongbangLocation: '63동 619호',
+      activityCycle: '',
+      minActivityPeriod: 1,
+      activeMemberCount: 0,
+      membershipFee: '',
+      sns: 'https://www.instagram.com/wafflestudio_official/',
+      tags: [],
+      imageUri: 'https://cdn.all-clear.cc/default.png',
+      blurHash: null,
+      article: '',
+      articleUploadedAt: null,
+      status: 'PENDING',
+      rejectReason: '',
+      avgRating: 0,
+      totalReviews: 0,
+      reviewKeywords: [],
+      latestComment: '',
+    },
   },
 }
 
@@ -955,7 +999,7 @@ registry.registerPath({
   tags: ['Clubs'],
   summary: '동아리 등록 신청',
   description:
-    '로그인한 사용자가 신규 동아리 등록을 신청합니다. 현재 교외 동아리는 신청할 수 없으며, 신청된 동아리는 PENDING 상태로 저장됩니다.',
+    '로그인한 사용자가 신규 동아리 등록을 신청합니다. 현재 교외 동아리는 신청할 수 없으며, 신청된 동아리는 PENDING 상태로 저장됩니다. 대표 이미지는 선택 입력이며, 응답의 club.uuid로 동아리장 이미지 업로드 API를 호출할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     body: {
@@ -972,11 +1016,8 @@ registry.registerPath({
       description: '동아리 등록 신청 성공',
       content: {
         'application/json': {
-          schema: successMessageSchema,
-          example: {
-            success: true,
-            message: '동아리 등록 신청이 완료되었습니다.',
-          },
+          schema: ClubRegisterResponseSchema,
+          example: clubRegisterResponseExample,
         },
       },
     },

@@ -4,16 +4,16 @@ import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
 import { BadRequestError, UserNotFoundError } from 'server/domain/error'
-import { ClubRegisterRequestSchema } from 'src/lib/schemas/managers'
+import { ClubRegisterRequestSchema, type ClubRegisterResponse } from 'src/lib/schemas/managers'
 
-type ClubRegisterResponse = {
-  success: boolean
+type ClubRegisterFailedResponse = {
+  success: false
   message: string
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ClubRegisterResponse | string | ZodIssue[]>,
+  res: NextApiResponse<ClubRegisterResponse | ClubRegisterFailedResponse | string | ZodIssue[]>,
 ) {
   try {
     const clubService = Provider.getService(ClubService)
@@ -22,11 +22,14 @@ export default async function handler(
     if (req.method === 'POST') {
       const user = await userService.getUserByAccountId(req.headers.user as string)
       const body = ClubRegisterRequestSchema.parse(req.body)
-      await clubService.registerClub(user.serviceUserId, body)
+      const club = await clubService.registerClub(user.serviceUserId, body)
 
       return res.status(201).json({
         success: true,
         message: '동아리 등록 신청이 완료되었습니다.',
+        data: {
+          club,
+        },
       })
     }
   } catch (err) {

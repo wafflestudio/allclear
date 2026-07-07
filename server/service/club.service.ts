@@ -227,11 +227,14 @@ export class ClubService {
     return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
   }
 
-  async registerClub(serviceUserId: string, body: ClubRegisterRequest): Promise<void> {
+  async registerClub(
+    serviceUserId: string,
+    body: ClubRegisterRequest,
+  ): Promise<Club> {
     const { club_data: club, manager_data: managerData } = body
     const clubPatch = await this.buildClubPatchFromClubData(club)
 
-    await this.clubRepository.manager.transaction(async (manager) => {
+    return this.clubRepository.manager.transaction(async (manager) => {
       const clubRepository = manager.getRepository(ClubEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
 
@@ -250,6 +253,13 @@ export class ClubService {
         phone: managerData.phone,
         studentId: managerData.student_id,
       })
+
+      const savedClub = await clubRepository.findOneByOrFail({
+        uuid: created.uuid,
+        deletedAt: IsNull(),
+      })
+
+      return toClubDomain(savedClub)
     })
   }
 
