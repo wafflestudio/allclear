@@ -56,10 +56,20 @@ const ClubManagementScreen = () => {
 		queryFn: () => recruitmentService.listClubRecruitments({ clubId }),
 	})
 
+	const {
+		data: representativeRecruitment,
+		isLoading: isRepresentativeLoading,
+		refetch: refetchRepresentativeRecruitment,
+	} = useQuery({
+		queryKey: ['clubRepresentativeRecruitment', clubId],
+		queryFn: () => recruitmentService.getRepresentativeRecruitment({ clubId }),
+	})
+
 	useFocusEffect(
 		useCallback(() => {
 			refetchRecruitments()
-		}, [refetchRecruitments]),
+			refetchRepresentativeRecruitment()
+		}, [refetchRecruitments, refetchRepresentativeRecruitment]),
 	)
 
 	const { mutate: deleteRecruitment, isPending: isDeleting } = useMutation({
@@ -69,6 +79,7 @@ const ClubManagementScreen = () => {
 			setDeleteTarget(null)
 			setDeletedTitle(title)
 			queryClient.invalidateQueries({ queryKey: ['clubRecruitments', clubId] })
+			queryClient.invalidateQueries({ queryKey: ['clubRepresentativeRecruitment', clubId] })
 		},
 		onError: () => {
 			setDeleteTarget(null)
@@ -76,8 +87,17 @@ const ClubManagementScreen = () => {
 	})
 
 	const recruitments = recruitmentsData?.recruitments ?? []
-	const activeRecruitment = recruitments.find(r => r.is_active) ?? null
-	const hasMore = recruitments.length > VISIBLE_COUNT
+	const representativeRecruitmentId = representativeRecruitment?.id ?? null
+	const currentRecruitment =
+		recruitments.find(r => String(r.id) === String(representativeRecruitmentId)) ??
+		recruitments[0] ??
+		null
+	const currentRecruitmentId = currentRecruitment?.id ?? null
+	const previousRecruitments = currentRecruitment
+		? recruitments.filter(r => r.id !== currentRecruitmentId)
+		: recruitments
+	const hasMore = previousRecruitments.length > VISIBLE_COUNT
+	const isRecruitmentsLoading = isLoading || isRepresentativeLoading
 
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -146,7 +166,7 @@ const ClubManagementScreen = () => {
 						</TouchableOpacity>
 
 						{/* 공고 목록 */}
-						{isLoading ? (
+						{isRecruitmentsLoading ? (
 							<ActivityIndicator color={Colors.POINTCOLOR} style={{ marginVertical: vs(16) }} />
 						) : recruitments.length === 0 ? (
 							<View style={[styles.row, styles.rowNormal]}>
@@ -154,15 +174,17 @@ const ClubManagementScreen = () => {
 							</View>
 						) : (
 							<>
-								{/* 현재 공고 - 상단 고정 표시 */}
-								{activeRecruitment && (
+								{/* 대표 공고 - 상단 고정 표시 */}
+								{currentRecruitment && (
 									<View style={[styles.row, styles.rowActive]}>
 										<View style={styles.rowLeft}>
 											<View style={styles.badge}>
-												<Text style={styles.badgeText}>현재 공고</Text>
+												<Text style={styles.badgeText} numberOfLines={1}>
+													현재 공고
+												</Text>
 											</View>
 											<Text style={styles.rowTextGray} numberOfLines={1}>
-												{activeRecruitment.display_title}
+												{currentRecruitment.display_title}
 											</Text>
 										</View>
 										<View style={styles.rowIcons}>
@@ -170,7 +192,7 @@ const ClubManagementScreen = () => {
 												hitSlop={8}
 												onPress={() =>
 													navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_EDIT, {
-														recruitmentId: activeRecruitment.id,
+														recruitmentId: currentRecruitment.id,
 													})
 												}>
 												<Icon name="edit" size={ms(16)} color="#C1C1C1" />
@@ -179,8 +201,8 @@ const ClubManagementScreen = () => {
 												hitSlop={8}
 												onPress={() =>
 													setDeleteTarget({
-														id: activeRecruitment.id,
-														title: activeRecruitment.display_title,
+														id: currentRecruitment.id,
+														title: currentRecruitment.display_title,
 													})
 												}>
 												<Icon name="delete" size={ms(16)} color="#C1C1C1" />
@@ -189,8 +211,8 @@ const ClubManagementScreen = () => {
 									</View>
 								)}
 
-								{/* 전체 목록 (현재 공고 포함, 배지 없이 동일 스타일) */}
-								{recruitments.slice(0, VISIBLE_COUNT).map(item => (
+								{/* 나머지 공고 목록 */}
+								{previousRecruitments.slice(0, VISIBLE_COUNT).map(item => (
 									<View key={item.id} style={[styles.row, styles.rowNormal]}>
 										<View style={styles.rowLeft}>
 											<Text style={styles.rowTextGray} numberOfLines={1}>
@@ -230,7 +252,7 @@ const ClubManagementScreen = () => {
 								)}
 
 								{showMore &&
-									recruitments.slice(VISIBLE_COUNT).map(item => (
+									previousRecruitments.slice(VISIBLE_COUNT).map(item => (
 										<View key={item.id} style={[styles.row, styles.rowMore]}>
 											<View style={styles.rowLeft}>
 												<Text style={styles.rowTextGray} numberOfLines={1}>
@@ -623,15 +645,16 @@ const styles = StyleSheet.create({
 		paddingVertical: vs(8),
 		backgroundColor: Colors.POINTCOLOR,
 		borderRadius: ms(12),
-		width: ms(57),
+		minWidth: ms(68),
 		height: ms(28),
+		flexShrink: 0,
 	},
 	badgeText: {
 		fontFamily: 'Pretendard',
 		fontWeight: '600',
 		fontSize: ms(10),
 		lineHeight: ms(12),
-		letterSpacing: -0.02 * 10,
+		letterSpacing: 0,
 		color: '#FFFFFF',
 	},
 

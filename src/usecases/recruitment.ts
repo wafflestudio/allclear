@@ -2,6 +2,8 @@ import {
 	RecruitmentRepository,
 	ListClubRecruitmentsRequest,
 	ListClubRecruitmentsResponse,
+	GetRepresentativeRecruitmentRequest,
+	GetRepresentativeRecruitmentResponse,
 	CreateRecruitmentRequest,
 	CreateRecruitmentResponse,
 	UploadRecruitmentImageRequest,
@@ -14,6 +16,9 @@ import {
 
 export type RecruitmentService = {
 	listClubRecruitments: (req: ListClubRecruitmentsRequest) => Promise<ListClubRecruitmentsResponse>
+	getRepresentativeRecruitment: (
+		req: GetRepresentativeRecruitmentRequest,
+	) => Promise<GetRepresentativeRecruitmentResponse>
 	createRecruitment: (req: CreateRecruitmentRequest) => Promise<CreateRecruitmentResponse>
 	uploadRecruitmentImage: (
 		req: UploadRecruitmentImageRequest,
@@ -29,6 +34,7 @@ type Deps = {
 
 export const getRecruitmentService = ({ repositories }: Deps): RecruitmentService => ({
 	listClubRecruitments: req => repositories[0].listClubRecruitments(req),
+	getRepresentativeRecruitment: req => repositories[0].getRepresentativeRecruitment(req),
 	createRecruitment: req => repositories[0].createRecruitment(req),
 	uploadRecruitmentImage: req => repositories[0].uploadRecruitmentImage(req),
 	deleteRecruitment: req => repositories[0].deleteRecruitment(req),

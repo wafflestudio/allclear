@@ -25,6 +25,19 @@ type ListClubRecruitmentsApiResponse = {
 	}
 }
 
+type RepresentativeRecruitmentApiPayload = {
+	id: number | string
+}
+
+type GetRepresentativeRecruitmentApiResponse =
+	| RepresentativeRecruitmentApiPayload
+	| {
+			success: boolean
+			message: string
+			data: RepresentativeRecruitmentApiPayload | null
+	  }
+	| null
+
 export type ListClubRecruitmentsRequest = {
 	clubId: string
 }
@@ -33,6 +46,14 @@ export type ListClubRecruitmentsResponse = {
 	club_name: string
 	recruitments: RecruitmentSummary[]
 }
+
+export type GetRepresentativeRecruitmentRequest = {
+	clubId: string
+}
+
+export type GetRepresentativeRecruitmentResponse = {
+	id: number
+} | null
 
 export type CreateRecruitmentRequest = {
 	clubId: string
@@ -121,6 +142,9 @@ export type UpdateRecruitmentRequest = {
 
 export type RecruitmentRepository = {
 	listClubRecruitments: (req: ListClubRecruitmentsRequest) => Promise<ListClubRecruitmentsResponse>
+	getRepresentativeRecruitment: (
+		req: GetRepresentativeRecruitmentRequest,
+	) => Promise<GetRepresentativeRecruitmentResponse>
 	createRecruitment: (req: CreateRecruitmentRequest) => Promise<CreateRecruitmentResponse>
 	uploadRecruitmentImage: (
 		req: UploadRecruitmentImageRequest,
@@ -141,6 +165,17 @@ export const getRecruitmentRepository = (): RecruitmentRepository => ({
 			club_name: res.data.club_name,
 			recruitments: res.data.recruitments,
 		}
+	},
+
+	getRepresentativeRecruitment: async req => {
+		const res = await apiConnector.get<GetRepresentativeRecruitmentApiResponse>(
+			`/v2/clubs/${req.clubId}/recruitments/representative`,
+		)
+		const representativeRecruitment = res && 'data' in res ? res.data : res
+		if (!representativeRecruitment) return null
+
+		const id = Number(representativeRecruitment.id)
+		return Number.isNaN(id) ? null : { id }
 	},
 
 	createRecruitment: async req => {
