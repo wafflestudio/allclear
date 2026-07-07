@@ -1,5 +1,6 @@
 import { IsNull, QueryFailedError, Repository } from 'typeorm'
 import { Inject, InjectRepository, Service } from '../provider'
+import { ClubEntity } from '../infra/database/entities'
 import { ClubRecruitmentEntity } from '../infra/database/entities/club-recruitment.entity'
 import { RegularMeetingEntity } from '../infra/database/entities/regular-meeting.entity'
 import { ConflictError, NotFoundError } from '../domain/error'
@@ -87,6 +88,7 @@ export class ClubRecruitmentService {
     const saved = await this.clubRecruitmentRepository.manager.transaction(async (manager) => {
       const clubRecruitmentRepository = manager.getRepository(ClubRecruitmentEntity)
       const regularMeetingRepository = manager.getRepository(RegularMeetingEntity)
+      const clubRepository = manager.getRepository(ClubEntity)
       const entity = clubRecruitmentRepository.create({
         clubId: clubUuid,
         ...this.toPersistencePayload(recruitment),
@@ -102,6 +104,7 @@ export class ClubRecruitmentService {
       if (regularMeetings.length > 0) {
         await regularMeetingRepository.insert(regularMeetings)
       }
+      await this.touchClubArticleUploadedAt(clubUuid, now, clubRepository)
       return this.getRecruitmentEntity(clubUuid, created.id, clubRecruitmentRepository)
     })
     return toClubRecruitmentDomain(saved)
@@ -121,11 +124,13 @@ export class ClubRecruitmentService {
 
     await this.clubAccessService.assertManagedClub(entity.clubId, serviceUserId)
 
+    const now = new Date().toISOString()
     const saved = await this.clubRecruitmentRepository.manager.transaction(async (manager) => {
       const clubRecruitmentRepository = manager.getRepository(ClubRecruitmentEntity)
       const regularMeetingRepository = manager.getRepository(RegularMeetingEntity)
+      const clubRepository = manager.getRepository(ClubEntity)
 
-      Object.assign(entity, this.toUpdatePayload(data), { updatedAt: new Date().toISOString() })
+      Object.assign(entity, this.toUpdatePayload(data), { updatedAt: now })
       const updated = await this.saveOrThrowConflict(entity, clubRecruitmentRepository)
 
       if (data.regular_meetings !== undefined) {
@@ -138,6 +143,7 @@ export class ClubRecruitmentService {
         }
       }
 
+      await this.touchClubArticleUploadedAt(entity.clubId, now, clubRepository)
       return this.getRecruitmentEntity(entity.clubId, recruitmentId, clubRecruitmentRepository)
     })
 
@@ -255,6 +261,22 @@ export class ClubRecruitmentService {
       }
       throw error
     }
+  }
+
+  private async touchClubArticleUploadedAt(
+    clubUuid: string,
+    uploadedAt: string,
+    repository: Repository<ClubEntity>,
+  ): Promise<void> {
+    await repository.update(
+      {
+        uuid: clubUuid,
+        deletedAt: IsNull(),
+      },
+      {
+        articleUploadedAt: uploadedAt,
+      },
+    )
   }
 
   private isMonthlyRecruitmentConflict(error: unknown): boolean {

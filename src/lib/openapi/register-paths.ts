@@ -1568,7 +1568,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '관리 중인 동아리 모집공고 생성',
   description:
-    '동아리 관리자가 새 모집공고를 등록합니다. 공고 생성 시각 기준 year_month가 저장되며, 같은 동아리의 같은 월 공고가 이미 있으면 409를 반환합니다.',
+    '동아리 관리자가 새 모집공고를 등록합니다. 공고 생성 시각 기준 year_month가 저장되며, 동아리의 article_uploaded_at이 갱신되어 최신 동아리 목록 정렬에 반영됩니다. 같은 동아리의 같은 월 공고가 이미 있으면 409를 반환합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubRecruitmentParamsSchema,
@@ -1730,7 +1730,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '모집공고 수정',
   description:
-    '동아리 관리자가 모집공고 내용을 부분 수정합니다. regular_meetings가 포함되면 기존 정기모임 목록을 요청 본문의 목록 전체로 교체합니다.',
+    '동아리 관리자가 모집공고 내용을 부분 수정합니다. 수정 시 동아리의 article_uploaded_at이 갱신되어 최신 동아리 목록 정렬에 반영됩니다. regular_meetings가 포함되면 기존 정기모임 목록을 요청 본문의 목록 전체로 교체합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: RecruitmentIdParamsSchema,
