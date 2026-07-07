@@ -51,9 +51,16 @@ export const ClubBasicInfoScreen = ({
 			return
 		}
 
-		const uri = result.assets?.[0]?.uri
-		if (uri) {
-			onFormDataChange({ clubImage: uri })
+		const asset = result.assets?.[0]
+		if (asset?.uri) {
+			onFormDataChange({
+				clubImage: asset.uri,
+				clubImageFile: {
+					uri: asset.uri,
+					type: asset.type ?? 'image/jpeg',
+					name: asset.fileName ?? `club_${Date.now()}.jpg`,
+				},
+			})
 		}
 	}
 

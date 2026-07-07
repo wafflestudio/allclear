@@ -111,7 +111,7 @@ export type RegisterClubRequest = {
 	club_data: {
 		name: string
 		type: string
-		image_uri: string
+		image_uri?: string
 		category: string
 		affiliation: string
 		short_description: string
@@ -132,6 +132,14 @@ export type RegisterClubRequest = {
 export type RegisterClubResponse = {
 	success: boolean
 	message: string
+	data?: {
+		club?: {
+			uuid: Club['uuid']
+			name: Club['name']
+			imageUri: Club['imageUri']
+			status: string
+		}
+	}
 }
 
 export type UpdateManagedClubRequest = {

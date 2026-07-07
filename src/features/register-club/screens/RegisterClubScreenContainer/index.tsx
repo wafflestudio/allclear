@@ -15,10 +15,9 @@ import { RegisterClubRequest } from '@/repositories/club'
 import { navigation } from '@/shared/utils/navigation'
 
 const mapFormDataToRequest = (formData: RegisterClubFormData): RegisterClubRequest => {
-	const clubData: Record<string, unknown> = {
+	const clubData: RegisterClubRequest['club_data'] = {
 		name: formData.clubName,
 		type: formData.clubType,
-		image_uri: formData.clubImage || '',
 		category: formData.selectedCategories[0] || '',
 		affiliation: formData.department,
 		short_description: formData.shortIntro,
@@ -35,7 +34,7 @@ const mapFormDataToRequest = (formData: RegisterClubFormData): RegisterClubReque
 	}
 
 	return {
-		club_data: clubData as RegisterClubRequest['club_data'],
+		club_data: clubData,
 		manager_data: {
 			name: formData.managerName,
 			phone: formData.managerPhone,
@@ -60,8 +59,27 @@ export const RegisterClubScreenContainer = () => {
 	}
 
 	const { mutate: registerClub, isLoading } = useRegisterClub({
-		onSuccess: () => resetAndExit(),
-		onFailure: () => resetAndExit(),
+		onSuccess: message => {
+			Toast.show({
+				type: 'success',
+				text1: message,
+				position: 'top',
+				topOffset: 60,
+				visibilityTime: 2000,
+			})
+			resetAndExit()
+		},
+		onFailure: message => {
+			Toast.show({
+				type: 'error',
+				text1: '동아리 등록 요청 중 문제가 생겼어요',
+				text2: message,
+				position: 'top',
+				topOffset: 60,
+				visibilityTime: 2000,
+			})
+			resetAndExit()
+		},
 	})
 
 	const handleFormDataChange = (data: Partial<RegisterClubFormData>) => {
@@ -100,7 +118,10 @@ export const RegisterClubScreenContainer = () => {
 	}
 
 	const handleComplete = () => {
-		registerClub(mapFormDataToRequest(formData))
+		registerClub({
+			request: mapFormDataToRequest(formData),
+			imageFile: formData.clubImageFile,
+		})
 	}
 
 	const screens = [
