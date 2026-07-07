@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
 import { serviceContext } from '@/shared/contexts/serviceContext'
+import { typography } from '@/shared/constants/typography'
 import { navigation } from '@/shared/utils/navigation'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -23,8 +24,21 @@ import { navigation } from '@/shared/utils/navigation'
 const PRIMARY = '#874fff'
 const BORDER = '#c1c1c1'
 const HELPER_COLOR = '#874fff'
-const PLACEHOLDER_COLOR = '#c1c1c1'
+const FORM_TEXT_COLOR = '#757474'
+const PLACEHOLDER_COLOR = FORM_TEXT_COLOR
 const BG = '#ffffff'
+const FONT_FAMILY = {
+	regular: typography.bodyMRegular.fontFamily,
+	medium: typography.bodyMMedium.fontFamily,
+	semibold: typography.headerXLSemibold.fontFamily,
+	bold: typography.headerXL.fontFamily,
+} as const
+const HELPER_TEXT_STYLE = {
+	fontFamily: FONT_FAMILY.regular,
+	fontSize: 14,
+	fontWeight: '400',
+	color: HELPER_COLOR,
+} as const
 
 const YEARS = Array.from({ length: 8 }, (_, i) => String(new Date().getFullYear() + 2 - i))
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
@@ -764,7 +778,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 							triggerWidth={DROPDOWN_WIDTHS.datePart}
 							unit="분"
 						/>
-						<Text style={styles.deadlineLabel}>모집 마감</Text>
+						<Text style={styles.inlineHelperText}>모집 마감</Text>
 					</View>
 				</View>
 
@@ -1195,9 +1209,10 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 	},
 	sectionLabel: {
+		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 20,
 		fontWeight: '600',
-		color: '#757474',
+		color: FORM_TEXT_COLOR,
 		marginBottom: 5,
 		paddingTop: 10,
 		paddingBottom: 5,
@@ -1209,17 +1224,20 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		paddingHorizontal: 15,
 		paddingVertical: 18,
+		fontFamily: FONT_FAMILY.medium,
 		fontSize: 16,
 		fontWeight: '500',
-		color: '#333',
+		color: FORM_TEXT_COLOR,
 		minHeight: 60,
 	},
 	helperText: {
-		fontSize: 14,
-		fontWeight: '400',
-		color: HELPER_COLOR,
+		...HELPER_TEXT_STYLE,
 		marginTop: 5,
 		paddingLeft: 5,
+	},
+	inlineHelperText: {
+		...HELPER_TEXT_STYLE,
+		marginLeft: 4,
 	},
 
 	// 날짜 행
@@ -1236,17 +1254,11 @@ const styles = StyleSheet.create({
 		gap: 5,
 	},
 	dateUnitLabel: {
+		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 20,
 		fontWeight: '600',
-		color: '#757474',
+		color: FORM_TEXT_COLOR,
 	},
-	deadlineLabel: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: PRIMARY,
-		marginLeft: 4,
-	},
-
 	// 드롭다운
 	dropdown: {
 		flexDirection: 'row',
@@ -1266,11 +1278,11 @@ const styles = StyleSheet.create({
 		borderBottomWidth: 0,
 	},
 	dropdownText: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: BORDER,
+		fontFamily: FONT_FAMILY.regular,
+		fontSize: 16,
+		fontWeight: '400',
+		color: FORM_TEXT_COLOR,
 		marginRight: 2,
-		letterSpacing: 0.4,
 	},
 	dropdownListOpen: {
 		borderWidth: 1,
@@ -1298,13 +1310,14 @@ const styles = StyleSheet.create({
 		backgroundColor: `${PRIMARY}18`,
 	},
 	dropdownItemText: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: '#757474',
+		fontFamily: FONT_FAMILY.regular,
+		fontSize: 16,
+		fontWeight: '400',
+		color: FORM_TEXT_COLOR,
 	},
 	dropdownItemTextSelected: {
 		color: PRIMARY,
-		fontWeight: '700',
+		fontWeight: '400',
 	},
 
 	// 토글 버튼
@@ -1328,8 +1341,9 @@ const styles = StyleSheet.create({
 		borderColor: PRIMARY,
 	},
 	toggleText: {
+		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 16,
-		color: BORDER,
+		color: FORM_TEXT_COLOR,
 		fontWeight: '600',
 		textAlign: 'center',
 	},
@@ -1348,7 +1362,7 @@ const styles = StyleSheet.create({
 	},
 	tilde: {
 		fontSize: 14,
-		color: '#757474',
+		color: FORM_TEXT_COLOR,
 	},
 	addTimeButton: {
 		alignSelf: 'center',
@@ -1375,9 +1389,10 @@ const styles = StyleSheet.create({
 	},
 	iconInput: {
 		flex: 1,
+		fontFamily: FONT_FAMILY.medium,
 		fontSize: 16,
 		fontWeight: '500',
-		color: '#333',
+		color: FORM_TEXT_COLOR,
 	},
 
 	// 이미지
