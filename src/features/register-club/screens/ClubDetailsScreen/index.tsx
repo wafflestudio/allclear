@@ -8,6 +8,11 @@ import { s, vs } from '@/shared/utils/scale'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
 import { isValidUrl } from '@/features/register-club/validation'
+import {
+	decrementActivityCycleValue,
+	incrementActivityCycleValue,
+	type ActivityCycleMode,
+} from '@/shared/utils/activityCycle'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 
 type Props = {
@@ -27,7 +32,7 @@ export const ClubDetailsScreen = ({
 	isLoading = false,
 	progress,
 }: Props) => {
-	const [activityCycleMode, setActivityCycleMode] = useState<'none' | 'number'>(
+	const [activityCycleMode, setActivityCycleMode] = useState<ActivityCycleMode>(
 		formData.activityCycle ? 'number' : 'none',
 	)
 
@@ -37,7 +42,7 @@ export const ClubDetailsScreen = ({
 		onFormDataChange(value ? { hasDongbang: true } : { hasDongbang: false, dongbangLocation: '' })
 	}
 
-	const handleActivityCycleModeChange = (mode: 'none' | 'number') => {
+	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
 		setActivityCycleMode(mode)
 		if (mode === 'none') {
 			onFormDataChange({ activityCycle: '' })
@@ -45,14 +50,15 @@ export const ClubDetailsScreen = ({
 	}
 
 	const incrementActivityCycle = () => {
-		setActivityCycleMode('number')
-		onFormDataChange({ activityCycle: (activitySemesters + 1).toString() })
+		const next = incrementActivityCycleValue(activitySemesters)
+		setActivityCycleMode(next.mode)
+		onFormDataChange({ activityCycle: next.value })
 	}
 
 	const decrementActivityCycle = () => {
-		if (activitySemesters > 0) {
-			onFormDataChange({ activityCycle: (activitySemesters - 1).toString() })
-		}
+		const next = decrementActivityCycleValue(activitySemesters)
+		setActivityCycleMode(next.mode)
+		onFormDataChange({ activityCycle: next.value })
 	}
 
 	const isComplete =
@@ -223,6 +229,8 @@ export const ClubDetailsScreen = ({
 							value={formData.clubDescription}
 							onChangeText={text => onFormDataChange({ clubDescription: text })}
 							maxLength={500}
+							multiline
+							textAlignVertical="top"
 						/>
 						<Text style={styles.validationText}>동아리 추가 설명은 필수 입력 정보예요.</Text>
 					</View>
@@ -352,10 +360,11 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 	},
 	descriptionInput: {
+		minHeight: vs(60),
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_MAIN,
 		paddingHorizontal: s(16),
-		paddingVertical: vs(8),
+		paddingVertical: vs(12),
 		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
 		borderRadius: 8,
