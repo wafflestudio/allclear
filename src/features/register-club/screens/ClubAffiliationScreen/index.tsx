@@ -1,5 +1,14 @@
-import React, { useContext, useState } from 'react'
-import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native'
+import React, { useContext, useMemo, useState } from 'react'
+import {
+	View,
+	Text,
+	ScrollView,
+	StyleSheet,
+	Pressable,
+	TextInput,
+	FlatList,
+	Modal,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import { useQuery } from '@tanstack/react-query'
@@ -29,16 +38,25 @@ export const ClubAffiliationScreen = ({
 }: Props) => {
 	const { userService } = useContext(serviceContext)
 	const [showDropdown, setShowDropdown] = useState(false)
+	const [departmentSearch, setDepartmentSearch] = useState('')
 	const isComplete = formData.department.trim() && formData.shortIntro.trim()
 	const { data: departmentOptions = DEFAULT_DEPARTMENT_OPTIONS } = useQuery({
 		queryKey: ['collegeMajors', 'clubAffiliation'],
 		queryFn: () => userService.listCollegeMajors({ includeNullMajor: true }),
 		select: data => buildDepartmentOptions(data.majors),
 	})
+	const filteredDepartmentOptions = useMemo(() => {
+		const keyword = departmentSearch.trim()
+		if (!keyword) {
+			return departmentOptions
+		}
+		return departmentOptions.filter(department => department.includes(keyword))
+	}, [departmentOptions, departmentSearch])
 
 	const handleSelectDepartment = (dept: string) => {
 		onFormDataChange({ department: dept })
 		setShowDropdown(false)
+		setDepartmentSearch('')
 	}
 
 	return (
@@ -70,28 +88,6 @@ export const ClubAffiliationScreen = ({
 						<Text style={styles.affiliationLabel}>소속</Text>
 					</View>
 
-					{showDropdown && (
-						<View style={styles.dropdownMenu}>
-							{departmentOptions.map(dept => (
-								<Pressable
-									key={dept}
-									style={[
-										styles.dropdownItem,
-										formData.department === dept && styles.dropdownItemSelected,
-									]}
-									onPress={() => handleSelectDepartment(dept)}>
-									<Text
-										style={[
-											styles.dropdownItemText,
-											formData.department === dept && styles.dropdownItemTextSelected,
-										]}>
-										{dept}
-									</Text>
-								</Pressable>
-							))}
-						</View>
-					)}
-
 					{/* Short Introduction Input */}
 					<TextField
 						placeholder="웹/앱 개발 동아리, 경영전략학회"
@@ -106,6 +102,48 @@ export const ClubAffiliationScreen = ({
 					</View>
 				</View>
 			</ScrollView>
+
+			<Modal
+				visible={showDropdown}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setShowDropdown(false)}>
+				<Pressable style={styles.departmentModalOverlay} onPress={() => setShowDropdown(false)}>
+					<Pressable style={styles.departmentModalCard} onPress={event => event.stopPropagation()}>
+						<Text style={styles.departmentModalTitle}>소속 선택</Text>
+						<TextInput
+							style={styles.dropdownSearchInput}
+							placeholder="소속 검색"
+							placeholderTextColor={Colors.BODYTEXT_DISABLED}
+							value={departmentSearch}
+							onChangeText={setDepartmentSearch}
+						/>
+						<FlatList
+							data={filteredDepartmentOptions}
+							style={styles.dropdownList}
+							keyboardShouldPersistTaps="handled"
+							keyExtractor={dept => dept}
+							renderItem={({ item: dept }) => (
+								<Pressable
+									style={[
+										styles.dropdownItem,
+										formData.department === dept && styles.dropdownItemSelected,
+									]}
+									onPress={() => handleSelectDepartment(dept)}>
+									<Text
+										style={[
+											styles.dropdownItemText,
+											formData.department === dept && styles.dropdownItemTextSelected,
+										]}>
+										{dept}
+									</Text>
+								</Pressable>
+							)}
+							ListEmptyComponent={<Text style={styles.dropdownEmptyText}>검색 결과가 없어요</Text>}
+						/>
+					</Pressable>
+				</Pressable>
+			</Modal>
 
 			<FormNavigationButtons
 				onPrevious={onPrevious}
@@ -174,12 +212,16 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_SUB,
 		flex: 1,
 	},
-	dropdownMenu: {
-		width: '55%',
-		borderWidth: 1,
-		borderColor: Colors.BODYTEXT_DISABLED,
-		borderRadius: 8,
-		backgroundColor: Colors.WHITE,
+	dropdownSearchInput: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_MAIN,
+		paddingHorizontal: s(16),
+		paddingVertical: vs(10),
+		borderBottomWidth: 1,
+		borderBottomColor: Colors.BACKGROUND_SUB,
+	},
+	dropdownList: {
+		maxHeight: vs(360),
 	},
 	dropdownItem: {
 		paddingHorizontal: s(16),
@@ -197,6 +239,30 @@ const styles = StyleSheet.create({
 	dropdownItemTextSelected: {
 		color: Colors.BUTTON_SELECTED,
 		fontWeight: '600',
+	},
+	dropdownEmptyText: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_DISABLED,
+		paddingHorizontal: s(16),
+		paddingVertical: vs(12),
+	},
+	departmentModalOverlay: {
+		flex: 1,
+		backgroundColor: Colors.BACKGROUND_DIM,
+		justifyContent: 'center',
+		paddingHorizontal: s(20),
+	},
+	departmentModalCard: {
+		backgroundColor: Colors.WHITE,
+		borderRadius: 12,
+		overflow: 'hidden',
+	},
+	departmentModalTitle: {
+		...typography.headerL,
+		color: Colors.BODYTEXT_MAIN,
+		paddingHorizontal: s(16),
+		paddingTop: vs(16),
+		paddingBottom: vs(8),
 	},
 	validationGroup: {
 		gap: vs(8),
