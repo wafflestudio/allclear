@@ -16,6 +16,7 @@ import { launchImageLibrary } from 'react-native-image-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
 import { serviceContext } from '@/shared/contexts/serviceContext'
+import { typography } from '@/shared/constants/typography'
 import { navigation } from '@/shared/utils/navigation'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -23,8 +24,21 @@ import { navigation } from '@/shared/utils/navigation'
 const PRIMARY = '#874fff'
 const BORDER = '#c1c1c1'
 const HELPER_COLOR = '#874fff'
-const PLACEHOLDER_COLOR = '#c1c1c1'
+const FORM_TEXT_COLOR = '#757474'
+const PLACEHOLDER_COLOR = FORM_TEXT_COLOR
 const BG = '#ffffff'
+const FONT_FAMILY = {
+	regular: typography.bodyMRegular.fontFamily,
+	medium: typography.bodyMMedium.fontFamily,
+	semibold: typography.headerXLSemibold.fontFamily,
+	bold: typography.headerXL.fontFamily,
+} as const
+const HELPER_TEXT_STYLE = {
+	fontFamily: FONT_FAMILY.regular,
+	fontSize: 14,
+	fontWeight: '400',
+	color: HELPER_COLOR,
+} as const
 
 const YEARS = Array.from({ length: 8 }, (_, i) => String(new Date().getFullYear() + 2 - i))
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
@@ -39,6 +53,12 @@ const MEETING_TIMES = Array.from({ length: 48 }, (_, i) => {
 	const m = i % 2 === 0 ? '00' : '30'
 	return `${h}:${m}`
 })
+const DROPDOWN_WIDTHS = {
+	year: 88,
+	datePart: 68,
+	weekday: 92,
+	meetingTime: 76,
+} as const
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -66,23 +86,47 @@ type DropdownProps = {
 	value: string
 	options: string[]
 	onChange: (val: string) => void
-	width?: number
+	triggerWidth: number
+	menuWidth?: number
 }
 
-const CustomDropdown = ({ value, options, onChange, width }: DropdownProps) => {
+type DropdownPosition = {
+	x: number
+	y: number
+	width: number
+}
+
+const isValidLayoutNumber = (value: number) => Number.isFinite(value)
+
+const CustomDropdown = ({ value, options, onChange, triggerWidth, menuWidth }: DropdownProps) => {
 	const [open, setOpen] = useState(false)
-	const [pos, setPos] = useState({ x: 0, y: 0, w: 0 })
+	const [pos, setPos] = useState<DropdownPosition | null>(null)
 	const btnRef = useRef<View>(null)
 
+	const closeDropdown = () => {
+		setOpen(false)
+		setPos(null)
+	}
+
 	const handleOpen = () => {
-		btnRef.current?.measureInWindow((x, y, w, h) => {
-			setPos({ x, y: y + h, w: width ?? w })
-			setOpen(true)
+		requestAnimationFrame(() => {
+			btnRef.current?.measureInWindow((x, y, w, h) => {
+				const resolvedMenuWidth = menuWidth ?? triggerWidth
+				const layoutValues = [x, y, w, h, triggerWidth, resolvedMenuWidth]
+
+				if (!layoutValues.every(isValidLayoutNumber) || h <= 0 || resolvedMenuWidth <= 0) {
+					closeDropdown()
+					return
+				}
+
+				setPos({ x, y: y + h, width: resolvedMenuWidth })
+				setOpen(true)
+			})
 		})
 	}
 
 	return (
-		<View style={{ width }} ref={btnRef}>
+		<View style={{ width: triggerWidth }} ref={btnRef} collapsable={false}>
 			<TouchableOpacity style={[styles.dropdown, open && styles.dropdownOpen]} onPress={handleOpen}>
 				<Text style={[styles.dropdownText, open && { color: PRIMARY }]}>{value}</Text>
 				<Icon
@@ -92,44 +136,57 @@ const CustomDropdown = ({ value, options, onChange, width }: DropdownProps) => {
 				/>
 			</TouchableOpacity>
 
-			<Modal visible={open} transparent animationType="none">
+			<Modal visible={open && pos !== null} transparent animationType="none">
 				<View
 					style={StyleSheet.absoluteFill}
 					onStartShouldSetResponder={() => true}
-					onResponderGrant={() => setOpen(false)}>
-					<View
-						style={[
-							styles.dropdownList,
-							styles.dropdownListOpen,
-							{ position: 'absolute', top: pos.y, left: pos.x, width: pos.w },
-						]}
-						onStartShouldSetResponder={() => true}
-						onResponderGrant={() => {}}>
-						<ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
-							{options.map(opt => (
-								<TouchableOpacity
-									key={opt}
-									style={[styles.dropdownItem, opt === value && styles.dropdownItemSelected]}
-									onPress={() => {
-										onChange(opt)
-										setOpen(false)
-									}}>
-									<Text
-										style={[
-											styles.dropdownItemText,
-											opt === value && styles.dropdownItemTextSelected,
-										]}>
-										{opt}
-									</Text>
-								</TouchableOpacity>
-							))}
-						</ScrollView>
-					</View>
+					onResponderGrant={closeDropdown}>
+					{pos && (
+						<View
+							style={[
+								styles.dropdownList,
+								styles.dropdownListOpen,
+								{ position: 'absolute', top: pos.y, left: pos.x, width: pos.width },
+							]}
+							onStartShouldSetResponder={() => true}
+							onResponderGrant={() => {}}>
+							<ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
+								{options.map(opt => (
+									<TouchableOpacity
+										key={opt}
+										style={[styles.dropdownItem, opt === value && styles.dropdownItemSelected]}
+										onPress={() => {
+											onChange(opt)
+											closeDropdown()
+										}}>
+										<Text
+											style={[
+												styles.dropdownItemText,
+												opt === value && styles.dropdownItemTextSelected,
+											]}>
+											{opt}
+										</Text>
+									</TouchableOpacity>
+								))}
+							</ScrollView>
+						</View>
+					)}
 				</View>
 			</Modal>
 		</View>
 	)
 }
+
+type LabeledDropdownProps = DropdownProps & {
+	unit: string
+}
+
+const LabeledDropdown = ({ unit, ...dropdownProps }: LabeledDropdownProps) => (
+	<View style={styles.dateField}>
+		<CustomDropdown {...dropdownProps} />
+		<Text style={styles.dateUnitLabel}>{unit}</Text>
+	</View>
+)
 
 // ─── ConfirmModal ─────────────────────────────────────────────────────────────
 
@@ -684,19 +741,44 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				<View style={styles.section}>
 					<Text style={styles.sectionLabel}>*모집 기간</Text>
 					<View style={styles.dateRow}>
-						<CustomDropdown value={year} options={YEARS} onChange={setYear} width={88} />
-						<Text style={styles.dateUnitLabel}>년</Text>
-						<CustomDropdown value={month} options={MONTHS} onChange={setMonth} width={68} />
-						<Text style={styles.dateUnitLabel}>월</Text>
-						<CustomDropdown value={day} options={DAYS} onChange={setDay} width={68} />
-						<Text style={styles.dateUnitLabel}>일</Text>
+						<LabeledDropdown
+							value={year}
+							options={YEARS}
+							onChange={setYear}
+							triggerWidth={DROPDOWN_WIDTHS.year}
+							unit="년"
+						/>
+						<LabeledDropdown
+							value={month}
+							options={MONTHS}
+							onChange={setMonth}
+							triggerWidth={DROPDOWN_WIDTHS.datePart}
+							unit="월"
+						/>
+						<LabeledDropdown
+							value={day}
+							options={DAYS}
+							onChange={setDay}
+							triggerWidth={DROPDOWN_WIDTHS.datePart}
+							unit="일"
+						/>
 					</View>
 					<View style={[styles.dateRow, { marginTop: 8 }]}>
-						<CustomDropdown value={hour} options={HOURS} onChange={setHour} width={68} />
-						<Text style={styles.dateUnitLabel}>시</Text>
-						<CustomDropdown value={minute} options={MINUTES} onChange={setMinute} width={68} />
-						<Text style={styles.dateUnitLabel}>분</Text>
-						<Text style={styles.deadlineLabel}>모집 마감</Text>
+						<LabeledDropdown
+							value={hour}
+							options={HOURS}
+							onChange={setHour}
+							triggerWidth={DROPDOWN_WIDTHS.datePart}
+							unit="시"
+						/>
+						<LabeledDropdown
+							value={minute}
+							options={MINUTES}
+							onChange={setMinute}
+							triggerWidth={DROPDOWN_WIDTHS.datePart}
+							unit="분"
+						/>
+						<Text style={styles.inlineHelperText}>모집 마감</Text>
 					</View>
 				</View>
 
@@ -752,20 +834,20 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 										value={meeting.day}
 										options={DAYS_OF_WEEK}
 										onChange={v => updateRegularMeeting(meeting.id, 'day', v)}
-										width={92}
+										triggerWidth={DROPDOWN_WIDTHS.weekday}
 									/>
 									<CustomDropdown
 										value={meeting.startTime}
 										options={MEETING_TIMES}
 										onChange={v => updateRegularMeeting(meeting.id, 'startTime', v)}
-										width={76}
+										triggerWidth={DROPDOWN_WIDTHS.meetingTime}
 									/>
 									<Text style={styles.tilde}>~</Text>
 									<CustomDropdown
 										value={meeting.endTime}
 										options={MEETING_TIMES}
 										onChange={v => updateRegularMeeting(meeting.id, 'endTime', v)}
-										width={76}
+										triggerWidth={DROPDOWN_WIDTHS.meetingTime}
 									/>
 									<TouchableOpacity
 										onPress={() => removeRegularMeeting(meeting.id)}
@@ -1127,9 +1209,10 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 	},
 	sectionLabel: {
+		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 20,
 		fontWeight: '600',
-		color: '#757474',
+		color: FORM_TEXT_COLOR,
 		marginBottom: 5,
 		paddingTop: 10,
 		paddingBottom: 5,
@@ -1141,37 +1224,41 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		paddingHorizontal: 15,
 		paddingVertical: 18,
+		fontFamily: FONT_FAMILY.medium,
 		fontSize: 16,
 		fontWeight: '500',
-		color: '#333',
+		color: FORM_TEXT_COLOR,
 		minHeight: 60,
 	},
 	helperText: {
-		fontSize: 14,
-		fontWeight: '400',
-		color: HELPER_COLOR,
+		...HELPER_TEXT_STYLE,
 		marginTop: 5,
 		paddingLeft: 5,
+	},
+	inlineHelperText: {
+		...HELPER_TEXT_STYLE,
+		marginLeft: 4,
 	},
 
 	// 날짜 행
 	dateRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
+		flexWrap: 'wrap',
+		gap: 8,
+		rowGap: 8,
+	},
+	dateField: {
+		flexDirection: 'row',
+		alignItems: 'center',
 		gap: 5,
 	},
 	dateUnitLabel: {
+		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 20,
 		fontWeight: '600',
-		color: '#757474',
+		color: FORM_TEXT_COLOR,
 	},
-	deadlineLabel: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: PRIMARY,
-		marginLeft: 4,
-	},
-
 	// 드롭다운
 	dropdown: {
 		flexDirection: 'row',
@@ -1191,11 +1278,11 @@ const styles = StyleSheet.create({
 		borderBottomWidth: 0,
 	},
 	dropdownText: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: BORDER,
+		fontFamily: FONT_FAMILY.regular,
+		fontSize: 16,
+		fontWeight: '400',
+		color: FORM_TEXT_COLOR,
 		marginRight: 2,
-		letterSpacing: 0.4,
 	},
 	dropdownListOpen: {
 		borderWidth: 1,
@@ -1208,7 +1295,6 @@ const styles = StyleSheet.create({
 	dropdownList: {
 		backgroundColor: '#fff',
 		borderRadius: 10,
-		minWidth: 140,
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.12,
@@ -1217,20 +1303,21 @@ const styles = StyleSheet.create({
 		overflow: 'hidden',
 	},
 	dropdownItem: {
-		paddingHorizontal: 20,
+		paddingHorizontal: 13,
 		paddingVertical: 13,
 	},
 	dropdownItemSelected: {
 		backgroundColor: `${PRIMARY}18`,
 	},
 	dropdownItemText: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: '#757474',
+		fontFamily: FONT_FAMILY.regular,
+		fontSize: 16,
+		fontWeight: '400',
+		color: FORM_TEXT_COLOR,
 	},
 	dropdownItemTextSelected: {
 		color: PRIMARY,
-		fontWeight: '700',
+		fontWeight: '400',
 	},
 
 	// 토글 버튼
@@ -1254,8 +1341,9 @@ const styles = StyleSheet.create({
 		borderColor: PRIMARY,
 	},
 	toggleText: {
+		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 16,
-		color: BORDER,
+		color: FORM_TEXT_COLOR,
 		fontWeight: '600',
 		textAlign: 'center',
 	},
@@ -1274,7 +1362,7 @@ const styles = StyleSheet.create({
 	},
 	tilde: {
 		fontSize: 14,
-		color: '#757474',
+		color: FORM_TEXT_COLOR,
 	},
 	addTimeButton: {
 		alignSelf: 'center',
@@ -1301,9 +1389,10 @@ const styles = StyleSheet.create({
 	},
 	iconInput: {
 		flex: 1,
+		fontFamily: FONT_FAMILY.medium,
 		fontSize: 16,
 		fontWeight: '500',
-		color: '#333',
+		color: FORM_TEXT_COLOR,
 	},
 
 	// 이미지

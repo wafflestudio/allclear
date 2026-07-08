@@ -1,5 +1,11 @@
 import { Category } from '@/entities/category'
 
+export type RegisterClubImageFile = {
+	uri: string
+	type: string
+	name: string
+}
+
 export type RegisterClubFormData = {
 	clubType: '교내' | '교외'
 
@@ -9,7 +15,8 @@ export type RegisterClubFormData = {
 	studentId: string
 
 	// Page 2: Club basic info
-	clubImage: string | null // Base64 or URI
+	clubImage: string | null
+	clubImageFile: RegisterClubImageFile | null
 	clubName: string
 
 	// Page 3: Categories
@@ -34,6 +41,7 @@ export const initialFormData: RegisterClubFormData = {
 	managerPhone: '',
 	studentId: '',
 	clubImage: null,
+	clubImageFile: null,
 	clubName: '',
 	selectedCategories: [],
 	department: '',
