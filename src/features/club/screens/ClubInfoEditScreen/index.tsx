@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	Dimensions,
+	FlatList,
 	Image,
 	Modal,
 	Pressable,
@@ -221,6 +222,7 @@ const ClubInfoEditScreen = () => {
 	const [formData, setFormData] = useState<ClubInfoEditFormData>(initialFormData)
 	const [activityCycleMode, setActivityCycleMode] = useState<ActivityCycleMode>('none')
 	const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false)
+	const [departmentSearch, setDepartmentSearch] = useState('')
 	const [imageFile, setImageFile] = useState<ImageFile | null>(null)
 	const [showSuccessModal, setShowSuccessModal] = useState(false)
 
@@ -250,10 +252,18 @@ const ClubInfoEditScreen = () => {
 	}
 
 	const activitySemesters = parseInt(formData.activityCycle, 10) || 0
+	const filteredDepartmentOptions = useMemo(() => {
+		const keyword = departmentSearch.trim()
+		if (!keyword) {
+			return departmentOptions
+		}
+		return departmentOptions.filter(department => department.includes(keyword))
+	}, [departmentOptions, departmentSearch])
 
 	const handleSelectDepartment = (department: string) => {
 		setFormField('department', department)
 		setShowDepartmentDropdown(false)
+		setDepartmentSearch('')
 	}
 
 	const handleSelectImage = async () => {
@@ -466,28 +476,6 @@ const ClubInfoEditScreen = () => {
 									<Text style={styles.affiliationLabel}>소속</Text>
 								</View>
 
-								{showDepartmentDropdown && (
-									<View style={styles.dropdownMenu}>
-										{departmentOptions.map(department => (
-											<Pressable
-												key={department}
-												style={[
-													styles.dropdownItem,
-													formData.department === department && styles.dropdownItemSelected,
-												]}
-												onPress={() => handleSelectDepartment(department)}>
-												<Text
-													style={[
-														styles.dropdownItemText,
-														formData.department === department && styles.dropdownItemTextSelected,
-													]}>
-													{department}
-												</Text>
-											</Pressable>
-										))}
-									</View>
-								)}
-
 								<TextField
 									placeholder="웹/앱 개발 동아리, 경영전략학회"
 									value={formData.shortIntro}
@@ -661,21 +649,65 @@ const ClubInfoEditScreen = () => {
 								/>
 							</View>
 						</View>
-					</ScrollView>
 
-					<View style={[styles.footer, { paddingBottom: insets.bottom + vs(14) }]}>
-						<Pressable
-							style={[
-								styles.submitButton,
-								(!isComplete || !hasChanges || isSubmitting) && styles.submitButtonDisabled,
-							]}
-							onPress={handleSubmit}
-							disabled={!isComplete || !hasChanges || isSubmitting}>
-							<Text style={styles.submitButtonText}>{isSubmitting ? '수정 중...' : '수정'}</Text>
-						</Pressable>
-					</View>
+						<View style={[styles.footer, { paddingBottom: insets.bottom + vs(14) }]}>
+							<Pressable
+								style={[
+									styles.submitButton,
+									(!isComplete || !hasChanges || isSubmitting) && styles.submitButtonDisabled,
+								]}
+								onPress={handleSubmit}
+								disabled={!isComplete || !hasChanges || isSubmitting}>
+								<Text style={styles.submitButtonText}>{isSubmitting ? '수정 중...' : '수정'}</Text>
+							</Pressable>
+						</View>
+					</ScrollView>
 				</>
 			)}
+
+			<Modal
+				visible={showDepartmentDropdown}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setShowDepartmentDropdown(false)}>
+				<Pressable
+					style={styles.departmentModalOverlay}
+					onPress={() => setShowDepartmentDropdown(false)}>
+					<Pressable style={styles.departmentModalCard} onPress={event => event.stopPropagation()}>
+						<Text style={styles.departmentModalTitle}>소속 선택</Text>
+						<TextInput
+							style={styles.dropdownSearchInput}
+							placeholder="소속 검색"
+							placeholderTextColor={Colors.BODYTEXT_DISABLED}
+							value={departmentSearch}
+							onChangeText={setDepartmentSearch}
+						/>
+						<FlatList
+							data={filteredDepartmentOptions}
+							style={styles.dropdownList}
+							keyboardShouldPersistTaps="handled"
+							keyExtractor={department => department}
+							renderItem={({ item: department }) => (
+								<Pressable
+									style={[
+										styles.dropdownItem,
+										formData.department === department && styles.dropdownItemSelected,
+									]}
+									onPress={() => handleSelectDepartment(department)}>
+									<Text
+										style={[
+											styles.dropdownItemText,
+											formData.department === department && styles.dropdownItemTextSelected,
+										]}>
+										{department}
+									</Text>
+								</Pressable>
+							)}
+							ListEmptyComponent={<Text style={styles.dropdownEmptyText}>검색 결과가 없어요</Text>}
+						/>
+					</Pressable>
+				</Pressable>
+			</Modal>
 
 			<SuccessModal visible={showSuccessModal} onConfirm={handleConfirmSuccess} />
 		</SafeAreaView>
@@ -798,12 +830,16 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_SUB,
 		flex: 1,
 	},
-	dropdownMenu: {
-		width: '55%',
-		borderWidth: 1,
-		borderColor: Colors.BODYTEXT_DISABLED,
-		borderRadius: 8,
-		backgroundColor: Colors.WHITE,
+	dropdownSearchInput: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_MAIN,
+		paddingHorizontal: s(16),
+		paddingVertical: vs(10),
+		borderBottomWidth: 1,
+		borderBottomColor: Colors.BACKGROUND_SUB,
+	},
+	dropdownList: {
+		maxHeight: vs(360),
 	},
 	dropdownItem: {
 		paddingHorizontal: s(16),
@@ -821,6 +857,30 @@ const styles = StyleSheet.create({
 	dropdownItemTextSelected: {
 		color: Colors.BUTTON_SELECTED,
 		fontWeight: '600',
+	},
+	dropdownEmptyText: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_DISABLED,
+		paddingHorizontal: s(16),
+		paddingVertical: vs(12),
+	},
+	departmentModalOverlay: {
+		flex: 1,
+		backgroundColor: Colors.BACKGROUND_DIM,
+		justifyContent: 'center',
+		paddingHorizontal: s(20),
+	},
+	departmentModalCard: {
+		backgroundColor: Colors.WHITE,
+		borderRadius: 12,
+		overflow: 'hidden',
+	},
+	departmentModalTitle: {
+		...typography.headerL,
+		color: Colors.BODYTEXT_MAIN,
+		paddingHorizontal: s(16),
+		paddingTop: vs(16),
+		paddingBottom: vs(8),
 	},
 	categoryGrid: {
 		flexDirection: 'row',
@@ -938,9 +998,7 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 	},
 	footer: {
-		paddingTop: vs(14),
-		paddingHorizontal: s(20),
-		backgroundColor: Colors.TEXTBOX_SELECTED,
+		paddingTop: vs(24),
 	},
 	submitButton: {
 		height: vs(48),
