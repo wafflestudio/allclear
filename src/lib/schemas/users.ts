@@ -85,3 +85,38 @@ export const RecentSearchesResponseSchema = z
     totalSize: z.number().int(),
   })
   .openapi('RecentSearchesResponse')
+
+export const UserNotificationTypeSchema = z.enum([
+  'CLUB_REGISTRATION_APPROVED',
+  'CLUB_REGISTRATION_REJECTED',
+  'MANAGER_REQUEST_APPROVED',
+  'MANAGER_REQUEST_REJECTED',
+])
+
+export const UserNotificationSourceTypeSchema = z.enum(['CLUB', 'CLUB_MANAGER_REQUEST'])
+
+export const UserNotificationSchema = z
+  .object({
+    id: z.string(),
+    type: UserNotificationTypeSchema,
+    clubId: z.string().uuid().nullable(),
+    sourceType: UserNotificationSourceTypeSchema,
+    sourceId: z.string(),
+    readAt: z.string().nullable(),
+    createdAt: z.string(),
+  })
+  .openapi('UserNotification')
+
+export const UserNotificationsResponseSchema = z
+  .object({
+    notifications: z.array(UserNotificationSchema),
+    totalSize: z.number().int(),
+    unreadCount: z.number().int(),
+  })
+  .openapi('UserNotificationsResponse')
+
+export const UserNotificationReadParamsSchema = z
+  .object({
+    id: z.string().regex(/^\d+$/),
+  })
+  .openapi('UserNotificationReadParams')

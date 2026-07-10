@@ -3,12 +3,19 @@ import { Inject, InjectRepository, Service } from '../provider'
 import {
   ClubEntity,
   ClubHistoryEntity,
+  ClubRecruitmentEntity,
   UserActivityLogEntity,
   UserActivityLogType,
 } from '../infra/database/entities'
 import { ClubCategory } from '../domain/model/ClubCategory'
 import { CATEGORIES } from '../../src/fixtures/category'
-import { Club, ManagedClubDetail, ReviewKeyword, toClubDomain } from 'server/domain/model/Club'
+import {
+  Club,
+  ManagedClubDetail,
+  ManagedClubListItem,
+  ReviewKeyword,
+  toClubDomain,
+} from 'server/domain/model/Club'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import { groupBy, round, toPairs } from 'lodash-es'
@@ -18,7 +25,11 @@ import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/clu
 import dayjs from 'dayjs'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { sortByPopularAndEachRandom } from '../util/club-sort'
-import { PENDING_CLUB_STATUS, PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
+import {
+  PENDING_CLUB_STATUS,
+  PUBLIC_CLUB_STATUS,
+  REJECTED_CLUB_STATUS,
+} from 'src/common/constants/club-status'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
 import type {
   ClubData,
@@ -31,6 +42,11 @@ import { ClubAccessService } from './club-access.service'
 
 type ClubUuid = string
 type ReviewKeywordId = string
+type ManagedClubListEntityItem = {
+  club: ClubEntity
+  managementStatus: ManagedClubListItem['managementStatus']
+  managerRequestId?: number
+}
 
 const CLUB_ENTITY_FIELD_TO_COLUMN: Record<string, string> = {
   name: 'name',
@@ -68,6 +84,8 @@ export class ClubService {
   private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
   @InjectRepository(ClubHistoryEntity)
   private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
+  @InjectRepository(ClubRecruitmentEntity)
+  private readonly clubRecruitmentRepository: Repository<ClubRecruitmentEntity>
   @Inject(ClubAccessService)
   private readonly clubAccessService: ClubAccessService
 
@@ -137,15 +155,135 @@ export class ClubService {
     return sortByPopularAndEachRandom(clubs)
   }
 
-  async findAllManagedByUser(serviceUserId: string): Promise<Club[]> {
-    const clubManagers = await this.clubManagerRepository.findBy({
-      serviceUserId,
-    })
+  async findAllManagedByUser(serviceUserId: string): Promise<ManagedClubListItem[]> {
+    const [clubManagers, pendingManagerRequests] = await Promise.all([
+      this.clubManagerRepository.find({
+        where: {
+          serviceUserId,
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+      }),
+      this.clubManagerRegisterRequestRepository.find({
+        where: {
+          serviceUserId,
+          status: PENDING_CLUB_STATUS,
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+      }),
+    ])
+    const managerClubIds = clubManagers.map((it) => it.clubId)
+    const pendingManagerRequestClubIds = pendingManagerRequests.map((it) => it.clubId)
+    const clubIds = Array.from(new Set([...managerClubIds, ...pendingManagerRequestClubIds]))
+    if (clubIds.length === 0) {
+      return []
+    }
     const clubs = await this.clubRepository.findBy({
-      uuid: In(clubManagers.map((it) => it.clubId)),
+      uuid: In(clubIds),
       deletedAt: IsNull(),
     })
-    return clubs.map((it) => toClubDomain(it))
+    const clubById = new Map(clubs.map((club) => [club.uuid, club]))
+    const managerClubIdSet = new Set(managerClubIds)
+
+    const approvedManagedClubs = clubManagers
+      .map((manager) => clubById.get(manager.clubId))
+      .filter((club): club is ClubEntity => club?.status === PUBLIC_CLUB_STATUS)
+    const latestRecruitmentUpdatedAtByClubId = await this.findLatestRecruitmentUpdatedAtByClubId(
+      approvedManagedClubs.map((club) => club.uuid),
+    )
+
+    const getRepresentativeUpdatedAt = (club: ClubEntity) => {
+      const latestRecruitmentUpdatedAt = latestRecruitmentUpdatedAtByClubId.get(club.uuid)
+      if (!latestRecruitmentUpdatedAt) {
+        return new Date(club.updatedAt).getTime()
+      }
+      return Math.max(new Date(club.updatedAt).getTime(), latestRecruitmentUpdatedAt)
+    }
+
+    const sortedApprovedManagedClubItems: ManagedClubListEntityItem[] = approvedManagedClubs
+      .sort((a, b) => getRepresentativeUpdatedAt(b) - getRepresentativeUpdatedAt(a))
+      .map((club) => ({
+        club,
+        managementStatus: PUBLIC_CLUB_STATUS,
+      }))
+    const rejectedManagedClubs = clubManagers
+      .map((manager) => clubById.get(manager.clubId))
+      .filter((club): club is ClubEntity => club?.status === REJECTED_CLUB_STATUS)
+      .map(
+        (club): ManagedClubListEntityItem => ({
+          club,
+          managementStatus: REJECTED_CLUB_STATUS,
+        }),
+      )
+    const pendingManagedClubs = clubManagers
+      .map((manager) => clubById.get(manager.clubId))
+      .filter((club): club is ClubEntity => club?.status === PENDING_CLUB_STATUS)
+      .map(
+        (club): ManagedClubListEntityItem => ({
+          club,
+          managementStatus: PENDING_CLUB_STATUS,
+        }),
+      )
+    const pendingManagerRequestClubs = pendingManagerRequests
+      .filter((request) => !managerClubIdSet.has(request.clubId))
+      .map((request): ManagedClubListEntityItem | null => {
+        const club = clubById.get(request.clubId)
+        if (!club) {
+          return null
+        }
+        return {
+          club,
+          managementStatus: 'MANAGER_REQUEST_PENDING',
+          managerRequestId: Number(request.id),
+        }
+      })
+      .filter((item): item is ManagedClubListEntityItem => !!item)
+
+    const orderedItems = [
+      ...sortedApprovedManagedClubItems,
+      ...rejectedManagedClubs,
+      ...pendingManagedClubs,
+      ...pendingManagerRequestClubs,
+    ]
+    const seenClubIds = new Set<string>()
+
+    return orderedItems
+      .filter((item) => {
+        if (seenClubIds.has(item.club.uuid)) {
+          return false
+        }
+        seenClubIds.add(item.club.uuid)
+        return true
+      })
+      .map((item) => ({
+        ...toClubDomain(item.club),
+        managementStatus: item.managementStatus,
+        ...(item.managerRequestId !== undefined && { managerRequestId: item.managerRequestId }),
+      }))
+  }
+
+  private async findLatestRecruitmentUpdatedAtByClubId(
+    clubIds: string[],
+  ): Promise<Map<string, number>> {
+    if (clubIds.length === 0) {
+      return new Map()
+    }
+
+    const rows = await this.clubRecruitmentRepository
+      .createQueryBuilder('recruitment')
+      .select('recruitment.club_id', 'club_id')
+      .addSelect('MAX(recruitment.updated_at)', 'latest_updated_at')
+      .where('recruitment.club_id IN (:...clubIds)', { clubIds })
+      .andWhere('recruitment.deleted_at IS NULL')
+      .groupBy('recruitment.club_id')
+      .getRawMany<{ club_id: string; latest_updated_at: string }>()
+
+    return new Map(
+      rows.map((row) => [row.club_id, new Date(row.latest_updated_at).getTime()] as const),
+    )
   }
 
   async findClubsReviewedByMe(serviceUserId: string): Promise<Club[]> {
@@ -227,10 +365,7 @@ export class ClubService {
     return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
   }
 
-  async registerClub(
-    serviceUserId: string,
-    body: ClubRegisterRequest,
-  ): Promise<Club> {
+  async registerClub(serviceUserId: string, body: ClubRegisterRequest): Promise<Club> {
     const { club_data: club, manager_data: managerData } = body
     const clubPatch = await this.buildClubPatchFromClubData(club)
 

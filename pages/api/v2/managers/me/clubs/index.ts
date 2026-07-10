@@ -1,4 +1,4 @@
-import { Club } from 'server/domain/model/Club'
+import { Club, ManagedClubListItem } from 'server/domain/model/Club'
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
@@ -12,7 +12,7 @@ type ResponseData = {
   message: string
   data: {
     total_count: number
-    clubs: Club[]
+    clubs: ManagedClubListItem[]
   }
 }
 

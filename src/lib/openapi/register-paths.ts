@@ -86,6 +86,8 @@ import {
   UpdateDeviceSchema,
   UpdateProfileSchema,
   UserClubsResponseSchema,
+  UserNotificationReadParamsSchema,
+  UserNotificationsResponseSchema,
   UserProfileResponseSchema,
   UserVoiceSchema,
 } from 'src/lib/schemas/users'
@@ -1378,6 +1380,73 @@ registry.registerPath({
 })
 
 registry.registerPath({
+  method: 'get',
+  path: '/api/v2/users/me/notifications',
+  tags: ['Users'],
+  summary: '내 알림 목록 조회',
+  description:
+    '로그인한 사용자의 알림 목록을 최신순으로 조회합니다. 앱은 type, clubId, sourceType, sourceId를 사용해 알림 문구와 이동 동작을 결정할 수 있으며 unreadCount로 읽지 않은 알림 수를 확인합니다.',
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: UserNotificationsResponseSchema,
+          example: {
+            notifications: [
+              {
+                id: '4',
+                type: 'MANAGER_REQUEST_REJECTED',
+                clubId: '61fd37f4-b325-4754-8493-aa9099fe27f9',
+                sourceType: 'CLUB_MANAGER_REQUEST',
+                sourceId: '13',
+                readAt: null,
+                createdAt: '2026-07-10T12:00:00.000Z',
+              },
+              {
+                id: '3',
+                type: 'CLUB_REGISTRATION_APPROVED',
+                clubId: '61fd37f4-b325-4754-8493-aa9099fe27f9',
+                sourceType: 'CLUB',
+                sourceId: '61fd37f4-b325-4754-8493-aa9099fe27f9',
+                readAt: '2026-07-10T12:05:00.000Z',
+                createdAt: '2026-07-10T11:30:00.000Z',
+              },
+            ],
+            totalSize: 2,
+            unreadCount: 1,
+          },
+        },
+      },
+    },
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v2/users/me/notifications/{id}/read',
+  tags: ['Users'],
+  summary: '내 알림 읽음 처리',
+  description:
+    '로그인한 사용자의 특정 알림을 읽음 처리합니다. 이미 읽은 알림이면 readAt을 다시 변경하지 않고 성공으로 처리합니다. 다른 사용자의 알림 id이거나 존재하지 않는 알림이면 404를 반환합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: UserNotificationReadParamsSchema,
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
   method: 'post',
   path: '/api/v2/users/me/voices',
   tags: ['Users'],
@@ -1474,7 +1543,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '내가 관리하는 동아리 목록',
   description:
-    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. 승인 대기, 승인 완료, 반려 상태를 모두 포함합니다.',
+    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. status는 동아리 자체의 승인 상태이며, 마이페이지 관리 목록의 상태 표시와 정렬은 managementStatus를 기준으로 판단합니다. 정렬 순서는 APPROVED, REJECTED, PENDING, MANAGER_REQUEST_PENDING 순이며, APPROVED 항목끼리는 동아리 수정일과 최신 모집공고 수정일 중 더 최근 날짜 기준 내림차순입니다.',
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -1486,19 +1555,39 @@ registry.registerPath({
             success: true,
             message: '관리 중인 동아리 목록 및 신청 현황 조회가 완료되었습니다.',
             data: {
-              total_count: 3,
+              total_count: 4,
               clubs: [
                 {
                   uuid: '123e4567-e89b-12d3-a456-426614174000',
                   name: '와플스튜디오',
                   status: 'APPROVED',
+                  managementStatus: 'APPROVED',
                   image_uri: 'https://cdn.allclear.com/temp/upload_123.jpg',
                   created_at: '2026-04-01T10:00:00Z',
                 },
                 {
                   uuid: '234f5678-f90c-23e4-b567-537725285111',
+                  name: '밴드동아리',
+                  status: 'REJECTED',
+                  managementStatus: 'REJECTED',
+                  reject_reason: '동아리 소개 정보가 부족합니다.',
+                  image_uri: 'https://cdn.allclear.com/temp/upload_234.jpg',
+                  created_at: '2026-04-02T11:00:00Z',
+                },
+                {
+                  uuid: '345a6789-a01d-34f5-c678-648836396222',
+                  name: '봉사동아리',
+                  status: 'PENDING',
+                  managementStatus: 'PENDING',
+                  image_uri: 'https://cdn.allclear.com/temp/upload_345.jpg',
+                  created_at: '2026-04-03T12:00:00Z',
+                },
+                {
+                  uuid: '456b7890-b12e-45f6-d789-759947407333',
                   name: '쿠킹마스터',
                   status: 'PENDING',
+                  managementStatus: 'MANAGER_REQUEST_PENDING',
+                  managerRequestId: 12,
                   image_uri: 'https://cdn.allclear.com/temp/upload_456.jpg',
                   created_at: '2026-04-03T14:30:00Z',
                 },
@@ -2017,7 +2106,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 매핑 신청 승인 및 반려',
   description:
-    '운영진이 특정 동아리 관리 권한 신청 건을 승인 또는 반려합니다. 승인 시 신청 유저가 club_manager에 등록됩니다. 이미 처리된 요청은 다시 수정할 수 없습니다.',
+    '운영진이 특정 동아리 관리 권한 신청 건을 승인 또는 반려합니다. 승인 시 신청 유저가 club_manager에 등록되고 MANAGER_REQUEST_APPROVED 알림이 생성됩니다. 반려 시 MANAGER_REQUEST_REJECTED 알림이 생성됩니다. PENDING으로 변경하면 해당 신청 건의 기존 승인/반려 알림이 삭제됩니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: AdminClubManagerRequestStatusParamsSchema,
@@ -2151,7 +2240,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 동아리 상태 변경',
   description:
-    '운영진이 동아리 상태를 변경합니다. 현재 구현은 PENDING, APPROVED, REJECTED를 모두 허용하므로 반려된 동아리를 다시 PENDING으로 되돌릴 수 있습니다. REJECTED로 변경할 때는 reject_reason이 필요합니다.',
+    '운영진이 동아리 상태를 변경합니다. 현재 구현은 PENDING, APPROVED, REJECTED를 모두 허용하므로 반려된 동아리를 다시 PENDING으로 되돌릴 수 있습니다. APPROVED로 변경하면 CLUB_REGISTRATION_APPROVED 알림이 생성되고, REJECTED로 변경하면 CLUB_REGISTRATION_REJECTED 알림이 생성됩니다. PENDING으로 변경하면 해당 동아리의 기존 신규 동아리 승인/반려 알림이 삭제됩니다. REJECTED로 변경할 때는 reject_reason이 필요합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,

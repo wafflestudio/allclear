@@ -136,13 +136,18 @@ export const ManagedClubPatchSchema = ClubDataSchema.partial()
 
 export type ManagedClubPatch = z.infer<typeof ManagedClubPatchSchema>
 
+export const ManagedClubListItemSchema = ClubSchema.extend({
+  managementStatus: z.enum(['APPROVED', 'REJECTED', 'PENDING', 'MANAGER_REQUEST_PENDING']),
+  managerRequestId: z.number().int().optional(),
+}).openapi('ManagedClubListItem')
+
 export const ManagedClubsResponseSchema = z
   .object({
     success: z.literal(true),
     message: z.string(),
     data: z.object({
       total_count: z.number().int(),
-      clubs: z.array(ClubSchema),
+      clubs: z.array(ManagedClubListItemSchema),
     }),
   })
   .openapi('ManagedClubsResponse')

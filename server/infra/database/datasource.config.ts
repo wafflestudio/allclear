@@ -15,6 +15,7 @@ import {
   TermsEntity,
   UserActivityLogEntity,
   UserEntity,
+  UserNotificationEntity,
 } from './entities'
 import { ENV } from '../../ENV'
 import { ClubReviewKeywordEntity } from './entities/club-review-keyword.entity'
@@ -60,6 +61,7 @@ export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
     TermsAgreementEntity,
     UserVoiceEntity,
     UserRecentSearchEntity,
+    UserNotificationEntity,
     CollegeMajorEntity,
   ],
   username: ENV.DB.USERNAME,

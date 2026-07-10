@@ -16,6 +16,17 @@ export type ManagedClubDetail = Club & {
   managers: ClubManager[]
 }
 
+export type ManagedClubManagementStatus =
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'PENDING'
+  | 'MANAGER_REQUEST_PENDING'
+
+export type ManagedClubListItem = Club & {
+  managementStatus: ManagedClubManagementStatus
+  managerRequestId?: number
+}
+
 export type ReviewKeyword = {
   id: string
   title: string

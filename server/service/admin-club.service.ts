@@ -10,6 +10,10 @@ import { ClubManagerEntity } from '../infra/database/entities/club-manager.entit
 import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import {
+  UserNotificationEntity,
+  type UserNotificationType,
+} from '../infra/database/entities/user-notification.entity'
+import {
   ClubStatus,
   PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
@@ -235,38 +239,71 @@ export class AdminClubService {
     clubUuid: string,
     decision: AdminClubStatusUpdate,
   ): Promise<{ club_uuid: string; status: AdminClubStatusUpdate['status']; processed_at: string }> {
-    const club = await this.clubRepository.findOneBy({
-      uuid: clubUuid,
-      deletedAt: IsNull(),
-    })
+    return this.clubRepository.manager.transaction(async (manager) => {
+      const clubRepository = manager.getRepository(ClubEntity)
+      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
-    if (!club) {
-      throw new NotFoundError('club not found')
-    }
-
-    const processedAt = new Date().toISOString()
-    const isApproved = decision.status === PUBLIC_CLUB_STATUS
-    const isRejected = decision.status === REJECTED_CLUB_STATUS
-
-    await this.clubRepository.update(
-      {
+      const club = await clubRepository.findOneBy({
         uuid: clubUuid,
         deletedAt: IsNull(),
-      },
-      {
-        status: decision.status,
-        approvedAt: isApproved ? processedAt : null,
-        rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
-        isOfficialVerified: isApproved ? decision.is_official_verified : false,
-        verifiedAt: isApproved && decision.is_official_verified ? processedAt : null,
-      },
-    )
+      })
 
-    return {
-      club_uuid: clubUuid,
-      status: decision.status,
-      processed_at: processedAt,
-    }
+      if (!club) {
+        throw new NotFoundError('club not found')
+      }
+
+      const processedAt = new Date().toISOString()
+      const isApproved = decision.status === PUBLIC_CLUB_STATUS
+      const isRejected = decision.status === REJECTED_CLUB_STATUS
+      const isPending = decision.status === PENDING_CLUB_STATUS
+      const notificationType = this.getClubRegistrationNotificationType(decision.status)
+      const shouldCreateNotification = club.status !== decision.status && notificationType !== null
+
+      await clubRepository.update(
+        {
+          uuid: clubUuid,
+          deletedAt: IsNull(),
+        },
+        {
+          status: decision.status,
+          approvedAt: isApproved ? processedAt : null,
+          rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
+          isOfficialVerified: isApproved ? decision.is_official_verified : false,
+          verifiedAt: isApproved && decision.is_official_verified ? processedAt : null,
+        },
+      )
+
+      if (isPending) {
+        await userNotificationRepository.delete({
+          sourceType: 'CLUB',
+          sourceId: clubUuid,
+          type: In(this.getClubRegistrationResultNotificationTypes()),
+        })
+      }
+
+      if (shouldCreateNotification) {
+        const clubManagers = await clubManagerRepository.findBy({ clubId: clubUuid })
+        const serviceUserIds = Array.from(new Set(clubManagers.map((it) => it.serviceUserId)))
+        if (serviceUserIds.length > 0) {
+          await userNotificationRepository.insert(
+            serviceUserIds.map((serviceUserId) => ({
+              serviceUserId,
+              type: notificationType,
+              clubId: clubUuid,
+              sourceType: 'CLUB',
+              sourceId: clubUuid,
+            })),
+          )
+        }
+      }
+
+      return {
+        club_uuid: clubUuid,
+        status: decision.status,
+        processed_at: processedAt,
+      }
+    })
   }
 
   async getAdminClubHistories({
@@ -481,6 +518,7 @@ export class AdminClubService {
     return this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
       const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
       const request = await managerRequestRepository.findOneBy({ id: String(requestId) })
       if (!request) {
@@ -491,6 +529,9 @@ export class AdminClubService {
       const isApproved = decision.status === PUBLIC_CLUB_STATUS
       const isRejected = decision.status === REJECTED_CLUB_STATUS
       const isPending = decision.status === PENDING_CLUB_STATUS
+      const notificationType = this.getManagerRequestNotificationType(decision.status)
+      const shouldCreateNotification =
+        request.status !== decision.status && notificationType !== null
 
       if (isApproved) {
         if (request.status !== PENDING_CLUB_STATUS) {
@@ -525,6 +566,24 @@ export class AdminClubService {
         },
       )
 
+      if (isPending) {
+        await userNotificationRepository.delete({
+          sourceType: 'CLUB_MANAGER_REQUEST',
+          sourceId: request.id,
+          type: In(this.getManagerRequestResultNotificationTypes()),
+        })
+      }
+
+      if (shouldCreateNotification) {
+        await userNotificationRepository.insert({
+          serviceUserId: request.serviceUserId,
+          type: notificationType,
+          clubId: request.clubId,
+          sourceType: 'CLUB_MANAGER_REQUEST',
+          sourceId: request.id,
+        })
+      }
+
       return {
         request_id: requestId,
         club_uuid: request.clubId,
@@ -532,6 +591,34 @@ export class AdminClubService {
         processed_at: processedAt,
       }
     })
+  }
+
+  private getClubRegistrationNotificationType(status: ClubStatus): UserNotificationType | null {
+    if (status === PUBLIC_CLUB_STATUS) {
+      return 'CLUB_REGISTRATION_APPROVED'
+    }
+    if (status === REJECTED_CLUB_STATUS) {
+      return 'CLUB_REGISTRATION_REJECTED'
+    }
+    return null
+  }
+
+  private getClubRegistrationResultNotificationTypes(): UserNotificationType[] {
+    return ['CLUB_REGISTRATION_APPROVED', 'CLUB_REGISTRATION_REJECTED']
+  }
+
+  private getManagerRequestNotificationType(status: ClubStatus): UserNotificationType | null {
+    if (status === PUBLIC_CLUB_STATUS) {
+      return 'MANAGER_REQUEST_APPROVED'
+    }
+    if (status === REJECTED_CLUB_STATUS) {
+      return 'MANAGER_REQUEST_REJECTED'
+    }
+    return null
+  }
+
+  private getManagerRequestResultNotificationTypes(): UserNotificationType[] {
+    return ['MANAGER_REQUEST_APPROVED', 'MANAGER_REQUEST_REJECTED']
   }
 
   async updateAdminClubVerificationRequestStatus(
