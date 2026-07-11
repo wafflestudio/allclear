@@ -4,7 +4,7 @@ import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { LOGIN_TOKEN } from '@/shared/constants/localStorage'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
-import { Club } from '@/entities/club'
+import { Club, ManagedClubListItem, ManagedClubManagementStatus } from '@/entities/club'
 import { useManageClubBottomSheet } from '@/shared/contexts/manageClubBottomSheet'
 import { useProfile } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -109,6 +109,41 @@ const MyPageScreen = () => {
 		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid })
 	}
 
+	const renderManageClubButtons = (club: ManagedClubListItem) => {
+		if (club.managementStatus === 'APPROVED') {
+			return (
+				<View style={styles.manageClubButtons}>
+					<TouchableOpacity
+						style={styles.manageClubBtnOutline}
+						activeOpacity={0.7}
+						onPress={() => handleRegisterAnnouncement(club)}>
+						<Text style={styles.manageClubBtnOutlineText}>공고 등록</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={styles.manageClubBtnFilled}
+						activeOpacity={0.7}
+						onPress={() => handleManageClub(club)}>
+						<Text style={styles.manageClubBtnFilledText}>동아리 관리</Text>
+					</TouchableOpacity>
+				</View>
+			)
+		}
+
+		return (
+			<View style={styles.manageClubButtons}>
+				<View style={styles.manageClubStatusButton}>
+					<Text
+						style={styles.manageClubStatusButtonText}
+						numberOfLines={1}
+						adjustsFontSizeToFit
+						minimumFontScale={0.85}>
+						{MANAGE_CLUB_STATUS_LABEL[club.managementStatus]}
+					</Text>
+				</View>
+			</View>
+		)
+	}
+
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
 			<ScrollView contentContainerStyle={styles.scrollContent}>
@@ -186,21 +221,7 @@ const MyPageScreen = () => {
 									</View>
 								</View>
 
-								{/* 버튼 행 */}
-								<View style={styles.manageClubButtons}>
-									<TouchableOpacity
-										style={styles.manageClubBtnOutline}
-										activeOpacity={0.7}
-										onPress={() => handleRegisterAnnouncement(club)}>
-										<Text style={styles.manageClubBtnOutlineText}>공고 등록</Text>
-									</TouchableOpacity>
-									<TouchableOpacity
-										style={styles.manageClubBtnFilled}
-										activeOpacity={0.7}
-										onPress={() => handleManageClub(club)}>
-										<Text style={styles.manageClubBtnFilledText}>동아리 관리</Text>
-									</TouchableOpacity>
-								</View>
+								{renderManageClubButtons(club)}
 							</View>
 						))}
 					</ScrollView>
@@ -269,6 +290,13 @@ const MyPageScreen = () => {
 }
 
 export default MyPageScreen
+
+const MANAGE_CLUB_STATUS_LABEL: Record<ManagedClubManagementStatus, string> = {
+	APPROVED: '동아리 관리',
+	REJECTED: '미승인(신청 반려)',
+	PENDING: '승인 대기',
+	MANAGER_REQUEST_PENDING: '운영진 권한 승인 대기',
+}
 
 const styles = StyleSheet.create({
 	safeArea: {
@@ -438,6 +466,23 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		letterSpacing: -0.02 * 14,
 		color: Colors.WHITE,
+	},
+	manageClubStatusButton: {
+		flex: 1,
+		height: vs(35),
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: Colors.TEXTBOX_UNSELECTED,
+		borderRadius: ms(8),
+		paddingHorizontal: s(10),
+	},
+	manageClubStatusButtonText: {
+		fontFamily: 'Apple SD Gothic Neo',
+		fontWeight: '600',
+		fontSize: ms(14),
+		lineHeight: ms(24),
+		textAlign: 'center',
+		color: Colors.TEXT_BUTTON_UNSELECTED,
 	},
 
 	// 메뉴

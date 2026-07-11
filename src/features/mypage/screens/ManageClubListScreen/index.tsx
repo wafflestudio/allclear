@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ENV } from '@/config/ENV'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import 'dayjs/locale/ko'
-import { Club } from '@/entities/club'
+import { ManagedClubListItem } from '@/entities/club'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import React, { useContext } from 'react'
 import { FlatList, Text, TouchableOpacity } from 'react-native'
@@ -24,7 +24,9 @@ const ManageClubListScreen = ({ navigation }: Props) => {
 
 	const handleMoveToHomePage = () => navigation.goBack()
 
-	const openManageClubDetailPage = async (club: Club) => {
+	const openManageClubDetailPage = async (club: ManagedClubListItem) => {
+		if (club.managementStatus !== 'APPROVED') return
+
 		const authorization = await AsyncStorage.getItem(LOGIN_TOKEN)
 
 		if (!authorization) return
@@ -56,13 +58,22 @@ const ManageClubListScreen = ({ navigation }: Props) => {
 			</Text>
 			<FlatList
 				nestedScrollEnabled
-				keyExtractor={(_, index) => index.toString()}
+				keyExtractor={item =>
+					`${item.uuid}-${item.managementStatus}-${item.managerRequestId ?? ''}`
+				}
 				data={manageClubs}
-				renderItem={({ item }) => (
-					<TouchableOpacity onPress={() => openManageClubDetailPage(item)}>
-						<ClubCard club={item} />
-					</TouchableOpacity>
-				)}
+				renderItem={({ item }) => {
+					const isEditable = item.managementStatus === 'APPROVED'
+
+					return (
+						<TouchableOpacity
+							disabled={!isEditable}
+							activeOpacity={isEditable ? 0.2 : 1}
+							onPress={() => openManageClubDetailPage(item)}>
+							<ClubCard club={item} />
+						</TouchableOpacity>
+					)
+				}}
 				// Performance settings
 				removeClippedSubviews={true} // Unmount components when outside of window
 				initialNumToRender={6} // Reduce initial render amount
