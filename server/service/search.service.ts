@@ -1,6 +1,5 @@
 import { Inject, Service } from '../provider'
 import { ClubEntity } from '../infra/database/entities'
-import { Club } from 'server/domain/model/Club'
 import { SearchQueryService } from './search/search-query.service'
 import { SearchTypoCorrectionService } from './search/search-typo-correction.service'
 import { SearchResultHydratorService } from './search/search-result-hydrator.service'
@@ -9,6 +8,7 @@ import { SearchLogService } from './search/search-log.service'
 import {
   ClubSearchResponse,
   DEFAULT_SEARCH_SORT,
+  SearchClub,
   SearchOptions,
 } from './search/search.types'
 
@@ -63,7 +63,7 @@ export class SearchService {
     }
   }
 
-  private async runSearch(query: string, options: SearchOptions): Promise<Club[]> {
+  private async runSearch(query: string, options: SearchOptions): Promise<SearchClub[]> {
     const entities: ClubEntity[] = await this.searchQueryService.search(query, options.filters)
     const clubs = await this.hydratorService.toClubs(entities)
     return this.sortService.sort(clubs, query, options.sort ?? DEFAULT_SEARCH_SORT)

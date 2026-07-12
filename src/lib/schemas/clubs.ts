@@ -76,9 +76,13 @@ export const ClubsResponseSchema = z
   })
   .openapi('ClubsResponse')
 
+export const SearchClubSchema = ClubSchema.extend({
+  hasManager: z.boolean(),
+}).openapi('SearchClub')
+
 export const ClubsSearchResponseSchema = z
   .object({
-    clubs: z.array(ClubSchema),
+    clubs: z.array(SearchClubSchema),
     totalSize: z.number().int(),
     query: z.string(),
     correctedQuery: z.string().nullable(),

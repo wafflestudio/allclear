@@ -2,9 +2,13 @@ import { ClubEntity } from 'server/infra/database/entities'
 import { Club } from 'server/domain/model/Club'
 
 export type ClubSearchResponse = {
-  clubs: Club[]
+  clubs: SearchClub[]
   correctedQuery: string | null
   isTypoCorrected: boolean
+}
+
+export type SearchClub = Club & {
+  hasManager: boolean
 }
 
 export type MinActivityPeriodFilter = '0' | '1' | '2' | '3_plus'

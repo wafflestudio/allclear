@@ -4,7 +4,7 @@ import { SearchSortType } from './search.types'
 
 @Service
 export class SearchSortService {
-  sort(clubs: Club[], query: string, sort: SearchSortType = 'default'): Club[] {
+  sort<T extends Club>(clubs: T[], query: string, sort: SearchSortType = 'default'): T[] {
     switch (sort) {
       case 'default':
         return sortByOfficialVerifiedAndNameMatch([...clubs], query)
@@ -12,7 +12,7 @@ export class SearchSortService {
   }
 }
 
-function sortByOfficialVerifiedAndNameMatch(clubs: Club[], query: string): Club[] {
+function sortByOfficialVerifiedAndNameMatch<T extends Club>(clubs: T[], query: string): T[] {
   // query 정규화와 클럽별 일치 점수를 한 번씩만 계산한다(decorate-sort).
   const normalizedQuery = query.trim().toLowerCase()
   const decorated = clubs.map((club) => ({

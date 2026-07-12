@@ -1,14 +1,17 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
 import { SearchService } from 'server/service/search.service'
-import { Club } from 'server/domain/model/Club'
-import { MinActivityPeriodFilter, SearchFilters } from 'server/service/search/search.types'
+import {
+  MinActivityPeriodFilter,
+  SearchClub,
+  SearchFilters,
+} from 'server/service/search/search.types'
 import { BadRequestError, UnauthorizedError } from 'server/domain/error'
 import { saveRecentSearchBestEffort } from 'server/service/recent-search.service'
 import { resolveOptionalAuth } from 'server/util/optional-auth'
 
 type ResponseData = {
-  clubs: Club[]
+  clubs: SearchClub[]
   totalSize: number
   query: string
   correctedQuery: string | null
