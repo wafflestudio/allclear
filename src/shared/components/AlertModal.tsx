@@ -14,6 +14,8 @@ export type AlertModalProps = {
 	hasCancel?: boolean
 	cancelLabel?: string
 	dismissOnBackdropPress?: boolean
+	overlayColor?: string
+	blurAmount?: number
 }
 
 const AlertModal = ({
@@ -27,14 +29,18 @@ const AlertModal = ({
 	hasCancel = false,
 	cancelLabel = '취소',
 	dismissOnBackdropPress = true,
+	overlayColor = Colors.BACKGROUND_DIM,
+	blurAmount = 1,
 }: AlertModalProps) => {
 	return (
 		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-			<Pressable style={styles.overlay} onPress={dismissOnBackdropPress ? onClose : undefined}>
+			<Pressable
+				style={[styles.overlay, { backgroundColor: overlayColor }]}
+				onPress={dismissOnBackdropPress ? onClose : undefined}>
 				<BlurView
 					style={styles.blur}
 					blurType="light"
-					blurAmount={1}
+					blurAmount={blurAmount}
 					overlayColor="transparent"
 					reducedTransparencyFallbackColor="transparent"
 				/>
@@ -66,7 +72,6 @@ const AlertModal = ({
 const styles = StyleSheet.create({
 	overlay: {
 		flex: 1,
-		backgroundColor: Colors.BACKGROUND_DIM,
 		justifyContent: 'center',
 		alignItems: 'center',
 		paddingHorizontal: 24,

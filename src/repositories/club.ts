@@ -1,4 +1,4 @@
-import { Club, ClubRanking } from '@/entities/club'
+import { Club, ClubRanking, ManagedClubListItem } from '@/entities/club'
 import { apiConnector } from '@/shared/utils/api'
 
 export type ClubSearchAffiliationType = '전체' | '중앙동아리' | '학과/단과대동아리'
@@ -65,7 +65,7 @@ export type GetManagedClubDetailRequest = {
 }
 
 export type ListManageClubsResponse = {
-	clubs: Club[]
+	clubs: ManagedClubListItem[]
 	totalSize: number
 }
 
@@ -74,7 +74,7 @@ type ListManageClubsV2Response = {
 	message: string
 	data: {
 		total_count: number
-		clubs: Club[]
+		clubs: ManagedClubListItem[]
 	}
 }
 

@@ -45,6 +45,17 @@ export type Club = {
 	totalReviews: number
 }
 
+export type ManagedClubManagementStatus =
+	| 'APPROVED'
+	| 'REJECTED'
+	| 'PENDING'
+	| 'MANAGER_REQUEST_PENDING'
+
+export type ManagedClubListItem = Club & {
+	managementStatus: ManagedClubManagementStatus
+	managerRequestId?: number
+}
+
 type ReviewKeyword = {
 	id: string
 	title: string

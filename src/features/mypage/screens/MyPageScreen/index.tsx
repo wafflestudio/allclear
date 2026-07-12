@@ -1,10 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useQueryClient, useQuery } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { LOGIN_TOKEN } from '@/shared/constants/localStorage'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
-import { Club } from '@/entities/club'
+import { Club, ManagedClubListItem, ManagedClubManagementStatus } from '@/entities/club'
+import { UserNotification, UserNotificationType } from '@/entities/userNotification'
 import { useManageClubBottomSheet } from '@/shared/contexts/manageClubBottomSheet'
 import { useProfile } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -29,7 +30,7 @@ import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
 const MyPageScreen = () => {
-	const { authService, clubService } = useContext(serviceContext)
+	const { authService, clubService, userService } = useContext(serviceContext)
 	const { openBottomSheet: openUserVoice } = useUserVoiceBottomSheet()
 	const { openBottomSheet: openManageClub } = useManageClubBottomSheet()
 	const queryClient = useQueryClient()
@@ -44,13 +45,32 @@ const MyPageScreen = () => {
 		select: data => data.clubs,
 	})
 
+	const { data: notificationData, refetch: refetchNotifications } = useQuery({
+		queryKey: ['userNotifications'],
+		queryFn: () => userService.listNotifications(),
+	})
+	const readNotificationMutation = useMutation({
+		mutationFn: (notificationId: UserNotification['id']) =>
+			userService.readNotification({ id: notificationId }),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['userNotifications'] })
+		},
+	})
+
 	useFocusEffect(
 		useCallback(() => {
 			refetchManageClubs()
-		}, [refetchManageClubs]),
+			refetchNotifications()
+		}, [refetchManageClubs, refetchNotifications]),
 	)
 
 	const manageClubs = manageClubsData ?? []
+	const currentNotification = notificationData?.notifications.find(
+		notification => !notification.readAt,
+	)
+	const notificationModalContent = currentNotification
+		? getUserNotificationContent(currentNotification, manageClubs)
+		: null
 
 	const handleLeave = () => setLeaveModalVisible(true)
 
@@ -107,6 +127,47 @@ const MyPageScreen = () => {
 
 	const handleManageClub = (club: Club) => {
 		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid })
+	}
+
+	const handleReadCurrentNotification = () => {
+		if (!currentNotification) return
+
+		readNotificationMutation.mutate(currentNotification.id)
+	}
+
+	const renderManageClubButtons = (club: ManagedClubListItem) => {
+		if (club.managementStatus === 'APPROVED') {
+			return (
+				<View style={styles.manageClubButtons}>
+					<TouchableOpacity
+						style={styles.manageClubBtnOutline}
+						activeOpacity={0.7}
+						onPress={() => handleRegisterAnnouncement(club)}>
+						<Text style={styles.manageClubBtnOutlineText}>공고 등록</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={styles.manageClubBtnFilled}
+						activeOpacity={0.7}
+						onPress={() => handleManageClub(club)}>
+						<Text style={styles.manageClubBtnFilledText}>동아리 관리</Text>
+					</TouchableOpacity>
+				</View>
+			)
+		}
+
+		return (
+			<View style={styles.manageClubButtons}>
+				<View style={styles.manageClubStatusButton}>
+					<Text
+						style={styles.manageClubStatusButtonText}
+						numberOfLines={1}
+						adjustsFontSizeToFit
+						minimumFontScale={0.85}>
+						{MANAGE_CLUB_STATUS_LABEL[club.managementStatus]}
+					</Text>
+				</View>
+			</View>
+		)
 	}
 
 	return (
@@ -186,21 +247,7 @@ const MyPageScreen = () => {
 									</View>
 								</View>
 
-								{/* 버튼 행 */}
-								<View style={styles.manageClubButtons}>
-									<TouchableOpacity
-										style={styles.manageClubBtnOutline}
-										activeOpacity={0.7}
-										onPress={() => handleRegisterAnnouncement(club)}>
-										<Text style={styles.manageClubBtnOutlineText}>공고 등록</Text>
-									</TouchableOpacity>
-									<TouchableOpacity
-										style={styles.manageClubBtnFilled}
-										activeOpacity={0.7}
-										onPress={() => handleManageClub(club)}>
-										<Text style={styles.manageClubBtnFilledText}>동아리 관리</Text>
-									</TouchableOpacity>
-								</View>
+								{renderManageClubButtons(club)}
 							</View>
 						))}
 					</ScrollView>
@@ -264,11 +311,109 @@ const MyPageScreen = () => {
 				}}
 				hasCancel
 			/>
+			<AlertModal
+				visible={!!currentNotification && !!notificationModalContent}
+				onClose={handleReadCurrentNotification}
+				title={notificationModalContent?.title ?? ''}
+				description={notificationModalContent?.description}
+				buttonLabel={notificationModalContent?.buttonLabel ?? '확인'}
+				onButtonPress={handleReadCurrentNotification}
+				hasCancel={notificationModalContent?.hasCancel}
+				cancelLabel={notificationModalContent?.cancelLabel}
+				dismissOnBackdropPress={false}
+				overlayColor={Colors.BACKGROUND_DIM}
+				blurAmount={1}
+			/>
 		</SafeAreaView>
 	)
 }
 
 export default MyPageScreen
+
+const MANAGE_CLUB_STATUS_LABEL: Record<ManagedClubManagementStatus, string> = {
+	APPROVED: '동아리 관리',
+	REJECTED: '미승인(신청 반려)',
+	PENDING: '승인 대기',
+	MANAGER_REQUEST_PENDING: '운영진 권한 승인 대기',
+}
+
+type UserNotificationModalContent = {
+	title: string
+	description: string
+	buttonLabel: string
+	hasCancel?: boolean
+	cancelLabel?: string
+}
+
+const USER_NOTIFICATION_CONTENT: Record<UserNotificationType, UserNotificationModalContent> = {
+	CLUB_REGISTRATION_APPROVED: {
+		title: '동아리 등록 신청이 승인되었어요!',
+		description: '이제 동아리 공고를 등록/수정하거나,\n동아리 정보를 수정할 수 있어요',
+		buttonLabel: '확인',
+	},
+	CLUB_REGISTRATION_REJECTED: {
+		title: '동아리 등록 신청이 반려되었어요',
+		description: '',
+		buttonLabel: '수정 및 재신청',
+		hasCancel: true,
+		cancelLabel: '취소',
+	},
+	MANAGER_REQUEST_APPROVED: {
+		title: '운영진 등록 신청이 승인되었어요!',
+		description: '이제 동아리 공고를 등록/수정하거나,\n동아리 정보를 수정할 수 있어요',
+		buttonLabel: '확인',
+	},
+	MANAGER_REQUEST_REJECTED: {
+		title: '운영진 등록 신청이 반려되었어요.',
+		description: '',
+		buttonLabel: '확인',
+	},
+}
+
+const getUserNotificationContent = (
+	notification: UserNotification,
+	manageClubs: ManagedClubListItem[],
+): UserNotificationModalContent => {
+	const content = USER_NOTIFICATION_CONTENT[notification.type]
+
+	if (
+		notification.type !== 'CLUB_REGISTRATION_REJECTED' &&
+		notification.type !== 'MANAGER_REQUEST_REJECTED'
+	) {
+		return content
+	}
+
+	const rejectReason = getNotificationRejectReason(notification, manageClubs)
+
+	return {
+		...content,
+		description: rejectReason ? `사유(${rejectReason})` : '사유가 등록되지 않았어요',
+	}
+}
+
+const getNotificationRejectReason = (
+	notification: UserNotification,
+	manageClubs: ManagedClubListItem[],
+) => {
+	const trimmedMetadataRejectReason = notification.metadata?.rejectReason?.trim()
+
+	if (trimmedMetadataRejectReason) {
+		return trimmedMetadataRejectReason
+	}
+
+	if (notification.type !== 'CLUB_REGISTRATION_REJECTED') {
+		return undefined
+	}
+
+	const rejectedClub = manageClubs.find(
+		club =>
+			club.uuid === notification.clubId ||
+			club.id === notification.clubId ||
+			club.uuid === notification.sourceId,
+	)
+
+	return rejectedClub?.rejectReason?.trim() || undefined
+}
 
 const styles = StyleSheet.create({
 	safeArea: {
@@ -438,6 +583,23 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		letterSpacing: -0.02 * 14,
 		color: Colors.WHITE,
+	},
+	manageClubStatusButton: {
+		flex: 1,
+		height: vs(35),
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: Colors.TEXTBOX_UNSELECTED,
+		borderRadius: ms(8),
+		paddingHorizontal: s(10),
+	},
+	manageClubStatusButtonText: {
+		fontFamily: 'Apple SD Gothic Neo',
+		fontWeight: '600',
+		fontSize: ms(14),
+		lineHeight: ms(24),
+		textAlign: 'center',
+		color: Colors.TEXT_BUTTON_UNSELECTED,
 	},
 
 	// 메뉴
