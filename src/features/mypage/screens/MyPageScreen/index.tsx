@@ -364,7 +364,7 @@ const USER_NOTIFICATION_CONTENT: Record<UserNotificationType, UserNotificationMo
 		buttonLabel: '확인',
 	},
 	MANAGER_REQUEST_REJECTED: {
-		title: '운영진 등록 신청이 반려되었어요.',
+		title: '운영진 등록 신청이 반려되었어요',
 		description: '',
 		buttonLabel: '확인',
 	},
