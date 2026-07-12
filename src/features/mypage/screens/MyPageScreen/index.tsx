@@ -29,6 +29,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
+const getClubAffiliationLabel = (club: Club): string => {
+	if (club.affiliationType !== '소속동아리') {
+		return club.affiliationType ?? ''
+	}
+
+	return club.collegeMajor?.major || club.collegeMajor?.college || ''
+}
+
 const MyPageScreen = () => {
 	const { authService, clubService, userService } = useContext(serviceContext)
 	const { openBottomSheet: openUserVoice } = useUserVoiceBottomSheet()
@@ -238,10 +246,10 @@ const MyPageScreen = () => {
 										</Text>
 										<View style={styles.manageClubSubTexts}>
 											<Text style={styles.manageClubSub} numberOfLines={1}>
-												{club.college}
+												{getClubAffiliationLabel(club)}
 											</Text>
 											<Text style={styles.manageClubSub} numberOfLines={1}>
-												{club.description}
+												{club.shortDescription}
 											</Text>
 										</View>
 									</View>
