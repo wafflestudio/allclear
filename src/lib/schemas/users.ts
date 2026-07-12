@@ -95,6 +95,12 @@ export const UserNotificationTypeSchema = z.enum([
 
 export const UserNotificationSourceTypeSchema = z.enum(['CLUB', 'CLUB_MANAGER_REQUEST'])
 
+export const UserNotificationMetadataSchema = z
+  .object({
+    rejectReason: z.string().optional(),
+  })
+  .openapi('UserNotificationMetadata')
+
 export const UserNotificationSchema = z
   .object({
     id: z.string(),
@@ -102,6 +108,7 @@ export const UserNotificationSchema = z
     clubId: z.string().uuid().nullable(),
     sourceType: UserNotificationSourceTypeSchema,
     sourceId: z.string(),
+    metadata: UserNotificationMetadataSchema.nullable(),
     readAt: z.string().nullable(),
     createdAt: z.string(),
   })

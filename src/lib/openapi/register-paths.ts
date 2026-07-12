@@ -1385,7 +1385,7 @@ registry.registerPath({
   tags: ['Users'],
   summary: '내 알림 목록 조회',
   description:
-    '로그인한 사용자의 알림 목록을 최신순으로 조회합니다. 앱은 type, clubId, sourceType, sourceId를 사용해 알림 문구와 이동 동작을 결정할 수 있으며 unreadCount로 읽지 않은 알림 수를 확인합니다.',
+    '로그인한 사용자의 알림 목록을 최신순으로 조회합니다. 앱은 type, clubId, sourceType, sourceId를 사용해 알림 문구와 이동 동작을 결정할 수 있으며 unreadCount로 읽지 않은 알림 수를 확인합니다. 반려 알림은 metadata.rejectReason으로 반려 사유를 제공합니다.',
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -1401,6 +1401,9 @@ registry.registerPath({
                 clubId: '61fd37f4-b325-4754-8493-aa9099fe27f9',
                 sourceType: 'CLUB_MANAGER_REQUEST',
                 sourceId: '13',
+                metadata: {
+                  rejectReason: '관리자 증빙 정보가 부족합니다.',
+                },
                 readAt: null,
                 createdAt: '2026-07-10T12:00:00.000Z',
               },
@@ -1410,6 +1413,7 @@ registry.registerPath({
                 clubId: '61fd37f4-b325-4754-8493-aa9099fe27f9',
                 sourceType: 'CLUB',
                 sourceId: '61fd37f4-b325-4754-8493-aa9099fe27f9',
+                metadata: null,
                 readAt: '2026-07-10T12:05:00.000Z',
                 createdAt: '2026-07-10T11:30:00.000Z',
               },

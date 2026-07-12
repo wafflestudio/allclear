@@ -8,6 +8,10 @@ export type UserNotificationType =
 
 export type UserNotificationSourceType = 'CLUB' | 'CLUB_MANAGER_REQUEST'
 
+export type UserNotificationMetadata = {
+  rejectReason?: string
+}
+
 @Entity('user_notification')
 @Index('idx_user_notification_service_user_created', ['serviceUserId', 'createdAt'])
 @Index('idx_user_notification_service_user_unread_created', ['serviceUserId', 'createdAt'], {
@@ -31,6 +35,9 @@ export class UserNotificationEntity {
 
   @Column({ type: 'varchar', name: 'source_id' })
   sourceId: string
+
+  @Column({ type: 'jsonb', nullable: true, name: 'metadata' })
+  metadata: UserNotificationMetadata | null
 
   @Column({ type: 'timestamp with time zone', nullable: true, name: 'read_at' })
   readAt: string | null
