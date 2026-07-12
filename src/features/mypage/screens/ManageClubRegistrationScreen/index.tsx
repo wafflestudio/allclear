@@ -321,7 +321,7 @@ const ManageClubRegistrationScreen = () => {
 				description="동아리당 한 명의 운영진만 등록할 수 있어요"
 				buttonLabel="확인"
 				onButtonPress={() => setIsExistingManagerModalVisible(false)}
-				dismissOnBackdropPress={false}
+				dismissOnBackdropPress
 			/>
 			<AlertModal
 				visible={clubPendingRequest !== null}
@@ -332,7 +332,7 @@ const ManageClubRegistrationScreen = () => {
 				onButtonPress={handleClubRequestConfirm}
 				hasCancel
 				cancelLabel="취소"
-				dismissOnBackdropPress={false}
+				dismissOnBackdropPress
 			/>
 			<AlertModal
 				visible={isSuccessModalVisible}
@@ -340,7 +340,7 @@ const ManageClubRegistrationScreen = () => {
 				title={'운영진 권한 요청이\n정상적으로 완료되었어요!'}
 				buttonLabel="확인"
 				onButtonPress={handleSuccessConfirm}
-				dismissOnBackdropPress={false}
+				dismissOnBackdropPress
 			/>
 			<AlertModal
 				visible={isErrorModalVisible}
