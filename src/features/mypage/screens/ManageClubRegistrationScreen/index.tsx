@@ -43,6 +43,7 @@ const ManageClubRegistrationScreen = () => {
 	const [clubSearchQuery, setClubSearchQuery] = useState<string>('')
 	const [searchResults, setSearchResults] = useState<Club[]>([])
 	const [selectedClubId, setSelectedClubId] = useState<string>('')
+	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(null)
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
@@ -149,6 +150,14 @@ const ManageClubRegistrationScreen = () => {
 
 	const handleClubAddPress = (club: Club) => {
 		setSelectedClubId(club.uuid)
+		setClubPendingRequest(club)
+	}
+
+	const handleClubRequestConfirm = () => {
+		if (!clubPendingRequest) return
+
+		const club = clubPendingRequest
+		setClubPendingRequest(null)
 		void submitClubRequest(club)
 	}
 
@@ -298,6 +307,17 @@ const ManageClubRegistrationScreen = () => {
 				</View>
 			)}
 
+			<AlertModal
+				visible={clubPendingRequest !== null}
+				onClose={() => setClubPendingRequest(null)}
+				title="운영진 권한을 요청하시겠습니까?"
+				description="실제 동아리 운영진 확인 후 권한이 부여됩니다."
+				buttonLabel="요청"
+				onButtonPress={handleClubRequestConfirm}
+				hasCancel
+				cancelLabel="취소"
+				dismissOnBackdropPress={false}
+			/>
 			<AlertModal
 				visible={isSuccessModalVisible}
 				onClose={() => setIsSuccessModalVisible(false)}
