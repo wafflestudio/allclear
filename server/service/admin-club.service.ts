@@ -91,6 +91,7 @@ export type AdminClubManagerRequestItem = {
   id: number
   club_uuid: string
   club_name: string
+  has_manager: boolean
   applicant: {
     service_user_id: string
     name: string
@@ -407,6 +408,7 @@ export class AdminClubService {
         'manager_request.id AS id',
         'manager_request.club_id AS club_uuid',
         "COALESCE(club.name, '') AS club_name",
+        'EXISTS (SELECT 1 FROM club_manager WHERE club_manager.club_id = manager_request.club_id) AS has_manager',
         'manager_request.service_user_id AS service_user_id',
         'manager_request.name AS applicant_name',
         'manager_request.phone AS applicant_phone',
@@ -423,6 +425,7 @@ export class AdminClubService {
         id: string
         club_uuid: string
         club_name: string
+        has_manager: boolean
         service_user_id: string
         applicant_name: string
         applicant_phone: string
@@ -438,6 +441,7 @@ export class AdminClubService {
         id: Number(request.id),
         club_uuid: request.club_uuid,
         club_name: request.club_name,
+        has_manager: request.has_manager,
         applicant: {
           service_user_id: request.service_user_id,
           name: request.applicant_name,

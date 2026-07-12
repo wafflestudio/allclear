@@ -186,6 +186,7 @@ const AdminClubManagerRequestSchema = z
     id: z.number().int(),
     club_uuid: z.string().uuid(),
     club_name: z.string(),
+    has_manager: z.boolean(),
     applicant: z.object({
       service_user_id: z.string().uuid(),
       name: z.string(),

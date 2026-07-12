@@ -80,9 +80,18 @@ const ManagerRequestCard = ({
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-base font-bold">{item.club_name}</h3>
               <StatusBadge status={item.status} />
+              {item.has_manager && (
+                <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-semibold text-rose-700">
+                  현재 관리자 있음
+                </span>
+              )}
             </div>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-3 text-xs font-semibold text-slate-500">신청자</p>
+            <p className="mt-1 text-sm text-slate-600">
               {item.applicant.name} · {item.applicant.phone} · {item.applicant.student_id}
+            </p>
+            <p className="mt-1 break-all text-xs text-slate-400">
+              {item.applicant.service_user_id}
             </p>
             <p className="mt-2 text-xs text-slate-400">{formatDate(item.created_at)}</p>
           </div>
@@ -139,7 +148,7 @@ const ManagerRequestCard = ({
                   </button>
                   <button
                     type="button"
-                    disabled={isMutating}
+                    disabled={isMutating || item.has_manager}
                     onClick={() =>
                       requestConfirm({ id: item.id, status: 'APPROVED' }, '승인 처리하시겠습니까?')
                     }
