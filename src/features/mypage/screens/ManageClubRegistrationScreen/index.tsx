@@ -44,6 +44,7 @@ const ManageClubRegistrationScreen = () => {
 	const [searchResults, setSearchResults] = useState<Club[]>([])
 	const [selectedClubId, setSelectedClubId] = useState<string>('')
 	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(null)
+	const [isExistingManagerModalVisible, setIsExistingManagerModalVisible] = useState(false)
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
@@ -150,6 +151,12 @@ const ManageClubRegistrationScreen = () => {
 
 	const handleClubAddPress = (club: Club) => {
 		setSelectedClubId(club.uuid)
+
+		if (club.hasManager) {
+			setIsExistingManagerModalVisible(true)
+			return
+		}
+
 		setClubPendingRequest(club)
 	}
 
@@ -307,6 +314,15 @@ const ManageClubRegistrationScreen = () => {
 				</View>
 			)}
 
+			<AlertModal
+				visible={isExistingManagerModalVisible}
+				onClose={() => setIsExistingManagerModalVisible(false)}
+				title="이미 등록된 운영진이 있어요"
+				description="동아리당 한 명의 운영진만 등록할 수 있어요"
+				buttonLabel="확인"
+				onButtonPress={() => setIsExistingManagerModalVisible(false)}
+				dismissOnBackdropPress={false}
+			/>
 			<AlertModal
 				visible={clubPendingRequest !== null}
 				onClose={() => setClubPendingRequest(null)}
