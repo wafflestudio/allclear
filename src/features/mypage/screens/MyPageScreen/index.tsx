@@ -321,6 +321,8 @@ const MyPageScreen = () => {
 				hasCancel={notificationModalContent?.hasCancel}
 				cancelLabel={notificationModalContent?.cancelLabel}
 				dismissOnBackdropPress={false}
+				overlayColor={Colors.BACKGROUND_DIM}
+				blurAmount={1}
 			/>
 		</SafeAreaView>
 	)
