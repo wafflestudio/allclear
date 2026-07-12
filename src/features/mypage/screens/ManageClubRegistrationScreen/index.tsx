@@ -43,6 +43,8 @@ const ManageClubRegistrationScreen = () => {
 	const [clubSearchQuery, setClubSearchQuery] = useState<string>('')
 	const [searchResults, setSearchResults] = useState<Club[]>([])
 	const [selectedClubId, setSelectedClubId] = useState<string>('')
+	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(null)
+	const [isExistingManagerModalVisible, setIsExistingManagerModalVisible] = useState(false)
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
@@ -149,6 +151,20 @@ const ManageClubRegistrationScreen = () => {
 
 	const handleClubAddPress = (club: Club) => {
 		setSelectedClubId(club.uuid)
+
+		if (club.hasManager) {
+			setIsExistingManagerModalVisible(true)
+			return
+		}
+
+		setClubPendingRequest(club)
+	}
+
+	const handleClubRequestConfirm = () => {
+		if (!clubPendingRequest) return
+
+		const club = clubPendingRequest
+		setClubPendingRequest(null)
 		void submitClubRequest(club)
 	}
 
@@ -299,12 +315,32 @@ const ManageClubRegistrationScreen = () => {
 			)}
 
 			<AlertModal
+				visible={isExistingManagerModalVisible}
+				onClose={() => setIsExistingManagerModalVisible(false)}
+				title="이미 등록된 운영진이 있어요"
+				description="동아리당 한 명의 운영진만 등록할 수 있어요"
+				buttonLabel="확인"
+				onButtonPress={() => setIsExistingManagerModalVisible(false)}
+				dismissOnBackdropPress
+			/>
+			<AlertModal
+				visible={clubPendingRequest !== null}
+				onClose={() => setClubPendingRequest(null)}
+				title="운영진 권한을 요청하시겠습니까?"
+				description="실제 동아리 운영진 확인 후 권한이 부여됩니다."
+				buttonLabel="요청"
+				onButtonPress={handleClubRequestConfirm}
+				hasCancel
+				cancelLabel="취소"
+				dismissOnBackdropPress
+			/>
+			<AlertModal
 				visible={isSuccessModalVisible}
 				onClose={() => setIsSuccessModalVisible(false)}
 				title={'운영진 권한 요청이\n정상적으로 완료되었어요!'}
 				buttonLabel="확인"
 				onButtonPress={handleSuccessConfirm}
-				dismissOnBackdropPress={false}
+				dismissOnBackdropPress
 			/>
 			<AlertModal
 				visible={isErrorModalVisible}

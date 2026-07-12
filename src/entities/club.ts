@@ -22,6 +22,7 @@ export type Club = {
 	collegeMajor?: ClubCollegeMajor | null
 	recruitType: string
 	isPopular: boolean
+	hasManager: boolean
 	hasDongbang: boolean
 	dongbangLocation?: string | null
 	minActivityPeriod?: number | null
