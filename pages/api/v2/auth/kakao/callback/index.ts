@@ -15,7 +15,7 @@ const buildAdminLoginCallbackPath = (token: string) =>
   `/admin/auth/callback#token=${encodeURIComponent(token)}`
 
 const buildWebLoginCallbackPath = (token: string) =>
-  `/auth/callback#token=${encodeURIComponent(token)}`
+  `/club/auth/callback#token=${encodeURIComponent(token)}`
 
 export default async function handler(
   req: NextApiRequest,

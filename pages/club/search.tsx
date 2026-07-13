@@ -1,16 +1,15 @@
 import Head from 'next/head'
-import { useEffect, useState } from 'react'
-import { ClubSearchFilters, DEFAULT_SEARCH_FILTERS, useSearchClubs } from '../src/club/api'
-import { AppTabBar } from '../src/club/components/AppTabBar'
-import { ClubCard, ClubCardSkeleton } from '../src/club/components/ClubCard'
-import { PopularClubs } from '../src/club/components/search/PopularClubs'
-import { RandomRecommendations } from '../src/club/components/search/RandomRecommendations'
-import { RecentSearches } from '../src/club/components/search/RecentSearches'
-import { SearchBar } from '../src/club/components/search/SearchBar'
-import { SearchFilterBar } from '../src/club/components/search/SearchFilterBar'
-import { SearchFilterOverlay } from '../src/club/components/search/SearchFilterOverlay'
-import { TypoCorrectionNotice } from '../src/club/components/search/TypoCorrectionNotice'
-import { addRecentSearch } from '../src/club/recentSearches'
+import { useState } from 'react'
+import { ClubSearchFilters, DEFAULT_SEARCH_FILTERS, useSearchClubs } from '../../src/club/api'
+import { AppTabBar } from '../../src/club/components/AppTabBar'
+import { ClubCard, ClubCardSkeleton } from '../../src/club/components/ClubCard'
+import { PopularClubs } from '../../src/club/components/search/PopularClubs'
+import { RandomRecommendations } from '../../src/club/components/search/RandomRecommendations'
+import { RecentSearches } from '../../src/club/components/search/RecentSearches'
+import { SearchBar } from '../../src/club/components/search/SearchBar'
+import { SearchFilterBar } from '../../src/club/components/search/SearchFilterBar'
+import { SearchFilterOverlay } from '../../src/club/components/search/SearchFilterOverlay'
+import { TypoCorrectionNotice } from '../../src/club/components/search/TypoCorrectionNotice'
 
 // 앱 SearchScreen과 동일: 헤더 → 검색바 → (초기: 최근검색/인기) | (결과: 필터바 + 목록)
 const SearchPage = () => {
@@ -19,19 +18,10 @@ const SearchPage = () => {
   const [filters, setFilters] = useState<ClubSearchFilters>(DEFAULT_SEARCH_FILTERS)
   const [isOverlayOpen, setIsOverlayOpen] = useState(false)
   const [isTypoNoticeVisible, setIsTypoNoticeVisible] = useState(true)
-  const [recentRefreshKey, setRecentRefreshKey] = useState(0)
 
   const hasSubmittedQuery = submittedQuery.trim().length > 0
+  // 최근 검색어는 앱과 동일하게 서버가 검색 시 기록하고, useSearchClubs가 성공 시 invalidate한다
   const { data: searchResult, isFetching } = useSearchClubs(submittedQuery, filters)
-
-  // 검색 성공 시 최근 검색어 저장 (앱은 서버 저장 + invalidate, 웹은 localStorage)
-  useEffect(() => {
-    if (hasSubmittedQuery && searchResult) {
-      addRecentSearch(submittedQuery)
-      setRecentRefreshKey((k) => k + 1)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchResult?.query])
 
   const handleSubmit = (query: string) => {
     const trimmed = query.trim()
@@ -83,7 +73,6 @@ const SearchPage = () => {
             /* 초기 상태: 최근 검색어 + 인기 동아리 */
             <div className="flex flex-col gap-[30px] px-5 pt-3.5">
               <RecentSearches
-                refreshKey={recentRefreshKey}
                 onSelect={(query) => {
                   setInputValue(query)
                   handleSubmit(query)

@@ -1,5 +1,6 @@
-import { useQuery } from 'react-query'
+import { useMutation, useQuery, useQueryClient } from 'react-query'
 import type { Club } from '../../server/domain/model/Club'
+import { ApiError, authHeaders } from './auth/token'
 import { getGuestId } from './guestId'
 
 export type { Club }
@@ -47,6 +48,12 @@ async function fetchJson<T>(url: string, headers?: Record<string, string>): Prom
     throw new Error(`${url} failed: ${res.status}`)
   }
   return res.json()
+}
+
+// 앱 apiConnector 인터셉터와 동일: 로그인 시 Bearer 토큰, 비로그인 시 x-guest-id
+function identityHeaders(): Record<string, string> {
+  const auth = authHeaders()
+  return Object.keys(auth).length > 0 ? auth : { 'x-guest-id': getGuestId() }
 }
 
 export function useLatestClubs() {
@@ -137,13 +144,77 @@ export function useClub(uuid: string | undefined) {
 }
 
 export function useSearchClubs(query: string, filters: ClubSearchFilters) {
+  const queryClient = useQueryClient()
   const params = buildSearchParams(query, filters)
   return useQuery(
     ['searchClubs', params.toString()],
     () =>
-      fetchJson<SearchClubsResponse>(`/api/v2/clubs/search?${params.toString()}`, {
-        'x-guest-id': getGuestId(),
-      }),
-    { enabled: query.trim().length > 0, keepPreviousData: true, staleTime: 0 },
+      fetchJson<SearchClubsResponse>(
+        `/api/v2/clubs/search?${params.toString()}`,
+        identityHeaders(),
+      ),
+    {
+      enabled: query.trim().length > 0,
+      keepPreviousData: true,
+      staleTime: 0,
+      // 앱과 동일: 검색 성공 시 서버에 기록된 최근 검색어를 다시 불러온다
+      onSuccess: () => {
+        queryClient.cancelQueries(RECENT_SEARCHES_QUERY_KEY)
+        queryClient.invalidateQueries(RECENT_SEARCHES_QUERY_KEY)
+      },
+    },
+  )
+}
+
+// --- 최근 검색어 (앱 SearchScreen과 동일: 서버 /v2/users/me/recent-searches) ---
+
+export type RecentSearch = {
+  query: string
+  searchedAt: string
+}
+
+type RecentSearchesResponse = {
+  recentSearches: RecentSearch[]
+  totalSize: number
+}
+
+export const RECENT_SEARCHES_QUERY_KEY = ['recentSearches'] as const
+
+export function useRecentSearches() {
+  return useQuery(
+    RECENT_SEARCHES_QUERY_KEY,
+    () => fetchJson<RecentSearchesResponse>('/api/v2/users/me/recent-searches', identityHeaders()),
+    { staleTime: 0, select: (data) => data.recentSearches.map((it) => it.query) },
+  )
+}
+
+export function useClearRecentSearches() {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, unknown, void, { previous?: RecentSearchesResponse }>(
+    async () => {
+      const url = '/api/v2/users/me/recent-searches'
+      const res = await fetch(url, { method: 'DELETE', headers: identityHeaders() })
+      if (!res.ok) {
+        throw new ApiError(url, res.status)
+      }
+    },
+    {
+      // 앱과 동일: 낙관적으로 비우고 실패 시 롤백
+      onMutate: async () => {
+        await queryClient.cancelQueries(RECENT_SEARCHES_QUERY_KEY)
+        const previous = queryClient.getQueryData<RecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY)
+        queryClient.setQueryData<RecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY, {
+          recentSearches: [],
+          totalSize: 0,
+        })
+        return { previous }
+      },
+      onError: (_error, _variables, context) => {
+        if (context?.previous) {
+          queryClient.setQueryData(RECENT_SEARCHES_QUERY_KEY, context.previous)
+        }
+      },
+    },
   )
 }

@@ -4,11 +4,11 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
-import { useProfile, useRequireLogin } from '../../src/club/auth/AuthContext'
-import { authFetch, clearLoginToken } from '../../src/club/auth/token'
-import { AlertModal } from '../../src/club/components/AlertModal'
-import { AppTabBar } from '../../src/club/components/AppTabBar'
-import { openAppDeepLink } from '../../src/club/openInApp'
+import { useProfile, useRequireLogin } from '../../../src/club/auth/AuthContext'
+import { authFetch, clearLoginToken } from '../../../src/club/auth/token'
+import { AlertModal } from '../../../src/club/components/AlertModal'
+import { AppTabBar } from '../../../src/club/components/AppTabBar'
+import { openAppDeepLink } from '../../../src/club/openInApp'
 
 // 앱 MyPageScreen과 동일: bg #F3F0F5, 프로필 카드 → 운영진 카드 → 메뉴 카드 → 계정 카드
 const MyPage = () => {
@@ -86,7 +86,7 @@ const MyPage = () => {
               {/* 프로필 카드 */}
               <div className="relative rounded-xl bg-white px-6 py-5">
                 <Link
-                  href="/mypage/edit"
+                  href="/club/mypage/edit"
                   aria-label="프로필 수정"
                   className="absolute right-5 top-5 active:opacity-50"
                 >

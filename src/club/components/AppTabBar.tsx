@@ -5,9 +5,9 @@ type TabKey = 'home' | 'explore' | 'saved' | 'mypage'
 
 const TABS: { key: TabKey; label: string; href: string }[] = [
   { key: 'home', label: '홈', href: '/club' },
-  { key: 'explore', label: '탐색', href: '/search' },
-  { key: 'saved', label: '저장', href: '/saved' },
-  { key: 'mypage', label: '마이', href: '/mypage' },
+  { key: 'explore', label: '탐색', href: '/club/search' },
+  { key: 'saved', label: '저장', href: '/club/saved' },
+  { key: 'mypage', label: '마이', href: '/club/mypage' },
 ]
 
 type Props = {

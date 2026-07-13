@@ -3,9 +3,9 @@ import { useRouter } from 'next/router'
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'react-query'
 import { toast } from 'react-toastify'
-import { fetchProfile, useProfile } from '../../src/club/auth/AuthContext'
-import { authFetch } from '../../src/club/auth/token'
-import { BackHeader } from '../../src/club/components/BackHeader'
+import { fetchProfile, useProfile } from '../../../src/club/auth/AuthContext'
+import { authFetch } from '../../../src/club/auth/token'
+import { BackHeader } from '../../../src/club/components/BackHeader'
 
 type CollegeMajor = {
   id: number

@@ -1,8 +1,8 @@
 import { useRouter } from 'next/router'
 import { useEffect, useRef } from 'react'
 import { toast } from 'react-toastify'
-import { consumeLoginNextPath, fetchProfile, useProfile } from '../../src/club/auth/AuthContext'
-import { setLoginToken } from '../../src/club/auth/token'
+import { consumeLoginNextPath, fetchProfile, useProfile } from '../../../src/club/auth/AuthContext'
+import { setLoginToken } from '../../../src/club/auth/token'
 
 // 카카오 OAuth 완료 후 #token=... 을 받아 저장하는 페이지 (admin/auth/callback과 동일 패턴)
 const AuthCallbackPage = () => {
@@ -16,7 +16,7 @@ const AuthCallbackPage = () => {
 
     const params = new URLSearchParams(window.location.hash.slice(1))
     const token = params.get('token')
-    window.history.replaceState(null, '', '/auth/callback')
+    window.history.replaceState(null, '', '/club/auth/callback')
 
     if (!token) {
       toast.error('로그인에 실패했어요!')

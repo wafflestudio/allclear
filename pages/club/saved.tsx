@@ -1,9 +1,9 @@
 import Head from 'next/head'
 import { useEffect } from 'react'
-import { useProfile, useRequireLogin } from '../src/club/auth/AuthContext'
-import { AppTabBar } from '../src/club/components/AppTabBar'
-import { ClubCard, ClubCardSkeleton } from '../src/club/components/ClubCard'
-import { useSavedClubs } from '../src/club/useSaveClub'
+import { useProfile, useRequireLogin } from '../../src/club/auth/AuthContext'
+import { AppTabBar } from '../../src/club/components/AppTabBar'
+import { ClubCard, ClubCardSkeleton } from '../../src/club/components/ClubCard'
+import { useSavedClubs } from '../../src/club/useSaveClub'
 
 // 앱 SavedClubListScreen과 동일: 중앙 타이틀 헤더(뒤로가기 없음) + 카드 목록
 const SavedClubListPage = () => {

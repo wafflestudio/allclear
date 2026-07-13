@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react'
-import { clearRecentSearches, getRecentSearches } from '../../recentSearches'
+import { useClearRecentSearches, useRecentSearches } from '../../api'
 
 type Props = {
   onSelect: (query: string) => void
-  // 검색 제출로 목록이 바뀐 뒤 다시 읽어오기 위한 신호
-  refreshKey: number
 }
 
-// 앱 RecentSearches와 동일한 UI (저장소만 서버 → localStorage)
-export function RecentSearches({ onSelect, refreshKey }: Props) {
-  const [searches, setSearches] = useState<string[]>([])
-
-  useEffect(() => {
-    setSearches(getRecentSearches())
-  }, [refreshKey])
+// 앱 RecentSearches와 동일한 UI, 저장소도 앱과 동일 (서버 /v2/users/me/recent-searches)
+export function RecentSearches({ onSelect }: Props) {
+  const { data: searches = [] } = useRecentSearches()
+  const { mutate: clearAll } = useClearRecentSearches()
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-[9px]">
@@ -22,7 +16,7 @@ export function RecentSearches({ onSelect, refreshKey }: Props) {
         {searches.length > 0 && (
           <button
             type="button"
-            onClick={() => setSearches(clearRecentSearches())}
+            onClick={() => clearAll()}
             className="pb-px pt-[5px] text-[12px] font-normal leading-[18px] text-[#757474] active:opacity-60"
           >
             검색내역 지우기
