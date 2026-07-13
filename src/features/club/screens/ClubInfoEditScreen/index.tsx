@@ -95,7 +95,7 @@ const initialFormData: ClubInfoEditFormData = {
 }
 
 const getClubDepartment = (club: ManagedClubDetail): string => {
-	const collegeDepartment = club.collegeMajor?.major || club.collegeMajor?.college || club.college
+	const collegeDepartment = club.collegeMajor?.major || club.collegeMajor?.college
 	if (collegeDepartment) {
 		return collegeDepartment
 	}
@@ -108,7 +108,7 @@ const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => ({
 	clubName: club.name ?? '',
 	category: club.category ?? '',
 	department: getClubDepartment(club),
-	shortIntro: club.shortDescription || club.description || '',
+	shortIntro: club.shortDescription || '',
 	recruitType: CLUB_RECRUIT_TYPES.includes(club.recruitType) ? club.recruitType : '',
 	activityCycle:
 		club.minActivityPeriod !== null && club.minActivityPeriod !== undefined
