@@ -120,7 +120,13 @@ const ClubManagementScreen = () => {
 					) : (
 						<View style={[styles.clubCardBg, { backgroundColor: '#E8E4F0' }]} />
 					)}
-					<View style={styles.clubCardOverlay} />
+					<BlurView
+						style={styles.clubCardOverlay}
+						blurType="light"
+						blurAmount={4}
+						overlayColor="rgba(255,255,255,0.6)"
+						reducedTransparencyFallbackColor="white"
+					/>
 					<View style={styles.clubCardContent}>
 						<View style={styles.clubCardTop}>
 							<View style={styles.clubLogo}>
@@ -485,7 +491,6 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		width: '100%',
 		height: '100%',
-		backgroundColor: 'rgba(255,255,255,0.45)',
 	},
 	clubCardContent: {
 		flex: 1,
