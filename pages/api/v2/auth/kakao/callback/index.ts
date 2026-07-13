@@ -14,6 +14,9 @@ type ResponseData = {
 const buildAdminLoginCallbackPath = (token: string) =>
   `/admin/auth/callback#token=${encodeURIComponent(token)}`
 
+const buildWebLoginCallbackPath = (token: string) =>
+  `/auth/callback#token=${encodeURIComponent(token)}`
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData | string | ZodIssue[]>,
@@ -36,6 +39,10 @@ export default async function handler(
 
         if (state === 'admin') {
           return res.redirect(302, buildAdminLoginCallbackPath(token))
+        }
+
+        if (state === 'web') {
+          return res.redirect(302, buildWebLoginCallbackPath(token))
         }
 
         return res.status(200).json({

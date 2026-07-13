@@ -1,14 +1,16 @@
 import { GetServerSideProps } from 'next'
 import Head from 'next/head'
-import { useState } from 'react'
+import { useRouter } from 'next/router'
+import { useRef, useState } from 'react'
 import { toast } from 'react-toastify'
-import { EntityNotFoundError } from 'typeorm'
 import { z } from 'zod'
 import { Provider } from 'server/provider'
-import { ClubServiceV1 } from 'server/service/v1/club.service'
-import type { V1Club } from 'server/service/v1/club.service'
+import { ClubService } from 'server/service/club.service'
+import { NotFoundError } from 'server/domain/error'
+import type { Club } from 'server/domain/model/Club'
 import { OpenGraph } from '../../src/common/components/OpenGraph'
 import { BackgroundCard } from '../../src/club/components/BackgroundCard'
+import { ClubDetailHeader } from '../../src/club/components/ClubDetailHeader'
 import { ClubDetailTabBar, ClubTabKey } from '../../src/club/components/ClubDetailTabBar'
 import { InfoTab } from '../../src/club/components/InfoTab'
 import { MdiIcon } from '../../src/club/components/icons'
@@ -16,19 +18,25 @@ import { RecruitTab } from '../../src/club/components/RecruitTab'
 import { ReviewKeywordPill } from '../../src/club/components/ReviewKeywordPill'
 import { ReviewTab } from '../../src/club/components/ReviewTab'
 import { getCategoryTheme } from '../../src/club/constants'
+import { useRequireLogin } from '../../src/club/auth/AuthContext'
 import { openClubInApp } from '../../src/club/openInApp'
-
-// 앱에서 모집공고/활동후기는 로그인이 필요하므로, 웹에서도 동일하게 앱 설치/로그인으로 유도한다.
-// 웹에서 전부 공개하려면 false로 변경.
-const GATE_RECRUIT_AND_REVIEW = true
+import { useSaveClub } from '../../src/club/useSaveClub'
 
 type Props = {
-  club: V1Club
+  club: Club
 }
 
 const ClubDetailPage = ({ club }: Props) => {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<ClubTabKey>('detail')
+  const tabBarRef = useRef<HTMLDivElement>(null)
   const theme = getCategoryTheme(club.category)
+  const { isSaved, toggle: toggleSave } = useSaveClub(club)
+  const requireLogin = useRequireLogin()
+
+  const handleWriteReview = () => {
+    requireLogin(() => router.push(`/club/${club.uuid}/review`))
+  }
 
   const handleShare = async () => {
     const url = window.location.href
@@ -62,6 +70,8 @@ const ClubDetailPage = ({ club }: Props) => {
       />
 
       <div className="min-h-screen bg-[#FAFAFA] font-pretendard text-[#202020]">
+        <ClubDetailHeader title={club.name} tabBarRef={tabBarRef} />
+
         <main className="mx-auto w-full max-w-[480px] pb-32">
           {/* 로고 배너 */}
           <div className="relative h-[300px] overflow-hidden">
@@ -90,6 +100,21 @@ const ClubDetailPage = ({ club }: Props) => {
                 <div className="ml-3 flex shrink-0 items-center gap-3">
                   <button
                     type="button"
+                    onClick={toggleSave}
+                    aria-label={isSaved ? '동아리 저장 해제' : '동아리 저장'}
+                    className="active:opacity-50"
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={isSaved ? '/icons/heart-fill.png' : '/icons/heart.png'}
+                      alt=""
+                      width={22}
+                      height={22}
+                      className="object-contain"
+                    />
+                  </button>
+                  <button
+                    type="button"
                     onClick={handleShare}
                     aria-label="공유하기"
                     className="text-[#874FFF] active:opacity-50"
@@ -114,16 +139,16 @@ const ClubDetailPage = ({ club }: Props) => {
             </BackgroundCard>
           </div>
 
-          {/* 탭바 (스크롤 시 상단 고정) */}
-          <div className="sticky top-0 z-20">
+          {/* 탭바: 스크롤 시 헤더(56px) 아래에 핀 고정 (앱의 pinned 탭바와 동일) */}
+          <div ref={tabBarRef} className="sticky top-14 z-20">
             <ClubDetailTabBar activeTab={activeTab} onChange={setActiveTab} />
           </div>
 
           {/* 탭 콘텐츠 */}
           <div className="px-4">
             {activeTab === 'detail' && <InfoTab club={club} />}
-            {activeTab === 'recruit' && <RecruitTab club={club} gated={GATE_RECRUIT_AND_REVIEW} />}
-            {activeTab === 'review' && <ReviewTab club={club} gated={GATE_RECRUIT_AND_REVIEW} />}
+            {activeTab === 'recruit' && <RecruitTab club={club} />}
+            {activeTab === 'review' && <ReviewTab club={club} onWriteReview={handleWriteReview} />}
           </div>
         </main>
 
@@ -151,8 +176,9 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) 
   }
 
   try {
-    const clubService = Provider.getService(ClubServiceV1)
-    const club = await clubService.findByUuid(uuid.data)
+    const clubService = Provider.getService(ClubService)
+    // v2: APPROVED 상태의 공개 동아리만 노출
+    const club = await clubService.findPublicByUuid(uuid.data)
     return {
       props: {
         club: {
@@ -161,11 +187,12 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) 
           articleUploadedAt: club.articleUploadedAt
             ? new Date(club.articleUploadedAt).toISOString()
             : null,
+          verifiedAt: club.verifiedAt ? new Date(club.verifiedAt).toISOString() : null,
         },
       },
     }
   } catch (err) {
-    if (err instanceof EntityNotFoundError) {
+    if (err instanceof NotFoundError) {
       return { notFound: true }
     }
     throw err

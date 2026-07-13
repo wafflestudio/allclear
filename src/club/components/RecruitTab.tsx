@@ -1,7 +1,6 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
-import type { V1Club } from '../../../server/service/v1/club.service'
-import { AppGateOverlay } from './AppGateOverlay'
+import type { Club } from '../../../server/domain/model/Club'
 import { BackgroundCard } from './BackgroundCard'
 import { HtmlContent } from './HtmlContent'
 
@@ -15,21 +14,17 @@ function formatUploadedAt(iso: string): string {
 }
 
 type Props = {
-  club: V1Club
-  gated: boolean
+  club: Club
 }
 
-export function RecruitTab({ club, gated }: Props) {
+export function RecruitTab({ club }: Props) {
   const hasArticle = club.article.trim() !== ''
 
   return (
     <div className="mt-4">
       <BackgroundCard className="relative min-h-[200px]">
         {hasArticle ? (
-          <>
-            <HtmlContent html={club.article} />
-            {gated && <AppGateOverlay clubName={club.name} tabLabel="모집공고" uuid={club.uuid} />}
-          </>
+          <HtmlContent html={club.article} />
         ) : (
           <div className="flex min-h-[120px] items-center justify-center">
             <p className="text-center text-[12px] font-normal leading-[18px] text-[#757474]">

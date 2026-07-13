@@ -11,6 +11,7 @@ import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
 import Script from 'next/script'
 import * as GA from '../src/common/connectors/ga'
+import { AuthProvider } from '../src/club/auth/AuthContext'
 import { WEB_ENV } from '../src/WEB_ENV'
 import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
@@ -76,7 +77,9 @@ const App = ({ Component, pageProps }: AppProps) => {
         }}
       />
       <QueryClientProvider client={queryClientRef.current}>
-        <Component {...pageProps} />
+        <AuthProvider>
+          <Component {...pageProps} />
+        </AuthProvider>
         <ToastContainer
           position="top-center"
           autoClose={2000}

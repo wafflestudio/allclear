@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { V1Club } from '../../../server/service/v1/club.service'
+import type { Club } from '../../../server/domain/model/Club'
 import { BackgroundCard } from './BackgroundCard'
 import { HTML_CONTENT_CLASS, useSanitizedHtml } from './HtmlContent'
 import { MdiIcon } from './icons'
@@ -7,7 +7,7 @@ import { MdiIcon } from './icons'
 const COLLAPSED_MAX_HEIGHT = 115
 
 type Props = {
-  club: V1Club
+  club: Club
 }
 
 export function InfoTab({ club }: Props) {

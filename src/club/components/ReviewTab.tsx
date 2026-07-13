@@ -1,17 +1,15 @@
-import type { V1Club } from '../../../server/service/v1/club.service'
+import type { Club } from '../../../server/domain/model/Club'
 import { getCategoryTheme } from '../constants'
-import { openClubInApp } from '../openInApp'
-import { AppGateOverlay } from './AppGateOverlay'
 import { BackgroundCard } from './BackgroundCard'
 import { MdiIcon } from './icons'
 import { ReviewKeywordBar } from './ReviewKeywordBar'
 
 type Props = {
-  club: V1Club
-  gated: boolean
+  club: Club
+  onWriteReview: () => void
 }
 
-export function ReviewTab({ club, gated }: Props) {
+export function ReviewTab({ club, onWriteReview }: Props) {
   const theme = getCategoryTheme(club.category)
   const sortedKeywords = [...club.reviewKeywords].sort((a, b) => b.totalUpvotes - a.totalUpvotes)
 
@@ -47,12 +45,11 @@ export function ReviewTab({ club, gated }: Props) {
             </p>
           </div>
         )}
-        {gated && <AppGateOverlay clubName={club.name} tabLabel="활동후기" uuid={club.uuid} />}
       </BackgroundCard>
 
       <button
         type="button"
-        onClick={() => openClubInApp(club.uuid)}
+        onClick={onWriteReview}
         className="mt-1 flex w-full items-center justify-between rounded-2xl bg-white p-4 text-left shadow-[0_2px_8px_rgba(0,0,0,0.06)] active:bg-[#F3F0F5]"
       >
         <span className="flex flex-col">

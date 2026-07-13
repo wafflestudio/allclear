@@ -26,6 +26,19 @@ export type CategoryTheme = {
   backgroundColor: string
 }
 
+// 앱 CategoryMap과 동일한 순서 (홈 카테고리 그리드 배치 순서)
+export const CLUB_CATEGORY_NAMES: CategoryName[] = [
+  '학술',
+  '종교',
+  '봉사',
+  '공연',
+  '운동',
+  '홍보',
+  '취미',
+  '문화',
+  '진로',
+]
+
 export const CategoryThemeMap: Record<CategoryName, CategoryTheme> = {
   학술: { themeColor: '#2486FF', backgroundColor: '#E5EEFA' },
   종교: { themeColor: '#947C4F', backgroundColor: '#F7F6F3' },
@@ -36,6 +49,19 @@ export const CategoryThemeMap: Record<CategoryName, CategoryTheme> = {
   취미: { themeColor: '#F05678', backgroundColor: '#F9EAED' },
   문화: { themeColor: '#739437', backgroundColor: '#F3F5F0' },
   진로: { themeColor: '#847876', backgroundColor: '#EEEDED' },
+}
+
+// 앱 홈 화면 카테고리 카드 아이콘 (allclear-app src/assets/icons/category/*)
+export const CategoryIconMap: Record<CategoryName, string> = {
+  학술: '/icons/category-home/academic.png',
+  종교: '/icons/category-home/religion.png',
+  봉사: '/icons/category-home/volunteer.png',
+  공연: '/icons/category-home/performance.png',
+  운동: '/icons/category-home/sports.png',
+  홍보: '/icons/category-home/promotion.png',
+  취미: '/icons/category-home/hobby.png',
+  문화: '/icons/category-home/culture.png',
+  진로: '/icons/category-home/career.png',
 }
 
 export function getCategoryTheme(category: string): CategoryTheme {
