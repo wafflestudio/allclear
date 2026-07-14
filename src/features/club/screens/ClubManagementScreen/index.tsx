@@ -21,6 +21,7 @@ const snuLogo = require('@/assets/images/mypage/snu-logo.png') as number
 import { Colors } from '@/shared/constants/colors'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import { serviceContext } from '@/shared/contexts/serviceContext'
+import { getClubAffiliationLabel } from '@/shared/utils/club'
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 
@@ -98,6 +99,8 @@ const ClubManagementScreen = () => {
 		: recruitments
 	const hasMore = previousRecruitments.length > VISIBLE_COUNT
 	const isRecruitmentsLoading = isLoading || isRepresentativeLoading
+	const clubAffiliation = club ? getClubAffiliationLabel(club) : ''
+	const shortIntro = club?.shortDescription || ''
 
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -144,10 +147,10 @@ const ClubManagementScreen = () => {
 								{club?.name ?? ''}
 							</Text>
 							<Text style={styles.clubCollege} numberOfLines={1}>
-								{club?.college ?? ''}
+								{clubAffiliation}
 							</Text>
 							<Text style={styles.clubDesc} numberOfLines={1}>
-								{club?.description ?? ''}
+								{shortIntro}
 							</Text>
 						</View>
 					</View>
