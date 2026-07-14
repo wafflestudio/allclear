@@ -13,6 +13,7 @@ import { useUserVoiceBottomSheet } from '@/shared/contexts/userVoiceBottomSheetC
 import { s, vs, ms } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 import { setToken } from '@/shared/utils/api'
+import { getClubAffiliationLabel } from '@/shared/utils/club'
 import AlertModal from '@/shared/components/AlertModal'
 import React, { useCallback, useContext, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
@@ -28,14 +29,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
-
-const getClubAffiliationLabel = (club: Club): string => {
-	if (club.affiliationType !== '소속동아리') {
-		return club.affiliationType ?? ''
-	}
-
-	return club.collegeMajor?.major || club.collegeMajor?.college || ''
-}
 
 const MyPageScreen = () => {
 	const { authService, clubService, userService } = useContext(serviceContext)
