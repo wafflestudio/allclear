@@ -122,10 +122,6 @@ const MyPageScreen = () => {
 		})
 	}
 
-	const handleRegisterAnnouncement = (club: Club) => {
-		navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, { clubId: club.uuid })
-	}
-
 	const handleManageClub = (club: Club) => {
 		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid })
 	}
@@ -140,12 +136,6 @@ const MyPageScreen = () => {
 		if (club.managementStatus === 'APPROVED') {
 			return (
 				<View style={styles.manageClubButtons}>
-					<TouchableOpacity
-						style={styles.manageClubBtnOutline}
-						activeOpacity={0.7}
-						onPress={() => handleRegisterAnnouncement(club)}>
-						<Text style={styles.manageClubBtnOutlineText}>공고 등록</Text>
-					</TouchableOpacity>
 					<TouchableOpacity
 						style={styles.manageClubBtnFilled}
 						activeOpacity={0.7}
@@ -549,24 +539,6 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: s(10),
-	},
-	manageClubBtnOutline: {
-		flex: 1,
-		height: vs(35),
-		justifyContent: 'center',
-		alignItems: 'center',
-		borderWidth: 1,
-		borderColor: Colors.POINTCOLOR,
-		borderRadius: ms(8),
-	},
-	manageClubBtnOutlineText: {
-		fontFamily: 'Apple SD Gothic Neo',
-		fontWeight: '600',
-		fontSize: ms(14),
-		lineHeight: ms(24),
-		textAlign: 'center',
-		letterSpacing: -0.02 * 14,
-		color: Colors.POINTCOLOR,
 	},
 	manageClubBtnFilled: {
 		flex: 1,
