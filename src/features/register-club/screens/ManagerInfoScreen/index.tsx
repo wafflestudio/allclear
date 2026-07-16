@@ -8,6 +8,7 @@ import TextField from '@/shared/components/TextField'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
 import { isValidPhoneNumber, isValidStudentId } from '@/features/register-club/validation'
+import { formatPhoneNumberInput, formatStudentIdInput } from '@/shared/utils/managerInfo'
 
 type Props = {
 	formData: RegisterClubFormData
@@ -52,11 +53,15 @@ export const ManagerInfoScreen = ({
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.label}>전화번호</Text>
 						<TextField
-							placeholder="01012345678"
+							placeholder="010-1234-5678"
 							value={formData.managerPhone}
-							onChangeText={text => onFormDataChange({ managerPhone: text })}
-							keyboardType="phone-pad"
-							maxLength={20}
+							onChangeText={text =>
+								onFormDataChange({
+									managerPhone: formatPhoneNumberInput(text, formData.managerPhone),
+								})
+							}
+							keyboardType="number-pad"
+							maxLength={13}
 						/>
 						<Text style={styles.helperText}>올바른 전화번호 형식으로 입력해주세요</Text>
 					</View>
@@ -66,9 +71,13 @@ export const ManagerInfoScreen = ({
 						<TextField
 							placeholder="1970-12345"
 							value={formData.studentId}
-							onChangeText={text => onFormDataChange({ studentId: text })}
-							keyboardType="numeric"
-							maxLength={20}
+							onChangeText={text =>
+								onFormDataChange({
+									studentId: formatStudentIdInput(text, formData.studentId),
+								})
+							}
+							keyboardType="number-pad"
+							maxLength={10}
 						/>
 						<Text style={styles.helperText}>2023-12345 형식으로 입력해주세요</Text>
 					</View>

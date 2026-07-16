@@ -44,9 +44,7 @@ export const ClubDetailsScreen = ({
 
 	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
 		setActivityCycleMode(mode)
-		if (mode === 'none') {
-			onFormDataChange({ activityCycle: '' })
-		}
+		onFormDataChange({ activityCycle: mode === 'number' ? '1' : '' })
 	}
 
 	const incrementActivityCycle = () => {

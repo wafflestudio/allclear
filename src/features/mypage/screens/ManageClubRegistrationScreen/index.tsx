@@ -5,6 +5,13 @@ import AlertModal from '@/shared/components/AlertModal'
 import FlowScreenFooter from '@/shared/components/FlowScreenFooter'
 import FlowScreenLayout from '@/shared/components/FlowScreenLayout'
 import { Colors } from '@/shared/constants/colors'
+import {
+	formatPhoneNumberInput,
+	formatStudentIdInput,
+	getPhoneNumberPrefill,
+	getStudentIdPrefill,
+} from '@/shared/utils/managerInfo'
+import { useProfile } from '@/shared/contexts/profileContext'
 import { navigation } from '@/shared/utils/navigation'
 import { Club } from '@/entities/club'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -23,6 +30,7 @@ type AdminFormErrors = {
 
 const ManageClubRegistrationScreen = () => {
 	const { clubService } = useContext(serviceContext)
+	const { user } = useProfile()
 	const nav = useNavigation()
 
 	useEffect(() => {
@@ -35,9 +43,9 @@ const ManageClubRegistrationScreen = () => {
 	}, [nav])
 	const [formStep, setFormStep] = useState<'form' | 'clubSearch'>('form')
 	const [adminForm, setAdminForm] = useState<AdminFormData>({
-		name: '',
-		phone: '',
-		studentId: '',
+		name: user?.name ?? '',
+		phone: getPhoneNumberPrefill(user?.phone ?? ''),
+		studentId: getStudentIdPrefill(user?.admissionClass ?? null),
 	})
 	const [adminFormErrors, setAdminFormErrors] = useState<AdminFormErrors>({})
 	const [clubSearchQuery, setClubSearchQuery] = useState<string>('')
@@ -48,6 +56,21 @@ const ManageClubRegistrationScreen = () => {
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
+
+	useEffect(() => {
+		if (!user) {
+			return
+		}
+
+		const phone = getPhoneNumberPrefill(user.phone)
+		const studentId = getStudentIdPrefill(user.admissionClass)
+		setAdminForm(prev => ({
+			...prev,
+			name: prev.name || user.name,
+			phone: prev.phone || phone,
+			studentId: prev.studentId || studentId,
+		}))
+	}, [user])
 
 	useEffect(() => {
 		const timer = setTimeout(async () => {
@@ -171,7 +194,11 @@ const ManageClubRegistrationScreen = () => {
 	const handleSuccessConfirm = () => {
 		setIsSuccessModalVisible(false)
 		setFormStep('form')
-		setAdminForm({ name: '', phone: '', studentId: '' })
+		setAdminForm({
+			name: user?.name ?? '',
+			phone: getPhoneNumberPrefill(user?.phone ?? ''),
+			studentId: getStudentIdPrefill(user?.admissionClass ?? null),
+		})
 		setAdminFormErrors({})
 		setClubSearchQuery('')
 		setSearchResults([])
@@ -198,6 +225,7 @@ const ManageClubRegistrationScreen = () => {
 					style={[styles.formInput, adminFormErrors.name && styles.formInputError]}
 					placeholder="홍길동"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
+					maxLength={50}
 					value={adminForm.name}
 					onChangeText={text => {
 						setAdminForm(prev => ({ ...prev, name: text }))
@@ -206,25 +234,29 @@ const ManageClubRegistrationScreen = () => {
 						}
 					}}
 				/>
-				{adminFormErrors.name && <Text style={styles.formErrorText}>{adminFormErrors.name}</Text>}
+				<Text style={styles.formErrorText}>이름을 입력해주세요</Text>
 			</View>
 
 			<View style={styles.formFieldGroup}>
 				<Text style={styles.formFieldLabel}>전화번호</Text>
 				<TextInput
 					style={[styles.formInput, adminFormErrors.phone && styles.formInputError]}
-					placeholder="01012345678"
+					placeholder="010-1234-5678"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
-					keyboardType="phone-pad"
+					keyboardType="number-pad"
+					maxLength={13}
 					value={adminForm.phone}
 					onChangeText={text => {
-						setAdminForm(prev => ({ ...prev, phone: text }))
+						setAdminForm(prev => ({
+							...prev,
+							phone: formatPhoneNumberInput(text, prev.phone),
+						}))
 						if (adminFormErrors.phone) {
 							setAdminFormErrors(prev => ({ ...prev, phone: undefined }))
 						}
 					}}
 				/>
-				{adminFormErrors.phone && <Text style={styles.formErrorText}>{adminFormErrors.phone}</Text>}
+				<Text style={styles.formErrorText}>올바른 전화번호 형식으로 입력해주세요</Text>
 			</View>
 
 			<View style={styles.formFieldGroup}>
@@ -233,17 +265,20 @@ const ManageClubRegistrationScreen = () => {
 					style={[styles.formInput, adminFormErrors.studentId && styles.formInputError]}
 					placeholder="1970-12345"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
+					keyboardType="number-pad"
+					maxLength={10}
 					value={adminForm.studentId}
 					onChangeText={text => {
-						setAdminForm(prev => ({ ...prev, studentId: text }))
+						setAdminForm(prev => ({
+							...prev,
+							studentId: formatStudentIdInput(text, prev.studentId),
+						}))
 						if (adminFormErrors.studentId) {
 							setAdminFormErrors(prev => ({ ...prev, studentId: undefined }))
 						}
 					}}
 				/>
-				{adminFormErrors.studentId && (
-					<Text style={styles.formErrorText}>{adminFormErrors.studentId}</Text>
-				)}
+				<Text style={styles.formErrorText}>2023-12345 형식으로 입력해주세요</Text>
 			</View>
 		</FlowScreenLayout>
 	)
