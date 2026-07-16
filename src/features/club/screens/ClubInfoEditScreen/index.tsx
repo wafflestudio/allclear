@@ -304,9 +304,7 @@ const ClubInfoEditScreen = () => {
 
 	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
 		setActivityCycleMode(mode)
-		if (mode === 'none') {
-			setFormField('activityCycle', '')
-		}
+		setFormField('activityCycle', mode === 'number' ? '1' : '')
 	}
 
 	const incrementActivityCycle = () => {
