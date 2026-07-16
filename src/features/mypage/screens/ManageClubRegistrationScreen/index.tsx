@@ -5,6 +5,7 @@ import AlertModal from '@/shared/components/AlertModal'
 import FlowScreenFooter from '@/shared/components/FlowScreenFooter'
 import FlowScreenLayout from '@/shared/components/FlowScreenLayout'
 import { Colors } from '@/shared/constants/colors'
+import { formatPhoneNumberInput, formatStudentIdInput } from '@/shared/utils/managerInfo'
 import { navigation } from '@/shared/utils/navigation'
 import { Club } from '@/entities/club'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -213,12 +214,16 @@ const ManageClubRegistrationScreen = () => {
 				<Text style={styles.formFieldLabel}>전화번호</Text>
 				<TextInput
 					style={[styles.formInput, adminFormErrors.phone && styles.formInputError]}
-					placeholder="01012345678"
+					placeholder="010-1234-5678"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
-					keyboardType="phone-pad"
+					keyboardType="number-pad"
+					maxLength={13}
 					value={adminForm.phone}
 					onChangeText={text => {
-						setAdminForm(prev => ({ ...prev, phone: text }))
+						setAdminForm(prev => ({
+							...prev,
+							phone: formatPhoneNumberInput(text, prev.phone),
+						}))
 						if (adminFormErrors.phone) {
 							setAdminFormErrors(prev => ({ ...prev, phone: undefined }))
 						}
@@ -233,9 +238,14 @@ const ManageClubRegistrationScreen = () => {
 					style={[styles.formInput, adminFormErrors.studentId && styles.formInputError]}
 					placeholder="1970-12345"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
+					keyboardType="number-pad"
+					maxLength={10}
 					value={adminForm.studentId}
 					onChangeText={text => {
-						setAdminForm(prev => ({ ...prev, studentId: text }))
+						setAdminForm(prev => ({
+							...prev,
+							studentId: formatStudentIdInput(text, prev.studentId),
+						}))
 						if (adminFormErrors.studentId) {
 							setAdminFormErrors(prev => ({ ...prev, studentId: undefined }))
 						}
