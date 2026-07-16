@@ -1030,9 +1030,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>공고 본문</Text>
 					<TextInput
 						style={[styles.textInput, { minHeight: 80 }]}
-						placeholder={
-							isEdit ? '텍스트를 입력하세요' : '기존에 작성해 둔 공고문을 붙여넣어주세요'
-						}
+						placeholder="기존에 작성해 둔 공고문을 붙여넣어주세요"
 						placeholderTextColor={PLACEHOLDER_COLOR}
 						value={existingAnnouncement}
 						onChangeText={setExistingAnnouncement}
