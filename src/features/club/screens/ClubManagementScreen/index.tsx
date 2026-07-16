@@ -12,7 +12,7 @@ import {
 } from 'react-native'
 import { BlurView } from '@react-native-community/blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native'
+import { RouteProp, useFocusEffect, useIsFocused, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
@@ -33,6 +33,7 @@ type DeleteTarget = { id: number; title: string } | null
 
 const ClubManagementScreen = () => {
 	const route = useRoute<RouteProps>()
+	const isFocused = useIsFocused()
 	const { clubId } = route.params
 
 	const { clubService, recruitmentService } = useContext(serviceContext)
@@ -123,13 +124,15 @@ const ClubManagementScreen = () => {
 					) : (
 						<View style={[styles.clubCardBg, { backgroundColor: '#E8E4F0' }]} />
 					)}
-					<BlurView
-						style={styles.clubCardOverlay}
-						blurType="light"
-						blurAmount={4}
-						overlayColor="rgba(255,255,255,0.6)"
-						reducedTransparencyFallbackColor="white"
-					/>
+					{isFocused && (
+						<BlurView
+							style={styles.clubCardOverlay}
+							blurType="light"
+							blurAmount={4}
+							overlayColor="rgba(255,255,255,0.6)"
+							reducedTransparencyFallbackColor="white"
+						/>
+					)}
 					<View style={styles.clubCardContent}>
 						<View style={styles.clubCardTop}>
 							<View style={styles.clubLogo}>
