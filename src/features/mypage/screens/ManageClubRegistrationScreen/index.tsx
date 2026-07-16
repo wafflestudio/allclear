@@ -199,6 +199,7 @@ const ManageClubRegistrationScreen = () => {
 					style={[styles.formInput, adminFormErrors.name && styles.formInputError]}
 					placeholder="홍길동"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
+					maxLength={50}
 					value={adminForm.name}
 					onChangeText={text => {
 						setAdminForm(prev => ({ ...prev, name: text }))
@@ -207,7 +208,7 @@ const ManageClubRegistrationScreen = () => {
 						}
 					}}
 				/>
-				{adminFormErrors.name && <Text style={styles.formErrorText}>{adminFormErrors.name}</Text>}
+				<Text style={styles.formErrorText}>이름을 입력해주세요</Text>
 			</View>
 
 			<View style={styles.formFieldGroup}>
@@ -229,7 +230,7 @@ const ManageClubRegistrationScreen = () => {
 						}
 					}}
 				/>
-				{adminFormErrors.phone && <Text style={styles.formErrorText}>{adminFormErrors.phone}</Text>}
+				<Text style={styles.formErrorText}>올바른 전화번호 형식으로 입력해주세요</Text>
 			</View>
 
 			<View style={styles.formFieldGroup}>
@@ -251,9 +252,7 @@ const ManageClubRegistrationScreen = () => {
 						}
 					}}
 				/>
-				{adminFormErrors.studentId && (
-					<Text style={styles.formErrorText}>{adminFormErrors.studentId}</Text>
-				)}
+				<Text style={styles.formErrorText}>2023-12345 형식으로 입력해주세요</Text>
 			</View>
 		</FlowScreenLayout>
 	)
