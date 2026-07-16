@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Toast from 'react-native-toast-message'
 import { useProfile } from '@/shared/contexts/profileContext'
 import { useLoginBottomSheet } from '@/shared/contexts/loginBottomSheetContext'
@@ -12,7 +12,16 @@ import { RegisterClubConfirmModal } from '@/features/register-club/components/Re
 import { RegisterClubFormData, initialFormData } from '@/features/register-club/types'
 import { normalizeUrl } from '@/features/register-club/validation'
 import { RegisterClubRequest } from '@/repositories/club'
+import { User } from '@/entities/user'
+import { getPhoneNumberPrefill, getStudentIdPrefill } from '@/shared/utils/managerInfo'
 import { navigation } from '@/shared/utils/navigation'
+
+const getInitialFormData = (user: User | null): RegisterClubFormData => ({
+	...initialFormData,
+	managerName: user?.name ?? '',
+	managerPhone: getPhoneNumberPrefill(user?.phone ?? ''),
+	studentId: getStudentIdPrefill(user?.admissionClass ?? null),
+})
 
 const mapFormDataToRequest = (formData: RegisterClubFormData): RegisterClubRequest => {
 	const clubData: RegisterClubRequest['club_data'] = {
@@ -44,16 +53,31 @@ const mapFormDataToRequest = (formData: RegisterClubFormData): RegisterClubReque
 }
 
 export const RegisterClubScreenContainer = () => {
-	const [currentStep, setCurrentStep] = useState(0)
-	const [formData, setFormData] = useState<RegisterClubFormData>(initialFormData)
-	const [showConfirm, setShowConfirm] = useState(false)
 	const { user } = useProfile()
+	const [currentStep, setCurrentStep] = useState(0)
+	const [formData, setFormData] = useState<RegisterClubFormData>(() => getInitialFormData(user))
+	const [showConfirm, setShowConfirm] = useState(false)
 	const { openBottomSheet: openLoginSheet } = useLoginBottomSheet()
+
+	useEffect(() => {
+		if (!user) {
+			return
+		}
+
+		const managerPhone = getPhoneNumberPrefill(user.phone)
+		const studentId = getStudentIdPrefill(user.admissionClass)
+		setFormData(prev => ({
+			...prev,
+			managerName: prev.managerName || user.name,
+			managerPhone: prev.managerPhone || managerPhone,
+			studentId: prev.studentId || studentId,
+		}))
+	}, [user])
 
 	// 등록 요청 후에는 성공/실패와 무관하게 폼을 초기화하고 마이페이지 메인으로 돌아간다.
 	const resetAndExit = () => {
 		setShowConfirm(false)
-		setFormData(initialFormData)
+		setFormData(getInitialFormData(user))
 		setCurrentStep(0)
 		navigation.navigate('마이')
 	}

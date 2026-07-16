@@ -5,7 +5,13 @@ import AlertModal from '@/shared/components/AlertModal'
 import FlowScreenFooter from '@/shared/components/FlowScreenFooter'
 import FlowScreenLayout from '@/shared/components/FlowScreenLayout'
 import { Colors } from '@/shared/constants/colors'
-import { formatPhoneNumberInput, formatStudentIdInput } from '@/shared/utils/managerInfo'
+import {
+	formatPhoneNumberInput,
+	formatStudentIdInput,
+	getPhoneNumberPrefill,
+	getStudentIdPrefill,
+} from '@/shared/utils/managerInfo'
+import { useProfile } from '@/shared/contexts/profileContext'
 import { navigation } from '@/shared/utils/navigation'
 import { Club } from '@/entities/club'
 import { serviceContext } from '@/shared/contexts/serviceContext'
@@ -24,6 +30,7 @@ type AdminFormErrors = {
 
 const ManageClubRegistrationScreen = () => {
 	const { clubService } = useContext(serviceContext)
+	const { user } = useProfile()
 	const nav = useNavigation()
 
 	useEffect(() => {
@@ -36,9 +43,9 @@ const ManageClubRegistrationScreen = () => {
 	}, [nav])
 	const [formStep, setFormStep] = useState<'form' | 'clubSearch'>('form')
 	const [adminForm, setAdminForm] = useState<AdminFormData>({
-		name: '',
-		phone: '',
-		studentId: '',
+		name: user?.name ?? '',
+		phone: getPhoneNumberPrefill(user?.phone ?? ''),
+		studentId: getStudentIdPrefill(user?.admissionClass ?? null),
 	})
 	const [adminFormErrors, setAdminFormErrors] = useState<AdminFormErrors>({})
 	const [clubSearchQuery, setClubSearchQuery] = useState<string>('')
@@ -49,6 +56,21 @@ const ManageClubRegistrationScreen = () => {
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
+
+	useEffect(() => {
+		if (!user) {
+			return
+		}
+
+		const phone = getPhoneNumberPrefill(user.phone)
+		const studentId = getStudentIdPrefill(user.admissionClass)
+		setAdminForm(prev => ({
+			...prev,
+			name: prev.name || user.name,
+			phone: prev.phone || phone,
+			studentId: prev.studentId || studentId,
+		}))
+	}, [user])
 
 	useEffect(() => {
 		const timer = setTimeout(async () => {
@@ -172,7 +194,11 @@ const ManageClubRegistrationScreen = () => {
 	const handleSuccessConfirm = () => {
 		setIsSuccessModalVisible(false)
 		setFormStep('form')
-		setAdminForm({ name: '', phone: '', studentId: '' })
+		setAdminForm({
+			name: user?.name ?? '',
+			phone: getPhoneNumberPrefill(user?.phone ?? ''),
+			studentId: getStudentIdPrefill(user?.admissionClass ?? null),
+		})
 		setAdminFormErrors({})
 		setClubSearchQuery('')
 		setSearchResults([])
