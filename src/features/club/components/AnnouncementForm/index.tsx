@@ -296,7 +296,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 	const [joinUrl, setJoinUrl] = useState('')
 	const [joinDescription, setJoinDescription] = useState('')
 
-	// 기존 공고
+	// 공고 본문
 	const [existingAnnouncement, setExistingAnnouncement] = useState('')
 
 	// 공고 이미지
@@ -1025,9 +1025,9 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.helperText}>동아리 가입 절차는 필수 입력 정보예요</Text>
 				</View>
 
-				{/* 기존 공고 */}
+				{/* 공고 본문 */}
 				<View style={styles.section}>
-					<Text style={styles.sectionLabel}>기존 공고</Text>
+					<Text style={styles.sectionLabel}>공고 본문</Text>
 					<TextInput
 						style={[styles.textInput, { minHeight: 80 }]}
 						placeholder={
