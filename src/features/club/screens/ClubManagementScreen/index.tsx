@@ -3,6 +3,7 @@ import {
 	ActivityIndicator,
 	Image,
 	Modal,
+	Platform,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -119,7 +120,11 @@ const ClubManagementScreen = () => {
 				{/* 동아리 카드 */}
 				<View style={styles.clubCard}>
 					{club?.imageUri ? (
-						<Image source={{ uri: club.imageUri }} style={styles.clubCardBg} blurRadius={4} />
+						<Image
+							source={{ uri: club.imageUri }}
+							style={styles.clubCardBg}
+							blurRadius={Platform.OS === 'ios' ? 4 : 1}
+						/>
 					) : (
 						<View style={[styles.clubCardBg, { backgroundColor: '#E8E4F0' }]} />
 					)}
