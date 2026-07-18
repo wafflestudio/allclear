@@ -123,7 +123,7 @@ const ClubManagementScreen = () => {
 						<Image
 							source={{ uri: club.imageUri }}
 							style={styles.clubCardBg}
-							blurRadius={Platform.OS === 'ios' ? 4 : 1}
+							blurRadius={Platform.OS === 'ios' ? 2 : 1}
 						/>
 					) : (
 						<View style={[styles.clubCardBg, { backgroundColor: '#E8E4F0' }]} />
