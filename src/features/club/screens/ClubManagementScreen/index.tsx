@@ -3,6 +3,7 @@ import {
 	ActivityIndicator,
 	Image,
 	Modal,
+	Platform,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -12,7 +13,7 @@ import {
 } from 'react-native'
 import { BlurView } from '@react-native-community/blur'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { RouteProp, useFocusEffect, useIsFocused, useRoute } from '@react-navigation/native'
+import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
@@ -33,7 +34,6 @@ type DeleteTarget = { id: number; title: string } | null
 
 const ClubManagementScreen = () => {
 	const route = useRoute<RouteProps>()
-	const isFocused = useIsFocused()
 	const { clubId } = route.params
 
 	const { clubService, recruitmentService } = useContext(serviceContext)
@@ -120,19 +120,15 @@ const ClubManagementScreen = () => {
 				{/* 동아리 카드 */}
 				<View style={styles.clubCard}>
 					{club?.imageUri ? (
-						<Image source={{ uri: club.imageUri }} style={styles.clubCardBg} />
+						<Image
+							source={{ uri: club.imageUri }}
+							style={styles.clubCardBg}
+							blurRadius={Platform.OS === 'ios' ? 2 : 1}
+						/>
 					) : (
 						<View style={[styles.clubCardBg, { backgroundColor: '#E8E4F0' }]} />
 					)}
-					{isFocused && (
-						<BlurView
-							style={styles.clubCardOverlay}
-							blurType="light"
-							blurAmount={4}
-							overlayColor="rgba(255,255,255,0.6)"
-							reducedTransparencyFallbackColor="white"
-						/>
-					)}
+					<View style={styles.clubCardOverlay} />
 					<View style={styles.clubCardContent}>
 						<View style={styles.clubCardTop}>
 							<View style={styles.clubLogo}>
@@ -497,6 +493,7 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		width: '100%',
 		height: '100%',
+		backgroundColor: 'rgba(255,255,255,0.6)',
 	},
 	clubCardContent: {
 		flex: 1,
