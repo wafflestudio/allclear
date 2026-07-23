@@ -1,5 +1,4 @@
 type ClubSnsData = {
-	sns?: string | null
 	snsUrls?: string[]
 }
 
@@ -22,21 +21,15 @@ export const normalizeSnsUrls = (urls: string[]): string[] => urls.map(normalize
 export const areValidSnsUrls = (urls: string[]): boolean =>
 	urls.length >= 1 && urls.length <= MAX_CLUB_SNS_URLS && urls.every(isValidUrl)
 
-export const getSnsRequestFields = (urls: string[]): { sns: string; sns_urls: string[] } => {
-	const snsUrls = normalizeSnsUrls(urls)
-	return {
-		sns: snsUrls[0] ?? '',
-		sns_urls: snsUrls,
-	}
-}
+export const getSnsRequestFields = (urls: string[]): { sns_urls: string[] } => ({
+	sns_urls: normalizeSnsUrls(urls),
+})
 
-export const getClubSnsUrls = ({ sns, snsUrls }: ClubSnsData): string[] => {
-	const urls = snsUrls?.length ? snsUrls : sns ? [sns] : []
-	return urls
+export const getClubSnsUrls = ({ snsUrls }: ClubSnsData): string[] =>
+	(snsUrls ?? [])
 		.map(url => url.trim())
 		.filter(Boolean)
 		.slice(0, MAX_CLUB_SNS_URLS)
-}
 
 export const getSnsIcon = (url: string): string => {
 	if (url.includes('instagram.com')) return 'instagram'

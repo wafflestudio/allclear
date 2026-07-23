@@ -15,9 +15,8 @@ describe('SNS URL validation', () => {
 		)
 	})
 
-	it('keeps the first URL in the legacy field and sends the full URL list', () => {
+	it('sends only the SNS URL list', () => {
 		expect(getSnsRequestFields(['instagram.com/club', 'youtube.com/@club'])).toEqual({
-			sns: 'https://instagram.com/club',
 			sns_urls: ['https://instagram.com/club', 'https://youtube.com/@club'],
 		})
 	})

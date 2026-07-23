@@ -4,7 +4,6 @@ describe('club SNS presentation', () => {
 	it('shows up to three SNS URLs from the new response field', () => {
 		expect(
 			getClubSnsUrls({
-				sns: 'https://legacy.example.com',
 				snsUrls: [
 					'https://instagram.com/club',
 					'https://youtube.com/@club',
@@ -19,10 +18,8 @@ describe('club SNS presentation', () => {
 		])
 	})
 
-	it('falls back to the legacy SNS URL', () => {
-		expect(getClubSnsUrls({ sns: 'https://instagram.com/club' })).toEqual([
-			'https://instagram.com/club',
-		])
+	it('returns an empty list when SNS URLs are absent', () => {
+		expect(getClubSnsUrls({})).toEqual([])
 	})
 
 	it('maps supported SNS domains to their icons', () => {

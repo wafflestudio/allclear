@@ -30,7 +30,6 @@ export type Club = {
 	membershipFee: string
 	tags: string[]
 	imageUri: string
-	sns?: string | null
 	snsUrls?: string[]
 	article: string
 	articleUploadedAt: string | null
