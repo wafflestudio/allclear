@@ -47,6 +47,7 @@ import RecruitTab from '@/features/club/components/ClubDetail/RecruitTab'
 import ReviewTab from '@/features/club/components/ClubDetail/ReviewTab'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
+import { getClubSnsUrls, getSnsIcon } from '@/shared/utils/clubSns'
 import { ms, s, vs } from '@/shared/utils/scale'
 
 type DetailsScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.CLUB_DETAIL>
@@ -83,14 +84,6 @@ const HTML_CONTENT_WIDTH = Dimensions.get('window').width - s(16) * 4
 const HEADER_HEIGHT = vs(56) // BackHeader 높이와 동일 (오버레이/고정 탭바 위치 계산에 사용)
 const LOGO_BANNER_HEIGHT = vs(300) // 로고 배너(배경)의 높이
 const LOGO_HERO_OVERLAP = vs(72) // hero 카드가 로고 하단을 덮고 올라오는 양
-
-const getSnsIcon = (url: string): string => {
-	if (url.includes('instagram.com')) return 'instagram'
-	if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
-	if (url.includes('facebook.com')) return 'facebook'
-	if (url.includes('x.com') || url.includes('twitter.com')) return 'twitter'
-	return 'link-variant'
-}
 
 const ClubDetailScreen = ({ route, navigation }: Props) => {
 	const {
@@ -162,7 +155,7 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 				.filter(Boolean)
 				.join(' ')
 		: ''
-	const snsUrl = club?.sns?.trim()
+	const snsUrls = club ? getClubSnsUrls(club) : []
 
 	const handleBackButton = () => navigation.goBack()
 
@@ -287,15 +280,18 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									))}
 								</View>
 							)}
-							{!!snsUrl && (
+							{snsUrls.length > 0 && (
 								<View style={styles.snsRow}>
-									<Pressable
-										accessibilityRole="link"
-										accessibilityLabel={`${club.name} SNS 열기`}
-										style={styles.snsButton}
-										onPress={() => Linking.openURL(snsUrl)}>
-										<Icon name={getSnsIcon(snsUrl)} size={ms(20)} color={Colors.POINTCOLOR} />
-									</Pressable>
+									{snsUrls.map((snsUrl, index) => (
+										<Pressable
+											key={`${snsUrl}-${index}`}
+											accessibilityRole="link"
+											accessibilityLabel={`${club.name} SNS ${index + 1} 열기`}
+											style={styles.snsButton}
+											onPress={() => Linking.openURL(snsUrl)}>
+											<Icon name={getSnsIcon(snsUrl)} size={ms(20)} color={Colors.POINTCOLOR} />
+										</Pressable>
+									))}
 								</View>
 							)}
 						</BackgroundCard>

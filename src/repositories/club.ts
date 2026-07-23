@@ -120,6 +120,7 @@ export type RegisterClubRequest = {
 		has_dongbang: boolean
 		dongbang_location?: string
 		sns: string
+		sns_urls?: string[]
 		introduction: string
 		activity_image_urls?: string[]
 	}
@@ -156,6 +157,7 @@ export type UpdateManagedClubRequest = {
 	has_dongbang?: boolean
 	dongbang_location?: string
 	sns?: string
+	sns_urls?: string[]
 	introduction?: string
 	activity_image_urls?: string[]
 }

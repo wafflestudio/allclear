@@ -28,7 +28,7 @@ export type RegisterClubFormData = {
 	activityCycle: string
 	hasDongbang: boolean
 	dongbangLocation: string
-	clubSNS: string
+	clubSNSUrls: string[]
 	activityImages: EditableImage[]
 	clubDescription: string
 }
@@ -48,7 +48,7 @@ export const initialFormData: RegisterClubFormData = {
 	activityCycle: '',
 	hasDongbang: false,
 	dongbangLocation: '',
-	clubSNS: '',
+	clubSNSUrls: [''],
 	activityImages: [],
 	clubDescription: '',
 }

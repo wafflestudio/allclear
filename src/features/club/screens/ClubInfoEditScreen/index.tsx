@@ -20,10 +20,16 @@ import Toast from 'react-native-toast-message'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { Category } from '@/entities/category'
-import { isValidUrl, normalizeUrl } from '@/features/register-club/validation'
+import {
+	areValidSnsUrls,
+	getClubSnsUrls,
+	getSnsRequestFields,
+	normalizeSnsUrls,
+} from '@/shared/utils/clubSns'
 import { ManagedClubDetail, UpdateManagedClubRequest } from '@/repositories/club'
 import TextField from '@/shared/components/TextField'
 import ClubActivityImagePicker from '@/shared/components/ClubActivityImagePicker'
+import ClubSnsInputList from '@/shared/components/ClubSnsInputList'
 import { CLUB_CATEGORIES } from '@/shared/constants/category'
 import { CLUB_RECRUIT_TYPES } from '@/shared/constants/club'
 import { Colors } from '@/shared/constants/colors'
@@ -52,7 +58,7 @@ type ClubInfoEditFormData = {
 	activityCycle: string
 	hasDongbang: boolean
 	dongbangLocation: string
-	clubSNS: string
+	clubSNSUrls: string[]
 	activityImages: EditableImage[]
 	clubDescription: string
 }
@@ -66,7 +72,7 @@ type ComparableClubInfo = {
 	minActivityPeriod: number
 	hasDongbang: boolean
 	dongbangLocation: string
-	sns: string
+	snsUrls: string[]
 	introduction: string
 }
 
@@ -87,7 +93,7 @@ const initialFormData: ClubInfoEditFormData = {
 	activityCycle: '',
 	hasDongbang: false,
 	dongbangLocation: '',
-	clubSNS: '',
+	clubSNSUrls: [''],
 	activityImages: [],
 	clubDescription: '',
 }
@@ -101,28 +107,31 @@ const getClubDepartment = (club: ManagedClubDetail): string => {
 	return club.affiliationType && club.affiliationType !== '소속동아리' ? club.affiliationType : ''
 }
 
-const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => ({
-	clubImage: club.imageUri || null,
-	clubName: club.name ?? '',
-	category: club.category ?? '',
-	department: getClubDepartment(club),
-	shortIntro: club.shortDescription || '',
-	recruitType: CLUB_RECRUIT_TYPES.includes(club.recruitType) ? club.recruitType : '',
-	activityCycle:
-		club.minActivityPeriod !== null && club.minActivityPeriod !== undefined
-			? club.minActivityPeriod > 0
-				? String(club.minActivityPeriod)
-				: ''
-			: club.activityCycle || '',
-	hasDongbang: club.hasDongbang ?? false,
-	dongbangLocation: club.dongbangLocation ?? '',
-	clubSNS: club.sns ?? '',
-	activityImages: (club.activityImageUrls ?? []).map((uri, index) => ({
-		id: `remote-${index}-${uri}`,
-		uri,
-	})),
-	clubDescription: club.introduction ?? '',
-})
+const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => {
+	const snsUrls = getClubSnsUrls(club)
+	return {
+		clubImage: club.imageUri || null,
+		clubName: club.name ?? '',
+		category: club.category ?? '',
+		department: getClubDepartment(club),
+		shortIntro: club.shortDescription || '',
+		recruitType: CLUB_RECRUIT_TYPES.includes(club.recruitType) ? club.recruitType : '',
+		activityCycle:
+			club.minActivityPeriod !== null && club.minActivityPeriod !== undefined
+				? club.minActivityPeriod > 0
+					? String(club.minActivityPeriod)
+					: ''
+				: club.activityCycle || '',
+		hasDongbang: club.hasDongbang ?? false,
+		dongbangLocation: club.dongbangLocation ?? '',
+		clubSNSUrls: snsUrls.length > 0 ? snsUrls : [''],
+		activityImages: (club.activityImageUrls ?? []).map((uri, index) => ({
+			id: `remote-${index}-${uri}`,
+			uri,
+		})),
+		clubDescription: club.introduction ?? '',
+	}
+}
 
 const getInitialActivityCycleMode = (club: ManagedClubDetail): ActivityCycleMode => {
 	const minActivityPeriod = club.minActivityPeriod
@@ -144,7 +153,7 @@ const normalizeComparableClubInfo = (
 	minActivityPeriod: activityCycleMode === 'number' ? parseInt(data.activityCycle, 10) || 0 : 0,
 	hasDongbang: data.hasDongbang,
 	dongbangLocation: data.hasDongbang ? data.dongbangLocation.trim() : '',
-	sns: normalizeUrl(data.clubSNS),
+	snsUrls: normalizeSnsUrls(data.clubSNSUrls),
 	introduction: data.clubDescription.trim(),
 })
 
@@ -182,8 +191,8 @@ const buildUpdateManagedClubRequest = (
 	) {
 		request.dongbang_location = current.dongbangLocation
 	}
-	if (current.sns !== initial.sns) {
-		request.sns = current.sns
+	if (JSON.stringify(current.snsUrls) !== JSON.stringify(initial.snsUrls)) {
+		Object.assign(request, getSnsRequestFields(current.snsUrls))
 	}
 	if (current.introduction !== initial.introduction) {
 		request.introduction = current.introduction
@@ -344,7 +353,8 @@ const ClubInfoEditScreen = () => {
 	)
 
 	const isSNSComplete =
-		currentComparable.sns === initialComparable?.sns || isValidUrl(formData.clubSNS)
+		JSON.stringify(currentComparable.snsUrls) === JSON.stringify(initialComparable?.snsUrls) ||
+		areValidSnsUrls(formData.clubSNSUrls)
 
 	const isComplete =
 		!!formData.clubImage &&
@@ -643,22 +653,10 @@ const ClubInfoEditScreen = () => {
 								)}
 							</View>
 
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.fieldLabel}>동아리 SNS</Text>
-								<View style={styles.iconInputRow}>
-									<Icon name="link" size={ms(20)} color={Colors.BODYTEXT_DISABLED} />
-									<TextInput
-										style={styles.iconInput}
-										placeholder="url을 입력하세요"
-										placeholderTextColor={Colors.BODYTEXT_DISABLED}
-										value={formData.clubSNS}
-										onChangeText={text => setFormField('clubSNS', text)}
-										autoCapitalize="none"
-										keyboardType="url"
-										maxLength={200}
-									/>
-								</View>
-							</View>
+							<ClubSnsInputList
+								urls={formData.clubSNSUrls}
+								onChange={clubSNSUrls => setFormField('clubSNSUrls', clubSNSUrls)}
+							/>
 
 							<ClubActivityImagePicker
 								images={formData.activityImages}
