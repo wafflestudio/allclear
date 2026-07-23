@@ -1,10 +1,7 @@
 import { Category } from '@/entities/category'
+import type { EditableImage, ImageFile } from '@/shared/types/image'
 
-export type RegisterClubImageFile = {
-	uri: string
-	type: string
-	name: string
-}
+export type RegisterClubImageFile = ImageFile
 
 export type RegisterClubFormData = {
 	clubType: '교내' | '교외'
@@ -32,6 +29,7 @@ export type RegisterClubFormData = {
 	hasDongbang: boolean
 	dongbangLocation: string
 	clubSNS: string
+	activityImages: EditableImage[]
 	clubDescription: string
 }
 
@@ -51,5 +49,6 @@ export const initialFormData: RegisterClubFormData = {
 	hasDongbang: false,
 	dongbangLocation: '',
 	clubSNS: '',
+	activityImages: [],
 	clubDescription: '',
 }

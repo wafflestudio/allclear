@@ -132,6 +132,17 @@ const MyPageScreen = () => {
 		readNotificationMutation.mutate(currentNotification.id)
 	}
 
+	const handleCurrentNotificationAction = () => {
+		if (!currentNotification) return
+
+		handleReadCurrentNotification()
+		if (currentNotification.type === 'CLUB_REGISTRATION_REJECTED' && currentNotification.clubId) {
+			navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, {
+				clubId: currentNotification.clubId,
+			})
+		}
+	}
+
 	const renderManageClubButtons = (club: ManagedClubListItem) => {
 		if (club.managementStatus === 'APPROVED') {
 			return (
@@ -141,6 +152,19 @@ const MyPageScreen = () => {
 						activeOpacity={0.7}
 						onPress={() => handleManageClub(club)}>
 						<Text style={styles.manageClubBtnFilledText}>동아리 관리</Text>
+					</TouchableOpacity>
+				</View>
+			)
+		}
+
+		if (club.managementStatus === 'REJECTED') {
+			return (
+				<View style={styles.manageClubButtons}>
+					<TouchableOpacity
+						style={styles.manageClubBtnFilled}
+						activeOpacity={0.7}
+						onPress={() => navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, { clubId: club.uuid })}>
+						<Text style={styles.manageClubBtnFilledText}>수정 및 재신청</Text>
 					</TouchableOpacity>
 				</View>
 			)
@@ -308,7 +332,7 @@ const MyPageScreen = () => {
 				title={notificationModalContent?.title ?? ''}
 				description={notificationModalContent?.description}
 				buttonLabel={notificationModalContent?.buttonLabel ?? '확인'}
-				onButtonPress={handleReadCurrentNotification}
+				onButtonPress={handleCurrentNotificationAction}
 				hasCancel={notificationModalContent?.hasCancel}
 				cancelLabel={notificationModalContent?.cancelLabel}
 				dismissOnBackdropPress={false}

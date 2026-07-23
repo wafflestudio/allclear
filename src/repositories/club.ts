@@ -121,6 +121,7 @@ export type RegisterClubRequest = {
 		dongbang_location?: string
 		sns: string
 		introduction: string
+		activity_image_urls?: string[]
 	}
 	manager_data: {
 		name: string
@@ -156,6 +157,7 @@ export type UpdateManagedClubRequest = {
 	dongbang_location?: string
 	sns?: string
 	introduction?: string
+	activity_image_urls?: string[]
 }
 
 export type UpdateManagedClubResponse = {
@@ -176,6 +178,12 @@ export type UploadManagedClubImageRequest = {
 
 export type UploadManagedClubImageResponse = {
 	ok: boolean
+}
+
+export type UploadClubActivityImageRequest = UploadManagedClubImageRequest
+
+export type UploadClubActivityImageResponse = {
+	url: string
 }
 
 export type ListMyClubsResponse = {
@@ -207,6 +215,9 @@ export type ClubRepository = {
 	uploadManagedClubImage: (
 		req: UploadManagedClubImageRequest,
 	) => Promise<UploadManagedClubImageResponse>
+	uploadClubActivityImage: (
+		req: UploadClubActivityImageRequest,
+	) => Promise<UploadClubActivityImageResponse>
 	listRandomRecommendations: () => Promise<ListRandomRecommendationsResponse>
 }
 
@@ -342,5 +353,19 @@ export const getClubRepository = (): ClubRepository => ({
 		)
 
 		return response
+	},
+	uploadClubActivityImage: async req => {
+		const formData = new FormData()
+		formData.append('file', {
+			uri: req.uri,
+			type: req.type,
+			name: req.name,
+		} as unknown as Blob)
+
+		return apiConnector.post<UploadClubActivityImageResponse>(
+			`/v2/managers/me/clubs/${req.clubId}/activity-images`,
+			formData as unknown as object,
+			{ timeout: 60000, headers: { 'Content-Type': 'multipart/form-data' } },
+		)
 	},
 })

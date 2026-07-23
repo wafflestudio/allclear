@@ -8,6 +8,8 @@ const DEFAULT_ERROR_MESSAGE = '동아리 등록 중 오류가 발생했습니다
 const MISSING_CLUB_UUID_MESSAGE = '동아리 등록 응답에서 동아리 ID를 찾지 못했어요'
 const IMAGE_UPLOAD_ERROR_MESSAGE =
 	'동아리 등록은 완료됐지만 대표 이미지를 업로드하지 못했어요. 관리 화면에서 다시 등록해주세요'
+const ACTIVITY_IMAGE_UPLOAD_ERROR_MESSAGE =
+	'동아리 등록은 완료됐지만 활동 사진을 업로드하지 못했어요. 관리 화면에서 다시 등록해주세요'
 
 const extractErrorMessage = (error: unknown): string => {
 	if (error instanceof Error) {
@@ -30,16 +32,17 @@ type Callbacks = {
 type RegisterClubMutationRequest = {
 	request: RegisterClubRequest
 	imageFile?: RegisterClubImageFile | null
+	activityImageFiles?: RegisterClubImageFile[]
 }
 
 export const useRegisterClub = ({ onSuccess, onFailure }: Callbacks) => {
 	const { clubService } = useContext(serviceContext)
 
 	return useMutation(
-		async ({ request, imageFile }: RegisterClubMutationRequest) => {
+		async ({ request, imageFile, activityImageFiles = [] }: RegisterClubMutationRequest) => {
 			const response = await clubService.registerClub(request)
 
-			if (response?.success !== true || !imageFile) {
+			if (response?.success !== true || (!imageFile && activityImageFiles.length === 0)) {
 				return response
 			}
 
@@ -48,15 +51,28 @@ export const useRegisterClub = ({ onSuccess, onFailure }: Callbacks) => {
 				throw new Error(MISSING_CLUB_UUID_MESSAGE)
 			}
 
-			try {
-				await clubService.uploadManagedClubImage({
-					clubId,
-					uri: imageFile.uri,
-					type: imageFile.type,
-					name: imageFile.name,
-				})
-			} catch {
-				throw new Error(IMAGE_UPLOAD_ERROR_MESSAGE)
+			if (imageFile) {
+				try {
+					await clubService.uploadManagedClubImage({ clubId, ...imageFile })
+				} catch {
+					throw new Error(IMAGE_UPLOAD_ERROR_MESSAGE)
+				}
+			}
+
+			if (activityImageFiles.length > 0) {
+				try {
+					const uploadedImages = await Promise.all(
+						activityImageFiles.map(file =>
+							clubService.uploadClubActivityImage({ clubId, ...file }),
+						),
+					)
+					await clubService.updateManagedClub({
+						uuid: clubId,
+						activity_image_urls: uploadedImages.map(image => image.url),
+					})
+				} catch {
+					throw new Error(ACTIVITY_IMAGE_UPLOAD_ERROR_MESSAGE)
+				}
 			}
 
 			return response

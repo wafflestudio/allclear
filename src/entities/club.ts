@@ -34,6 +34,8 @@ export type Club = {
 	article: string
 	articleUploadedAt: string | null
 	activeMemberCount?: number
+	foundedAt?: string | null
+	activityImageUrls?: string[]
 	blurHash?: string | null
 	status?: string
 	rejectReason?: string | null

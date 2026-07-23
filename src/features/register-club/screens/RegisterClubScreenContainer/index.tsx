@@ -35,6 +35,7 @@ const mapFormDataToRequest = (formData: RegisterClubFormData): RegisterClubReque
 		has_dongbang: formData.hasDongbang,
 		sns: normalizeUrl(formData.clubSNS),
 		introduction: formData.clubDescription,
+		activity_image_urls: [],
 	}
 
 	// Send dongbang_location (API key) only when the club has a dongbang
@@ -145,6 +146,9 @@ export const RegisterClubScreenContainer = () => {
 		registerClub({
 			request: mapFormDataToRequest(formData),
 			imageFile: formData.clubImageFile,
+			activityImageFiles: formData.activityImages.flatMap(image =>
+				image.file ? [image.file] : [],
+			),
 		})
 	}
 

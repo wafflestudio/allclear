@@ -14,6 +14,7 @@ import {
 	type ActivityCycleMode,
 } from '@/shared/utils/activityCycle'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import ClubActivityImagePicker from '@/shared/components/ClubActivityImagePicker'
 
 type Props = {
 	formData: RegisterClubFormData
@@ -198,7 +199,6 @@ export const ClubDetailsScreen = ({
 						<Text style={styles.validationText}>동방 보유 여부를 알려주세요</Text>
 					</View>
 
-					{/* SNS */}
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.fieldLabel}>동아리 SNS</Text>
 						<View style={styles.iconInputRow}>
@@ -208,7 +208,7 @@ export const ClubDetailsScreen = ({
 								placeholder="url을 입력하세요"
 								placeholderTextColor={Colors.BODYTEXT_DISABLED}
 								value={formData.clubSNS}
-								onChangeText={text => onFormDataChange({ clubSNS: text })}
+								onChangeText={clubSNS => onFormDataChange({ clubSNS })}
 								autoCapitalize="none"
 								keyboardType="url"
 								maxLength={200}
@@ -216,6 +216,11 @@ export const ClubDetailsScreen = ({
 						</View>
 						<Text style={styles.validationText}>동아리 SNS 링크를 입력해주세요</Text>
 					</View>
+
+					<ClubActivityImagePicker
+						images={formData.activityImages}
+						onChange={activityImages => onFormDataChange({ activityImages })}
+					/>
 
 					{/* Description */}
 					<View style={styles.fieldWrapper}>

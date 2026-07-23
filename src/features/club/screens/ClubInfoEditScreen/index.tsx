@@ -23,6 +23,7 @@ import { Category } from '@/entities/category'
 import { isValidUrl, normalizeUrl } from '@/features/register-club/validation'
 import { ManagedClubDetail, UpdateManagedClubRequest } from '@/repositories/club'
 import TextField from '@/shared/components/TextField'
+import ClubActivityImagePicker from '@/shared/components/ClubActivityImagePicker'
 import { CLUB_CATEGORIES } from '@/shared/constants/category'
 import { CLUB_RECRUIT_TYPES } from '@/shared/constants/club'
 import { Colors } from '@/shared/constants/colors'
@@ -37,6 +38,7 @@ import {
 } from '@/shared/utils/activityCycle'
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
+import type { EditableImage, ImageFile } from '@/shared/types/image'
 
 type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_INFO_EDIT>
 
@@ -51,13 +53,8 @@ type ClubInfoEditFormData = {
 	hasDongbang: boolean
 	dongbangLocation: string
 	clubSNS: string
+	activityImages: EditableImage[]
 	clubDescription: string
-}
-
-type ImageFile = {
-	uri: string
-	type: string
-	name: string
 }
 
 type ComparableClubInfo = {
@@ -91,6 +88,7 @@ const initialFormData: ClubInfoEditFormData = {
 	hasDongbang: false,
 	dongbangLocation: '',
 	clubSNS: '',
+	activityImages: [],
 	clubDescription: '',
 }
 
@@ -119,6 +117,10 @@ const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => ({
 	hasDongbang: club.hasDongbang ?? false,
 	dongbangLocation: club.dongbangLocation ?? '',
 	clubSNS: club.sns ?? '',
+	activityImages: (club.activityImageUrls ?? []).map((uri, index) => ({
+		id: `remote-${index}-${uri}`,
+		uri,
+	})),
 	clubDescription: club.introduction ?? '',
 })
 
@@ -362,7 +364,17 @@ const ClubInfoEditScreen = () => {
 		return buildUpdateManagedClubRequest(clubId, currentComparable, initialComparable)
 	}, [clubId, currentComparable, initialComparable])
 
-	const hasChanges = !!imageFile || !!updateRequest
+	const initialActivityImageUrls = club?.activityImageUrls ?? []
+	const retainedActivityImageUrls = formData.activityImages
+		.filter(image => !image.file)
+		.map(image => image.uri)
+	const newActivityImageFiles = formData.activityImages.flatMap(image =>
+		image.file ? [image.file] : [],
+	)
+	const activityImagesChanged =
+		newActivityImageFiles.length > 0 ||
+		JSON.stringify(retainedActivityImageUrls) !== JSON.stringify(initialActivityImageUrls)
+	const hasChanges = !!imageFile || !!updateRequest || activityImagesChanged
 
 	const { mutate: updateClub, isPending: isSubmitting } = useMutation({
 		mutationFn: async () => {
@@ -375,15 +387,30 @@ const ClubInfoEditScreen = () => {
 				})
 			}
 
-			if (!updateRequest) {
-				return
+			const request: UpdateManagedClubRequest = updateRequest
+				? { ...updateRequest }
+				: { uuid: clubId }
+
+			if (activityImagesChanged) {
+				const uploadedImages = await Promise.all(
+					newActivityImageFiles.map(file =>
+						clubService.uploadClubActivityImage({ clubId, ...file }),
+					),
+				)
+				request.activity_image_urls = [
+					...retainedActivityImageUrls,
+					...uploadedImages.map(image => image.url),
+				]
 			}
 
-			return clubService.updateManagedClub(updateRequest)
+			if (Object.keys(request).length > 1) {
+				return clubService.updateManagedClub(request)
+			}
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ['managedClub', clubId] })
 			queryClient.invalidateQueries({ queryKey: ['manageClubs'] })
+			queryClient.invalidateQueries({ queryKey: ['clubs', clubId] })
 			setShowSuccessModal(true)
 		},
 		onError: () => {
@@ -632,6 +659,11 @@ const ClubInfoEditScreen = () => {
 									/>
 								</View>
 							</View>
+
+							<ClubActivityImagePicker
+								images={formData.activityImages}
+								onChange={activityImages => setFormField('activityImages', activityImages)}
+							/>
 
 							<View style={styles.fieldWrapper}>
 								<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
