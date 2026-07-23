@@ -7,13 +7,15 @@ import { typography } from '@/shared/constants/typography'
 import { s, vs } from '@/shared/utils/scale'
 import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
 import { RegisterClubFormData } from '@/features/register-club/types'
-import { isValidUrl } from '@/features/register-club/validation'
+import { areValidSnsUrls } from '@/features/register-club/validation'
 import {
 	decrementActivityCycleValue,
 	incrementActivityCycleValue,
 	type ActivityCycleMode,
 } from '@/shared/utils/activityCycle'
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import ClubActivityImagePicker from '@/shared/components/ClubActivityImagePicker'
+import ClubSnsInputList from '@/shared/components/ClubSnsInputList'
 
 type Props = {
 	formData: RegisterClubFormData
@@ -61,7 +63,7 @@ export const ClubDetailsScreen = ({
 
 	const isComplete =
 		formData.recruitType.trim() &&
-		isValidUrl(formData.clubSNS) &&
+		areValidSnsUrls(formData.clubSNSUrls) &&
 		formData.clubDescription.trim() &&
 		(activityCycleMode === 'none' || formData.activityCycle.trim())
 
@@ -198,24 +200,15 @@ export const ClubDetailsScreen = ({
 						<Text style={styles.validationText}>동방 보유 여부를 알려주세요</Text>
 					</View>
 
-					{/* SNS */}
-					<View style={styles.fieldWrapper}>
-						<Text style={styles.fieldLabel}>동아리 SNS</Text>
-						<View style={styles.iconInputRow}>
-							<MaterialIcons name="link" size={20} color={Colors.BODYTEXT_DISABLED} />
-							<TextInput
-								style={styles.iconInput}
-								placeholder="url을 입력하세요"
-								placeholderTextColor={Colors.BODYTEXT_DISABLED}
-								value={formData.clubSNS}
-								onChangeText={text => onFormDataChange({ clubSNS: text })}
-								autoCapitalize="none"
-								keyboardType="url"
-								maxLength={200}
-							/>
-						</View>
-						<Text style={styles.validationText}>동아리 SNS 링크를 입력해주세요</Text>
-					</View>
+					<ClubSnsInputList
+						urls={formData.clubSNSUrls}
+						onChange={clubSNSUrls => onFormDataChange({ clubSNSUrls })}
+					/>
+
+					<ClubActivityImagePicker
+						images={formData.activityImages}
+						onChange={activityImages => onFormDataChange({ activityImages })}
+					/>
 
 					{/* Description */}
 					<View style={styles.fieldWrapper}>

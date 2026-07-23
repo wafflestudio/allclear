@@ -25,6 +25,8 @@ import {
 	UpdateManagedClubResponse,
 	UploadManagedClubImageRequest,
 	UploadManagedClubImageResponse,
+	UploadClubActivityImageRequest,
+	UploadClubActivityImageResponse,
 } from '@/repositories/club'
 
 export type ClubService = {
@@ -46,6 +48,9 @@ export type ClubService = {
 	uploadManagedClubImage: (
 		req: UploadManagedClubImageRequest,
 	) => Promise<UploadManagedClubImageResponse>
+	uploadClubActivityImage: (
+		req: UploadClubActivityImageRequest,
+	) => Promise<UploadClubActivityImageResponse>
 	listRandomRecommendations: () => Promise<ListRandomRecommendationsResponse>
 }
 
@@ -70,5 +75,6 @@ export const getClubService = ({ repositories }: Deps): ClubService => ({
 	registerClub: req => repositories[0].registerClub(req),
 	updateManagedClub: req => repositories[0].updateManagedClub(req),
 	uploadManagedClubImage: req => repositories[0].uploadManagedClubImage(req),
+	uploadClubActivityImage: req => repositories[0].uploadClubActivityImage(req),
 	listRandomRecommendations: () => repositories[0].listRandomRecommendations(),
 })

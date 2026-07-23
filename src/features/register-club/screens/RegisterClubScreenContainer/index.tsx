@@ -10,7 +10,7 @@ import { ClubAffiliationScreen } from '@/features/register-club/screens/ClubAffi
 import { ClubDetailsScreen } from '@/features/register-club/screens/ClubDetailsScreen'
 import { RegisterClubConfirmModal } from '@/features/register-club/components/RegisterClubConfirmModal'
 import { RegisterClubFormData, initialFormData } from '@/features/register-club/types'
-import { normalizeUrl } from '@/features/register-club/validation'
+import { getSnsRequestFields } from '@/features/register-club/validation'
 import { RegisterClubRequest } from '@/repositories/club'
 import { User } from '@/entities/user'
 import { getPhoneNumberPrefill, getStudentIdPrefill } from '@/shared/utils/managerInfo'
@@ -33,8 +33,9 @@ const mapFormDataToRequest = (formData: RegisterClubFormData): RegisterClubReque
 		recruit_type: formData.recruitType,
 		min_activity_period: parseInt(formData.activityCycle, 10) || 0,
 		has_dongbang: formData.hasDongbang,
-		sns: normalizeUrl(formData.clubSNS),
+		...getSnsRequestFields(formData.clubSNSUrls),
 		introduction: formData.clubDescription,
+		activity_image_urls: [],
 	}
 
 	// Send dongbang_location (API key) only when the club has a dongbang
@@ -145,6 +146,9 @@ export const RegisterClubScreenContainer = () => {
 		registerClub({
 			request: mapFormDataToRequest(formData),
 			imageFile: formData.clubImageFile,
+			activityImageFiles: formData.activityImages.flatMap(image =>
+				image.file ? [image.file] : [],
+			),
 		})
 	}
 

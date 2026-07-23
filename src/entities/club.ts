@@ -30,10 +30,12 @@ export type Club = {
 	membershipFee: string
 	tags: string[]
 	imageUri: string
-	sns?: string | null
+	snsUrls?: string[]
 	article: string
 	articleUploadedAt: string | null
 	activeMemberCount?: number
+	foundedAt?: string | null
+	activityImageUrls?: string[]
 	blurHash?: string | null
 	status?: string
 	rejectReason?: string | null

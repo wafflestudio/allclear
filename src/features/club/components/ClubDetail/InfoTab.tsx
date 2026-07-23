@@ -1,5 +1,13 @@
 import React, { useCallback, useState } from 'react'
-import { Image, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native'
+import {
+	Image,
+	LayoutChangeEvent,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View,
+} from 'react-native'
 import LinearGradient from 'react-native-linear-gradient'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { Club } from '@/entities/club'
@@ -14,190 +22,202 @@ type Props = {
 	contentWidth: number
 }
 
-const COLLAPSED_MAX_HEIGHT = vs(115) // 약 6줄
+const COLLAPSED_MAX_HEIGHT = vs(115)
 const FADE_COLORS = ['rgba(255, 255, 255, 0)', Colors.WHITE]
-const ICON_SIZE = 30
+
+const formatFoundedAt = (value: string): string => {
+	const [year, month, day] = value.split('-').map(Number)
+	return year && month && day ? `${year}년 ${month}월 ${day}일` : value
+}
+
+const StatePills = ({ active, detail }: { active: boolean; detail?: string }) => (
+	<View style={styles.stateContent}>
+		<View style={styles.statePills}>
+			<View style={[styles.statePill, active && styles.statePillActive]}>
+				<Text style={[styles.statePillText, active && styles.statePillTextActive]}>있음</Text>
+			</View>
+			<View style={[styles.statePill, !active && styles.statePillActive]}>
+				<Text style={[styles.statePillText, !active && styles.statePillTextActive]}>없음</Text>
+			</View>
+		</View>
+		{!!detail && (
+			<View style={styles.detailTag}>
+				<Text style={styles.detailTagText}>{detail}</Text>
+			</View>
+		)}
+	</View>
+)
 
 const InfoTab = ({ club, contentWidth }: Props) => {
 	const [descriptionExpanded, setDescriptionExpanded] = useState(false)
 	const [contentHeight, setContentHeight] = useState<number | null>(null)
 
-	// 접힘 판단에 쓸 전체 높이. 재레이아웃 시 더 작은 값으로 덮어쓰지 않도록 관측된 최대값을 유지한다.
-	const onContentLayout = useCallback((e: LayoutChangeEvent) => {
-		const height = e.nativeEvent.layout.height
-		setContentHeight(prev => (prev === null || height > prev ? height : prev))
+	const onContentLayout = useCallback((event: LayoutChangeEvent) => {
+		const height = event.nativeEvent.layout.height
+		setContentHeight(previous => (previous === null || height > previous ? height : previous))
 	}, [])
 
 	const isLong = contentHeight !== null && contentHeight > COLLAPSED_MAX_HEIGHT
-	const collapsed = !descriptionExpanded && (contentHeight === null || isLong) // contentHeight 초기화 전에는 접힌 상태
-
-	const iconItems = [
-		{
-			label: '분류',
-			value: `${club.type} 동아리`,
-			icon: require('@/assets/icons/clubInfo/club-type.png'),
-		},
-		{
-			label: '단과대학',
-			value: club.college,
-			icon: require('@/assets/icons/clubInfo/college.png'),
-		},
-		{
-			label: '모집형태',
-			value: `${club.recruitType} 모집`,
-			icon: require('@/assets/icons/clubInfo/recruit-type.png'),
-		},
-	].filter(item => !!item.value?.trim())
-
-	const detailRows: { label: string; value: string }[] = [
-		{ label: '활동주기', value: club.activityCycle },
-		{ label: '회비', value: club.membershipFee },
-	].filter(row => !!row.value?.trim())
-
+	const collapsed = !descriptionExpanded && (contentHeight === null || isLong)
 	const introduction = club.introduction?.trim()
-
-	if (!introduction && iconItems.length === 0 && detailRows.length === 0) {
-		return (
-			<View style={styles.emptyState}>
-				<Text style={styles.emptyText}>아직 등록된 상세정보가 없어요.</Text>
-			</View>
-		)
-	}
+	const minActivityPeriod = club.minActivityPeriod ?? 0
+	const activityImageUrls = club.activityImageUrls ?? []
+	const topItems = [
+		{ label: '분류', value: `${club.type} 동아리`, icon: 'account-group-outline' },
+		{ label: '카테고리', value: club.category, icon: 'shape-outline' },
+		{ label: '모집형태', value: `${club.recruitType} 모집`, icon: 'account-plus-outline' },
+	]
 
 	return (
-		<BackgroundCard style={styles.card}>
-			<View style={styles.sections}>
-				{iconItems.length > 0 && (
+		<View style={styles.container}>
+			<BackgroundCard>
+				<View style={styles.sections}>
 					<View style={styles.iconRow}>
-						{iconItems.map((item, index) => (
+						{topItems.map((item, index) => (
 							<React.Fragment key={item.label}>
 								{index > 0 && <View style={styles.iconDivider} />}
 								<View style={styles.iconCell}>
-									<Image source={item.icon} style={styles.icon} resizeMode="contain" />
-									<Text style={styles.iconValue}>{item.value}</Text>
+									<Icon name={item.icon} size={ms(28)} color={Colors.POINTCOLOR} />
+									<Text style={styles.iconLabel}>{item.label}</Text>
+									<Text style={styles.iconValue} numberOfLines={2}>
+										{item.value}
+									</Text>
 								</View>
 							</React.Fragment>
 						))}
 					</View>
-				)}
 
-				{introduction && (
-					<View style={styles.descriptionSection}>
-						<Text style={styles.label}>상세설명</Text>
-						<View>
-							<View style={collapsed && styles.descriptionCollapsed}>
-								<View onLayout={onContentLayout}>
-									<HtmlView html={introduction} contentWidth={contentWidth} />
+					<View style={styles.infoList}>
+						<View style={styles.infoRow}>
+							<Text style={styles.label}>동방</Text>
+							<StatePills active={club.hasDongbang} detail={club.dongbangLocation ?? undefined} />
+						</View>
+						<View style={styles.infoRow}>
+							<Text style={styles.label}>최소 활동기간</Text>
+							<StatePills
+								active={minActivityPeriod > 0}
+								detail={minActivityPeriod > 0 ? `${minActivityPeriod}학기` : undefined}
+							/>
+						</View>
+					</View>
+
+					{!!introduction && (
+						<View style={styles.descriptionSection}>
+							<Text style={styles.label}>상세설명</Text>
+							<View>
+								<View style={collapsed && styles.descriptionCollapsed}>
+									<View onLayout={onContentLayout}>
+										<HtmlView html={introduction} contentWidth={contentWidth} />
+									</View>
 								</View>
+								{collapsed && isLong && (
+									<LinearGradient pointerEvents="none" colors={FADE_COLORS} style={styles.fade} />
+								)}
 							</View>
-							{collapsed && isLong && (
-								<LinearGradient pointerEvents="none" colors={FADE_COLORS} style={styles.fade} />
+							{isLong && (
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel={descriptionExpanded ? '상세설명 접기' : '상세설명 펼치기'}
+									style={styles.toggle}
+									onPress={() => setDescriptionExpanded(previous => !previous)}>
+									<Icon
+										name={descriptionExpanded ? 'chevron-up' : 'chevron-down'}
+										size={ms(24)}
+										color={Colors.BODYTEXT_SUB}
+									/>
+								</Pressable>
 							)}
 						</View>
-						{isLong && (
-							<Pressable
-								style={styles.toggle}
-								hitSlop={8}
-								onPress={() => setDescriptionExpanded(prev => !prev)}>
-								<Icon
-									name={descriptionExpanded ? 'chevron-up' : 'chevron-down'}
-									size={ms(24)}
-									color={Colors.BODYTEXT_SUB}
-								/>
-							</Pressable>
-						)}
-					</View>
-				)}
+					)}
 
-				{detailRows.length > 0 && (
-					<View style={styles.infoList}>
-						{detailRows.map(row => (
-							<View key={row.label} style={styles.infoRow}>
-								<Text style={[styles.label, styles.labelColumn]}>{row.label}</Text>
-								<Text style={styles.infoValue}>{row.value}</Text>
-							</View>
+					{(club.foundedAt || (club.activeMemberCount ?? 0) > 0) && (
+						<View style={styles.plainInfoList}>
+							{!!club.foundedAt && (
+								<View style={styles.plainInfoRow}>
+									<Text style={styles.label}>설립일</Text>
+									<Text style={styles.plainValue}>{formatFoundedAt(club.foundedAt)}</Text>
+								</View>
+							)}
+							{(club.activeMemberCount ?? 0) > 0 && (
+								<View style={styles.plainInfoRow}>
+									<Text style={styles.label}>활동 인원</Text>
+									<Text style={styles.plainValue}>약 {club.activeMemberCount}명</Text>
+								</View>
+							)}
+						</View>
+					)}
+				</View>
+			</BackgroundCard>
+
+			{activityImageUrls.length > 0 && (
+				<View style={styles.photoSection}>
+					<Text style={styles.photoTitle}>활동 사진</Text>
+					<ScrollView
+						horizontal
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={styles.photoList}>
+						{activityImageUrls.map((url, index) => (
+							<Image
+								key={`${url}-${index}`}
+								source={{ uri: url }}
+								style={styles.activityImage}
+								resizeMode="cover"
+							/>
 						))}
-					</View>
-				)}
-			</View>
-		</BackgroundCard>
+					</ScrollView>
+				</View>
+			)}
+		</View>
 	)
 }
 
 export default InfoTab
 
 const styles = StyleSheet.create({
-	card: {
-		marginTop: vs(16),
-	},
-	sections: {
-		gap: vs(20),
-	},
-	label: {
-		...typography.bodyMRegular,
-		color: Colors.BODYTEXT_SUB_2,
-	},
-	labelColumn: {
-		width: s(76),
-	},
-	iconRow: {
-		flexDirection: 'row',
-	},
-	iconCell: {
-		flex: 1,
-		alignItems: 'center',
-		gap: vs(8),
-	},
-	iconDivider: {
-		width: 1,
-		backgroundColor: Colors.TEXTBOX_SELECTED,
-	},
-	icon: {
-		width: ICON_SIZE,
-		height: ICON_SIZE,
-	},
-	iconValue: {
-		...typography.bodyMMedium,
-		color: Colors.BODYTEXT_SUB,
-	},
-	descriptionSection: {
-		gap: vs(8),
-	},
-	descriptionCollapsed: {
-		maxHeight: COLLAPSED_MAX_HEIGHT,
-		overflow: 'hidden',
-	},
-	fade: {
-		position: 'absolute',
-		left: 0,
-		right: 0,
-		bottom: 0,
-		height: vs(28),
-	},
-	toggle: {
-		alignItems: 'center',
-		marginTop: -vs(8),
-	},
-	infoList: {
-		gap: vs(12),
-	},
-	infoRow: {
-		flexDirection: 'row',
-		alignItems: 'flex-start',
-	},
-	infoValue: {
-		...typography.bodyMMedium,
-		color: Colors.BODYTEXT_SUB,
-		flex: 1,
-	},
-	emptyState: {
-		minHeight: vs(160),
-		justifyContent: 'center',
+	container: { marginTop: vs(16), gap: vs(20) },
+	sections: { gap: vs(22) },
+	iconRow: { flexDirection: 'row' },
+	iconCell: { flex: 1, alignItems: 'center', gap: vs(5), paddingHorizontal: s(4) },
+	iconDivider: { width: 1, backgroundColor: Colors.TEXTBOX_SELECTED },
+	iconLabel: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB_2 },
+	iconValue: { ...typography.bodyMMedium, color: Colors.BODYTEXT_SUB, textAlign: 'center' },
+	infoList: { gap: vs(14) },
+	infoRow: { gap: vs(8) },
+	label: { ...typography.bodyMRegular, color: Colors.BODYTEXT_SUB_2 },
+	stateContent: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: s(8) },
+	statePills: { flexDirection: 'row', gap: s(6) },
+	statePill: {
+		minWidth: s(54),
+		paddingHorizontal: s(13),
+		paddingVertical: vs(7),
+		borderRadius: ms(18),
+		backgroundColor: Colors.BACKGROUND_SUB,
 		alignItems: 'center',
 	},
-	emptyText: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
-		textAlign: 'center',
+	statePillActive: { backgroundColor: Colors.POINTCOLOR },
+	statePillText: { ...typography.bodySMedium, color: Colors.BODYTEXT_SUB_2 },
+	statePillTextActive: { color: Colors.WHITE },
+	detailTag: {
+		paddingHorizontal: s(12),
+		paddingVertical: vs(7),
+		borderRadius: ms(18),
+		backgroundColor: Colors.POINTCOLOR_10,
+	},
+	detailTagText: { ...typography.bodySMedium, color: Colors.POINTCOLOR },
+	descriptionSection: { gap: vs(8) },
+	descriptionCollapsed: { maxHeight: COLLAPSED_MAX_HEIGHT, overflow: 'hidden' },
+	fade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: vs(28) },
+	toggle: { minHeight: ms(44), alignItems: 'center', justifyContent: 'center', marginTop: -vs(8) },
+	plainInfoList: { gap: vs(12) },
+	plainInfoRow: { flexDirection: 'row', alignItems: 'center' },
+	plainValue: { ...typography.bodyMMedium, color: Colors.BODYTEXT_SUB, marginLeft: 'auto' },
+	photoSection: { gap: vs(10) },
+	photoTitle: { ...typography.headerL, color: Colors.BODYTEXT_SUB },
+	photoList: { gap: s(10) },
+	activityImage: {
+		width: s(150),
+		height: s(106),
+		borderRadius: ms(12),
+		backgroundColor: Colors.WHITE,
 	},
 })

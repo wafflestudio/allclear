@@ -10,6 +10,7 @@ export enum SCREEN_TYPE {
 
 	CLUB_DETAIL = 'ClubDetail',
 	CLUB_REVIEW = 'ClubReview',
+	PREVIOUS_RECRUITMENTS = 'PreviousRecruitments',
 
 	MYPAGE = 'MyPage',
 	EDIT_PROFILE = 'EditProfile',
@@ -48,6 +49,11 @@ export type StackParamList = {
 	[SCREEN_TYPE.CLUB_REVIEW]: {
 		uuid: Club['uuid']
 		category: Club['category']
+	}
+	[SCREEN_TYPE.PREVIOUS_RECRUITMENTS]: {
+		clubId: Club['uuid']
+		clubName: Club['name']
+		representativeRecruitmentId: number | null
 	}
 
 	[SCREEN_TYPE.EDIT_PROFILE]: undefined

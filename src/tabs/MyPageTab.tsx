@@ -8,6 +8,8 @@ import EditProfileScreen from '@/features/mypage/screens/EditProfileScreen'
 import ManageClubRegistrationScreen from '@/features/mypage/screens/ManageClubRegistrationScreen'
 import MyPageScreen from '@/features/mypage/screens/MyPageScreen'
 import WebViewScreen from '@/features/webview/screens/WebviewScreen'
+import PreviousRecruitmentsScreen from '@/features/club/screens/PreviousRecruitmentsScreen'
+import ClubReviewScreen from '@/features/club/screens/ClubReviewScreen'
 
 const Stack = createNativeStackNavigator<StackParamList>()
 
@@ -39,6 +41,16 @@ export function MyPageTab() {
 				key={SCREEN_TYPE.CLUB_DETAIL}
 				name={SCREEN_TYPE.CLUB_DETAIL}
 				component={ClubDetailScreen}
+			/>
+			<Stack.Screen
+				key={SCREEN_TYPE.PREVIOUS_RECRUITMENTS}
+				name={SCREEN_TYPE.PREVIOUS_RECRUITMENTS}
+				component={PreviousRecruitmentsScreen}
+			/>
+			<Stack.Screen
+				key={SCREEN_TYPE.CLUB_REVIEW}
+				name={SCREEN_TYPE.CLUB_REVIEW}
+				component={ClubReviewScreen}
 			/>
 			<Stack.Screen
 				key={SCREEN_TYPE.CLUB_MANAGEMENT}

@@ -346,8 +346,8 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 						c.regular_meetings.map((m, i) => ({
 							id: i + 1,
 							day: m.day_of_week,
-							startTime: m.start_time.slice(0, 5),
-							endTime: m.end_time.slice(0, 5),
+							startTime: m.start_time?.slice(0, 5) ?? '',
+							endTime: m.end_time?.slice(0, 5) ?? '',
 						})),
 					)
 				}
@@ -574,8 +574,8 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					c.regular_meetings.map((m, i) => ({
 						id: i + 1,
 						day: m.day_of_week,
-						startTime: m.start_time.slice(0, 5),
-						endTime: m.end_time.slice(0, 5),
+						startTime: m.start_time?.slice(0, 5) ?? '',
+						endTime: m.end_time?.slice(0, 5) ?? '',
 					})),
 				)
 			}

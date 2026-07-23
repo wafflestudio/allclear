@@ -1,16 +1,18 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
-import React from 'react'
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native'
-
+import React, { useContext } from 'react'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import { useQuery } from '@tanstack/react-query'
 import { Club } from '@/entities/club'
-import HtmlView from '@/shared/components/HtmlView'
+import { serviceContext } from '@/shared/contexts/serviceContext'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
-import { s, vs } from '@/shared/utils/scale'
+import { ms, s, vs } from '@/shared/utils/scale'
 import BackgroundCard from './BackgroundCard'
 import { ClubDetailTabLabel } from './ClubDetailTabBar'
 import LoginBlurOverlay from './LoginBlurOverlay'
+import RecruitmentDetailCard from './RecruitmentDetailCard'
 
 dayjs.locale('ko')
 
@@ -20,15 +22,53 @@ type Props = {
 	contentWidth: number
 	isLoggedIn: boolean
 	onLoginPress: () => void
+	onPreviousPress: (representativeRecruitmentId: number | null) => void
 }
 
-const RecruitTab = ({ club, tabLabel, contentWidth, isLoggedIn, onLoginPress }: Props) => {
-	const uploadedAt = club.articleUploadedAt ? dayjs(club.articleUploadedAt) : null
+const RecruitTab = ({
+	club,
+	tabLabel,
+	contentWidth,
+	isLoggedIn,
+	onLoginPress,
+	onPreviousPress,
+}: Props) => {
+	const { recruitmentService } = useContext(serviceContext)
+	const representativeQuery = useQuery(['representativeRecruitment', club.uuid], () =>
+		recruitmentService.getRepresentativeRecruitment({ clubId: club.uuid }),
+	)
+	const representativeId = representativeQuery.data?.id ?? null
+	const detailQuery = useQuery(
+		['recruitmentDetail', representativeId],
+		() => recruitmentService.getRecruitmentDetail({ recruitmentId: representativeId as number }),
+		{ enabled: representativeId !== null },
+	)
+	const isLoading =
+		representativeQuery.isLoading || (representativeId !== null && detailQuery.isLoading)
+	const isError = representativeQuery.isError || detailQuery.isError
+	const content = detailQuery.data?.content
+	const updatedAt = club.articleUploadedAt ? dayjs(club.articleUploadedAt) : null
 
 	return (
 		<View style={styles.tabSection}>
 			<BackgroundCard style={styles.articleCard}>
-				{club.article ? (
+				{isLoading ? (
+					<View style={styles.centerState}>
+						<ActivityIndicator color={Colors.POINTCOLOR} />
+					</View>
+				) : isError ? (
+					<View style={styles.centerState}>
+						<Text style={styles.emptyText}>모집공고를 불러오지 못했어요.</Text>
+						<Pressable
+							style={styles.retryButton}
+							onPress={() => {
+								representativeQuery.refetch()
+								if (representativeId !== null) detailQuery.refetch()
+							}}>
+							<Text style={styles.retryText}>다시 시도</Text>
+						</Pressable>
+					</View>
+				) : content ? (
 					<>
 						{!isLoggedIn && (
 							<LoginBlurOverlay
@@ -37,29 +77,35 @@ const RecruitTab = ({ club, tabLabel, contentWidth, isLoggedIn, onLoginPress }: 
 								onLoginPress={onLoginPress}
 							/>
 						)}
-						<HtmlView html={club.article} contentWidth={contentWidth} />
+						<RecruitmentDetailCard content={content} contentWidth={contentWidth} />
 					</>
 				) : (
-					<View style={styles.emptyState}>
-						<Text style={styles.emptyText}>아직 등록된 모집공고가 없어요</Text>
+					<View style={styles.centerState}>
+						<Text style={styles.emptyText}>아직 등록된 모집공고가 없어요.</Text>
 					</View>
 				)}
 			</BackgroundCard>
-			<View style={styles.recruitFooter}>
-				{uploadedAt && (
-					<Text style={styles.sectionMeta}>
-						{uploadedAt.format(
-							(uploadedAt.year() === dayjs().year() ? '' : 'YY년 ') +
-								'M월 D일 dddd A h시에 업데이트 되었어요',
-						)}
-					</Text>
-				)}
-				<Pressable
-					style={({ pressed }) => [styles.requestButton, pressed && styles.pressed]}
-					onPress={() => Linking.openURL('https://tally.so/r/EkQrQN')}>
-					<Text style={styles.requestText}>업데이트 요청</Text>
-				</Pressable>
-			</View>
+
+			{content && (
+				<View style={styles.recruitFooter}>
+					{updatedAt && (
+						<Text style={styles.sectionMeta}>
+							{updatedAt.format(
+								(updatedAt.year() === dayjs().year() ? '' : 'YY년 ') +
+									'M월 D일 dddd A h시에 업데이트 되었어요',
+							)}
+						</Text>
+					)}
+				</View>
+			)}
+
+			<Pressable
+				accessibilityRole="button"
+				style={({ pressed }) => [styles.previousButton, pressed && styles.pressed]}
+				onPress={() => onPreviousPress(representativeId)}>
+				<Text style={styles.previousButtonText}>이전 공고 확인하기</Text>
+				<Icon name="chevron-right" size={ms(20)} color={Colors.POINTCOLOR} />
+			</Pressable>
 		</View>
 	)
 }
@@ -67,45 +113,28 @@ const RecruitTab = ({ club, tabLabel, contentWidth, isLoggedIn, onLoginPress }: 
 export default RecruitTab
 
 const styles = StyleSheet.create({
-	tabSection: {
-		marginTop: vs(16),
+	tabSection: { marginTop: vs(16), gap: vs(12) },
+	articleCard: { minHeight: vs(200) },
+	centerState: { minHeight: vs(160), justifyContent: 'center', alignItems: 'center', gap: vs(10) },
+	emptyText: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB, textAlign: 'center' },
+	retryButton: {
+		paddingHorizontal: s(14),
+		paddingVertical: vs(8),
+		borderRadius: ms(16),
+		backgroundColor: Colors.POINTCOLOR_10,
 	},
-	articleCard: {
-		minHeight: vs(200),
-	},
-	emptyState: {
-		flex: 1,
-		minHeight: vs(120),
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
-	emptyText: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
-		textAlign: 'center',
-	},
-	recruitFooter: {
+	retryText: { ...typography.bodySMedium, color: Colors.POINTCOLOR },
+	recruitFooter: { paddingHorizontal: s(10) },
+	sectionMeta: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB },
+	previousButton: {
+		minHeight: ms(48),
+		borderRadius: ms(12),
+		backgroundColor: Colors.POINTCOLOR_10,
 		flexDirection: 'row',
 		alignItems: 'center',
-		marginTop: vs(8),
-		paddingHorizontal: s(10),
+		justifyContent: 'center',
+		gap: s(4),
 	},
-	sectionMeta: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
-		marginTop: vs(4),
-		flexShrink: 1,
-	},
-	requestButton: {
-		marginLeft: 'auto',
-	},
-	pressed: {
-		opacity: 0.5,
-	},
-	requestText: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
-		textDecorationLine: 'underline',
-		marginLeft: s(8),
-	},
+	previousButtonText: { ...typography.bodyMSemibold, color: Colors.POINTCOLOR },
+	pressed: { opacity: 0.6 },
 })

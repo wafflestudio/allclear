@@ -8,6 +8,12 @@ export type RegularMeetingPayload = {
 	end_time: string
 }
 
+export type RecruitmentRegularMeeting = {
+	day_of_week: string
+	start_time: string | null
+	end_time: string | null
+}
+
 export type RecruitmentSummary = {
 	id: number
 	display_title: string
@@ -100,7 +106,7 @@ export type RecruitmentContent = {
 	deadline: string
 	is_mandatory: boolean
 	has_regular_meeting: boolean
-	regular_meetings: RegularMeetingPayload[]
+	regular_meetings: RecruitmentRegularMeeting[]
 	activity_location_type: string
 	activity_location_text: string
 	has_eligibility: boolean

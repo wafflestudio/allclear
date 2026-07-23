@@ -16,6 +16,7 @@ import {
 	ActivityIndicator,
 	Dimensions,
 	Image,
+	Linking,
 	Pressable,
 	Share,
 	StyleSheet,
@@ -46,6 +47,7 @@ import RecruitTab from '@/features/club/components/ClubDetail/RecruitTab'
 import ReviewTab from '@/features/club/components/ClubDetail/ReviewTab'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
+import { getClubSnsUrls, getSnsIcon } from '@/shared/utils/clubSns'
 import { ms, s, vs } from '@/shared/utils/scale'
 
 type DetailsScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.CLUB_DETAIL>
@@ -142,6 +144,18 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 
 	if (!currentCategory) return null
 	const categoryDetail = CategoryMap[currentCategory]
+	const affiliation =
+		club?.collegeMajor?.major ||
+		club?.collegeMajor?.college ||
+		club?.college ||
+		club?.affiliationType ||
+		''
+	const heroDescription = club
+		? [affiliation ? `${affiliation} 소속` : '', club.shortDescription || club.description]
+				.filter(Boolean)
+				.join(' ')
+		: ''
+	const snsUrls = club ? getClubSnsUrls(club) : []
 
 	const handleBackButton = () => navigation.goBack()
 
@@ -149,6 +163,14 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 		requireLogin(() =>
 			navigation.navigate(SCREEN_TYPE.CLUB_REVIEW, { uuid, category: currentCategory }),
 		)
+	const handlePreviousRecruitments = (representativeRecruitmentId: number | null) => {
+		if (!club) return
+		navigation.navigate(SCREEN_TYPE.PREVIOUS_RECRUITMENTS, {
+			clubId: club.uuid,
+			clubName: club.name,
+			representativeRecruitmentId,
+		})
+	}
 
 	const handleShare = async () => {
 		if (!club) return
@@ -220,6 +242,8 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 								</View>
 								<View style={styles.headerActions}>
 									<Pressable
+										accessibilityRole="button"
+										accessibilityLabel={isSaved ? '저장 취소' : '동아리 저장'}
 										onPress={handleToggle}
 										hitSlop={8}
 										style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
@@ -234,6 +258,8 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 										/>
 									</Pressable>
 									<Pressable
+										accessibilityRole="button"
+										accessibilityLabel="동아리 공유"
 										onPress={handleShare}
 										hitSlop={8}
 										style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}>
@@ -241,7 +267,7 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									</Pressable>
 								</View>
 							</View>
-							<Text style={styles.description}>{club.description}</Text>
+							{!!heroDescription && <Text style={styles.description}>{heroDescription}</Text>}
 							{club.reviewKeywords.length > 0 && (
 								<View style={styles.keywordRow}>
 									{club.reviewKeywords.slice(0, 2).map(keyword => (
@@ -251,6 +277,20 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 											themeColor={categoryDetail.themeColor}
 											backgroundColor={categoryDetail.backgroundColor}
 										/>
+									))}
+								</View>
+							)}
+							{snsUrls.length > 0 && (
+								<View style={styles.snsRow}>
+									{snsUrls.map((snsUrl, index) => (
+										<Pressable
+											key={`${snsUrl}-${index}`}
+											accessibilityRole="link"
+											accessibilityLabel={`${club.name} SNS ${index + 1} 열기`}
+											style={styles.snsButton}
+											onPress={() => Linking.openURL(snsUrl)}>
+											<Icon name={getSnsIcon(snsUrl)} size={ms(20)} color={Colors.POINTCOLOR} />
+										</Pressable>
 									))}
 								</View>
 							)}
@@ -275,6 +315,7 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									contentWidth={HTML_CONTENT_WIDTH}
 									isLoggedIn={!!user}
 									onLoginPress={handleLoginRequired}
+									onPreviousPress={handlePreviousRecruitments}
 								/>
 							)}
 
@@ -389,6 +430,7 @@ const styles = StyleSheet.create({
 	cardTitleRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
+		gap: s(5),
 		flexShrink: 1,
 	},
 	headerActions: {
@@ -414,6 +456,19 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: ms(4),
+	},
+	snsRow: {
+		flexDirection: 'row',
+		gap: s(8),
+		marginTop: vs(10),
+	},
+	snsButton: {
+		width: ms(44),
+		height: ms(44),
+		borderRadius: ms(22),
+		backgroundColor: Colors.POINTCOLOR_10,
+		alignItems: 'center',
+		justifyContent: 'center',
 	},
 	tabContent: {
 		paddingHorizontal: s(16),
