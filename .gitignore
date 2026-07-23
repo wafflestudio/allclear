@@ -218,6 +218,9 @@ dist
 # vuepress build output
 .vuepress/dist
 
+# Local task planning
+tasks/
+
 # vuepress v2.x temp and cache directory
 .temp
 
