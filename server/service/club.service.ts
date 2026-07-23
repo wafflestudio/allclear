@@ -39,6 +39,7 @@ import type {
 } from 'src/lib/schemas/managers'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
 import { ClubAccessService } from './club-access.service'
+import { getClubResubmissionStatusPatch } from './club-registration-status'
 
 type ClubUuid = string
 type ReviewKeywordId = string
@@ -60,7 +61,8 @@ const CLUB_ENTITY_FIELD_TO_COLUMN: Record<string, string> = {
   dongbangLocation: 'dongbang_location',
   affiliationType: 'affiliation_type',
   collegeMajorId: 'college_major_id',
-  sns: 'sns',
+  snsUrls: 'sns_urls',
+  activityImageUrls: 'activity_image_urls',
   introduction: 'introduction',
 }
 
@@ -615,13 +617,18 @@ export class ClubService {
         throw new ForbiddenError('club manager permission required')
       }
 
+      const statusPatch = getClubResubmissionStatusPatch(club.status)
+      const patchWithStatus = {
+        ...patch,
+        ...statusPatch,
+      }
       const beforeData = this.toClubHistoryData(club)
       await clubRepository.update(
         {
           uuid: clubUuid,
           deletedAt: IsNull(),
         },
-        patch,
+        patchWithStatus,
       )
 
       const updatedClub = await clubRepository.findOneByOrFail({
@@ -629,7 +636,7 @@ export class ClubService {
         deletedAt: IsNull(),
       })
       const afterData = this.toClubHistoryData(updatedClub)
-      const changedFields = Object.keys(patch)
+      const changedFields = Object.keys(patchWithStatus)
         .map((key) => CLUB_ENTITY_FIELD_TO_COLUMN[key] ?? key)
         .filter((key) => beforeData[key] !== afterData[key])
 
@@ -686,11 +693,14 @@ export class ClubService {
     if (body.dongbang_location !== undefined) {
       patch.dongbangLocation = body.dongbang_location
     }
-    if (body.sns !== undefined) {
-      patch.sns = body.sns
+    if (body.sns_urls !== undefined) {
+      patch.snsUrls = body.sns_urls
     }
     if (body.introduction !== undefined) {
       patch.introduction = body.introduction
+    }
+    if (body.activity_image_urls !== undefined) {
+      patch.activityImageUrls = body.activity_image_urls
     }
 
     return patch
@@ -719,11 +729,13 @@ export class ClubService {
       activity_cycle: club.activityCycle,
       min_activity_period: club.minActivityPeriod,
       active_member_count: club.activeMemberCount,
+      founded_at: club.foundedAt,
       membership_fee: club.membershipFee,
       recruit_type: club.recruitType,
       is_official_verified: club.isOfficialVerified,
       verified_at: club.verifiedAt,
-      sns: club.sns,
+      sns_urls: club.snsUrls,
+      activity_image_urls: club.activityImageUrls,
       introduction: club.introduction,
       blur_image: club.blurImage,
       blur_hash: club.blurHash,

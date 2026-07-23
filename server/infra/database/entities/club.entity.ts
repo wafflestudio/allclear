@@ -76,6 +76,9 @@ export class ClubEntity extends ClubTimeStampMixin {
   @Column({ type: 'int', default: 0, name: 'active_member_count' })
   activeMemberCount: number
 
+  @Column({ type: 'date', nullable: true, name: 'founded_at' })
+  foundedAt: string | null
+
   @Column({ type: 'varchar', default: '', nullable: true, name: 'membership_fee' })
   membershipFee: string | null
 
@@ -88,8 +91,11 @@ export class ClubEntity extends ClubTimeStampMixin {
   @Column({ type: 'timestamp without time zone', nullable: true, name: 'verified_at' })
   verifiedAt: string | null
 
-  @Column({ type: 'varchar', default: '', name: 'sns' })
-  sns: string
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb", name: 'sns_urls' })
+  snsUrls: string[]
+
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb", name: 'activity_image_urls' })
+  activityImageUrls: string[]
 
   @Column({ type: 'varchar', default: '', nullable: true, name: 'introduction' })
   introduction: string | null

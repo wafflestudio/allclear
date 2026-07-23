@@ -30,7 +30,7 @@ export type Club = {
   minActivityPeriod: number
   activeMemberCount: number
   membershipFee: string
-  sns: string
+  snsUrls: string[]
   tags: string[]
   imageUri: string
   article: string

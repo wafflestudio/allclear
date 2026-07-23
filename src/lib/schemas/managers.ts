@@ -31,6 +31,9 @@ const OptionalUrlStringSchema = z.preprocess(
   z.string().trim().url().optional(),
 )
 
+const SnsUrlsSchema = z.array(z.string().trim().url()).min(1).max(3)
+const ActivityImageUrlsSchema = z.array(z.string().trim().url()).max(5).optional()
+
 export const ManagerClubParamsSchema = z
   .object({
     serviceUserId: z.string().uuid(),
@@ -79,7 +82,6 @@ const clubDraftShape = {
   dongbangLocation: z.string().nullable().optional(),
   minActivityPeriod: NonnegativeIntInputSchema,
   activeMemberCount: NonnegativeIntInputSchema,
-  sns: z.string().nullable().optional(),
   introduction: z.string().max(1000).nullable().optional(),
   detail: z.string().max(5000).nullable().optional(),
 }
@@ -95,8 +97,9 @@ const ClubDataSchema = z.object({
   min_activity_period: z.number().int().nonnegative(),
   has_dongbang: z.boolean(),
   dongbang_location: z.string().trim().optional(),
-  sns: z.string().trim().url(),
+  sns_urls: SnsUrlsSchema,
   introduction: z.string().trim().nonempty(),
+  activity_image_urls: ActivityImageUrlsSchema,
 })
 
 export type ClubData = z.infer<typeof ClubDataSchema>
@@ -161,6 +164,12 @@ export const ClubImageUploadSchema = z
     }),
   })
   .openapi('ClubImageUpload')
+
+export const ClubActivityImageUploadResponseSchema = z
+  .object({
+    url: z.string().url(),
+  })
+  .openapi('ClubActivityImageUploadResponse')
 
 export const CreateVerificationRequestResponseSchema = z
   .object({

@@ -21,7 +21,7 @@ export const config: PageConfig = {
 async function uploadAndPersistImage(
   req: NextApiRequest,
   clubId: string,
-  persist: (clubId: string, imageUri: string) => Promise<boolean>,
+  persist: (clubId: string, imageUri: string) => Promise<unknown>,
 ) {
   return new Promise<void>((resolve, reject) => {
     const busboy = Busboy({ headers: req.headers })
@@ -36,10 +36,7 @@ async function uploadAndPersistImage(
 
       uploadClubImageStream(fileKey, file, mimeType)
         .then(async () => {
-          const persisted = await persist(clubId, imageUri)
-          if (!persisted) {
-            throw new Error('failed to update club image')
-          }
+          await persist(clubId, imageUri)
           resolve()
         })
         .catch((err) => {
@@ -72,7 +69,7 @@ export default async function imageUploadHandler(req: NextApiRequest, res: NextA
       const club = await clubService.getManagedClubByUuid(clubUuid, user.serviceUserId)
 
       const persist = (clubId: string, imageUri: string) =>
-        clubService.updateClub(clubId, { imageUri })
+        clubService.patchManagedClub(clubId, user.serviceUserId, { image_uri: imageUri })
       await uploadAndPersistImage(req, club.uuid, persist)
 
       return res.status(200).json({ ok: true })

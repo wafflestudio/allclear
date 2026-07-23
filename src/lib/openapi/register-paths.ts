@@ -46,6 +46,7 @@ import {
 } from 'src/lib/schemas/club-recruitments'
 import {
   ClubImageUploadSchema,
+  ClubActivityImageUploadResponseSchema,
   ClubRegisterRequestSchema,
   ClubRegisterResponseSchema,
   ClubManagerRequestSchema,
@@ -207,7 +208,10 @@ const clubRegisterRequestExample = {
     min_activity_period: 1,
     has_dongbang: true,
     dongbang_location: '63동 619호',
-    sns: 'https://www.instagram.com/wafflestudio_official/',
+    sns_urls: [
+      'https://www.instagram.com/wafflestudio_official/',
+      'https://www.youtube.com/@wafflestudio',
+    ],
     introduction: '동아리 소개글',
   },
   manager_data: {
@@ -245,7 +249,10 @@ const clubRegisterResponseExample = {
       minActivityPeriod: 1,
       activeMemberCount: 0,
       membershipFee: '',
-      sns: 'https://www.instagram.com/wafflestudio_official/',
+      snsUrls: [
+        'https://www.instagram.com/wafflestudio_official/',
+        'https://www.youtube.com/@wafflestudio',
+      ],
       tags: [],
       imageUri: 'https://cdn.all-clear.cc/default.png',
       blurHash: null,
@@ -373,7 +380,10 @@ const adminClubDetailResponseExample = {
       min_activity_period: 1,
       has_dongbang: true,
       dongbang_location: '63동 619호',
-      sns: 'https://www.instagram.com/wafflestudio_official/',
+      sns_urls: [
+        'https://www.instagram.com/wafflestudio_official/',
+        'https://www.youtube.com/@wafflestudio',
+      ],
       introduction: '동아리 소개글',
       created_at: '2026-04-01T10:00:00Z',
     },
@@ -410,13 +420,13 @@ const adminClubHistoriesResponseExample = {
           service_user_id: '417bdb60-c70c-4dfa-bfd4-a5a55a0ae001',
           name: '홍길동',
         },
-        changed_fields: ['short_description', 'sns'],
+        changed_fields: ['short_description', 'sns_urls'],
         before_data: {
           uuid: '123e4567-e89b-12d3-a456-426614174000',
           name: '와플스튜디오',
           short_description: '개발 동아리',
           category: '진로',
-          sns: 'https://old-link.com',
+          sns_urls: ['https://old-link.com'],
           affiliation_type: '소속동아리',
           college_major_id: 36,
           has_dongbang: true,
@@ -428,7 +438,7 @@ const adminClubHistoriesResponseExample = {
           name: '와플스튜디오',
           short_description: '서울대 최대 규모 개발 동아리',
           category: '진로',
-          sns: 'https://new-link.com',
+          sns_urls: ['https://new-link.com'],
           affiliation_type: '소속동아리',
           college_major_id: 36,
           has_dongbang: true,
@@ -1759,7 +1769,10 @@ registry.registerPath({
             min_activity_period: 2,
             has_dongbang: true,
             dongbang_location: '301동 3층',
-            sns: 'https://wafflestudio.com',
+            sns_urls: [
+              'https://www.instagram.com/wafflestudio_official/',
+              'https://www.youtube.com/@wafflestudio',
+            ],
           },
         },
       },
@@ -1938,6 +1951,44 @@ registry.registerPath({
       },
     },
     400: validationErrorResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v2/managers/me/clubs/{uuid}/activity-images',
+  tags: ['Managers'],
+  summary: '동아리 활동 사진 업로드',
+  description:
+    '동아리 관리자가 상세 정보에 첨부할 활동 사진을 한 장 업로드합니다. 반환된 url은 동아리 등록 또는 수정 시 activity_image_urls에 포함하며, 동아리당 최대 5개까지 저장할 수 있습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+    body: {
+      content: {
+        'multipart/form-data': {
+          schema: ClubImageUploadSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: '업로드 성공',
+      content: {
+        'application/json': {
+          schema: ClubActivityImageUploadResponseSchema,
+          example: {
+            url: 'https://cdn.all-clear.cc/club%2Fxxxx-xxxx-xxxx.jpg',
+          },
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },

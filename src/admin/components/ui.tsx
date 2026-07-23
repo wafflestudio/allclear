@@ -363,9 +363,56 @@ export const ClubDetailModal = ({
                           : '없음'
                       }
                     />
-                    <DetailItem label="SNS" value={detail.club_data.sns || '-'} wide />
+                    <DetailItem
+                      label="SNS"
+                      value={
+                        detail.club_data.sns_urls.length > 0 ? (
+                          <ul className="space-y-1">
+                            {detail.club_data.sns_urls.map((url) => (
+                              <li key={url}>
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary-700 underline"
+                                >
+                                  {url}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          '-'
+                        )
+                      }
+                      wide
+                    />
                     <DetailItem label="소개" value={detail.club_data.introduction ?? '-'} wide />
                   </dl>
+                </div>
+                <div className="mt-5">
+                  <h3 className="text-sm font-bold text-slate-900">활동 사진</h3>
+                  {detail.club_data.activity_image_urls.length > 0 ? (
+                    <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {detail.club_data.activity_image_urls.map((url, index) => (
+                        <a
+                          key={`${url}-${index}`}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block overflow-hidden rounded-md border border-slate-200 bg-slate-50"
+                        >
+                          <img
+                            src={url}
+                            alt={`${detail.club_data.name} 활동 사진 ${index + 1}`}
+                            className="aspect-[4/3] w-full object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-slate-500">등록된 활동 사진이 없습니다.</p>
+                  )}
                 </div>
               </div>
               <aside className="rounded-md border border-slate-200 bg-slate-50 p-4">
