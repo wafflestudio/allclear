@@ -49,6 +49,7 @@ import {
   ClubActivityImageUploadResponseSchema,
   ClubRegisterRequestSchema,
   ClubRegisterResponseSchema,
+  ClubManagerRequestPatchSchema,
   ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
   ManagedClubPatchSchema,
@@ -1101,6 +1102,57 @@ registry.registerPath({
 })
 
 registry.registerPath({
+  method: 'patch',
+  path: '/api/v2/clubs/{uuid}/manager-requests',
+  tags: ['Clubs'],
+  summary: '동아리 관리 권한 신청 수정',
+  description:
+    '로그인한 사용자가 해당 동아리에 제출한 PENDING 상태의 관리자 권한 신청을 수정합니다. name, phone, student_id 중 최소 하나가 필요하며 신청 상태와 신청 시각은 변경하지 않습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: ClubManagerRequestPatchSchema,
+          example: {
+            phone: '010-9876-5432',
+            student_id: '2022-12345',
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/v2/clubs/{uuid}/manager-requests',
+  tags: ['Clubs'],
+  summary: '동아리 관리 권한 신청 취소',
+  description:
+    '로그인한 사용자가 해당 동아리에 제출한 PENDING 또는 REJECTED 상태의 관리자 권한 신청을 삭제합니다. 연결된 관리자 권한 신청 반려 알림도 함께 삭제됩니다. APPROVED 상태의 신청과 실제 관리자 매핑은 삭제하지 않습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
   method: 'get',
   path: '/api/v2/clubs/{uuid}/recruitments',
   tags: ['Clubs'],
@@ -1563,7 +1615,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '내가 관리하는 동아리 목록',
   description:
-    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. status는 동아리 자체의 승인 상태이며, 마이페이지 관리 목록의 상태 표시와 정렬은 managementStatus를 기준으로 판단합니다. 정렬 순서는 APPROVED, REJECTED, PENDING, MANAGER_REQUEST_PENDING 순이며, APPROVED 항목끼리는 동아리 수정일과 최신 모집공고 수정일 중 더 최근 날짜 기준 내림차순입니다.',
+    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. status는 동아리 자체의 승인 상태이며, 마이페이지 관리 목록의 상태 표시와 정렬은 managementStatus를 기준으로 판단합니다. 관리자 관계와 신청 이력이 모두 있으면 관리자 관계를 우선하고, 신청 이력이 여러 건이면 동아리별 가장 최근 신청만 사용합니다. 정렬 순서는 APPROVED, REJECTED, MANAGER_REQUEST_REJECTED, PENDING, MANAGER_REQUEST_PENDING 순이며, APPROVED 항목끼리는 동아리 수정일과 최신 모집공고 수정일 중 더 최근 날짜 기준 내림차순입니다.',
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -1575,7 +1627,7 @@ registry.registerPath({
             success: true,
             message: '관리 중인 동아리 목록 및 신청 현황 조회가 완료되었습니다.',
             data: {
-              total_count: 4,
+              total_count: 5,
               clubs: [
                 {
                   uuid: '123e4567-e89b-12d3-a456-426614174000',
@@ -1596,20 +1648,29 @@ registry.registerPath({
                 },
                 {
                   uuid: '345a6789-a01d-34f5-c678-648836396222',
-                  name: '봉사동아리',
-                  status: 'PENDING',
-                  managementStatus: 'PENDING',
+                  name: '사진동아리',
+                  status: 'APPROVED',
+                  managementStatus: 'MANAGER_REQUEST_REJECTED',
+                  managerRequestId: 11,
                   image_uri: 'https://cdn.allclear.com/temp/upload_345.jpg',
                   created_at: '2026-04-03T12:00:00Z',
                 },
                 {
                   uuid: '456b7890-b12e-45f6-d789-759947407333',
-                  name: '쿠킹마스터',
+                  name: '봉사동아리',
                   status: 'PENDING',
+                  managementStatus: 'PENDING',
+                  image_uri: 'https://cdn.allclear.com/temp/upload_456.jpg',
+                  created_at: '2026-04-04T12:00:00Z',
+                },
+                {
+                  uuid: '567c8901-c23f-56a7-e890-860058518444',
+                  name: '쿠킹마스터',
+                  status: 'APPROVED',
                   managementStatus: 'MANAGER_REQUEST_PENDING',
                   managerRequestId: 12,
-                  image_uri: 'https://cdn.allclear.com/temp/upload_456.jpg',
-                  created_at: '2026-04-03T14:30:00Z',
+                  image_uri: 'https://cdn.allclear.com/temp/upload_567.jpg',
+                  created_at: '2026-04-04T14:30:00Z',
                 },
               ],
             },
@@ -1628,6 +1689,9 @@ registry.registerPath({
   path: '/api/v2/managers/me/clubs',
   tags: ['Managers'],
   summary: '동아리 관리자 등록 요청',
+  description:
+    '삭제 예정인 API입니다. 동아리 관리 권한 신청에는 POST /api/v2/clubs/{uuid}/manager-requests를 사용해 주세요.',
+  deprecated: true,
   security: [{ bearerAuth: [] }],
   request: {
     body: {

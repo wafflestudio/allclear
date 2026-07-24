@@ -6,6 +6,7 @@ import {
   ClubRecruitmentEntity,
   UserActivityLogEntity,
   UserActivityLogType,
+  UserNotificationEntity,
 } from '../infra/database/entities'
 import { ClubCategory } from '../domain/model/ClubCategory'
 import { CATEGORIES } from '../../src/fixtures/category'
@@ -34,6 +35,7 @@ import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type
 import type {
   ClubData,
   ClubManagerRequest,
+  ClubManagerRequestPatch,
   ClubRegisterRequest,
   ManagedClubPatch,
 } from 'src/lib/schemas/managers'
@@ -158,7 +160,7 @@ export class ClubService {
   }
 
   async findAllManagedByUser(serviceUserId: string): Promise<ManagedClubListItem[]> {
-    const [clubManagers, pendingManagerRequests] = await Promise.all([
+    const [clubManagers, managerRequests] = await Promise.all([
       this.clubManagerRepository.find({
         where: {
           serviceUserId,
@@ -170,16 +172,29 @@ export class ClubService {
       this.clubManagerRegisterRequestRepository.find({
         where: {
           serviceUserId,
-          status: PENDING_CLUB_STATUS,
         },
         order: {
           createdAt: 'DESC',
+          id: 'DESC',
         },
       }),
     ])
+    const latestManagerRequestByClubId = new Map<string, ClubManagerRegisterRequestEntity>()
+    managerRequests.forEach((request) => {
+      if (!latestManagerRequestByClubId.has(request.clubId)) {
+        latestManagerRequestByClubId.set(request.clubId, request)
+      }
+    })
+    const latestManagerRequests = Array.from(latestManagerRequestByClubId.values())
+
     const managerClubIds = clubManagers.map((it) => it.clubId)
-    const pendingManagerRequestClubIds = pendingManagerRequests.map((it) => it.clubId)
-    const clubIds = Array.from(new Set([...managerClubIds, ...pendingManagerRequestClubIds]))
+    const managerRequestClubIds = latestManagerRequests
+      .filter(
+        (request) =>
+          request.status === PENDING_CLUB_STATUS || request.status === REJECTED_CLUB_STATUS,
+      )
+      .map((it) => it.clubId)
+    const clubIds = Array.from(new Set([...managerClubIds, ...managerRequestClubIds]))
     if (clubIds.length === 0) {
       return []
     }
@@ -229,7 +244,25 @@ export class ClubService {
           managementStatus: PENDING_CLUB_STATUS,
         }),
       )
-    const pendingManagerRequestClubs = pendingManagerRequests
+    const rejectedManagerRequestClubs = latestManagerRequests
+      .filter(
+        (request) =>
+          request.status === REJECTED_CLUB_STATUS && !managerClubIdSet.has(request.clubId),
+      )
+      .map((request): ManagedClubListEntityItem | null => {
+        const club = clubById.get(request.clubId)
+        if (!club) {
+          return null
+        }
+        return {
+          club,
+          managementStatus: 'MANAGER_REQUEST_REJECTED',
+          managerRequestId: Number(request.id),
+        }
+      })
+      .filter((item): item is ManagedClubListEntityItem => !!item)
+    const pendingManagerRequestClubs = latestManagerRequests
+      .filter((request) => request.status === PENDING_CLUB_STATUS)
       .filter((request) => !managerClubIdSet.has(request.clubId))
       .map((request): ManagedClubListEntityItem | null => {
         const club = clubById.get(request.clubId)
@@ -247,6 +280,7 @@ export class ClubService {
     const orderedItems = [
       ...sortedApprovedManagedClubItems,
       ...rejectedManagedClubs,
+      ...rejectedManagerRequestClubs,
       ...pendingManagedClubs,
       ...pendingManagerRequestClubs,
     ]
@@ -774,29 +808,115 @@ export class ClubService {
   ): Promise<void> {
     await this.clubAccessService.getExistingClub(clubUuid)
 
-    const existingManager = await this.clubManagerRepository.findOneBy({
-      clubId: clubUuid,
-    })
-    if (existingManager) {
-      throw new ConflictError('club already has a manager')
-    }
+    await this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
+      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
-    const pendingRequest = await this.clubManagerRegisterRequestRepository.findOneBy({
-      clubId: clubUuid,
-      serviceUserId,
-      status: 'PENDING',
-    })
-    if (pendingRequest) {
-      throw new ConflictError('pending manager request already exists')
-    }
+      const existingManager = await clubManagerRepository.findOneBy({
+        clubId: clubUuid,
+      })
+      if (existingManager) {
+        throw new ConflictError('club already has a manager')
+      }
 
-    await this.clubManagerRegisterRequestRepository.insert({
-      serviceUserId,
-      clubId: clubUuid,
-      name: request.name,
-      phone: request.phone,
-      studentId: request.student_id,
+      const pendingRequest = await managerRequestRepository.findOneBy({
+        clubId: clubUuid,
+        serviceUserId,
+        status: PENDING_CLUB_STATUS,
+      })
+      if (pendingRequest) {
+        throw new ConflictError('pending manager request already exists')
+      }
+
+      const rejectedRequest = await managerRequestRepository.findOne({
+        where: {
+          clubId: clubUuid,
+          serviceUserId,
+          status: REJECTED_CLUB_STATUS,
+        },
+        order: {
+          createdAt: 'DESC',
+          id: 'DESC',
+        },
+      })
+
+      if (rejectedRequest) {
+        await managerRequestRepository.update(
+          { id: rejectedRequest.id },
+          {
+            status: PENDING_CLUB_STATUS,
+            rejectReason: '',
+            name: request.name,
+            phone: request.phone,
+            studentId: request.student_id,
+            createdAt: new Date().toISOString(),
+          },
+        )
+        await userNotificationRepository.delete({
+          sourceType: 'CLUB_MANAGER_REQUEST',
+          sourceId: rejectedRequest.id,
+          type: 'MANAGER_REQUEST_REJECTED',
+        })
+        return
+      }
+
+      await managerRequestRepository.insert({
+        serviceUserId,
+        clubId: clubUuid,
+        name: request.name,
+        phone: request.phone,
+        studentId: request.student_id,
+      })
     })
+  }
+
+  async deleteClubManagerRequest(clubUuid: string, serviceUserId: string): Promise<void> {
+    await this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
+      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
+
+      const requests = await managerRequestRepository.findBy({
+        clubId: clubUuid,
+        serviceUserId,
+        status: In([PENDING_CLUB_STATUS, REJECTED_CLUB_STATUS]),
+      })
+      if (requests.length === 0) {
+        throw new NotFoundError('cancellable manager request not found')
+      }
+
+      const requestIds = requests.map((request) => request.id)
+      await userNotificationRepository.delete({
+        sourceType: 'CLUB_MANAGER_REQUEST',
+        sourceId: In(requestIds),
+        type: 'MANAGER_REQUEST_REJECTED',
+      })
+      await managerRequestRepository.delete({
+        id: In(requestIds),
+      })
+    })
+  }
+
+  async updateClubManagerRequest(
+    clubUuid: string,
+    serviceUserId: string,
+    request: ClubManagerRequestPatch,
+  ): Promise<void> {
+    const updated = await this.clubManagerRegisterRequestRepository.update(
+      {
+        clubId: clubUuid,
+        serviceUserId,
+        status: PENDING_CLUB_STATUS,
+      },
+      {
+        ...(request.name !== undefined && { name: request.name }),
+        ...(request.phone !== undefined && { phone: request.phone }),
+        ...(request.student_id !== undefined && { studentId: request.student_id }),
+      },
+    )
+    if (!updated.affected) {
+      throw new NotFoundError('pending manager request not found')
+    }
   }
 
   async registerClubManager(serviceUserId: string, clubUuid: string) {

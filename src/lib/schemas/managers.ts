@@ -60,6 +60,14 @@ export const ClubManagerRequestSchema = z
 
 export type ClubManagerRequest = z.infer<typeof ClubManagerRequestSchema>
 
+export const ClubManagerRequestPatchSchema = ClubManagerRequestSchema.partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field is required',
+  })
+  .openapi('ClubManagerRequestPatch')
+
+export type ClubManagerRequestPatch = z.infer<typeof ClubManagerRequestPatchSchema>
+
 const clubDraftShape = {
   name: z.string().nonempty().max(30),
   fullName: z.string().nonempty().max(50),
@@ -140,7 +148,13 @@ export const ManagedClubPatchSchema = ClubDataSchema.partial()
 export type ManagedClubPatch = z.infer<typeof ManagedClubPatchSchema>
 
 export const ManagedClubListItemSchema = ClubSchema.extend({
-  managementStatus: z.enum(['APPROVED', 'REJECTED', 'PENDING', 'MANAGER_REQUEST_PENDING']),
+  managementStatus: z.enum([
+    'APPROVED',
+    'REJECTED',
+    'MANAGER_REQUEST_REJECTED',
+    'PENDING',
+    'MANAGER_REQUEST_PENDING',
+  ]),
   managerRequestId: z.number().int().optional(),
 }).openapi('ManagedClubListItem')
 

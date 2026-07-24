@@ -5,7 +5,7 @@ import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
 import { ConflictError, NotFoundError, UserNotFoundError } from 'server/domain/error'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import { ClubManagerRequestSchema } from 'src/lib/schemas/managers'
+import { ClubManagerRequestPatchSchema, ClubManagerRequestSchema } from 'src/lib/schemas/managers'
 
 type ClubManagerRequestResponse = {
   success: boolean
@@ -14,7 +14,7 @@ type ClubManagerRequestResponse = {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ClubManagerRequestResponse | string | ZodIssue[]>,
+  res: NextApiResponse<ClubManagerRequestResponse | string | ZodIssue[] | null>,
 ) {
   try {
     const clubService = Provider.getService(ClubService)
@@ -32,6 +32,25 @@ export default async function handler(
         message: '동아리 관리 권한 신청이 완료되었습니다. 운영진 검토 후 승인됩니다.',
       })
     }
+
+    if (req.method === 'DELETE') {
+      const user = await userService.getUserByAccountId(req.headers.user as string)
+      const { uuid: clubUuid } = ClubUuidParamsSchema.parse(req.query)
+
+      await clubService.deleteClubManagerRequest(clubUuid, user.serviceUserId)
+
+      return res.status(204).send(null)
+    }
+
+    if (req.method === 'PATCH') {
+      const user = await userService.getUserByAccountId(req.headers.user as string)
+      const { uuid: clubUuid } = ClubUuidParamsSchema.parse(req.query)
+      const body = ClubManagerRequestPatchSchema.parse(req.body)
+
+      await clubService.updateClubManagerRequest(clubUuid, user.serviceUserId, body)
+
+      return res.status(204).send(null)
+    }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
       return res.status(401).send('Unauthorized')
@@ -45,7 +64,7 @@ export default async function handler(
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
     }
-    console.error('createClubManagerRequest error: ', err)
+    console.error('clubManagerRequest error: ', err)
     return res.status(500).send('Internal Server Error')
   }
 
