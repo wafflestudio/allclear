@@ -268,9 +268,12 @@ const clubRegisterResponseExample = {
   },
 }
 
+const clubRecruitmentDeadlineRequestExample = '2026-03-15T23:59:00+09:00'
+const clubRecruitmentDeadlineResponseExample = '2026-03-15T14:59:00.000Z'
+
 const clubRecruitmentRequestExample = {
   title: '2026년 하반기 와플스튜디오 루키 모집',
-  deadline: '2026-03-15T23:59:00Z',
+  deadline: clubRecruitmentDeadlineRequestExample,
   is_mandatory: true,
   has_regular_meeting: true,
   regular_meetings: [
@@ -301,14 +304,14 @@ const publicRecruitmentsResponseExample = {
         id: 105,
         display_title: '2026년 3월 공고',
         title: '2026년 상반기 루키 모집',
-        deadline: '2026-03-15T23:59:00Z',
+        deadline: clubRecruitmentDeadlineResponseExample,
         is_active: true,
       },
       {
         id: 88,
         display_title: '2025년 9월 공고',
         title: '2025년 하반기 루키 모집',
-        deadline: '2025-09-10T23:59:00Z',
+        deadline: '2025-09-10T14:59:00.000Z',
         is_active: false,
       },
     ],
@@ -321,7 +324,10 @@ const publicRecruitmentDetailResponseExample = {
     id: 105,
     display_title: '2026년 3월 공고',
     club_id: '123e4567-e89b-12d3-a456-426614174000',
-    content: clubRecruitmentRequestExample,
+    content: {
+      ...clubRecruitmentRequestExample,
+      deadline: clubRecruitmentDeadlineResponseExample,
+    },
   },
 }
 
@@ -1697,7 +1703,7 @@ registry.registerPath({
               recruitment_id: 42,
               club_uuid: '123e4567-e89b-12d3-a456-426614174000',
               year_month: '2026-03',
-              deadline: '2026-03-15T23:59:00Z',
+              deadline: clubRecruitmentDeadlineResponseExample,
             },
           },
         },
@@ -1846,7 +1852,7 @@ registry.registerPath({
           schema: UpdateClubRecruitmentSchema,
           example: {
             title: '2026 루키 모집 (기간 연장)',
-            deadline: '2026-03-20T23:59:00Z',
+            deadline: '2026-03-20T23:59:00+09:00',
             regular_meetings: [
               { day_of_week: '화요일', start_time: '19:00', end_time: '21:00' },
               { day_of_week: '목요일', start_time: '19:00', end_time: '21:00' },
@@ -1870,7 +1876,7 @@ registry.registerPath({
               recruitment_id: 105,
               club_uuid: '123e4567-e89b-12d3-a456-426614174000',
               year_month: '2026-03',
-              deadline: '2026-03-20T23:59:00Z',
+              deadline: '2026-03-20T14:59:00.000Z',
               updated_at: '2026-03-10T15:00:00Z',
             },
           },
