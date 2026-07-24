@@ -1,4 +1,4 @@
-import { getClubSnsUrls, getSnsIcon } from './clubSns'
+import { getClubSnsUrls, getSnsIcon, getSnsIconSize } from './clubSns'
 
 describe('club SNS presentation', () => {
 	it('shows up to three SNS URLs from the new response field', () => {
@@ -28,5 +28,13 @@ describe('club SNS presentation', () => {
 		expect(getSnsIcon('https://facebook.com/club')).toBe('facebook')
 		expect(getSnsIcon('https://x.com/club')).toBe('twitter')
 		expect(getSnsIcon('https://example.com')).toBe('link-variant')
+	})
+
+	it('sizes SNS icons to match their proportions in the design', () => {
+		expect(getSnsIconSize('https://instagram.com/club')).toBe(24)
+		expect(getSnsIconSize('https://youtube.com/@club')).toBe(26)
+		expect(getSnsIconSize('https://facebook.com/club')).toBe(24)
+		expect(getSnsIconSize('https://x.com/club')).toBe(24)
+		expect(getSnsIconSize('https://example.com')).toBe(26)
 	})
 })
