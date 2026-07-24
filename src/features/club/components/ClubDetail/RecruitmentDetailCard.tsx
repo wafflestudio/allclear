@@ -48,10 +48,8 @@ const BooleanDetailRow = ({
 }) => (
 	<View style={styles.field}>
 		<Text style={styles.fieldLabel}>{label}</Text>
-		<View style={styles.valueLine}>
-			<BooleanPills active={active} />
-			{!!detail && <DetailTag text={detail} />}
-		</View>
+		<BooleanPills active={active} />
+		{!!detail && <Text style={styles.bodyText}>{detail}</Text>}
 	</View>
 )
 
