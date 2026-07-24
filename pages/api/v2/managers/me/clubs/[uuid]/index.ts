@@ -5,6 +5,7 @@ import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
 import {
   BadRequestError,
+  ConflictError,
   ForbiddenError,
   NotFoundError,
   UserNotFoundError,
@@ -37,6 +38,11 @@ const api: NextApiHandler = async (req, res) => {
         },
       })
     }
+
+    if (req.method === 'DELETE') {
+      await clubService.deleteManagedClub(clubUuid, user.serviceUserId)
+      return res.status(204).end()
+    }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
       return res.status(401).send('Unauthorized')
@@ -50,10 +56,13 @@ const api: NextApiHandler = async (req, res) => {
     if (err instanceof BadRequestError) {
       return res.status(400).send(err.message)
     }
+    if (err instanceof ConflictError) {
+      return res.status(409).send(err.message)
+    }
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
     }
-    console.error('editClub error: ', err)
+    console.error('managedClub error: ', err)
     return res.status(500).send('Internal Server Error')
   }
 

@@ -634,6 +634,7 @@ export class ClubService {
       const clubRepository = manager.getRepository(ClubEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
       const clubHistoryRepository = manager.getRepository(ClubHistoryEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
       const club = await clubRepository.findOneBy({
         uuid: clubUuid,
@@ -656,7 +657,8 @@ export class ClubService {
         ...patch,
         ...statusPatch,
       }
-      const beforeData = this.toClubHistoryData(club)
+      const shouldRecordHistory = club.status === PUBLIC_CLUB_STATUS
+      const beforeData = shouldRecordHistory ? this.toClubHistoryData(club) : null
       await clubRepository.update(
         {
           uuid: clubUuid,
@@ -665,27 +667,77 @@ export class ClubService {
         patchWithStatus,
       )
 
+      if (club.status === REJECTED_CLUB_STATUS) {
+        await userNotificationRepository.delete({
+          sourceType: 'CLUB',
+          sourceId: clubUuid,
+          type: 'CLUB_REGISTRATION_REJECTED',
+        })
+      }
+
       const updatedClub = await clubRepository.findOneByOrFail({
         uuid: clubUuid,
         deletedAt: IsNull(),
       })
-      const afterData = this.toClubHistoryData(updatedClub)
-      const changedFields = Object.keys(patchWithStatus)
-        .map((key) => CLUB_ENTITY_FIELD_TO_COLUMN[key] ?? key)
-        .filter((key) => beforeData[key] !== afterData[key])
+      if (shouldRecordHistory && beforeData) {
+        const afterData = this.toClubHistoryData(updatedClub)
+        const changedFields = Object.keys(patchWithStatus)
+          .map((key) => CLUB_ENTITY_FIELD_TO_COLUMN[key] ?? key)
+          .filter((key) => beforeData[key] !== afterData[key])
 
-      await clubHistoryRepository.insert({
-        clubId: clubUuid,
-        serviceUserId,
-        beforeData: beforeData as any,
-        afterData: afterData as any,
-        changedFields,
-      })
+        await clubHistoryRepository.insert({
+          clubId: clubUuid,
+          serviceUserId,
+          beforeData: beforeData as any,
+          afterData: afterData as any,
+          changedFields,
+        })
+      }
 
       return {
         clubUuid,
         updatedAt: updatedClub.updatedAt,
       }
+    })
+  }
+
+  async deleteManagedClub(clubUuid: string, serviceUserId: string): Promise<void> {
+    await this.clubRepository.manager.transaction(async (manager) => {
+      const clubRepository = manager.getRepository(ClubEntity)
+      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
+
+      const club = await clubRepository.findOneBy({
+        uuid: clubUuid,
+        deletedAt: IsNull(),
+      })
+      if (!club) {
+        throw new NotFoundError('club not found')
+      }
+
+      const clubManager = await clubManagerRepository.findOneBy({
+        clubId: clubUuid,
+        serviceUserId,
+      })
+      if (!clubManager) {
+        throw new ForbiddenError('club manager permission required')
+      }
+
+      if (club.status !== PENDING_CLUB_STATUS && club.status !== REJECTED_CLUB_STATUS) {
+        throw new ConflictError('only pending or rejected clubs can be deleted')
+      }
+
+      await userNotificationRepository.delete({
+        sourceType: 'CLUB',
+        sourceId: clubUuid,
+        type: In(['CLUB_REGISTRATION_APPROVED', 'CLUB_REGISTRATION_REJECTED']),
+      })
+      await clubManagerRepository.softDelete({
+        clubId: clubUuid,
+      })
+      await clubRepository.softDelete({
+        uuid: clubUuid,
+      })
     })
   }
 

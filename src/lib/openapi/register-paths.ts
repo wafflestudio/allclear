@@ -1826,7 +1826,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '관리 중인 동아리 수정',
   description:
-    '동아리 관리자가 본인 동아리 정보를 수정합니다. 요청에 포함된 필드만 반영하며 수정 전후 스냅샷은 club_history에 기록됩니다.',
+    '동아리 관리자가 본인 동아리 정보를 수정합니다. 요청에 포함된 필드만 반영합니다. APPROVED 상태의 동아리 수정만 수정 전후 스냅샷을 club_history에 기록하며, PENDING 또는 REJECTED 상태에서는 이력을 기록하지 않습니다. REJECTED 상태의 동아리를 수정하면 신규 동아리 등록 재신청으로 처리되어 상태가 PENDING으로 변경되고 rejectReason이 초기화되며 기존 CLUB_REGISTRATION_REJECTED 알림이 삭제됩니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -1876,6 +1876,28 @@ registry.registerPath({
     401: unauthorizedResponse,
     403: forbiddenResponse,
     404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/v2/managers/me/clubs/{uuid}',
+  tags: ['Managers'],
+  summary: '신규 동아리 등록 신청 삭제',
+  description:
+    '동아리 관리자가 본인이 등록한 PENDING 또는 REJECTED 상태의 동아리를 삭제합니다. 동아리와 해당 동아리의 모든 관리자 관계는 soft delete하며, 기존 신규 동아리 승인/반려 알림도 함께 삭제합니다. APPROVED 상태의 동아리는 삭제할 수 없습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
     500: internalServerErrorResponse,
   },
 })
