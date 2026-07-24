@@ -9,6 +9,7 @@ import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
 import {
 	formatRegularMeeting,
+	getRecruitmentApplicationUrl,
 	shouldStackActivityLocation,
 	shouldStackRegularMeetings,
 } from '@/features/club/utils/recruitmentPresentation'
@@ -146,7 +147,7 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 					<Pressable
 						accessibilityRole="link"
 						style={styles.linkRow}
-						onPress={() => Linking.openURL(content.application_url)}>
+						onPress={() => Linking.openURL(getRecruitmentApplicationUrl(content.application_url))}>
 						<Text style={styles.linkText} numberOfLines={1}>
 							{content.application_url}
 						</Text>

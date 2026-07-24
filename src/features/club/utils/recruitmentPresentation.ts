@@ -1,4 +1,5 @@
 import type { RecruitmentRegularMeeting } from '@/repositories/recruitment'
+import { normalizeUrl } from '@/shared/utils/clubSns'
 
 export const shouldStackRegularMeetings = (meetingCount: number): boolean => meetingCount >= 2
 
@@ -22,3 +23,6 @@ export const getNextExpandedRecruitmentId = (
 	currentId: number | null,
 	pressedId: number,
 ): number | null => (currentId === pressedId ? null : pressedId)
+
+export const getRecruitmentApplicationUrl = (applicationUrl: string): string =>
+	normalizeUrl(applicationUrl)

@@ -1,5 +1,6 @@
 import {
 	formatRegularMeeting,
+	getRecruitmentApplicationUrl,
 	getNextExpandedRecruitmentId,
 	shouldStackActivityLocation,
 	shouldStackRegularMeetings,
@@ -45,5 +46,12 @@ describe('recruitment presentation rules', () => {
 		expect(getNextExpandedRecruitmentId(null, 10)).toBe(10)
 		expect(getNextExpandedRecruitmentId(10, 20)).toBe(20)
 		expect(getNextExpandedRecruitmentId(20, 20)).toBeNull()
+	})
+
+	it('normalizes an application link before opening it', () => {
+		expect(getRecruitmentApplicationUrl('instagram.com/club')).toBe('https://instagram.com/club')
+		expect(getRecruitmentApplicationUrl('https://example.com/apply')).toBe(
+			'https://example.com/apply',
+		)
 	})
 })
