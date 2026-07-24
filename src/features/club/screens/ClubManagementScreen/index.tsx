@@ -25,7 +25,7 @@ import { serviceContext } from '@/shared/contexts/serviceContext'
 import { getClubAffiliationLabel } from '@/shared/utils/club'
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
-import { ClubManagementEditButton } from '@/features/club/components/ClubManagementEditButton'
+import EditPencilButton from '@/shared/components/EditPencilButton'
 
 type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_MANAGEMENT>
 
@@ -145,7 +145,10 @@ const ClubManagementScreen = () => {
 								</Text>
 							</View>
 						</View>
-						<ClubManagementEditButton onPress={() => setShowEditConfirm(true)} />
+						<EditPencilButton
+							accessibilityLabel="동아리 정보 수정"
+							onPress={() => setShowEditConfirm(true)}
+						/>
 					</View>
 				</View>
 
@@ -506,7 +509,7 @@ const styles = StyleSheet.create({
 		width: ms(40),
 		height: ms(40),
 		borderRadius: ms(20),
-		opacity: 0.34,
+		opacity: 0.5,
 		resizeMode: 'contain',
 	},
 	clubTexts: {

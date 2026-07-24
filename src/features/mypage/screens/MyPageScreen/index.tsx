@@ -15,6 +15,7 @@ import { navigation } from '@/shared/utils/navigation'
 import { setToken } from '@/shared/utils/api'
 import { getClubAffiliationLabel } from '@/shared/utils/club'
 import AlertModal from '@/shared/components/AlertModal'
+import EditPencilButton from '@/shared/components/EditPencilButton'
 import React, { useCallback, useContext, useState } from 'react'
 import { useFocusEffect } from '@react-navigation/native'
 import {
@@ -29,6 +30,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Toast from 'react-native-toast-message'
 import Icon from 'react-native-vector-icons/MaterialIcons'
+
+const snuLogo = require('@/assets/images/club-management-snu-logo.png') as number
 
 const MyPageScreen = () => {
 	const { authService, clubService, userService } = useContext(serviceContext)
@@ -190,17 +193,13 @@ const MyPageScreen = () => {
 			<ScrollView contentContainerStyle={styles.scrollContent}>
 				{/* 프로필 카드 */}
 				<View style={styles.card}>
-					<Pressable
-						style={({ pressed }) => [styles.editButton, pressed && styles.pressed]}
-						onPress={handleMoveEditProfilePage}>
-						<Image source={require('@/assets/icons/edit-pencil.png')} style={styles.editIcon} />
-					</Pressable>
-					<View style={styles.profileImageContainer}>
-						<Image
-							source={require('@/assets/images/mypage/snu-logo.png')}
-							style={styles.profileImage}
+					<View style={styles.editButton}>
+						<EditPencilButton
+							accessibilityLabel="내 프로필 수정"
+							onPress={handleMoveEditProfilePage}
 						/>
 					</View>
+					<Image source={snuLogo} style={styles.profileImage} />
 					<Text style={styles.name}>{user?.nickname || '이름 정보가 없습니다'}</Text>
 					<Text style={styles.profileSub}>
 						{user?.college
@@ -452,19 +451,12 @@ const styles = StyleSheet.create({
 		top: s(20),
 		right: s(20),
 	},
-	editIcon: {
-		width: ms(22),
-		height: ms(22),
-	},
-	profileImageContainer: {
-		width: ms(48),
-		height: ms(48),
-		justifyContent: 'center',
-		alignItems: 'center',
-	},
 	profileImage: {
-		width: ms(48),
-		height: ms(48),
+		width: ms(40),
+		height: ms(40),
+		borderRadius: ms(20),
+		opacity: 0.5,
+		resizeMode: 'contain',
 	},
 	name: {
 		...typography.headerXL,
