@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import { Club } from '@/entities/club'
 import HtmlView from '@/shared/components/HtmlView'
+import ImageViewerModal from '@/shared/components/ImageViewerModal'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
@@ -51,6 +52,7 @@ const StatePills = ({ active, detail }: { active: boolean; detail?: string }) =>
 const InfoTab = ({ club, contentWidth }: Props) => {
 	const [descriptionExpanded, setDescriptionExpanded] = useState(false)
 	const [contentHeight, setContentHeight] = useState<number | null>(null)
+	const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
 
 	const onContentLayout = useCallback((event: LayoutChangeEvent) => {
 		const height = event.nativeEvent.layout.height
@@ -157,16 +159,24 @@ const InfoTab = ({ club, contentWidth }: Props) => {
 						showsHorizontalScrollIndicator={false}
 						contentContainerStyle={styles.photoList}>
 						{activityImageUrls.map((url, index) => (
-							<Image
+							<Pressable
 								key={`${url}-${index}`}
-								source={{ uri: url }}
-								style={styles.activityImage}
-								resizeMode="cover"
-							/>
+								accessibilityRole="button"
+								accessibilityLabel={`활동 사진 ${index + 1} 확대`}
+								onPress={() => setSelectedImageIndex(index)}>
+								<Image source={{ uri: url }} style={styles.activityImage} resizeMode="cover" />
+							</Pressable>
 						))}
 					</ScrollView>
 				</View>
 			)}
+
+			<ImageViewerModal
+				imageUrls={activityImageUrls}
+				initialIndex={selectedImageIndex ?? 0}
+				visible={selectedImageIndex !== null}
+				onClose={() => setSelectedImageIndex(null)}
+			/>
 		</View>
 	)
 }
