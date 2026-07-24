@@ -1,6 +1,7 @@
 import {
 	formatRegularMeeting,
 	getRecruitmentApplicationUrl,
+	getRecruitmentApplicationRequestFields,
 	getNextExpandedRecruitmentId,
 	shouldStackActivityLocation,
 	shouldStackRegularMeetings,
@@ -53,5 +54,14 @@ describe('recruitment presentation rules', () => {
 		expect(getRecruitmentApplicationUrl('https://example.com/apply')).toBe(
 			'https://example.com/apply',
 		)
+	})
+
+	it('normalizes an application link before sending it', () => {
+		expect(getRecruitmentApplicationRequestFields('forms.example.com/apply')).toEqual({
+			application_url: 'https://forms.example.com/apply',
+		})
+		expect(getRecruitmentApplicationRequestFields('https://forms.example.com/apply')).toEqual({
+			application_url: 'https://forms.example.com/apply',
+		})
 	})
 })

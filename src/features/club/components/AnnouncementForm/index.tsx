@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { launchImageLibrary } from 'react-native-image-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
+import { getRecruitmentApplicationRequestFields } from '@/features/club/utils/recruitmentPresentation'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { typography } from '@/shared/constants/typography'
 import { navigation } from '@/shared/utils/navigation'
@@ -497,7 +498,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				capacity_limit_text: recruitCountText,
 				has_membership_fee: hasFee ?? false,
 				membership_fee_text: feeText,
-				application_url: joinUrl,
+				...getRecruitmentApplicationRequestFields(joinUrl),
 				application_process: joinDescription,
 				full_recruitment_text: existingAnnouncement,
 				image_urls: imageUrls,

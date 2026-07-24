@@ -26,3 +26,9 @@ export const getNextExpandedRecruitmentId = (
 
 export const getRecruitmentApplicationUrl = (applicationUrl: string): string =>
 	normalizeUrl(applicationUrl)
+
+export const getRecruitmentApplicationRequestFields = (
+	applicationUrl: string,
+): { application_url: string } => ({
+	application_url: getRecruitmentApplicationUrl(applicationUrl),
+})
