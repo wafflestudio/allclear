@@ -64,6 +64,7 @@ export const config = {
     '/api/v2/managers/me/clubs/:uuid?/recruitments',
     '/api/v2/managers/me/clubs/:uuid?/recruitments/images',
     '/api/v2/managers/me/clubs/:uuid?/images',
+    '/api/v2/managers/me/clubs/:uuid?/activity-images',
     '/api/v2/managers/me/clubs/:uuid?/verifications',
     '/api/v2/managers/me/recruitments/:recruitmentId?',
     '/api/v2/admin/me',
