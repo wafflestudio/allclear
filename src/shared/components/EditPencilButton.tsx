@@ -1,21 +1,22 @@
 import React, { useState } from 'react'
 import { Image, Pressable, StyleSheet } from 'react-native'
 
-import { getClubManagementEditButtonColors } from '@/features/club/utils/clubManagementEditButton'
+import { getEditPencilButtonColors } from '@/shared/utils/editPencilButton'
 import { ms } from '@/shared/utils/scale'
 
 const editPencilIcon = require('@/assets/icons/club-edit-pencil.png') as number
 
-type ClubManagementEditButtonProps = {
+type EditPencilButtonProps = {
+	accessibilityLabel: string
 	onPress: () => void
 }
 
-export const ClubManagementEditButton = ({ onPress }: ClubManagementEditButtonProps) => {
+const EditPencilButton = ({ accessibilityLabel, onPress }: EditPencilButtonProps) => {
 	const [hovered, setHovered] = useState(false)
 
 	return (
 		<Pressable
-			accessibilityLabel="동아리 정보 수정"
+			accessibilityLabel={accessibilityLabel}
 			accessibilityRole="button"
 			hitSlop={8}
 			onHoverIn={() => setHovered(true)}
@@ -24,7 +25,7 @@ export const ClubManagementEditButton = ({ onPress }: ClubManagementEditButtonPr
 			style={({ pressed }) => [
 				styles.button,
 				{
-					backgroundColor: getClubManagementEditButtonColors({ hovered, pressed }).backgroundColor,
+					backgroundColor: getEditPencilButtonColors({ hovered, pressed }).backgroundColor,
 				},
 			]}>
 			{({ pressed }) => (
@@ -33,7 +34,7 @@ export const ClubManagementEditButton = ({ onPress }: ClubManagementEditButtonPr
 					style={[
 						styles.icon,
 						{
-							tintColor: getClubManagementEditButtonColors({ hovered, pressed }).iconColor,
+							tintColor: getEditPencilButtonColors({ hovered, pressed }).iconColor,
 						},
 					]}
 				/>
@@ -41,6 +42,8 @@ export const ClubManagementEditButton = ({ onPress }: ClubManagementEditButtonPr
 		</Pressable>
 	)
 }
+
+export default EditPencilButton
 
 const styles = StyleSheet.create({
 	button: {

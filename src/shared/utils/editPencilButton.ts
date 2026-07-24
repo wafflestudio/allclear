@@ -1,19 +1,19 @@
 import { Colors } from '@/shared/constants/colors'
 
-type ClubManagementEditButtonState = {
+type EditPencilButtonState = {
 	hovered: boolean
 	pressed: boolean
 }
 
-type ClubManagementEditButtonColors = {
+type EditPencilButtonColors = {
 	backgroundColor: string
 	iconColor: string
 }
 
-export const getClubManagementEditButtonColors = ({
+export const getEditPencilButtonColors = ({
 	hovered,
 	pressed,
-}: ClubManagementEditButtonState): ClubManagementEditButtonColors => {
+}: EditPencilButtonState): EditPencilButtonColors => {
 	if (pressed) {
 		return {
 			backgroundColor: Colors.BUTTON_PUSH,
