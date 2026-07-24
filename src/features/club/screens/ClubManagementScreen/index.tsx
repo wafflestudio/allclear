@@ -25,6 +25,7 @@ import { serviceContext } from '@/shared/contexts/serviceContext'
 import { getClubAffiliationLabel } from '@/shared/utils/club'
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
+import { ClubManagementEditButton } from '@/features/club/components/ClubManagementEditButton'
 
 type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_MANAGEMENT>
 
@@ -134,12 +135,7 @@ const ClubManagementScreen = () => {
 							<View style={styles.clubLogo}>
 								<Image source={snuLogo} style={styles.clubLogoImage} />
 							</View>
-							<Pressable
-								style={styles.editIconWrapper}
-								onPress={() => setShowEditConfirm(true)}
-								hitSlop={8}>
-								<Icon name="edit" size={ms(20)} color="#8F8686" style={{ opacity: 0.5 }} />
-							</Pressable>
+							<ClubManagementEditButton onPress={() => setShowEditConfirm(true)} />
 						</View>
 						<View style={styles.clubTexts}>
 							<Text style={styles.clubName} numberOfLines={1}>
@@ -516,12 +512,6 @@ const styles = StyleSheet.create({
 		width: '100%',
 		height: '100%',
 		resizeMode: 'contain',
-	},
-	editIconWrapper: {
-		width: ms(24),
-		height: ms(24),
-		justifyContent: 'center',
-		alignItems: 'center',
 	},
 	clubTexts: {
 		gap: vs(4),
