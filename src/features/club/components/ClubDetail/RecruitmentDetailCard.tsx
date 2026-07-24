@@ -3,6 +3,7 @@ import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
 import type { RecruitmentContent } from '@/repositories/recruitment'
 import HtmlView from '@/shared/components/HtmlView'
+import ImageViewerModal from '@/shared/components/ImageViewerModal'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
@@ -56,6 +57,7 @@ const BooleanDetailRow = ({
 
 const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 	const [fullTextExpanded, setFullTextExpanded] = useState(false)
+	const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
 	const meetingTags = content.regular_meetings.map(formatRegularMeeting)
 	const stackMeetings = shouldStackRegularMeetings(meetingTags.length)
 	const stackLocation = shouldStackActivityLocation(content.activity_location_text)
@@ -74,7 +76,13 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={styles.imageList}>
 					{content.image_urls.map((url, index) => (
-						<Image key={`${url}-${index}`} source={{ uri: url }} style={styles.recruitmentImage} />
+						<Pressable
+							key={`${url}-${index}`}
+							accessibilityRole="button"
+							accessibilityLabel={`공고 사진 ${index + 1} 확대`}
+							onPress={() => setSelectedImageIndex(index)}>
+							<Image source={{ uri: url }} style={styles.recruitmentImage} />
+						</Pressable>
 					))}
 				</ScrollView>
 			)}
@@ -179,6 +187,13 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 					)}
 				</View>
 			)}
+
+			<ImageViewerModal
+				imageUrls={content.image_urls}
+				initialIndex={selectedImageIndex ?? 0}
+				visible={selectedImageIndex !== null}
+				onClose={() => setSelectedImageIndex(null)}
+			/>
 		</View>
 	)
 }
