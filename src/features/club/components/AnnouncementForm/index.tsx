@@ -15,7 +15,11 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { launchImageLibrary } from 'react-native-image-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
-import { getRecruitmentApplicationRequestFields } from '@/features/club/utils/recruitmentPresentation'
+import {
+	getRecruitmentApplicationRequestFields,
+	getRecruitmentDeadlineFormFields,
+	getRecruitmentDeadlineRequestValue,
+} from '@/features/club/utils/recruitmentPresentation'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { typography } from '@/shared/constants/typography'
 import { navigation } from '@/shared/utils/navigation'
@@ -248,6 +252,7 @@ const SuccessModal = ({ visible, message, onConfirm }: SuccessModalProps) => (
 
 const AnnouncementForm = (props: AnnouncementFormProps) => {
 	const { recruitmentService } = useContext(serviceContext)
+	const initialDeadline = getRecruitmentDeadlineFormFields(new Date().toISOString())
 
 	const isEdit = props.mode === 'edit'
 	const recruitmentIdForEdit = isEdit ? props.recruitmentId : null
@@ -262,9 +267,9 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 	const [title, setTitle] = useState('')
 
 	// 모집 기간
-	const [year, setYear] = useState(String(new Date().getFullYear()))
-	const [month, setMonth] = useState(String(new Date().getMonth() + 1).padStart(2, '0'))
-	const [day, setDay] = useState(String(new Date().getDate()).padStart(2, '0'))
+	const [year, setYear] = useState(initialDeadline.year)
+	const [month, setMonth] = useState(initialDeadline.month)
+	const [day, setDay] = useState(initialDeadline.day)
 	const [hour, setHour] = useState('23')
 	const [minute, setMinute] = useState('59')
 
@@ -332,12 +337,12 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 
 				setTitle(c.title)
 
-				const d = new Date(c.deadline)
-				setYear(String(d.getUTCFullYear()))
-				setMonth(String(d.getUTCMonth() + 1).padStart(2, '0'))
-				setDay(String(d.getUTCDate()).padStart(2, '0'))
-				setHour(String(d.getUTCHours()).padStart(2, '0'))
-				setMinute(String(d.getUTCMinutes()).padStart(2, '0'))
+				const deadline = getRecruitmentDeadlineFormFields(c.deadline)
+				setYear(deadline.year)
+				setMonth(deadline.month)
+				setDay(deadline.day)
+				setHour(deadline.hour)
+				setMinute(deadline.minute)
 
 				setHasRequiredActivity(c.is_mandatory)
 				setHasRegularMeeting(c.has_regular_meeting)
@@ -475,7 +480,13 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 			}
 
 			const imageUrls = [...remoteUrls, ...newUploadedUrls]
-			const deadline = `${year}-${month}-${day}T${hour}:${minute}:00Z`
+			const deadline = getRecruitmentDeadlineRequestValue({
+				year,
+				month,
+				day,
+				hour,
+				minute,
+			})
 
 			const payload = {
 				title,
@@ -560,12 +571,12 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 
 			setTitle(c.title)
 
-			const d = new Date(c.deadline)
-			setYear(String(d.getUTCFullYear()))
-			setMonth(String(d.getUTCMonth() + 1).padStart(2, '0'))
-			setDay(String(d.getUTCDate()).padStart(2, '0'))
-			setHour(String(d.getUTCHours()).padStart(2, '0'))
-			setMinute(String(d.getUTCMinutes()).padStart(2, '0'))
+			const deadline = getRecruitmentDeadlineFormFields(c.deadline)
+			setYear(deadline.year)
+			setMonth(deadline.month)
+			setDay(deadline.day)
+			setHour(deadline.hour)
+			setMinute(deadline.minute)
 
 			setHasRequiredActivity(c.is_mandatory)
 			setHasRegularMeeting(c.has_regular_meeting)

@@ -1,4 +1,3 @@
-import dayjs from 'dayjs'
 import React, { useState } from 'react'
 import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -8,6 +7,7 @@ import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
 import {
+	formatRecruitmentDeadline,
 	formatRegularMeeting,
 	getRecruitmentApplicationUrl,
 	shouldStackActivityLocation,
@@ -65,7 +65,7 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 		<View style={styles.container}>
 			<View style={styles.titleSection}>
 				<Text style={styles.title}>{content.title}</Text>
-				<Text style={styles.deadline}>~ {dayjs(content.deadline).format('M월 D일')} 모집</Text>
+				<Text style={styles.deadline}>~ {formatRecruitmentDeadline(content.deadline)} 모집</Text>
 			</View>
 
 			{content.image_urls.length > 0 && (

@@ -1,5 +1,8 @@
 import {
+	formatRecruitmentDeadline,
 	formatRegularMeeting,
+	getRecruitmentDeadlineFormFields,
+	getRecruitmentDeadlineRequestValue,
 	getRecruitmentApplicationUrl,
 	getRecruitmentApplicationRequestFields,
 	getNextExpandedRecruitmentId,
@@ -8,6 +11,35 @@ import {
 } from './recruitmentPresentation'
 
 describe('recruitment presentation rules', () => {
+	it('shows minutes and omits the year only for deadlines in the current Korean year', () => {
+		const now = new Date('2026-01-01T00:00:00.000Z')
+
+		expect(formatRecruitmentDeadline('2026-07-24T09:30:00.000Z', now)).toBe('7월 24일 18:30')
+		expect(formatRecruitmentDeadline('2027-01-05T00:05:00.000Z', now)).toBe('2027년 1월 5일 09:05')
+	})
+
+	it('converts a Korean deadline input to UTC for the request', () => {
+		expect(
+			getRecruitmentDeadlineRequestValue({
+				year: '2026',
+				month: '07',
+				day: '24',
+				hour: '18',
+				minute: '30',
+			}),
+		).toBe('2026-07-24T09:30:00.000Z')
+	})
+
+	it('converts a stored UTC deadline back to Korean form fields', () => {
+		expect(getRecruitmentDeadlineFormFields('2026-07-24T09:30:00.000Z')).toEqual({
+			year: '2026',
+			month: '07',
+			day: '24',
+			hour: '18',
+			minute: '30',
+		})
+	})
+
 	it('keeps zero or one regular meeting beside the yes/no row', () => {
 		expect(shouldStackRegularMeetings(0)).toBe(false)
 		expect(shouldStackRegularMeetings(1)).toBe(false)
