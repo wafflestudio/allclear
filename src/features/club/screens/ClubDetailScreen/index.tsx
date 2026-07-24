@@ -47,7 +47,7 @@ import RecruitTab from '@/features/club/components/ClubDetail/RecruitTab'
 import ReviewTab from '@/features/club/components/ClubDetail/ReviewTab'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
-import { getClubSnsUrls, getSnsIcon } from '@/shared/utils/clubSns'
+import { getClubSnsUrls, getSnsIcon, getSnsIconSize } from '@/shared/utils/clubSns'
 import { ms, s, vs } from '@/shared/utils/scale'
 
 type DetailsScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.CLUB_DETAIL>
@@ -289,7 +289,11 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 											accessibilityLabel={`${club.name} SNS ${index + 1} 열기`}
 											style={styles.snsButton}
 											onPress={() => Linking.openURL(snsUrl)}>
-											<Icon name={getSnsIcon(snsUrl)} size={ms(20)} color={Colors.POINTCOLOR} />
+											<Icon
+												name={getSnsIcon(snsUrl)}
+												size={ms(getSnsIconSize(snsUrl))}
+												color={Colors.POINTCOLOR}
+											/>
 										</Pressable>
 									))}
 								</View>

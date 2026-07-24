@@ -38,3 +38,8 @@ export const getSnsIcon = (url: string): string => {
 	if (url.includes('x.com') || url.includes('twitter.com')) return 'twitter'
 	return 'link-variant'
 }
+
+export const getSnsIconSize = (url: string): number => {
+	const icon = getSnsIcon(url)
+	return icon === 'youtube' || icon === 'link-variant' ? 26 : 24
+}
