@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
 		width: ms(40),
 		height: ms(40),
 		borderRadius: ms(20),
-		opacity: 0.34,
+		opacity: 0.5,
 		resizeMode: 'contain',
 	},
 	clubTexts: {
