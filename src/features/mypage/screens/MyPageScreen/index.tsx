@@ -443,12 +443,12 @@ const styles = StyleSheet.create({
 	card: {
 		backgroundColor: Colors.WHITE,
 		borderRadius: ms(12),
-		paddingHorizontal: s(20),
-		paddingVertical: vs(30),
+		paddingHorizontal: s(24),
+		paddingVertical: s(20),
 	},
 	editButton: {
 		position: 'absolute',
-		top: vs(30),
+		top: s(20),
 		right: s(20),
 	},
 	profileImage: {
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
 	name: {
 		...typography.headerXL,
 		color: Colors.BODYTEXT_MAIN,
-		marginTop: vs(12),
+		marginTop: vs(10),
 	},
 	profileSub: {
 		...typography.bodyMRegular,
