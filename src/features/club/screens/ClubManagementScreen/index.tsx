@@ -17,7 +17,7 @@ import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 
-const snuLogo = require('@/assets/images/mypage/snu-logo.png') as number
+const clubManagementSnuLogo = require('@/assets/images/club-management-snu-logo.png') as number
 
 import { Colors } from '@/shared/constants/colors'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
@@ -131,23 +131,21 @@ const ClubManagementScreen = () => {
 					)}
 					<View style={styles.clubCardOverlay} />
 					<View style={styles.clubCardContent}>
-						<View style={styles.clubCardTop}>
-							<View style={styles.clubLogo}>
-								<Image source={snuLogo} style={styles.clubLogoImage} />
+						<View style={styles.clubDetails}>
+							<Image source={clubManagementSnuLogo} style={styles.clubLogoImage} />
+							<View style={styles.clubTexts}>
+								<Text style={styles.clubName} numberOfLines={1}>
+									{club?.name ?? ''}
+								</Text>
+								<Text style={styles.clubCollege} numberOfLines={1}>
+									{clubAffiliation}
+								</Text>
+								<Text style={styles.clubDesc} numberOfLines={1}>
+									{shortIntro}
+								</Text>
 							</View>
-							<ClubManagementEditButton onPress={() => setShowEditConfirm(true)} />
 						</View>
-						<View style={styles.clubTexts}>
-							<Text style={styles.clubName} numberOfLines={1}>
-								{club?.name ?? ''}
-							</Text>
-							<Text style={styles.clubCollege} numberOfLines={1}>
-								{clubAffiliation}
-							</Text>
-							<Text style={styles.clubDesc} numberOfLines={1}>
-								{shortIntro}
-							</Text>
-						</View>
+						<ClubManagementEditButton onPress={() => setShowEditConfirm(true)} />
 					</View>
 				</View>
 
@@ -477,7 +475,7 @@ const styles = StyleSheet.create({
 	clubCard: {
 		borderRadius: ms(12),
 		overflow: 'hidden',
-		height: vs(160),
+		height: vs(186),
 	},
 	clubCardBg: {
 		position: 'absolute',
@@ -493,28 +491,27 @@ const styles = StyleSheet.create({
 	},
 	clubCardContent: {
 		flex: 1,
-		padding: s(16),
-		justifyContent: 'space-between',
-	},
-	clubCardTop: {
 		flexDirection: 'row',
+		alignItems: 'flex-start',
 		justifyContent: 'space-between',
+		paddingHorizontal: s(20),
+		paddingVertical: vs(30),
+	},
+	clubDetails: {
+		width: s(152),
+		gap: vs(12),
 		alignItems: 'flex-start',
 	},
-	clubLogo: {
+	clubLogoImage: {
 		width: ms(40),
 		height: ms(40),
-		borderRadius: ms(8),
-		backgroundColor: '#FFFFFF',
-		overflow: 'hidden',
-	},
-	clubLogoImage: {
-		width: '100%',
-		height: '100%',
+		borderRadius: ms(20),
+		opacity: 0.34,
 		resizeMode: 'contain',
 	},
 	clubTexts: {
-		gap: vs(4),
+		alignSelf: 'stretch',
+		gap: vs(8),
 	},
 	clubName: {
 		fontFamily: 'Pretendard',
