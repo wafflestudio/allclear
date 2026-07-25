@@ -53,6 +53,8 @@ import {
   ClubManagerRequestResponseSchema,
   ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
+  ClubRegistrationManagerPatchSchema,
+  ClubRegistrationManagerSchema,
   ManagedClubPatchSchema,
   ManagedClubsResponseSchema,
   ManagerClubParamsSchema,
@@ -1764,6 +1766,74 @@ registry.registerPath({
     401: unauthorizedResponse,
     403: forbiddenResponse,
     404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v2/managers/me/clubs/{uuid}/manager',
+  tags: ['Managers'],
+  summary: '신규 동아리 등록 신청 운영진 정보 조회',
+  description:
+    '로그인한 사용자가 직접 등록한 PENDING 또는 REJECTED 상태의 신규 동아리 신청에서 본인의 운영진 기본 정보만 조회합니다. 기존 동아리의 관리 권한 신청(manager-requests) 정보는 조회하지 않습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    200: {
+      description: '조회 성공',
+      content: {
+        'application/json': {
+          schema: ClubRegistrationManagerSchema,
+          example: {
+            name: '홍길동',
+            phone: '010-1234-5678',
+            student_id: '2021-12345',
+          },
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/v2/managers/me/clubs/{uuid}/manager',
+  tags: ['Managers'],
+  summary: '신규 동아리 등록 신청 운영진 정보 수정',
+  description:
+    '로그인한 사용자가 직접 등록한 PENDING 또는 REJECTED 상태의 신규 동아리 신청에서 본인의 운영진 기본 정보를 부분 수정합니다. name, phone, student_id 중 최소 하나가 필요합니다. 동일한 값을 전달해도 성공하며 동아리 및 신청 상태는 변경하지 않습니다. 기존 동아리의 관리 권한 신청(manager-requests)은 수정하지 않습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+    body: {
+      content: {
+        'application/json': {
+          schema: ClubRegistrationManagerPatchSchema,
+          example: {
+            name: '홍길동',
+            phone: '010-9876-5432',
+            student_id: '2022-12345',
+          },
+        },
+      },
+    },
+  },
+  responses: {
+    204: NoContentResponse,
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
     500: internalServerErrorResponse,
   },
 })

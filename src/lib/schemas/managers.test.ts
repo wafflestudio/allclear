@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   ClubManagerRequestResponseSchema,
   ClubRegisterRequestSchema,
+  ClubRegistrationManagerPatchSchema,
+  ClubRegistrationManagerSchema,
   ManagedClubPatchSchema,
 } from './managers'
 
@@ -35,6 +37,31 @@ describe('manager club information schemas', () => {
       phone: '010-1234-5678',
       student_id: '2021-12345',
     })
+  })
+
+  it('maps registration manager information to the API response shape', () => {
+    expect(
+      ClubRegistrationManagerSchema.parse({
+        name: '홍길동',
+        phone: '010-1234-5678',
+        student_id: '2021-12345',
+      }),
+    ).toEqual({
+      name: '홍길동',
+      phone: '010-1234-5678',
+      student_id: '2021-12345',
+    })
+  })
+
+  it('accepts partial registration manager updates but rejects an empty update', () => {
+    expect(
+      ClubRegistrationManagerPatchSchema.parse({
+        phone: '010-9876-5432',
+      }),
+    ).toEqual({
+      phone: '010-9876-5432',
+    })
+    expect(() => ClubRegistrationManagerPatchSchema.parse({})).toThrow()
   })
 
   it('does not collect founded date or active member count during registration', () => {

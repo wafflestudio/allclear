@@ -37,6 +37,8 @@ import type {
   ClubManagerRequest,
   ClubManagerRequestPatch,
   ClubManagerRequestResponse,
+  ClubRegistrationManager,
+  ClubRegistrationManagerPatch,
   ClubRegisterRequest,
   ManagedClubPatch,
 } from 'src/lib/schemas/managers'
@@ -433,6 +435,112 @@ export class ClubService {
 
       return toClubDomain(savedClub)
     })
+  }
+
+  async getClubRegistrationManager(
+    clubUuid: string,
+    serviceUserId: string,
+  ): Promise<ClubRegistrationManager> {
+    const club = await this.clubRepository.findOneBy({
+      uuid: clubUuid,
+      deletedAt: IsNull(),
+    })
+    if (!club) {
+      throw new NotFoundError('club not found')
+    }
+
+    const clubManager = await this.getOwnedRegistrationManager(
+      this.clubManagerRepository,
+      this.clubManagerRegisterRequestRepository,
+      clubUuid,
+      serviceUserId,
+    )
+    this.assertEditableClubRegistrationStatus(club.status)
+
+    return {
+      name: clubManager.name,
+      phone: clubManager.phone,
+      student_id: clubManager.studentId,
+    }
+  }
+
+  async updateClubRegistrationManager(
+    clubUuid: string,
+    serviceUserId: string,
+    request: ClubRegistrationManagerPatch,
+  ): Promise<void> {
+    await this.clubRepository.manager.transaction(async (manager) => {
+      const clubRepository = manager.getRepository(ClubEntity)
+      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const clubManagerRegisterRequestRepository = manager.getRepository(
+        ClubManagerRegisterRequestEntity,
+      )
+      const club = await clubRepository.findOne({
+        where: {
+          uuid: clubUuid,
+          deletedAt: IsNull(),
+        },
+        lock: {
+          mode: 'pessimistic_write',
+        },
+      })
+      if (!club) {
+        throw new NotFoundError('club not found')
+      }
+
+      const clubManager = await this.getOwnedRegistrationManager(
+        clubManagerRepository,
+        clubManagerRegisterRequestRepository,
+        clubUuid,
+        serviceUserId,
+      )
+      this.assertEditableClubRegistrationStatus(club.status)
+
+      await clubManagerRepository.update(
+        { id: clubManager.id },
+        {
+          ...(request.name !== undefined && { name: request.name }),
+          ...(request.phone !== undefined && { phone: request.phone }),
+          ...(request.student_id !== undefined && { studentId: request.student_id }),
+        },
+      )
+    })
+  }
+
+  private async getOwnedRegistrationManager(
+    clubManagerRepository: Repository<ClubManagerEntity>,
+    clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>,
+    clubUuid: string,
+    serviceUserId: string,
+  ): Promise<ClubManagerEntity> {
+    const clubManager = await clubManagerRepository.findOneBy({
+      clubId: clubUuid,
+      serviceUserId,
+    })
+    if (clubManager) {
+      const managerRequest = await clubManagerRegisterRequestRepository.findOneBy({
+        clubId: clubUuid,
+        serviceUserId,
+      })
+      if (managerRequest) {
+        throw new ForbiddenError('manager request is not a club registration')
+      }
+      return clubManager
+    }
+
+    const anotherManager = await clubManagerRepository.findOneBy({
+      clubId: clubUuid,
+    })
+    if (anotherManager) {
+      throw new ForbiddenError('club registration manager permission required')
+    }
+    throw new NotFoundError('club registration manager not found')
+  }
+
+  private assertEditableClubRegistrationStatus(status: ClubEntity['status']): void {
+    if (status !== PENDING_CLUB_STATUS && status !== REJECTED_CLUB_STATUS) {
+      throw new ConflictError('only pending or rejected club registrations can be edited')
+    }
   }
 
   private async resolveClubAffiliation(

@@ -78,6 +78,29 @@ export const ClubManagerRequestPatchSchema = ClubManagerRequestSchema.partial()
 
 export type ClubManagerRequestPatch = z.infer<typeof ClubManagerRequestPatchSchema>
 
+export const ClubRegistrationManagerSchema = z
+  .object({
+    name: z.string().trim().nonempty(),
+    phone: z.string().trim().nonempty(),
+    student_id: z.string().trim().nonempty(),
+  })
+  .openapi('ClubRegistrationManager')
+
+export type ClubRegistrationManager = z.infer<typeof ClubRegistrationManagerSchema>
+
+export const ClubRegistrationManagerPatchSchema = ClubRegistrationManagerSchema.pick({
+  name: true,
+  phone: true,
+  student_id: true,
+})
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field is required',
+  })
+  .openapi('ClubRegistrationManagerPatch')
+
+export type ClubRegistrationManagerPatch = z.infer<typeof ClubRegistrationManagerPatchSchema>
+
 const clubDraftShape = {
   name: z.string().nonempty().max(30),
   fullName: z.string().nonempty().max(50),
