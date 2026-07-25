@@ -7,7 +7,7 @@ import Animated, {
 	withSpring,
 	withTiming,
 } from 'react-native-reanimated'
-import { clampImageScale, getPinchTranslation } from '@/shared/utils/imageViewer'
+import { clampImageScale, getPanTranslation } from '@/shared/utils/imageViewer'
 
 type Props = {
 	url: string
@@ -26,10 +26,8 @@ const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
 	const savedTranslationX = useSharedValue(0)
 	const savedTranslationY = useSharedValue(0)
 	const pinchStartScale = useSharedValue(1)
-	const pinchStartTranslationX = useSharedValue(0)
-	const pinchStartTranslationY = useSharedValue(0)
-	const pinchStartFocalX = useSharedValue(0)
-	const pinchStartFocalY = useSharedValue(0)
+	const panStartTranslationX = useSharedValue(0)
+	const panStartTranslationY = useSharedValue(0)
 
 	const handleLayout = (event: LayoutChangeEvent) => {
 		viewportWidth.value = event.nativeEvent.layout.width
@@ -47,64 +45,71 @@ const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
 	}
 
 	const pinchGesture = Gesture.Pinch()
-		.onStart(event => {
+		.onStart(() => {
 			pinchStartScale.value = savedScale.value
-			pinchStartTranslationX.value = savedTranslationX.value
-			pinchStartTranslationY.value = savedTranslationY.value
-			pinchStartFocalX.value = event.focalX
-			pinchStartFocalY.value = event.focalY
 		})
 		.onUpdate(event => {
-			const nextScale = clampImageScale(pinchStartScale.value * event.scale)
-			const nextTranslation = getPinchTranslation({
-				initialScale: pinchStartScale.value,
-				nextScale,
+			scale.value = clampImageScale(pinchStartScale.value * event.scale)
+		})
+		.onEnd(() => {
+			savedScale.value = scale.value
+			if (scale.value <= 1) {
+				resetZoom()
+				return
+			}
+
+			const clampedTranslation = getPanTranslation({
 				initialTranslation: {
-					x: pinchStartTranslationX.value,
-					y: pinchStartTranslationY.value,
+					x: translationX.value,
+					y: translationY.value,
 				},
-				initialFocal: {
-					x: pinchStartFocalX.value,
-					y: pinchStartFocalY.value,
-				},
-				currentFocal: {
-					x: event.focalX,
-					y: event.focalY,
-				},
+				gestureTranslation: { x: 0, y: 0 },
+				scale: scale.value,
 				viewport: {
 					width: viewportWidth.value,
 					height: viewportHeight.value,
 				},
 			})
+			translationX.value = clampedTranslation.x
+			translationY.value = clampedTranslation.y
+			savedTranslationX.value = clampedTranslation.x
+			savedTranslationY.value = clampedTranslation.y
+		})
 
-			scale.value = nextScale
+	const panGesture = Gesture.Pan()
+		.averageTouches(true)
+		.onStart(() => {
+			panStartTranslationX.value = savedTranslationX.value
+			panStartTranslationY.value = savedTranslationY.value
+		})
+		.onUpdate(event => {
+			if (scale.value <= 1) return
+
+			const nextTranslation = getPanTranslation({
+				initialTranslation: {
+					x: panStartTranslationX.value,
+					y: panStartTranslationY.value,
+				},
+				gestureTranslation: {
+					x: event.translationX,
+					y: event.translationY,
+				},
+				scale: scale.value,
+				viewport: {
+					width: viewportWidth.value,
+					height: viewportHeight.value,
+				},
+			})
 			translationX.value = nextTranslation.x
 			translationY.value = nextTranslation.y
 		})
 		.onEnd(() => {
-			savedScale.value = scale.value
-			savedTranslationX.value = translationX.value
-			savedTranslationY.value = translationY.value
-			if (scale.value <= 1) resetZoom()
-		})
+			if (savedScale.value <= 1) {
+				savedTranslationX.value = 0
+				savedTranslationY.value = 0
+				return
+			}
 
-	const panGesture = Gesture.Pan()
-		.maxPointers(1)
-		.onUpdate(event => {
-			if (scale.value <= 1) return
-
-			const maxTranslationX = (viewportWidth.value * (scale.value - 1)) / 2
-			const maxTranslationY = (viewportHeight.value * (scale.value - 1)) / 2
-			translationX.value = Math.min(
-				Math.max(savedTranslationX.value + event.translationX, -maxTranslationX),
-				maxTranslationX,
-			)
-			translationY.value = Math.min(
-				Math.max(savedTranslationY.value + event.translationY, -maxTranslationY),
-				maxTranslationY,
-			)
-		})
-		.onEnd(() => {
 			savedTranslationX.value = translationX.value
 			savedTranslationY.value = translationY.value
 		})
@@ -122,10 +127,7 @@ const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
 			savedScale.value = DOUBLE_TAP_SCALE
 		})
 
-	const gesture = Gesture.Exclusive(
-		doubleTapGesture,
-		Gesture.Simultaneous(pinchGesture, panGesture),
-	)
+	const gesture = Gesture.Race(doubleTapGesture, Gesture.Simultaneous(pinchGesture, panGesture))
 	const animatedStyle = useAnimatedStyle(() => ({
 		transform: [
 			{ translateX: translationX.value },
