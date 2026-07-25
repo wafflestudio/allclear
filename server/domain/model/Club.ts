@@ -25,6 +25,7 @@ export type ManagedClubManagementStatus =
 
 export type ManagedClubListItem = Club & {
   managementStatus: ManagedClubManagementStatus
+  hasManager: boolean
   managerRequestId?: number
 }
 

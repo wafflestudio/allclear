@@ -202,6 +202,7 @@ export const ManagedClubListItemSchema = ClubSchema.extend({
     'PENDING',
     'MANAGER_REQUEST_PENDING',
   ]),
+  hasManager: z.boolean(),
   managerRequestId: z.number().int().optional(),
 }).openapi('ManagedClubListItem')
 

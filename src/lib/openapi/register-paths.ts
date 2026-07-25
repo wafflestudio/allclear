@@ -1650,7 +1650,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '내가 관리하는 동아리 목록',
   description:
-    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. status는 동아리 자체의 승인 상태이며, 마이페이지 관리 목록의 상태 표시와 정렬은 managementStatus를 기준으로 판단합니다. 관리자 관계와 신청 이력이 모두 있으면 관리자 관계를 우선하고, 신청 이력이 여러 건이면 동아리별 가장 최근 신청만 사용합니다. 정렬 순서는 APPROVED, REJECTED, MANAGER_REQUEST_REJECTED, PENDING, MANAGER_REQUEST_PENDING 순이며, APPROVED 항목끼리는 동아리 수정일과 최신 모집공고 수정일 중 더 최근 날짜 기준 내림차순입니다.',
+    '로그인한 사용자가 신청했거나 관리 중인 동아리 목록을 조회합니다. status는 동아리 자체의 승인 상태이며, 마이페이지 관리 목록의 상태 표시와 정렬은 managementStatus를 기준으로 판단합니다. hasManager는 해당 동아리에 활성 club_manager 관계가 존재하는지를 나타냅니다. 관리자 관계와 신청 이력이 모두 있으면 관리자 관계를 우선하고, 신청 이력이 여러 건이면 동아리별 가장 최근 신청만 사용합니다. 정렬 순서는 APPROVED, REJECTED, MANAGER_REQUEST_REJECTED, PENDING, MANAGER_REQUEST_PENDING 순이며, APPROVED 항목끼리는 동아리 수정일과 최신 모집공고 수정일 중 더 최근 날짜 기준 내림차순입니다.',
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -1669,6 +1669,7 @@ registry.registerPath({
                   name: '와플스튜디오',
                   status: 'APPROVED',
                   managementStatus: 'APPROVED',
+                  hasManager: true,
                   image_uri: 'https://cdn.allclear.com/temp/upload_123.jpg',
                   created_at: '2026-04-01T10:00:00Z',
                 },
@@ -1677,6 +1678,7 @@ registry.registerPath({
                   name: '밴드동아리',
                   status: 'REJECTED',
                   managementStatus: 'REJECTED',
+                  hasManager: true,
                   reject_reason: '동아리 소개 정보가 부족합니다.',
                   image_uri: 'https://cdn.allclear.com/temp/upload_234.jpg',
                   created_at: '2026-04-02T11:00:00Z',
@@ -1686,6 +1688,7 @@ registry.registerPath({
                   name: '사진동아리',
                   status: 'APPROVED',
                   managementStatus: 'MANAGER_REQUEST_REJECTED',
+                  hasManager: false,
                   managerRequestId: 11,
                   image_uri: 'https://cdn.allclear.com/temp/upload_345.jpg',
                   created_at: '2026-04-03T12:00:00Z',
@@ -1695,6 +1698,7 @@ registry.registerPath({
                   name: '봉사동아리',
                   status: 'PENDING',
                   managementStatus: 'PENDING',
+                  hasManager: true,
                   image_uri: 'https://cdn.allclear.com/temp/upload_456.jpg',
                   created_at: '2026-04-04T12:00:00Z',
                 },
@@ -1703,6 +1707,7 @@ registry.registerPath({
                   name: '쿠킹마스터',
                   status: 'APPROVED',
                   managementStatus: 'MANAGER_REQUEST_PENDING',
+                  hasManager: false,
                   managerRequestId: 12,
                   image_uri: 'https://cdn.allclear.com/temp/upload_567.jpg',
                   created_at: '2026-04-04T14:30:00Z',

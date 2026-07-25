@@ -299,6 +299,7 @@ export class ClubService {
       .map((item) => ({
         ...toClubDomain(item.club),
         managementStatus: item.managementStatus,
+        hasManager: managerClubIdSet.has(item.club.uuid),
         ...(item.managerRequestId !== undefined && { managerRequestId: item.managerRequestId }),
       }))
   }
