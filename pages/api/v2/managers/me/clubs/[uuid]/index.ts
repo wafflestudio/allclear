@@ -31,7 +31,7 @@ const api: NextApiHandler = async (req, res) => {
       const result = await clubService.patchManagedClub(clubUuid, user.serviceUserId, body)
       return res.status(200).json({
         success: true,
-        message: '동아리 정보가 수정되었으며, 수정 이력이 기록되었습니다.',
+        message: '동아리 및 운영진 정보가 수정되었습니다.',
         data: {
           club_uuid: result.clubUuid,
           updated_at: result.updatedAt,

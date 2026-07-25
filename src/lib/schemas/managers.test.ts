@@ -81,32 +81,60 @@ describe('manager club information schemas', () => {
     expect(parsed.club_data.activity_image_urls).toEqual(validClubData.activity_image_urls)
   })
 
-  it('accepts up to three SNS URLs and does not collect removed fields in manager patches', () => {
+  it('accepts partial club and manager data in a managed club patch', () => {
     const parsed = ManagedClubPatchSchema.parse({
-      founded_at: null,
-      active_member_count: 0,
-      sns_urls: [
-        'https://instagram.com/wafflestudio',
-        'https://youtube.com/@wafflestudio',
-        'https://facebook.com/wafflestudio',
-      ],
-      activity_image_urls: [],
+      club_data: {
+        founded_at: null,
+        active_member_count: 0,
+        sns_urls: [
+          'https://instagram.com/wafflestudio',
+          'https://youtube.com/@wafflestudio',
+          'https://facebook.com/wafflestudio',
+        ],
+        activity_image_urls: [],
+      },
+      manager_data: {
+        phone: '010-9876-5432',
+      },
     })
 
     expect(parsed).toEqual({
-      sns_urls: [
-        'https://instagram.com/wafflestudio',
-        'https://youtube.com/@wafflestudio',
-        'https://facebook.com/wafflestudio',
-      ],
-      activity_image_urls: [],
+      club_data: {
+        sns_urls: [
+          'https://instagram.com/wafflestudio',
+          'https://youtube.com/@wafflestudio',
+          'https://facebook.com/wafflestudio',
+        ],
+        activity_image_urls: [],
+      },
+      manager_data: {
+        phone: '010-9876-5432',
+      },
     })
+  })
+
+  it('accepts a manager-only patch but rejects an empty final submission', () => {
+    expect(
+      ManagedClubPatchSchema.parse({
+        manager_data: {
+          name: '홍길동',
+        },
+      }),
+    ).toEqual({
+      manager_data: {
+        name: '홍길동',
+      },
+    })
+    expect(() => ManagedClubPatchSchema.parse({})).toThrow()
+    expect(() => ManagedClubPatchSchema.parse({ club_data: {} })).toThrow()
   })
 
   it('rejects more than three SNS URLs', () => {
     expect(() =>
       ManagedClubPatchSchema.parse({
-        sns_urls: Array.from({ length: 4 }, (_, index) => `https://example.com/social-${index}`),
+        club_data: {
+          sns_urls: Array.from({ length: 4 }, (_, index) => `https://example.com/social-${index}`),
+        },
       }),
     ).toThrow()
   })
@@ -131,10 +159,12 @@ describe('manager club information schemas', () => {
   it('rejects more than five activity image URLs', () => {
     expect(() =>
       ManagedClubPatchSchema.parse({
-        activity_image_urls: Array.from(
-          { length: 6 },
-          (_, index) => `https://example.com/activity-${index}.jpg`,
-        ),
+        club_data: {
+          activity_image_urls: Array.from(
+            { length: 6 },
+            (_, index) => `https://example.com/activity-${index}.jpg`,
+          ),
+        },
       }),
     ).toThrow()
   })

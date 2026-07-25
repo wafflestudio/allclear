@@ -38,7 +38,6 @@ import type {
   ClubManagerRequestPatch,
   ClubManagerRequestResponse,
   ClubRegistrationManager,
-  ClubRegistrationManagerPatch,
   ClubRegisterRequest,
   ManagedClubPatch,
 } from 'src/lib/schemas/managers'
@@ -464,50 +463,6 @@ export class ClubService {
     }
   }
 
-  async updateClubRegistrationManager(
-    clubUuid: string,
-    serviceUserId: string,
-    request: ClubRegistrationManagerPatch,
-  ): Promise<void> {
-    await this.clubRepository.manager.transaction(async (manager) => {
-      const clubRepository = manager.getRepository(ClubEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const clubManagerRegisterRequestRepository = manager.getRepository(
-        ClubManagerRegisterRequestEntity,
-      )
-      const club = await clubRepository.findOne({
-        where: {
-          uuid: clubUuid,
-          deletedAt: IsNull(),
-        },
-        loadEagerRelations: false,
-        lock: {
-          mode: 'pessimistic_write',
-        },
-      })
-      if (!club) {
-        throw new NotFoundError('club not found')
-      }
-
-      const clubManager = await this.getOwnedRegistrationManager(
-        clubManagerRepository,
-        clubManagerRegisterRequestRepository,
-        clubUuid,
-        serviceUserId,
-      )
-      this.assertEditableClubRegistrationStatus(club.status)
-
-      await clubManagerRepository.update(
-        { id: clubManager.id },
-        {
-          ...(request.name !== undefined && { name: request.name }),
-          ...(request.phone !== undefined && { phone: request.phone }),
-          ...(request.student_id !== undefined && { studentId: request.student_id }),
-        },
-      )
-    })
-  }
-
   private async getOwnedRegistrationManager(
     clubManagerRepository: Repository<ClubManagerEntity>,
     clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>,
@@ -735,20 +690,29 @@ export class ClubService {
     serviceUserId: string,
     body: ManagedClubPatch,
   ): Promise<{ clubUuid: string; updatedAt: string }> {
-    const patch = await this.buildClubPatchFromClubData(body)
-    if (Object.keys(patch).length === 0) {
+    const clubPatch = body.club_data ? await this.buildClubPatchFromClubData(body.club_data) : {}
+    if (Object.keys(clubPatch).length === 0 && !body.manager_data) {
       throw new BadRequestError('수정할 필드가 없습니다.')
     }
 
     return this.clubRepository.manager.transaction(async (manager) => {
       const clubRepository = manager.getRepository(ClubEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
+      const clubManagerRegisterRequestRepository = manager.getRepository(
+        ClubManagerRegisterRequestEntity,
+      )
       const clubHistoryRepository = manager.getRepository(ClubHistoryEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
-      const club = await clubRepository.findOneBy({
-        uuid: clubUuid,
-        deletedAt: IsNull(),
+      const club = await clubRepository.findOne({
+        where: {
+          uuid: clubUuid,
+          deletedAt: IsNull(),
+        },
+        loadEagerRelations: false,
+        lock: {
+          mode: 'pessimistic_write',
+        },
       })
       if (!club) {
         throw new NotFoundError('club not found')
@@ -762,20 +726,44 @@ export class ClubService {
         throw new ForbiddenError('club manager permission required')
       }
 
+      if (body.manager_data) {
+        const managerRequest = await clubManagerRegisterRequestRepository.findOneBy({
+          clubId: clubUuid,
+          serviceUserId,
+        })
+        if (managerRequest) {
+          throw new ForbiddenError('manager request is not a club registration')
+        }
+        this.assertEditableClubRegistrationStatus(club.status)
+
+        await clubManagerRepository.update(
+          { id: clubManager.id },
+          {
+            ...(body.manager_data.name !== undefined && { name: body.manager_data.name }),
+            ...(body.manager_data.phone !== undefined && { phone: body.manager_data.phone }),
+            ...(body.manager_data.student_id !== undefined && {
+              studentId: body.manager_data.student_id,
+            }),
+          },
+        )
+      }
+
       const statusPatch = getClubResubmissionStatusPatch(club.status)
       const patchWithStatus = {
-        ...patch,
+        ...clubPatch,
         ...statusPatch,
       }
       const shouldRecordHistory = club.status === PUBLIC_CLUB_STATUS
       const beforeData = shouldRecordHistory ? this.toClubHistoryData(club) : null
-      await clubRepository.update(
-        {
-          uuid: clubUuid,
-          deletedAt: IsNull(),
-        },
-        patchWithStatus,
-      )
+      if (Object.keys(patchWithStatus).length > 0) {
+        await clubRepository.update(
+          {
+            uuid: clubUuid,
+            deletedAt: IsNull(),
+          },
+          patchWithStatus,
+        )
+      }
 
       if (club.status === REJECTED_CLUB_STATUS) {
         await userNotificationRepository.delete({

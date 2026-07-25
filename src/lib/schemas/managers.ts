@@ -172,10 +172,19 @@ export type ClubRegisterResponse = z.infer<typeof ClubRegisterResponseSchema>
 
 export const ManagedClubUpdateSchema = z.object(clubDraftShape).openapi('ManagedClubUpdate')
 
-export const ManagedClubPatchSchema = ClubDataSchema.partial()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: 'At least one field is required',
+export const ManagedClubPatchSchema = z
+  .object({
+    club_data: ClubDataSchema.partial().optional(),
+    manager_data: ClubRegistrationManagerPatchSchema.optional(),
   })
+  .refine(
+    (data) =>
+      (data.club_data !== undefined && Object.keys(data.club_data).length > 0) ||
+      data.manager_data !== undefined,
+    {
+      message: 'At least one field is required',
+    },
+  )
   .openapi('ManagedClubPatch')
 
 export type ManagedClubPatch = z.infer<typeof ManagedClubPatchSchema>

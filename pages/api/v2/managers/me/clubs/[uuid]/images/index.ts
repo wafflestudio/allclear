@@ -69,7 +69,9 @@ export default async function imageUploadHandler(req: NextApiRequest, res: NextA
       const club = await clubService.getManagedClubByUuid(clubUuid, user.serviceUserId)
 
       const persist = (clubId: string, imageUri: string) =>
-        clubService.patchManagedClub(clubId, user.serviceUserId, { image_uri: imageUri })
+        clubService.patchManagedClub(clubId, user.serviceUserId, {
+          club_data: { image_uri: imageUri },
+        })
       await uploadAndPersistImage(req, club.uuid, persist)
 
       return res.status(200).json({ ok: true })

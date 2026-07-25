@@ -53,7 +53,6 @@ import {
   ClubManagerRequestResponseSchema,
   ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
-  ClubRegistrationManagerPatchSchema,
   ClubRegistrationManagerSchema,
   ManagedClubPatchSchema,
   ManagedClubsResponseSchema,
@@ -1805,40 +1804,6 @@ registry.registerPath({
 })
 
 registry.registerPath({
-  method: 'patch',
-  path: '/api/v2/managers/me/clubs/{uuid}/manager',
-  tags: ['Managers'],
-  summary: '신규 동아리 등록 신청 운영진 정보 수정',
-  description:
-    '로그인한 사용자가 직접 등록한 PENDING 또는 REJECTED 상태의 신규 동아리 신청에서 본인의 운영진 기본 정보를 부분 수정합니다. name, phone, student_id 중 최소 하나가 필요합니다. 동일한 값을 전달해도 성공하며 동아리 및 신청 상태는 변경하지 않습니다. 기존 동아리의 관리 권한 신청(manager-requests)은 수정하지 않습니다.',
-  security: [{ bearerAuth: [] }],
-  request: {
-    params: ClubUuidParamsSchema,
-    body: {
-      content: {
-        'application/json': {
-          schema: ClubRegistrationManagerPatchSchema,
-          example: {
-            name: '홍길동',
-            phone: '010-9876-5432',
-            student_id: '2022-12345',
-          },
-        },
-      },
-    },
-  },
-  responses: {
-    204: NoContentResponse,
-    400: validationErrorResponse,
-    401: unauthorizedResponse,
-    403: forbiddenResponse,
-    404: notFoundResponse,
-    409: conflictResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
   method: 'post',
   path: '/api/v2/managers/me/clubs/{uuid}/recruitments',
   tags: ['Managers'],
@@ -1929,7 +1894,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '관리 중인 동아리 수정',
   description:
-    '동아리 관리자가 본인 동아리 정보를 수정합니다. 요청에 포함된 필드만 반영합니다. APPROVED 상태의 동아리 수정만 수정 전후 스냅샷을 club_history에 기록하며, PENDING 또는 REJECTED 상태에서는 이력을 기록하지 않습니다. REJECTED 상태의 동아리를 수정하면 신규 동아리 등록 재신청으로 처리되어 상태가 PENDING으로 변경되고 rejectReason이 초기화되며 기존 CLUB_REGISTRATION_REJECTED 알림이 삭제됩니다.',
+    '동아리 관리자가 본인 동아리와 신규 등록 신청의 운영진 정보를 하나의 트랜잭션에서 수정합니다. club_data와 manager_data에 포함된 필드만 반영하며 둘 중 최소 하나가 필요합니다. manager_data는 직접 등록한 PENDING 또는 REJECTED 상태의 신규 동아리 신청에서만 수정할 수 있고 기존 manager-requests 관계와 APPROVED 상태에서는 수정할 수 없습니다. APPROVED 상태의 동아리 정보 수정만 수정 전후 스냅샷을 club_history에 기록합니다. REJECTED 상태의 신청을 최종 수정하면 PENDING으로 변경되고 rejectReason이 초기화되며 기존 CLUB_REGISTRATION_REJECTED 알림이 삭제됩니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -1938,14 +1903,14 @@ registry.registerPath({
         'application/json': {
           schema: ManagedClubPatchSchema,
           example: {
-            recruit_type: '상시',
-            min_activity_period: 2,
-            has_dongbang: true,
-            dongbang_location: '301동 3층',
-            sns_urls: [
-              'https://www.instagram.com/wafflestudio_official/',
-              'https://www.youtube.com/@wafflestudio',
-            ],
+            club_data: {
+              name: '수정된 동아리명',
+              category: '학술',
+            },
+            manager_data: {
+              phone: '010-9876-5432',
+              student_id: '2022-12345',
+            },
           },
         },
       },
@@ -1966,7 +1931,7 @@ registry.registerPath({
           }),
           example: {
             success: true,
-            message: '동아리 정보가 수정되었으며, 수정 이력이 기록되었습니다.',
+            message: '동아리 및 운영진 정보가 수정되었습니다.',
             data: {
               club_uuid: '123e4567-e89b-12d3-a456-426614174000',
               updated_at: '2026-04-02T10:00:00Z',

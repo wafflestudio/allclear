@@ -7,7 +7,7 @@ vi.mock('../provider', () => ({
 }))
 
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
-import { ClubEntity } from '../infra/database/entities'
+import { ClubEntity, ClubHistoryEntity, UserNotificationEntity } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
 import { ClubService } from './club.service'
@@ -142,9 +142,15 @@ describe('club registration manager information', () => {
     ).rejects.toBeInstanceOf(NotFoundError)
   })
 
-  it('updates only supplied manager fields without changing registration status', async () => {
+  it('updates club and manager information in one transaction', async () => {
     const clubRepository = {
-      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'REJECTED' }),
+      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'PENDING' }),
+      update: vi.fn().mockResolvedValue({ affected: 1 }),
+      findOneByOrFail: vi.fn().mockResolvedValue({
+        uuid: clubUuid,
+        status: 'PENDING',
+        updatedAt: '2026-07-26T00:00:00.000Z',
+      }),
     }
     const clubManagerRepository = {
       findOneBy: vi.fn().mockResolvedValue({
@@ -157,6 +163,12 @@ describe('club registration manager information', () => {
     const clubManagerRegisterRequestRepository = {
       findOneBy: vi.fn().mockResolvedValue(null),
     }
+    const clubHistoryRepository = {
+      insert: vi.fn(),
+    }
+    const userNotificationRepository = {
+      delete: vi.fn(),
+    }
     const entityManager = {
       getRepository: vi.fn((entity) => {
         if (entity === ClubEntity) return clubRepository
@@ -164,6 +176,8 @@ describe('club registration manager information', () => {
         if (entity === ClubManagerRegisterRequestEntity) {
           return clubManagerRegisterRequestRepository
         }
+        if (entity === ClubHistoryEntity) return clubHistoryRepository
+        if (entity === UserNotificationEntity) return userNotificationRepository
         throw new Error('unexpected repository')
       }),
     }
@@ -175,8 +189,13 @@ describe('club registration manager information', () => {
       },
     })
 
-    await service.updateClubRegistrationManager(clubUuid, serviceUserId, {
-      phone: '010-9876-5432',
+    await service.patchManagedClub(clubUuid, serviceUserId, {
+      club_data: {
+        short_description: '수정된 한줄소개',
+      },
+      manager_data: {
+        phone: '010-9876-5432',
+      },
     })
 
     expect(clubRepository.findOne).toHaveBeenCalledWith({
@@ -190,5 +209,16 @@ describe('club registration manager information', () => {
       },
     })
     expect(clubManagerRepository.update).toHaveBeenCalledWith({ id: 1 }, { phone: '010-9876-5432' })
+    expect(clubRepository.update).toHaveBeenCalledWith(
+      {
+        uuid: clubUuid,
+        deletedAt: expect.anything(),
+      },
+      {
+        shortDescription: '수정된 한줄소개',
+      },
+    )
+    expect(clubHistoryRepository.insert).not.toHaveBeenCalled()
+    expect(userNotificationRepository.delete).not.toHaveBeenCalled()
   })
 })

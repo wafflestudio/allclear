@@ -11,10 +11,7 @@ import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import {
-  ClubRegistrationManagerPatchSchema,
-  type ClubRegistrationManager,
-} from 'src/lib/schemas/managers'
+import type { ClubRegistrationManager } from 'src/lib/schemas/managers'
 
 export default async function handler(
   req: NextApiRequest,
@@ -29,12 +26,6 @@ export default async function handler(
     if (req.method === 'GET') {
       const manager = await clubService.getClubRegistrationManager(clubUuid, user.serviceUserId)
       return res.status(200).json(manager)
-    }
-
-    if (req.method === 'PATCH') {
-      const body = ClubRegistrationManagerPatchSchema.parse(req.body)
-      await clubService.updateClubRegistrationManager(clubUuid, user.serviceUserId, body)
-      return res.status(204).end()
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {
