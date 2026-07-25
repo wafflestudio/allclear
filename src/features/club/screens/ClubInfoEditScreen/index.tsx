@@ -45,6 +45,7 @@ import {
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 import type { EditableImage, ImageFile } from '@/shared/types/image'
+import { getManagedClubUpdateErrorContent } from '@/features/club/utils/managedClubUpdateError'
 
 type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_INFO_EDIT>
 
@@ -78,6 +79,7 @@ type ComparableClubInfo = {
 
 type SuccessModalProps = {
 	visible: boolean
+	title: string
 	onConfirm: () => void
 }
 
@@ -201,7 +203,7 @@ const buildUpdateManagedClubRequest = (
 	return Object.keys(request).length > 1 ? request : null
 }
 
-const SuccessModal = memo(({ visible, onConfirm }: SuccessModalProps) => (
+const SuccessModal = memo(({ visible, title, onConfirm }: SuccessModalProps) => (
 	<Modal visible={visible} transparent animationType="fade" onRequestClose={onConfirm}>
 		<Pressable style={styles.modalOverlay} onPress={onConfirm}>
 			<BlurView
@@ -213,7 +215,7 @@ const SuccessModal = memo(({ visible, onConfirm }: SuccessModalProps) => (
 			/>
 			<Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
 				<View style={styles.modalContents}>
-					<Text style={styles.modalTitle}>동아리 정보가 정상적으로 수정되었어요</Text>
+					<Text style={styles.modalTitle}>{title}</Text>
 				</View>
 				<Pressable style={styles.modalSingleBtn} onPress={onConfirm}>
 					<Text style={styles.modalConfirmText}>확인</Text>
@@ -577,7 +579,7 @@ DepartmentModal.displayName = 'DepartmentModal'
 
 const ClubInfoEditScreen = () => {
 	const route = useRoute<RouteProps>()
-	const { clubId } = route.params
+	const { clubId, fromClubRegistrationEdit = false, managerData } = route.params
 	const { clubService, userService } = useContext(serviceContext)
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
@@ -781,6 +783,7 @@ const ClubInfoEditScreen = () => {
 		newActivityImageFiles.length > 0 ||
 		JSON.stringify(retainedActivityImageUrls) !== JSON.stringify(initialActivityImageUrls)
 	const hasChanges = !!imageFile || !!updateRequest || activityImagesChanged
+	const hasAnyChanges = hasChanges || managerData !== undefined
 
 	const { mutate: updateClub, isPending: isSubmitting } = useMutation({
 		mutationFn: async () => {
@@ -809,21 +812,31 @@ const ClubInfoEditScreen = () => {
 				]
 			}
 
+			if (managerData) {
+				request.manager_data = managerData
+			}
+
 			if (Object.keys(request).length > 1) {
 				return clubService.updateManagedClub(request)
 			}
 		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ['managedClub', clubId] })
-			queryClient.invalidateQueries({ queryKey: ['manageClubs'] })
-			queryClient.invalidateQueries({ queryKey: ['clubs', clubId] })
+		onSuccess: async () => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: ['managedClub', clubId] }),
+				queryClient.invalidateQueries({ queryKey: ['manageClubs'] }),
+				queryClient.invalidateQueries({ queryKey: ['clubs', clubId] }),
+				queryClient.invalidateQueries({
+					queryKey: ['clubManagerInfo', 'clubRegistration', clubId],
+				}),
+			])
 			setShowSuccessModal(true)
 		},
-		onError: () => {
+		onError: error => {
+			const errorContent = getManagedClubUpdateErrorContent(error)
 			Toast.show({
 				type: 'error',
-				text1: '동아리 정보를 수정하지 못했어요',
-				text2: '잠시 후 다시 시도해주세요',
+				text1: errorContent.title,
+				text2: errorContent.description,
 				position: 'top',
 				topOffset: 60,
 				visibilityTime: 2000,
@@ -832,16 +845,21 @@ const ClubInfoEditScreen = () => {
 	})
 
 	const handleSubmit = useCallback(() => {
-		if (!isComplete || !hasChanges || isSubmitting) {
+		if (!isComplete || !hasAnyChanges || isSubmitting) {
 			return
 		}
 		updateClub()
-	}, [hasChanges, isComplete, isSubmitting, updateClub])
+	}, [hasAnyChanges, isComplete, isSubmitting, updateClub])
 
 	const handleConfirmSuccess = useCallback(() => {
 		setShowSuccessModal(false)
+		if (fromClubRegistrationEdit) {
+			navigation.setRoot('마이')
+			return
+		}
+
 		navigation.goBack()
-	}, [])
+	}, [fromClubRegistrationEdit])
 
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -913,7 +931,7 @@ const ClubInfoEditScreen = () => {
 
 						<ClubEditFooter
 							paddingBottom={insets.bottom + vs(14)}
-							disabled={!isComplete || !hasChanges || isSubmitting}
+							disabled={!isComplete || !hasAnyChanges || isSubmitting}
 							isSubmitting={isSubmitting}
 							onSubmit={handleSubmit}
 						/>
@@ -931,7 +949,15 @@ const ClubInfoEditScreen = () => {
 				onSelect={handleSelectDepartment}
 			/>
 
-			<SuccessModal visible={showSuccessModal} onConfirm={handleConfirmSuccess} />
+			<SuccessModal
+				visible={showSuccessModal}
+				title={
+					fromClubRegistrationEdit
+						? '신청 내용이 정상적으로 수정되었어요'
+						: '동아리 정보가 정상적으로 수정되었어요'
+				}
+				onConfirm={handleConfirmSuccess}
+			/>
 		</SafeAreaView>
 	)
 }

@@ -21,6 +21,7 @@ import React, { useCallback, useContext, useState } from 'react'
 import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import {
 	Image,
+	Modal,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -45,6 +46,8 @@ const MyPageScreen = () => {
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false)
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false)
 	const [statusBlurEnabled, setStatusBlurEnabled] = useState(true)
+	const [cancelRequestClub, setCancelRequestClub] = useState<ManagedClubListItem | null>(null)
+	const [cancelRequestSuccessVisible, setCancelRequestSuccessVisible] = useState(false)
 
 	const { data: manageClubsData, refetch: refetchManageClubs } = useQuery({
 		queryKey: ['manageClubs'],
@@ -139,6 +142,57 @@ const MyPageScreen = () => {
 		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid })
 	}
 
+	const cancelRequestMutation = useMutation({
+		mutationFn: async (club: ManagedClubListItem) => {
+			if (club.managementStatus === 'PENDING') {
+				return clubService.cancelManagedClubRequest({ uuid: club.uuid })
+			}
+
+			return clubService.cancelClubManagerRequest({ clubId: club.uuid })
+		},
+		onSuccess: () => {
+			setCancelRequestClub(null)
+			setCancelRequestSuccessVisible(true)
+			queryClient.invalidateQueries({ queryKey: ['manageClubs'] })
+		},
+		onError: () => {
+			Toast.show({
+				type: 'error',
+				text1: '신청을 취소하지 못했어요',
+				text2: '잠시 후 다시 시도해주세요',
+			})
+		},
+	})
+
+	const handleEditRequest = (club: ManagedClubListItem) => {
+		setStatusBlurEnabled(false)
+
+		if (club.managementStatus === 'PENDING' || club.managementStatus === 'REJECTED') {
+			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
+				clubId: club.uuid,
+				editMode: 'clubRegistration',
+			})
+			return
+		}
+
+		navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
+			clubId: club.uuid,
+			editMode: 'managerRequest',
+		})
+	}
+
+	const handleCloseCancelRequestModal = () => {
+		if (!cancelRequestMutation.isPending) {
+			setCancelRequestClub(null)
+		}
+	}
+
+	const handleConfirmCancelRequest = () => {
+		if (!cancelRequestClub || cancelRequestMutation.isPending) return
+
+		cancelRequestMutation.mutate(cancelRequestClub)
+	}
+
 	const handleReadCurrentNotification = () => {
 		if (!currentNotification) return
 
@@ -150,8 +204,10 @@ const MyPageScreen = () => {
 
 		handleReadCurrentNotification()
 		if (currentNotification.type === 'CLUB_REGISTRATION_REJECTED' && currentNotification.clubId) {
-			navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, {
+			setStatusBlurEnabled(false)
+			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
 				clubId: currentNotification.clubId,
+				editMode: 'clubRegistration',
 			})
 		}
 	}
@@ -182,8 +238,30 @@ const MyPageScreen = () => {
 					<TouchableOpacity
 						style={styles.manageClubBtnFilled}
 						activeOpacity={0.7}
-						onPress={() => navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, { clubId: club.uuid })}>
+						onPress={() => handleEditRequest(club)}>
 						<Text style={styles.manageClubBtnFilledText}>수정 및 재신청</Text>
+					</TouchableOpacity>
+				</View>
+			)
+		}
+
+		if (
+			club.managementStatus === 'PENDING' ||
+			club.managementStatus === 'MANAGER_REQUEST_PENDING'
+		) {
+			return (
+				<View style={styles.manageClubButtons}>
+					<TouchableOpacity
+						style={styles.manageClubBtnOutline}
+						activeOpacity={0.7}
+						onPress={() => handleEditRequest(club)}>
+						<Text style={styles.manageClubBtnOutlineText}>신청 내용 수정</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={styles.manageClubBtnFilled}
+						activeOpacity={0.7}
+						onPress={() => setCancelRequestClub(club)}>
+						<Text style={styles.manageClubBtnFilledText}>신청 취소</Text>
 					</TouchableOpacity>
 				</View>
 			)
@@ -351,6 +429,22 @@ const MyPageScreen = () => {
 				hasCancel
 			/>
 			<AlertModal
+				visible={cancelRequestClub !== null}
+				onClose={handleCloseCancelRequestModal}
+				title="신청을 취소하시겠어요?"
+				description="취소한 신청은 복구할 수 없어요."
+				buttonLabel="신청 취소"
+				buttonVariant="destructive"
+				onButtonPress={handleConfirmCancelRequest}
+				hasCancel
+				cancelLabel="돌아가기"
+				dismissOnBackdropPress={!cancelRequestMutation.isPending}
+			/>
+			<CancelRequestSuccessModal
+				visible={cancelRequestSuccessVisible}
+				onClose={() => setCancelRequestSuccessVisible(false)}
+			/>
+			<AlertModal
 				visible={!!currentNotification && !!notificationModalContent}
 				onClose={handleReadCurrentNotification}
 				title={notificationModalContent?.title ?? ''}
@@ -367,6 +461,34 @@ const MyPageScreen = () => {
 }
 
 export default MyPageScreen
+
+const CancelRequestSuccessModal = ({
+	visible,
+	onClose,
+}: {
+	visible: boolean
+	onClose: () => void
+}) => (
+	<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+		<Pressable style={styles.cancelSuccessOverlay} onPress={onClose}>
+			<BlurView
+				style={StyleSheet.absoluteFillObject}
+				blurType="light"
+				blurAmount={1}
+				overlayColor="transparent"
+				reducedTransparencyFallbackColor="transparent"
+			/>
+			<Pressable style={styles.cancelSuccessCard} onPress={event => event.stopPropagation()}>
+				<View style={styles.cancelSuccessContents}>
+					<Text style={styles.cancelSuccessTitle}>신청이 취소되었어요.</Text>
+				</View>
+				<TouchableOpacity style={styles.cancelSuccessButton} activeOpacity={0.6} onPress={onClose}>
+					<Text style={styles.cancelSuccessButtonText}>확인</Text>
+				</TouchableOpacity>
+			</Pressable>
+		</Pressable>
+	</Modal>
+)
 
 type ManagedClubOverlayStatus = Exclude<ManagedClubManagementStatus, 'APPROVED'>
 
@@ -722,5 +844,48 @@ const styles = StyleSheet.create({
 	},
 	pressed: {
 		opacity: 0.5,
+	},
+	cancelSuccessOverlay: {
+		flex: 1,
+		backgroundColor: Colors.BACKGROUND_DIM,
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	cancelSuccessCard: {
+		width: ms(320),
+		backgroundColor: Colors.WHITE,
+		borderRadius: ms(12),
+		padding: ms(24),
+		gap: ms(24),
+		alignItems: 'center',
+	},
+	cancelSuccessContents: {
+		alignSelf: 'stretch',
+		alignItems: 'center',
+		gap: ms(8),
+	},
+	cancelSuccessTitle: {
+		fontFamily: 'Apple SD Gothic Neo',
+		fontWeight: '700',
+		fontSize: ms(16),
+		lineHeight: ms(24),
+		color: Colors.BLACK,
+		textAlign: 'center',
+		alignSelf: 'stretch',
+	},
+	cancelSuccessButton: {
+		alignSelf: 'stretch',
+		height: ms(44),
+		backgroundColor: Colors.BUTTON_SELECTED,
+		borderRadius: ms(8),
+		justifyContent: 'center',
+		alignItems: 'center',
+	},
+	cancelSuccessButtonText: {
+		fontFamily: 'Apple SD Gothic Neo',
+		fontWeight: '600',
+		fontSize: ms(16),
+		lineHeight: ms(20),
+		color: Colors.TEXT_BUTTON_SELECTED,
 	},
 })

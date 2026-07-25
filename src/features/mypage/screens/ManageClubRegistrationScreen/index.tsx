@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { useNavigation } from '@react-navigation/native'
+import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
 import AlertModal from '@/shared/components/AlertModal'
 import FlowScreenFooter from '@/shared/components/FlowScreenFooter'
@@ -15,6 +15,9 @@ import { useProfile } from '@/shared/contexts/profileContext'
 import { navigation } from '@/shared/utils/navigation'
 import { Club } from '@/entities/club'
 import { serviceContext } from '@/shared/contexts/serviceContext'
+import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { getManagedClubUpdateErrorContent } from '@/features/club/utils/managedClubUpdateError'
 
 type AdminFormData = {
 	name: string
@@ -32,6 +35,13 @@ const ManageClubRegistrationScreen = () => {
 	const { clubService } = useContext(serviceContext)
 	const { user } = useProfile()
 	const nav = useNavigation()
+	const queryClient = useQueryClient()
+	const route = useRoute<RouteProp<StackParamList, typeof SCREEN_TYPE.MANAGE_CLUB_REGISTRATION>>()
+	const editClubId = route.params?.clubId
+	const editMode = route.params?.editMode
+	const isManagerRequestEditMode = editMode === 'managerRequest'
+	const isClubRegistrationEditMode = editMode === 'clubRegistration'
+	const isEditMode = editClubId !== undefined && editMode !== undefined
 
 	useEffect(() => {
 		const parent = nav.getParent()
@@ -43,9 +53,9 @@ const ManageClubRegistrationScreen = () => {
 	}, [nav])
 	const [formStep, setFormStep] = useState<'form' | 'clubSearch'>('form')
 	const [adminForm, setAdminForm] = useState<AdminFormData>({
-		name: user?.name ?? '',
-		phone: getPhoneNumberPrefill(user?.phone ?? ''),
-		studentId: getStudentIdPrefill(user?.admissionClass ?? null),
+		name: isEditMode ? '' : (user?.name ?? ''),
+		phone: isEditMode ? '' : getPhoneNumberPrefill(user?.phone ?? ''),
+		studentId: isEditMode ? '' : getStudentIdPrefill(user?.admissionClass ?? null),
 	})
 	const [adminFormErrors, setAdminFormErrors] = useState<AdminFormErrors>({})
 	const [clubSearchQuery, setClubSearchQuery] = useState<string>('')
@@ -57,8 +67,46 @@ const ManageClubRegistrationScreen = () => {
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
 
+	const {
+		data: initialManagerInfo,
+		isLoading: isManagerInfoLoading,
+		isError: isManagerInfoError,
+		error: managerInfoError,
+		refetch: refetchManagerInfo,
+	} = useQuery({
+		queryKey: ['clubManagerInfo', editMode, editClubId],
+		queryFn: () => {
+			if (!editClubId || !editMode) {
+				throw new Error('Club id and edit mode are required to load manager info')
+			}
+
+			if (editMode === 'clubRegistration') {
+				return clubService.getManagedClubManager({ uuid: editClubId })
+			}
+
+			return clubService.getClubManagerRequest({ clubId: editClubId })
+		},
+		enabled: isEditMode,
+	})
+
 	useEffect(() => {
-		if (!user) {
+		if (!initialManagerInfo) return
+
+		setAdminForm({
+			name: initialManagerInfo.name,
+			phone: initialManagerInfo.phone,
+			studentId: initialManagerInfo.studentId,
+		})
+	}, [initialManagerInfo])
+
+	useEffect(() => {
+		if (isManagerInfoError) {
+			setIsErrorModalVisible(true)
+		}
+	}, [isManagerInfoError])
+
+	useEffect(() => {
+		if (!user || isEditMode) {
 			return
 		}
 
@@ -70,7 +118,7 @@ const ManageClubRegistrationScreen = () => {
 			phone: prev.phone || phone,
 			studentId: prev.studentId || studentId,
 		}))
-	}, [user])
+	}, [isEditMode, user])
 
 	useEffect(() => {
 		const timer = setTimeout(async () => {
@@ -131,6 +179,13 @@ const ManageClubRegistrationScreen = () => {
 		validatePhoneNumber(adminForm.phone) &&
 		adminForm.studentId.trim() !== '' &&
 		validateStudentId(adminForm.studentId)
+	const hasManagerInfoChanges =
+		initialManagerInfo !== undefined &&
+		(adminForm.name !== initialManagerInfo.name ||
+			adminForm.phone !== initialManagerInfo.phone ||
+			adminForm.studentId !== initialManagerInfo.studentId)
+	const isManagerInfoPrefillLoading = isEditMode && isManagerInfoLoading
+	const managerInfoErrorContent = getManagedClubUpdateErrorContent(managerInfoError)
 
 	const handleBack = () => {
 		if (formStep === 'clubSearch') {
@@ -144,8 +199,53 @@ const ManageClubRegistrationScreen = () => {
 		navigation.goBack()
 	}
 
-	const handleFormNext = () => {
+	const handleFormNext = async () => {
 		if (!validateAdminForm()) return
+
+		if (editClubId && isClubRegistrationEditMode) {
+			const managerData = hasManagerInfoChanges
+				? {
+						...(adminForm.name !== initialManagerInfo?.name && {
+							name: adminForm.name,
+						}),
+						...(adminForm.phone !== initialManagerInfo?.phone && {
+							phone: adminForm.phone,
+						}),
+						...(adminForm.studentId !== initialManagerInfo?.studentId && {
+							studentId: adminForm.studentId,
+						}),
+					}
+				: undefined
+
+			navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, {
+				clubId: editClubId,
+				fromClubRegistrationEdit: true,
+				managerData,
+			})
+			return
+		}
+
+		if (editClubId && isManagerRequestEditMode) {
+			if (isSubmittingRequest || !hasManagerInfoChanges) return
+
+			setIsSubmittingRequest(true)
+			try {
+				await clubService.updateClubManagerRequest({
+					clubId: editClubId,
+					name: adminForm.name,
+					phone: adminForm.phone,
+					studentId: adminForm.studentId,
+				})
+				queryClient.setQueryData(['clubManagerInfo', editMode, editClubId], adminForm)
+				setIsSuccessModalVisible(true)
+			} catch {
+				setIsErrorModalVisible(true)
+			} finally {
+				setIsSubmittingRequest(false)
+			}
+			return
+		}
+
 		setFormStep('clubSearch')
 	}
 
@@ -203,18 +303,72 @@ const ManageClubRegistrationScreen = () => {
 		setClubSearchQuery('')
 		setSearchResults([])
 		setSelectedClubId('')
+		if (isEditMode) {
+			navigation.goBack()
+			return
+		}
+
 		navigation.setRoot('마이')
 	}
+
+	const handleRetryManagerInfo = async () => {
+		setIsErrorModalVisible(false)
+		const result = await refetchManagerInfo()
+		if (result.isError) {
+			setIsErrorModalVisible(true)
+		}
+	}
+
+	const renderResultModals = () => (
+		<>
+			<AlertModal
+				visible={isSuccessModalVisible}
+				onClose={() => setIsSuccessModalVisible(false)}
+				title={
+					isEditMode
+						? '운영진 권한 신청 내용이\n수정되었어요!'
+						: '운영진 권한 요청이\n정상적으로 완료되었어요!'
+				}
+				buttonLabel="확인"
+				onButtonPress={handleSuccessConfirm}
+				dismissOnBackdropPress
+			/>
+			<AlertModal
+				visible={isErrorModalVisible}
+				onClose={() => setIsErrorModalVisible(false)}
+				title={isManagerInfoError ? managerInfoErrorContent.title : '실행이 완료되지 않았어요'}
+				description={
+					isManagerInfoError
+						? managerInfoErrorContent.description
+						: '네트워크 문제로 실행이 완료되지 않았어요\n네트워크 상태를 확인한 후, 다시 시도해주세요'
+				}
+				buttonLabel={isManagerInfoError ? '다시 시도' : '확인'}
+				onButtonPress={() => {
+					if (isManagerInfoError) {
+						void handleRetryManagerInfo()
+						return
+					}
+					setIsErrorModalVisible(false)
+				}}
+				dismissOnBackdropPress={false}
+			/>
+		</>
+	)
 
 	const renderForm = () => (
 		<FlowScreenLayout
 			footer={
 				<FlowScreenFooter
 					backLabel="이전"
-					nextLabel="다음"
+					nextLabel={isManagerRequestEditMode ? '수정' : '다음'}
 					onBack={handleBack}
-					onNext={handleFormNext}
-					nextDisabled={!isFormFieldsValid}
+					onNext={() => void handleFormNext()}
+					nextDisabled={
+						!isFormFieldsValid ||
+						isSubmittingRequest ||
+						isManagerInfoPrefillLoading ||
+						(isManagerRequestEditMode && !hasManagerInfoChanges)
+					}
 				/>
 			}>
 			<Text style={styles.title}>운영진 기본 정보를{'\n'}입력해주세요</Text>
@@ -227,6 +381,7 @@ const ManageClubRegistrationScreen = () => {
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					maxLength={50}
 					value={adminForm.name}
+					editable={!isManagerInfoPrefillLoading}
 					onChangeText={text => {
 						setAdminForm(prev => ({ ...prev, name: text }))
 						if (adminFormErrors.name) {
@@ -246,6 +401,7 @@ const ManageClubRegistrationScreen = () => {
 					keyboardType="number-pad"
 					maxLength={13}
 					value={adminForm.phone}
+					editable={!isManagerInfoPrefillLoading}
 					onChangeText={text => {
 						setAdminForm(prev => ({
 							...prev,
@@ -268,6 +424,7 @@ const ManageClubRegistrationScreen = () => {
 					keyboardType="number-pad"
 					maxLength={10}
 					value={adminForm.studentId}
+					editable={!isManagerInfoPrefillLoading}
 					onChangeText={text => {
 						setAdminForm(prev => ({
 							...prev,
@@ -280,6 +437,7 @@ const ManageClubRegistrationScreen = () => {
 				/>
 				<Text style={styles.formErrorText}>2023-12345 형식으로 입력해주세요</Text>
 			</View>
+			{renderResultModals()}
 		</FlowScreenLayout>
 	)
 
@@ -369,25 +527,7 @@ const ManageClubRegistrationScreen = () => {
 				cancelLabel="취소"
 				dismissOnBackdropPress
 			/>
-			<AlertModal
-				visible={isSuccessModalVisible}
-				onClose={() => setIsSuccessModalVisible(false)}
-				title={'운영진 권한 요청이\n정상적으로 완료되었어요!'}
-				buttonLabel="확인"
-				onButtonPress={handleSuccessConfirm}
-				dismissOnBackdropPress
-			/>
-			<AlertModal
-				visible={isErrorModalVisible}
-				onClose={() => setIsErrorModalVisible(false)}
-				title={'실행이 완료되지 않았어요'}
-				description={
-					'네트워크 문제로 실행이 완료되지 않았어요\n네트워크 상태를 확인한 후, 다시 시도해주세요'
-				}
-				buttonLabel="확인"
-				onButtonPress={() => setIsErrorModalVisible(false)}
-				dismissOnBackdropPress={false}
-			/>
+			{renderResultModals()}
 		</FlowScreenLayout>
 	)
 
