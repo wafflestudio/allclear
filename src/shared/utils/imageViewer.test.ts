@@ -2,7 +2,7 @@ import {
 	clampImageIndex,
 	clampImageScale,
 	getAdjacentImageIndex,
-	getPinchTranslation,
+	getPanTranslation,
 } from './imageViewer'
 
 describe('image viewer navigation', () => {
@@ -28,42 +28,25 @@ describe('image viewer zoom', () => {
 		expect(clampImageScale(10)).toBe(6)
 	})
 
-	it('moves the zoomed image with a two-finger pinch focal point', () => {
+	it('moves a zoomed image using the pan gesture translation', () => {
 		expect(
-			getPinchTranslation({
-				initialScale: 1,
-				nextScale: 2,
-				initialTranslation: { x: 0, y: 0 },
-				initialFocal: { x: 250, y: 300 },
-				currentFocal: { x: 270, y: 320 },
+			getPanTranslation({
+				initialTranslation: { x: 20, y: -10 },
+				gestureTranslation: { x: 60, y: 40 },
+				scale: 2,
 				viewport: { width: 400, height: 600 },
 			}),
-		).toEqual({ x: -30, y: 20 })
+		).toEqual({ x: 80, y: 30 })
 	})
 
-	it('keeps the moved image inside the zoomed viewport bounds', () => {
+	it('keeps panning inside the current zoom bounds', () => {
 		expect(
-			getPinchTranslation({
-				initialScale: 2,
-				nextScale: 2,
-				initialTranslation: { x: 0, y: 0 },
-				initialFocal: { x: 200, y: 300 },
-				currentFocal: { x: 1000, y: -1000 },
+			getPanTranslation({
+				initialTranslation: { x: 100, y: -100 },
+				gestureTranslation: { x: 500, y: -500 },
+				scale: 2,
 				viewport: { width: 400, height: 600 },
 			}),
 		).toEqual({ x: 200, y: -300 })
-	})
-
-	it('keeps a previously panned point under the fingers while zooming again', () => {
-		expect(
-			getPinchTranslation({
-				initialScale: 2,
-				nextScale: 4,
-				initialTranslation: { x: 100, y: -50 },
-				initialFocal: { x: 200, y: 300 },
-				currentFocal: { x: 200, y: 300 },
-				viewport: { width: 400, height: 600 },
-			}),
-		).toEqual({ x: 200, y: -100 })
 	})
 })

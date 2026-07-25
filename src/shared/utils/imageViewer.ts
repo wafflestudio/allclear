@@ -17,12 +17,10 @@ type Size = {
 	height: number
 }
 
-type PinchTranslationInput = {
-	initialScale: number
-	nextScale: number
+type PanTranslationInput = {
 	initialTranslation: Point
-	initialFocal: Point
-	currentFocal: Point
+	gestureTranslation: Point
+	scale: number
 	viewport: Size
 }
 
@@ -39,34 +37,19 @@ export const clampImageScale = (scale: number): number => {
 	return clamp(scale, MIN_IMAGE_SCALE, MAX_IMAGE_SCALE)
 }
 
-export const getPinchTranslation = ({
-	initialScale,
-	nextScale,
+export const getPanTranslation = ({
 	initialTranslation,
-	initialFocal,
-	currentFocal,
+	gestureTranslation,
+	scale,
 	viewport,
-}: PinchTranslationInput): Point => {
+}: PanTranslationInput): Point => {
 	'worklet'
 
-	const scaleRatio = nextScale / initialScale
-	const focalOffsetX = initialFocal.x - viewport.width / 2
-	const focalOffsetY = initialFocal.y - viewport.height / 2
-	const focalMovementX = currentFocal.x - initialFocal.x
-	const focalMovementY = currentFocal.y - initialFocal.y
-	const maxTranslationX = (viewport.width * (nextScale - 1)) / 2
-	const maxTranslationY = (viewport.height * (nextScale - 1)) / 2
+	const maxTranslationX = (viewport.width * (scale - 1)) / 2
+	const maxTranslationY = (viewport.height * (scale - 1)) / 2
 
 	return {
-		x: clamp(
-			initialTranslation.x * scaleRatio + focalMovementX + focalOffsetX * (1 - scaleRatio),
-			-maxTranslationX,
-			maxTranslationX,
-		),
-		y: clamp(
-			initialTranslation.y * scaleRatio + focalMovementY + focalOffsetY * (1 - scaleRatio),
-			-maxTranslationY,
-			maxTranslationY,
-		),
+		x: clamp(initialTranslation.x + gestureTranslation.x, -maxTranslationX, maxTranslationX),
+		y: clamp(initialTranslation.y + gestureTranslation.y, -maxTranslationY, maxTranslationY),
 	}
 }
