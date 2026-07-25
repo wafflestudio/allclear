@@ -18,7 +18,7 @@ import { getClubAffiliationLabel } from '@/shared/utils/club'
 import AlertModal from '@/shared/components/AlertModal'
 import EditPencilButton from '@/shared/components/EditPencilButton'
 import React, { useCallback, useContext, useState } from 'react'
-import { useFocusEffect } from '@react-navigation/native'
+import { useFocusEffect, useIsFocused } from '@react-navigation/native'
 import {
 	Image,
 	Pressable,
@@ -40,9 +40,11 @@ const MyPageScreen = () => {
 	const { openBottomSheet: openManageClub } = useManageClubBottomSheet()
 	const queryClient = useQueryClient()
 	const { user, setUser } = useProfile()
+	const isFocused = useIsFocused()
 
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false)
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false)
+	const [statusBlurEnabled, setStatusBlurEnabled] = useState(true)
 
 	const { data: manageClubsData, refetch: refetchManageClubs } = useQuery({
 		queryKey: ['manageClubs'],
@@ -64,6 +66,7 @@ const MyPageScreen = () => {
 
 	useFocusEffect(
 		useCallback(() => {
+			setStatusBlurEnabled(true)
 			refetchManageClubs()
 			refetchNotifications()
 		}, [refetchManageClubs, refetchNotifications]),
@@ -127,10 +130,12 @@ const MyPageScreen = () => {
 	}
 
 	const handleRegisterAnnouncement = (club: Club) => {
+		setStatusBlurEnabled(false)
 		navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, { clubId: club.uuid })
 	}
 
 	const handleManageClub = (club: Club) => {
+		setStatusBlurEnabled(false)
 		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid })
 	}
 
@@ -273,7 +278,10 @@ const MyPageScreen = () => {
 												</Text>
 											</View>
 										</View>
-										<ManageClubStatusBlurLayer status={club.managementStatus} />
+										<ManageClubStatusBlurLayer
+											status={club.managementStatus}
+											blurEnabled={isFocused && statusBlurEnabled}
+										/>
 									</View>
 									<ManageClubStatusTextLayer status={club.managementStatus} />
 								</View>
@@ -384,20 +392,28 @@ const MANAGE_CLUB_STATUS_OVERLAY: Record<
 	},
 }
 
-const ManageClubStatusBlurLayer = ({ status }: { status: ManagedClubManagementStatus }) => {
+const ManageClubStatusBlurLayer = ({
+	status,
+	blurEnabled,
+}: {
+	status: ManagedClubManagementStatus
+	blurEnabled: boolean
+}) => {
 	if (status === 'APPROVED') return null
 
 	const overlay = MANAGE_CLUB_STATUS_OVERLAY[status]
 
 	return (
 		<View style={styles.manageClubStatusBlurLayer} pointerEvents="none">
-			<BlurView
-				style={StyleSheet.absoluteFillObject}
-				blurType="light"
-				blurAmount={1}
-				overlayColor="transparent"
-				reducedTransparencyFallbackColor="transparent"
-			/>
+			{blurEnabled && (
+				<BlurView
+					style={StyleSheet.absoluteFillObject}
+					blurType="light"
+					blurAmount={1}
+					overlayColor="transparent"
+					reducedTransparencyFallbackColor="transparent"
+				/>
+			)}
 			<View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlay.backgroundColor }]} />
 		</View>
 	)
