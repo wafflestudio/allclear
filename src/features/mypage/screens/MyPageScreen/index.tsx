@@ -455,7 +455,7 @@ const styles = StyleSheet.create({
 		width: ms(40),
 		height: ms(40),
 		borderRadius: ms(20),
-		opacity: 0.5,
+		opacity: 1,
 		resizeMode: 'contain',
 	},
 	name: {
