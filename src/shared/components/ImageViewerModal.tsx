@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
@@ -40,6 +40,7 @@ const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) 
 			statusBarTranslucent
 			navigationBarTranslucent
 			onRequestClose={onClose}>
+			<StatusBar barStyle="light-content" backgroundColor={Colors.BLACK} />
 			<GestureHandlerRootView style={styles.modalRoot}>
 				<SafeAreaView style={styles.safeArea}>
 					<View style={styles.header}>
