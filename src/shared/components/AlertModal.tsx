@@ -29,7 +29,7 @@ const AlertModal = ({
 	hasCancel = false,
 	cancelLabel = '취소',
 	dismissOnBackdropPress = true,
-	overlayColor = Colors.BACKGROUND_DIM,
+	overlayColor = Colors.BACKGROUND_DIM_STRONG,
 	blurAmount = 1,
 }: AlertModalProps) => {
 	return (

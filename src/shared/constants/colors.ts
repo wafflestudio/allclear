@@ -8,6 +8,7 @@ export const Colors = {
 	BACKGROUND_MAIN: '#FAFAFA',
 	BACKGROUND_SUB: '#F3F0F5',
 	BACKGROUND_DIM: 'rgba(0, 0, 0, 0.20)',
+	BACKGROUND_DIM_STRONG: 'rgba(0, 0, 0, 0.40)',
 
 	// Body Text
 	BODYTEXT_MAIN: '#202020',
