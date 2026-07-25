@@ -480,6 +480,7 @@ export class ClubService {
           uuid: clubUuid,
           deletedAt: IsNull(),
         },
+        loadEagerRelations: false,
         lock: {
           mode: 'pessimistic_write',
         },

@@ -184,6 +184,7 @@ describe('club registration manager information', () => {
         uuid: clubUuid,
         deletedAt: expect.anything(),
       },
+      loadEagerRelations: false,
       lock: {
         mode: 'pessimistic_write',
       },
