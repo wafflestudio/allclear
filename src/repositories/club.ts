@@ -299,7 +299,11 @@ export const getClubRepository = (): ClubRepository => ({
 		return response
 	},
 	requestClubManager: async req => {
-		await apiConnector.post<void>('/v2/managers/me/clubs', req)
+		await apiConnector.post<void>(`/v2/clubs/${req.clubId}/manager-requests`, {
+			name: req.name,
+			phone: req.phone,
+			student_id: req.studentId,
+		})
 	},
 	listSavedClubs: async () => {
 		const response = await apiConnector.get<ListSavedClubsResponse>('/v2/users/me/clubs/saved')
