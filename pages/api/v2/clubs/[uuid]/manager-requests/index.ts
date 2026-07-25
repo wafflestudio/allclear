@@ -5,20 +5,35 @@ import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
 import { ConflictError, NotFoundError, UserNotFoundError } from 'server/domain/error'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import { ClubManagerRequestPatchSchema, ClubManagerRequestSchema } from 'src/lib/schemas/managers'
+import {
+  ClubManagerRequestPatchSchema,
+  ClubManagerRequestSchema,
+  type ClubManagerRequestResponse,
+} from 'src/lib/schemas/managers'
 
-type ClubManagerRequestResponse = {
+type ClubManagerRequestMutationResponse = {
   success: boolean
   message: string
 }
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ClubManagerRequestResponse | string | ZodIssue[] | null>,
+  res: NextApiResponse<
+    ClubManagerRequestResponse | ClubManagerRequestMutationResponse | string | ZodIssue[] | null
+  >,
 ) {
   try {
     const clubService = Provider.getService(ClubService)
     const userService = Provider.getService(UserService)
+
+    if (req.method === 'GET') {
+      const user = await userService.getUserByAccountId(req.headers.user as string)
+      const { uuid: clubUuid } = ClubUuidParamsSchema.parse(req.query)
+
+      const managerRequest = await clubService.getClubManagerRequest(clubUuid, user.serviceUserId)
+
+      return res.status(200).json(managerRequest)
+    }
 
     if (req.method === 'POST') {
       const user = await userService.getUserByAccountId(req.headers.user as string)

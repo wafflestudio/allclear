@@ -60,6 +60,16 @@ export const ClubManagerRequestSchema = z
 
 export type ClubManagerRequest = z.infer<typeof ClubManagerRequestSchema>
 
+export const ClubManagerRequestResponseSchema = z
+  .object({
+    name: z.string(),
+    phone: z.string(),
+    student_id: z.string(),
+  })
+  .openapi('ClubManagerRequestResponse')
+
+export type ClubManagerRequestResponse = z.infer<typeof ClubManagerRequestResponseSchema>
+
 export const ClubManagerRequestPatchSchema = ClubManagerRequestSchema.partial()
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field is required',

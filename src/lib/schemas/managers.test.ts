@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { ClubRegisterRequestSchema, ManagedClubPatchSchema } from './managers'
+import {
+  ClubManagerRequestResponseSchema,
+  ClubRegisterRequestSchema,
+  ManagedClubPatchSchema,
+} from './managers'
 
 const validClubData = {
   name: '와플스튜디오',
@@ -19,6 +23,20 @@ const validClubData = {
 }
 
 describe('manager club information schemas', () => {
+  it('parses a manager request prefill response', () => {
+    expect(
+      ClubManagerRequestResponseSchema.parse({
+        name: '홍길동',
+        phone: '010-1234-5678',
+        student_id: '2021-12345',
+      }),
+    ).toEqual({
+      name: '홍길동',
+      phone: '010-1234-5678',
+      student_id: '2021-12345',
+    })
+  })
+
   it('does not collect founded date or active member count during registration', () => {
     const parsed = ClubRegisterRequestSchema.parse({
       club_data: validClubData,

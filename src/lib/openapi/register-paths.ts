@@ -50,6 +50,7 @@ import {
   ClubRegisterRequestSchema,
   ClubRegisterResponseSchema,
   ClubManagerRequestPatchSchema,
+  ClubManagerRequestResponseSchema,
   ClubManagerRequestSchema,
   ClubManagerRegisterRequestSchema,
   ManagedClubPatchSchema,
@@ -1053,6 +1054,38 @@ registry.registerPath({
       },
     },
     401: unauthorizedResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v2/clubs/{uuid}/manager-requests',
+  tags: ['Clubs'],
+  summary: '본인의 동아리 관리 권한 신청 조회',
+  description:
+    '로그인한 사용자가 해당 동아리에 제출한 수정 또는 취소 가능한 신청을 조회합니다. PENDING 상태의 최신 신청을 우선 반환하고, 없으면 최신 REJECTED 신청을 반환합니다. APPROVED 신청과 다른 사용자의 신청은 반환하지 않습니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    200: {
+      description: '동아리 관리 권한 신청 조회 성공',
+      content: {
+        'application/json': {
+          schema: ClubManagerRequestResponseSchema,
+          example: {
+            name: '홍길동',
+            phone: '010-1234-5678',
+            student_id: '2021-12345',
+          },
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
     500: internalServerErrorResponse,
   },
 })

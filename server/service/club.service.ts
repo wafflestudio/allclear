@@ -36,6 +36,7 @@ import type {
   ClubData,
   ClubManagerRequest,
   ClubManagerRequestPatch,
+  ClubManagerRequestResponse,
   ClubRegisterRequest,
   ManagedClubPatch,
 } from 'src/lib/schemas/managers'
@@ -921,6 +922,47 @@ export class ClubService {
         studentId: request.student_id,
       })
     })
+  }
+
+  async getClubManagerRequest(
+    clubUuid: string,
+    serviceUserId: string,
+  ): Promise<ClubManagerRequestResponse> {
+    const pendingRequest = await this.clubManagerRegisterRequestRepository.findOne({
+      where: {
+        clubId: clubUuid,
+        serviceUserId,
+        status: PENDING_CLUB_STATUS,
+      },
+      order: {
+        createdAt: 'DESC',
+        id: 'DESC',
+      },
+    })
+
+    const managerRequest =
+      pendingRequest ??
+      (await this.clubManagerRegisterRequestRepository.findOne({
+        where: {
+          clubId: clubUuid,
+          serviceUserId,
+          status: REJECTED_CLUB_STATUS,
+        },
+        order: {
+          createdAt: 'DESC',
+          id: 'DESC',
+        },
+      }))
+
+    if (!managerRequest) {
+      throw new NotFoundError('editable manager request not found')
+    }
+
+    return {
+      name: managerRequest.name,
+      phone: managerRequest.phone,
+      student_id: managerRequest.studentId,
+    }
   }
 
   async deleteClubManagerRequest(clubUuid: string, serviceUserId: string): Promise<void> {
