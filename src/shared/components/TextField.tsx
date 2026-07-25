@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import { TextInput, TextInputProps, StyleSheet, TextStyle, ViewStyle } from 'react-native'
 import { Colors } from '@/shared/constants/colors'
 
@@ -89,4 +89,4 @@ const styles = StyleSheet.create({
 	},
 })
 
-export default TextField
+export default memo(TextField)

@@ -73,7 +73,7 @@ const ClubSnsInputList = ({ urls, onChange }: Props) => {
 	)
 }
 
-export default ClubSnsInputList
+export default React.memo(ClubSnsInputList)
 
 const styles = StyleSheet.create({
 	fieldWrapper: {
