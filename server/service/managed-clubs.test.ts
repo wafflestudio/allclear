@@ -53,20 +53,34 @@ const createClub = (uuid: string, name: string): ClubEntity =>
   } as ClubEntity)
 
 describe('ClubService.findAllManagedByUser', () => {
-  it('returns hasManager based on an active club_manager relation', async () => {
+  it('returns hasManager when any user manages the club', async () => {
     const managedClub = createClub('123e4567-e89b-12d3-a456-426614174000', '관리 동아리')
-    const requestedClub = createClub('123e4567-e89b-12d3-a456-426614174001', '신청 동아리')
+    const requestedClubWithManager = createClub(
+      '123e4567-e89b-12d3-a456-426614174001',
+      '운영진 있는 신청 동아리',
+    )
+    const requestedClubWithoutManager = createClub(
+      '123e4567-e89b-12d3-a456-426614174002',
+      '운영진 없는 신청 동아리',
+    )
     const service = Object.create(ClubService.prototype) as ClubService
+    const findClubManagers = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          clubId: managedClub.uuid,
+          createdAt: '2026-07-26T00:00:00.000Z',
+        },
+      ])
+      .mockResolvedValueOnce([
+        { clubId: managedClub.uuid },
+        { clubId: requestedClubWithManager.uuid },
+      ])
 
     Object.defineProperties(service, {
       clubManagerRepository: {
         value: {
-          find: vi.fn().mockResolvedValue([
-            {
-              clubId: managedClub.uuid,
-              createdAt: '2026-07-26T00:00:00.000Z',
-            },
-          ]),
+          find: findClubManagers,
         },
       },
       clubManagerRegisterRequestRepository: {
@@ -74,7 +88,13 @@ describe('ClubService.findAllManagedByUser', () => {
           find: vi.fn().mockResolvedValue([
             {
               id: '1',
-              clubId: requestedClub.uuid,
+              clubId: requestedClubWithManager.uuid,
+              status: 'PENDING',
+              createdAt: '2026-07-26T00:00:00.000Z',
+            },
+            {
+              id: '2',
+              clubId: requestedClubWithoutManager.uuid,
               status: 'PENDING',
               createdAt: '2026-07-26T00:00:00.000Z',
             },
@@ -83,7 +103,13 @@ describe('ClubService.findAllManagedByUser', () => {
       },
       clubRepository: {
         value: {
-          findBy: vi.fn().mockResolvedValue([managedClub, requestedClub]),
+          findBy: vi
+            .fn()
+            .mockResolvedValue([
+              managedClub,
+              requestedClubWithManager,
+              requestedClubWithoutManager,
+            ]),
         },
       },
       findLatestRecruitmentUpdatedAtByClubId: {
@@ -101,11 +127,24 @@ describe('ClubService.findAllManagedByUser', () => {
           hasManager: true,
         }),
         expect.objectContaining({
-          uuid: requestedClub.uuid,
+          uuid: requestedClubWithManager.uuid,
+          managementStatus: 'MANAGER_REQUEST_PENDING',
+          hasManager: true,
+        }),
+        expect.objectContaining({
+          uuid: requestedClubWithoutManager.uuid,
           managementStatus: 'MANAGER_REQUEST_PENDING',
           hasManager: false,
         }),
       ]),
+    )
+
+    expect(findClubManagers).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        select: { clubId: true },
+        where: { clubId: expect.anything() },
+      }),
     )
   })
 })

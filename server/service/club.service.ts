@@ -200,12 +200,19 @@ export class ClubService {
     if (clubIds.length === 0) {
       return []
     }
-    const clubs = await this.clubRepository.findBy({
-      uuid: In(clubIds),
-      deletedAt: IsNull(),
-    })
+    const [clubs, allClubManagers] = await Promise.all([
+      this.clubRepository.findBy({
+        uuid: In(clubIds),
+        deletedAt: IsNull(),
+      }),
+      this.clubManagerRepository.find({
+        select: { clubId: true },
+        where: { clubId: In(clubIds) },
+      }),
+    ])
     const clubById = new Map(clubs.map((club) => [club.uuid, club]))
-    const managerClubIdSet = new Set(managerClubIds)
+    const userManagedClubIdSet = new Set(managerClubIds)
+    const clubIdWithManagerSet = new Set(allClubManagers.map((manager) => manager.clubId))
 
     const approvedManagedClubs = clubManagers
       .map((manager) => clubById.get(manager.clubId))
@@ -249,7 +256,7 @@ export class ClubService {
     const rejectedManagerRequestClubs = latestManagerRequests
       .filter(
         (request) =>
-          request.status === REJECTED_CLUB_STATUS && !managerClubIdSet.has(request.clubId),
+          request.status === REJECTED_CLUB_STATUS && !userManagedClubIdSet.has(request.clubId),
       )
       .map((request): ManagedClubListEntityItem | null => {
         const club = clubById.get(request.clubId)
@@ -265,7 +272,7 @@ export class ClubService {
       .filter((item): item is ManagedClubListEntityItem => !!item)
     const pendingManagerRequestClubs = latestManagerRequests
       .filter((request) => request.status === PENDING_CLUB_STATUS)
-      .filter((request) => !managerClubIdSet.has(request.clubId))
+      .filter((request) => !userManagedClubIdSet.has(request.clubId))
       .map((request): ManagedClubListEntityItem | null => {
         const club = clubById.get(request.clubId)
         if (!club) {
@@ -299,7 +306,7 @@ export class ClubService {
       .map((item) => ({
         ...toClubDomain(item.club),
         managementStatus: item.managementStatus,
-        hasManager: managerClubIdSet.has(item.club.uuid),
+        hasManager: clubIdWithManagerSet.has(item.club.uuid),
         ...(item.managerRequestId !== undefined && { managerRequestId: item.managerRequestId }),
       }))
   }
