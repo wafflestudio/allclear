@@ -97,7 +97,7 @@ const ClubActivityImagePicker = ({ images, onChange }: Props) => {
 	)
 }
 
-export default ClubActivityImagePicker
+export default React.memo(ClubActivityImagePicker)
 
 const styles = StyleSheet.create({
 	wrapper: { gap: vs(8) },

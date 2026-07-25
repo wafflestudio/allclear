@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from 'react'
+import React, { memo, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import {
 	ActivityIndicator,
 	Dimensions,
@@ -201,7 +201,7 @@ const buildUpdateManagedClubRequest = (
 	return Object.keys(request).length > 1 ? request : null
 }
 
-const SuccessModal = ({ visible, onConfirm }: SuccessModalProps) => (
+const SuccessModal = memo(({ visible, onConfirm }: SuccessModalProps) => (
 	<Modal visible={visible} transparent animationType="fade" onRequestClose={onConfirm}>
 		<Pressable style={styles.modalOverlay} onPress={onConfirm}>
 			<BlurView
@@ -221,7 +221,359 @@ const SuccessModal = ({ visible, onConfirm }: SuccessModalProps) => (
 			</Pressable>
 		</Pressable>
 	</Modal>
+))
+
+SuccessModal.displayName = 'SuccessModal'
+
+type ClubCategorySectionProps = {
+	category: ClubInfoEditFormData['category']
+	onChange: (category: ClubInfoEditFormData['category']) => void
+}
+
+const ClubCategorySection = memo(({ category, onChange }: ClubCategorySectionProps) => {
+	return (
+		<View style={styles.fieldWrapper}>
+			<Text style={styles.label}>카테고리</Text>
+			<View style={styles.categoryGrid}>
+				{CLUB_CATEGORIES.map(categoryOption => {
+					const isSelected = category === categoryOption
+					return (
+						<Pressable
+							key={categoryOption}
+							style={[styles.categoryBlock, isSelected && styles.categoryBlockSelected]}
+							onPress={() => onChange(categoryOption)}>
+							<Text style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
+								{categoryOption}
+							</Text>
+						</Pressable>
+					)
+				})}
+			</View>
+		</View>
+	)
+})
+
+ClubCategorySection.displayName = 'ClubCategorySection'
+
+type ClubRecruitTypeSectionProps = {
+	recruitType: string
+	onChange: (recruitType: string) => void
+}
+
+const ClubRecruitTypeSection = memo(({ recruitType, onChange }: ClubRecruitTypeSectionProps) => {
+	return (
+		<View style={styles.fieldWrapper}>
+			<Text style={styles.fieldLabel}>모집 형태</Text>
+			<View style={styles.buttonGroup}>
+				{CLUB_RECRUIT_TYPES.map(recruitTypeOption => {
+					const isSelected = recruitType === recruitTypeOption
+					return (
+						<Pressable
+							key={recruitTypeOption}
+							style={[styles.typeButton, isSelected && styles.typeButtonSelected]}
+							onPress={() => onChange(recruitTypeOption)}>
+							<Text style={[styles.typeButtonText, isSelected && styles.typeButtonTextSelected]}>
+								{recruitTypeOption}
+							</Text>
+						</Pressable>
+					)
+				})}
+			</View>
+		</View>
+	)
+})
+
+ClubRecruitTypeSection.displayName = 'ClubRecruitTypeSection'
+
+type ClubActivityPeriodSectionProps = {
+	mode: ActivityCycleMode
+	semesters: number
+	onModeChange: (mode: ActivityCycleMode) => void
+	onDecrement: () => void
+	onIncrement: () => void
+}
+
+const ClubActivityPeriodSection = memo(
+	({ mode, semesters, onModeChange, onDecrement, onIncrement }: ClubActivityPeriodSectionProps) => {
+		return (
+			<View style={styles.fieldWrapper}>
+				<Text style={styles.fieldLabel}>(최소) 활동 기간</Text>
+				<View style={styles.periodRow}>
+					<View style={styles.modeButtons}>
+						<Pressable
+							style={[styles.typeButton, mode === 'none' && styles.typeButtonSelected]}
+							onPress={() => onModeChange('none')}>
+							<Text
+								style={[styles.typeButtonText, mode === 'none' && styles.typeButtonTextSelected]}>
+								없음
+							</Text>
+						</Pressable>
+						<Pressable
+							style={[styles.typeButton, mode === 'number' && styles.typeButtonSelected]}
+							onPress={() => onModeChange('number')}>
+							<Text
+								style={[styles.typeButtonText, mode === 'number' && styles.typeButtonTextSelected]}>
+								있음
+							</Text>
+						</Pressable>
+					</View>
+
+					<View style={styles.periodStepper}>
+						<Text style={styles.semesterValue}>{semesters}학기</Text>
+						<View style={styles.stepperPill}>
+							<Pressable style={styles.stepperButton} onPress={onDecrement}>
+								<Icon name="remove" size={ms(18)} color={Colors.BODYTEXT_SUB} />
+							</Pressable>
+							<View style={styles.stepperDivider} />
+							<Pressable style={styles.stepperButton} onPress={onIncrement}>
+								<Icon name="add" size={ms(18)} color={Colors.BODYTEXT_SUB} />
+							</Pressable>
+						</View>
+					</View>
+				</View>
+			</View>
+		)
+	},
 )
+
+ClubActivityPeriodSection.displayName = 'ClubActivityPeriodSection'
+
+type ClubDongbangSectionProps = {
+	hasDongbang: boolean
+	location: string
+	onHasDongbangChange: (value: boolean) => void
+	onLocationChange: (value: string) => void
+}
+
+const ClubDongbangSection = memo(
+	({ hasDongbang, location, onHasDongbangChange, onLocationChange }: ClubDongbangSectionProps) => {
+		return (
+			<View style={styles.fieldWrapper}>
+				<Text style={styles.fieldLabel}>동방 보유 여부</Text>
+				<View style={styles.buttonGroup}>
+					<Pressable
+						style={[styles.typeButton, hasDongbang && styles.typeButtonSelected]}
+						onPress={() => onHasDongbangChange(true)}>
+						<Text style={[styles.typeButtonText, hasDongbang && styles.typeButtonTextSelected]}>
+							보유
+						</Text>
+					</Pressable>
+					<Pressable
+						style={[styles.typeButton, !hasDongbang && styles.typeButtonSelected]}
+						onPress={() => onHasDongbangChange(false)}>
+						<Text style={[styles.typeButtonText, !hasDongbang && styles.typeButtonTextSelected]}>
+							미보유
+						</Text>
+					</Pressable>
+				</View>
+
+				{hasDongbang && (
+					<View style={styles.iconInputRow}>
+						<Icon name="location-on" size={ms(20)} color={Colors.BODYTEXT_DISABLED} />
+						<TextInput
+							style={styles.iconInput}
+							placeholder="동방 위치를 입력하세요"
+							placeholderTextColor={Colors.BODYTEXT_DISABLED}
+							value={location}
+							onChangeText={onLocationChange}
+							maxLength={100}
+						/>
+					</View>
+				)}
+			</View>
+		)
+	},
+)
+
+ClubDongbangSection.displayName = 'ClubDongbangSection'
+
+type ClubBasicInfoSectionProps = {
+	clubImage: string | null
+	clubName: string
+	department: string
+	shortIntro: string
+	showDepartmentDropdown: boolean
+	onSelectImage: () => void
+	onClubNameChange: (value: string) => void
+	onToggleDepartmentDropdown: () => void
+	onShortIntroChange: (value: string) => void
+}
+
+const ClubBasicInfoSection = memo(
+	({
+		clubImage,
+		clubName,
+		department,
+		shortIntro,
+		showDepartmentDropdown,
+		onSelectImage,
+		onClubNameChange,
+		onToggleDepartmentDropdown,
+		onShortIntroChange,
+	}: ClubBasicInfoSectionProps) => (
+		<>
+			<View style={styles.fieldWrapper}>
+				<Text style={styles.label}>동아리 대표 이미지</Text>
+				<Text style={styles.helperDescription}>4X4 정방형 이미지를 권장드려요</Text>
+				<Pressable style={styles.imageUploadBox} onPress={onSelectImage}>
+					{clubImage ? (
+						<Image source={{ uri: clubImage }} style={styles.uploadedImage} />
+					) : (
+						<Icon name="add" size={s(40)} color={Colors.BODYTEXT_DISABLED} />
+					)}
+				</Pressable>
+				<Pressable style={styles.imageChangeButton} onPress={onSelectImage}>
+					<Text style={styles.imageChangeText}>이미지 변경</Text>
+				</Pressable>
+			</View>
+
+			<View style={styles.fieldWrapper}>
+				<Text style={styles.label}>동아리명</Text>
+				<TextField
+					value={clubName}
+					placeholder="와플스튜디오"
+					onChangeText={onClubNameChange}
+					maxLength={30}
+				/>
+			</View>
+
+			<View style={styles.fieldWrapper}>
+				<Text style={styles.label}>한줄소개</Text>
+				<View style={styles.affiliationRow}>
+					<Pressable
+						style={[styles.dropdown, showDepartmentDropdown && styles.dropdownActive]}
+						onPress={onToggleDepartmentDropdown}>
+						<Text style={styles.dropdownText} numberOfLines={1}>
+							{department || '단과대/학과'}
+						</Text>
+						<Icon
+							name={showDepartmentDropdown ? 'expand-less' : 'expand-more'}
+							size={ms(20)}
+							color={Colors.BODYTEXT_MAIN}
+						/>
+					</Pressable>
+					<Text style={styles.affiliationLabel}>소속</Text>
+				</View>
+
+				<TextField
+					placeholder="웹/앱 개발 동아리, 경영전략학회"
+					value={shortIntro}
+					onChangeText={onShortIntroChange}
+					maxLength={100}
+				/>
+			</View>
+		</>
+	),
+)
+
+ClubBasicInfoSection.displayName = 'ClubBasicInfoSection'
+
+type ClubDescriptionSectionProps = {
+	description: string
+	onChange: (value: string) => void
+}
+
+const ClubDescriptionSection = memo(({ description, onChange }: ClubDescriptionSectionProps) => (
+	<View style={styles.fieldWrapper}>
+		<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
+		<TextInput
+			style={styles.descriptionInput}
+			placeholder="동아리에 대해 자세히 설명해주세요"
+			placeholderTextColor={Colors.BODYTEXT_DISABLED}
+			value={description}
+			onChangeText={onChange}
+			maxLength={500}
+			multiline
+			textAlignVertical="top"
+		/>
+	</View>
+))
+
+ClubDescriptionSection.displayName = 'ClubDescriptionSection'
+
+type ClubEditFooterProps = {
+	paddingBottom: number
+	disabled: boolean
+	isSubmitting: boolean
+	onSubmit: () => void
+}
+
+const ClubEditFooter = memo(
+	({ paddingBottom, disabled, isSubmitting, onSubmit }: ClubEditFooterProps) => (
+		<View style={[styles.footer, { paddingBottom }]}>
+			<Pressable
+				style={[styles.submitButton, disabled && styles.submitButtonDisabled]}
+				onPress={onSubmit}
+				disabled={disabled}>
+				<Text style={styles.submitButtonText}>{isSubmitting ? '수정 중...' : '수정'}</Text>
+			</Pressable>
+		</View>
+	),
+)
+
+ClubEditFooter.displayName = 'ClubEditFooter'
+
+type DepartmentModalProps = {
+	visible: boolean
+	search: string
+	options: string[]
+	selectedDepartment: string
+	onClose: () => void
+	onSearchChange: (value: string) => void
+	onSelect: (department: string) => void
+}
+
+const DepartmentModal = memo(
+	({
+		visible,
+		search,
+		options,
+		selectedDepartment,
+		onClose,
+		onSearchChange,
+		onSelect,
+	}: DepartmentModalProps) => (
+		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+			<Pressable style={styles.departmentModalOverlay} onPress={onClose}>
+				<Pressable style={styles.departmentModalCard} onPress={event => event.stopPropagation()}>
+					<Text style={styles.departmentModalTitle}>소속 선택</Text>
+					<TextInput
+						style={styles.dropdownSearchInput}
+						placeholder="소속 검색"
+						placeholderTextColor={Colors.BODYTEXT_DISABLED}
+						value={search}
+						onChangeText={onSearchChange}
+					/>
+					<FlatList
+						data={options}
+						style={styles.dropdownList}
+						keyboardShouldPersistTaps="handled"
+						keyExtractor={department => department}
+						renderItem={({ item: department }) => {
+							const isSelected = selectedDepartment === department
+							return (
+								<Pressable
+									style={[styles.dropdownItem, isSelected && styles.dropdownItemSelected]}
+									onPress={() => onSelect(department)}>
+									<Text
+										style={[
+											styles.dropdownItemText,
+											isSelected && styles.dropdownItemTextSelected,
+										]}>
+										{department}
+									</Text>
+								</Pressable>
+							)
+						}}
+						ListEmptyComponent={<Text style={styles.dropdownEmptyText}>검색 결과가 없어요</Text>}
+					/>
+				</Pressable>
+			</Pressable>
+		</Modal>
+	),
+)
+
+DepartmentModal.displayName = 'DepartmentModal'
 
 const ClubInfoEditScreen = () => {
 	const route = useRoute<RouteProps>()
@@ -255,12 +607,12 @@ const ClubInfoEditScreen = () => {
 		}
 	}, [club])
 
-	const setFormField = <K extends keyof ClubInfoEditFormData>(
-		key: K,
-		value: ClubInfoEditFormData[K],
-	) => {
-		setFormData(prev => ({ ...prev, [key]: value }))
-	}
+	const setFormField = useCallback(
+		<K extends keyof ClubInfoEditFormData>(key: K, value: ClubInfoEditFormData[K]) => {
+			setFormData(prev => ({ ...prev, [key]: value }))
+		},
+		[],
+	)
 
 	const activitySemesters = parseInt(formData.activityCycle, 10) || 0
 	const filteredDepartmentOptions = useMemo(() => {
@@ -271,13 +623,17 @@ const ClubInfoEditScreen = () => {
 		return departmentOptions.filter(department => department.includes(keyword))
 	}, [departmentOptions, departmentSearch])
 
-	const handleSelectDepartment = (department: string) => {
-		setFormField('department', department)
-		setShowDepartmentDropdown(false)
-		setDepartmentSearch('')
-	}
+	const handleSelectDepartment = useCallback(
+		(department: string) => {
+			setFormField('department', department)
+			setShowDepartmentDropdown(false)
+			setDepartmentSearch('')
+		},
+		[setFormField],
+	)
+	const handleCloseDepartmentDropdown = useCallback(() => setShowDepartmentDropdown(false), [])
 
-	const handleSelectImage = async () => {
+	const handleSelectImage = useCallback(async () => {
 		const result = await launchImageLibrary({
 			mediaType: 'photo',
 			selectionLimit: 1,
@@ -311,32 +667,72 @@ const ClubInfoEditScreen = () => {
 			type: asset.type ?? 'image/jpeg',
 			name: asset.fileName ?? `club_${Date.now()}.jpg`,
 		})
-	}
+	}, [setFormField])
 
-	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
-		setActivityCycleMode(mode)
-		setFormField('activityCycle', mode === 'number' ? '1' : '')
-	}
+	const handleActivityCycleModeChange = useCallback(
+		(mode: ActivityCycleMode) => {
+			setActivityCycleMode(mode)
+			setFormField('activityCycle', mode === 'number' ? '1' : '')
+		},
+		[setFormField],
+	)
 
-	const incrementActivityCycle = () => {
+	const incrementActivityCycle = useCallback(() => {
 		const next = incrementActivityCycleValue(activitySemesters)
 		setActivityCycleMode(next.mode)
 		setFormField('activityCycle', next.value)
-	}
+	}, [activitySemesters, setFormField])
 
-	const decrementActivityCycle = () => {
+	const decrementActivityCycle = useCallback(() => {
 		const next = decrementActivityCycleValue(activitySemesters)
 		setActivityCycleMode(next.mode)
 		setFormField('activityCycle', next.value)
-	}
+	}, [activitySemesters, setFormField])
 
-	const handleSetHasDongbang = (value: boolean) => {
+	const handleSetHasDongbang = useCallback((value: boolean) => {
 		setFormData(prev => ({
 			...prev,
 			hasDongbang: value,
 			dongbangLocation: value ? prev.dongbangLocation : '',
 		}))
-	}
+	}, [])
+
+	const handleCategoryChange = useCallback(
+		(category: ClubInfoEditFormData['category']) => setFormField('category', category),
+		[setFormField],
+	)
+	const handleClubNameChange = useCallback(
+		(clubName: string) => setFormField('clubName', clubName),
+		[setFormField],
+	)
+	const handleShortIntroChange = useCallback(
+		(shortIntro: string) => setFormField('shortIntro', shortIntro),
+		[setFormField],
+	)
+	const handleToggleDepartmentDropdown = useCallback(
+		() => setShowDepartmentDropdown(prev => !prev),
+		[],
+	)
+	const handleRecruitTypeChange = useCallback(
+		(recruitType: string) => setFormField('recruitType', recruitType),
+		[setFormField],
+	)
+	const handleDongbangLocationChange = useCallback(
+		(location: string) => setFormField('dongbangLocation', location),
+		[setFormField],
+	)
+	const handleSnsUrlsChange = useCallback(
+		(clubSNSUrls: string[]) => setFormField('clubSNSUrls', clubSNSUrls),
+		[setFormField],
+	)
+	const handleActivityImagesChange = useCallback(
+		(activityImages: EditableImage[]) => setFormField('activityImages', activityImages),
+		[setFormField],
+	)
+	const handleDescriptionChange = useCallback(
+		(clubDescription: string) => setFormField('clubDescription', clubDescription),
+		[setFormField],
+	)
 
 	const initialComparable = useMemo(() => {
 		if (!club) {
@@ -435,17 +831,17 @@ const ClubInfoEditScreen = () => {
 		},
 	})
 
-	const handleSubmit = () => {
+	const handleSubmit = useCallback(() => {
 		if (!isComplete || !hasChanges || isSubmitting) {
 			return
 		}
 		updateClub()
-	}
+	}, [hasChanges, isComplete, isSubmitting, updateClub])
 
-	const handleConfirmSuccess = () => {
+	const handleConfirmSuccess = useCallback(() => {
 		setShowSuccessModal(false)
 		navigation.goBack()
-	}
+	}, [])
 
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -468,274 +864,72 @@ const ClubInfoEditScreen = () => {
 						showsVerticalScrollIndicator={false}
 						keyboardShouldPersistTaps="handled">
 						<View style={styles.form}>
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.label}>동아리 대표 이미지</Text>
-								<Text style={styles.helperDescription}>4X4 정방형 이미지를 권장드려요</Text>
-								<Pressable style={styles.imageUploadBox} onPress={handleSelectImage}>
-									{formData.clubImage ? (
-										<Image source={{ uri: formData.clubImage }} style={styles.uploadedImage} />
-									) : (
-										<Icon name="add" size={s(40)} color={Colors.BODYTEXT_DISABLED} />
-									)}
-								</Pressable>
-								<Pressable style={styles.imageChangeButton} onPress={handleSelectImage}>
-									<Text style={styles.imageChangeText}>이미지 변경</Text>
-								</Pressable>
-							</View>
-
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.label}>동아리명</Text>
-								<TextField
-									value={formData.clubName}
-									placeholder="와플스튜디오"
-									onChangeText={text => setFormField('clubName', text)}
-									maxLength={30}
-								/>
-							</View>
-
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.label}>한줄소개</Text>
-								<View style={styles.affiliationRow}>
-									<Pressable
-										style={[styles.dropdown, showDepartmentDropdown && styles.dropdownActive]}
-										onPress={() => setShowDepartmentDropdown(prev => !prev)}>
-										<Text style={styles.dropdownText} numberOfLines={1}>
-											{formData.department || '단과대/학과'}
-										</Text>
-										<Icon
-											name={showDepartmentDropdown ? 'expand-less' : 'expand-more'}
-											size={ms(20)}
-											color={Colors.BODYTEXT_MAIN}
-										/>
-									</Pressable>
-									<Text style={styles.affiliationLabel}>소속</Text>
-								</View>
-
-								<TextField
-									placeholder="웹/앱 개발 동아리, 경영전략학회"
-									value={formData.shortIntro}
-									onChangeText={text => setFormField('shortIntro', text)}
-									maxLength={100}
-								/>
-							</View>
-
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.label}>카테고리</Text>
-								<View style={styles.categoryGrid}>
-									{CLUB_CATEGORIES.map(category => {
-										const isSelected = formData.category === category
-										return (
-											<Pressable
-												key={category}
-												style={[styles.categoryBlock, isSelected && styles.categoryBlockSelected]}
-												onPress={() => setFormField('category', category)}>
-												<Text
-													style={[styles.categoryText, isSelected && styles.categoryTextSelected]}>
-													{category}
-												</Text>
-											</Pressable>
-										)
-									})}
-								</View>
-							</View>
-
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.fieldLabel}>모집 형태</Text>
-								<View style={styles.buttonGroup}>
-									{CLUB_RECRUIT_TYPES.map(type => (
-										<Pressable
-											key={type}
-											style={[
-												styles.typeButton,
-												formData.recruitType === type && styles.typeButtonSelected,
-											]}
-											onPress={() => setFormField('recruitType', type)}>
-											<Text
-												style={[
-													styles.typeButtonText,
-													formData.recruitType === type && styles.typeButtonTextSelected,
-												]}>
-												{type}
-											</Text>
-										</Pressable>
-									))}
-								</View>
-							</View>
-
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.fieldLabel}>(최소) 활동 기간</Text>
-								<View style={styles.periodRow}>
-									<View style={styles.modeButtons}>
-										<Pressable
-											style={[
-												styles.typeButton,
-												activityCycleMode === 'none' && styles.typeButtonSelected,
-											]}
-											onPress={() => handleActivityCycleModeChange('none')}>
-											<Text
-												style={[
-													styles.typeButtonText,
-													activityCycleMode === 'none' && styles.typeButtonTextSelected,
-												]}>
-												없음
-											</Text>
-										</Pressable>
-										<Pressable
-											style={[
-												styles.typeButton,
-												activityCycleMode === 'number' && styles.typeButtonSelected,
-											]}
-											onPress={() => handleActivityCycleModeChange('number')}>
-											<Text
-												style={[
-													styles.typeButtonText,
-													activityCycleMode === 'number' && styles.typeButtonTextSelected,
-												]}>
-												있음
-											</Text>
-										</Pressable>
-									</View>
-
-									<View style={styles.periodStepper}>
-										<Text style={styles.semesterValue}>{activitySemesters}학기</Text>
-										<View style={styles.stepperPill}>
-											<Pressable style={styles.stepperButton} onPress={decrementActivityCycle}>
-												<Icon name="remove" size={ms(18)} color={Colors.BODYTEXT_SUB} />
-											</Pressable>
-											<View style={styles.stepperDivider} />
-											<Pressable style={styles.stepperButton} onPress={incrementActivityCycle}>
-												<Icon name="add" size={ms(18)} color={Colors.BODYTEXT_SUB} />
-											</Pressable>
-										</View>
-									</View>
-								</View>
-							</View>
-
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.fieldLabel}>동방 보유 여부</Text>
-								<View style={styles.buttonGroup}>
-									<Pressable
-										style={[styles.typeButton, formData.hasDongbang && styles.typeButtonSelected]}
-										onPress={() => handleSetHasDongbang(true)}>
-										<Text
-											style={[
-												styles.typeButtonText,
-												formData.hasDongbang && styles.typeButtonTextSelected,
-											]}>
-											보유
-										</Text>
-									</Pressable>
-									<Pressable
-										style={[styles.typeButton, !formData.hasDongbang && styles.typeButtonSelected]}
-										onPress={() => handleSetHasDongbang(false)}>
-										<Text
-											style={[
-												styles.typeButtonText,
-												!formData.hasDongbang && styles.typeButtonTextSelected,
-											]}>
-											미보유
-										</Text>
-									</Pressable>
-								</View>
-
-								{formData.hasDongbang && (
-									<View style={styles.iconInputRow}>
-										<Icon name="location-on" size={ms(20)} color={Colors.BODYTEXT_DISABLED} />
-										<TextInput
-											style={styles.iconInput}
-											placeholder="동방 위치를 입력하세요"
-											placeholderTextColor={Colors.BODYTEXT_DISABLED}
-											value={formData.dongbangLocation}
-											onChangeText={text => setFormField('dongbangLocation', text)}
-											maxLength={100}
-										/>
-									</View>
-								)}
-							</View>
-
-							<ClubSnsInputList
-								urls={formData.clubSNSUrls}
-								onChange={clubSNSUrls => setFormField('clubSNSUrls', clubSNSUrls)}
+							<ClubBasicInfoSection
+								clubImage={formData.clubImage}
+								clubName={formData.clubName}
+								department={formData.department}
+								shortIntro={formData.shortIntro}
+								showDepartmentDropdown={showDepartmentDropdown}
+								onSelectImage={handleSelectImage}
+								onClubNameChange={handleClubNameChange}
+								onToggleDepartmentDropdown={handleToggleDepartmentDropdown}
+								onShortIntroChange={handleShortIntroChange}
 							/>
+
+							<ClubCategorySection category={formData.category} onChange={handleCategoryChange} />
+
+							<ClubRecruitTypeSection
+								recruitType={formData.recruitType}
+								onChange={handleRecruitTypeChange}
+							/>
+
+							<ClubActivityPeriodSection
+								mode={activityCycleMode}
+								semesters={activitySemesters}
+								onModeChange={handleActivityCycleModeChange}
+								onDecrement={decrementActivityCycle}
+								onIncrement={incrementActivityCycle}
+							/>
+
+							<ClubDongbangSection
+								hasDongbang={formData.hasDongbang}
+								location={formData.dongbangLocation}
+								onHasDongbangChange={handleSetHasDongbang}
+								onLocationChange={handleDongbangLocationChange}
+							/>
+
+							<ClubSnsInputList urls={formData.clubSNSUrls} onChange={handleSnsUrlsChange} />
 
 							<ClubActivityImagePicker
 								images={formData.activityImages}
-								onChange={activityImages => setFormField('activityImages', activityImages)}
+								onChange={handleActivityImagesChange}
 							/>
 
-							<View style={styles.fieldWrapper}>
-								<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
-								<TextInput
-									style={styles.descriptionInput}
-									placeholder="동아리에 대해 자세히 설명해주세요"
-									placeholderTextColor={Colors.BODYTEXT_DISABLED}
-									value={formData.clubDescription}
-									onChangeText={text => setFormField('clubDescription', text)}
-									maxLength={500}
-									multiline
-									textAlignVertical="top"
-								/>
-							</View>
+							<ClubDescriptionSection
+								description={formData.clubDescription}
+								onChange={handleDescriptionChange}
+							/>
 						</View>
 
-						<View style={[styles.footer, { paddingBottom: insets.bottom + vs(14) }]}>
-							<Pressable
-								style={[
-									styles.submitButton,
-									(!isComplete || !hasChanges || isSubmitting) && styles.submitButtonDisabled,
-								]}
-								onPress={handleSubmit}
-								disabled={!isComplete || !hasChanges || isSubmitting}>
-								<Text style={styles.submitButtonText}>{isSubmitting ? '수정 중...' : '수정'}</Text>
-							</Pressable>
-						</View>
+						<ClubEditFooter
+							paddingBottom={insets.bottom + vs(14)}
+							disabled={!isComplete || !hasChanges || isSubmitting}
+							isSubmitting={isSubmitting}
+							onSubmit={handleSubmit}
+						/>
 					</ScrollView>
 				</>
 			)}
 
-			<Modal
+			<DepartmentModal
 				visible={showDepartmentDropdown}
-				transparent
-				animationType="fade"
-				onRequestClose={() => setShowDepartmentDropdown(false)}>
-				<Pressable
-					style={styles.departmentModalOverlay}
-					onPress={() => setShowDepartmentDropdown(false)}>
-					<Pressable style={styles.departmentModalCard} onPress={event => event.stopPropagation()}>
-						<Text style={styles.departmentModalTitle}>소속 선택</Text>
-						<TextInput
-							style={styles.dropdownSearchInput}
-							placeholder="소속 검색"
-							placeholderTextColor={Colors.BODYTEXT_DISABLED}
-							value={departmentSearch}
-							onChangeText={setDepartmentSearch}
-						/>
-						<FlatList
-							data={filteredDepartmentOptions}
-							style={styles.dropdownList}
-							keyboardShouldPersistTaps="handled"
-							keyExtractor={department => department}
-							renderItem={({ item: department }) => (
-								<Pressable
-									style={[
-										styles.dropdownItem,
-										formData.department === department && styles.dropdownItemSelected,
-									]}
-									onPress={() => handleSelectDepartment(department)}>
-									<Text
-										style={[
-											styles.dropdownItemText,
-											formData.department === department && styles.dropdownItemTextSelected,
-										]}>
-										{department}
-									</Text>
-								</Pressable>
-							)}
-							ListEmptyComponent={<Text style={styles.dropdownEmptyText}>검색 결과가 없어요</Text>}
-						/>
-					</Pressable>
-				</Pressable>
-			</Modal>
+				search={departmentSearch}
+				options={filteredDepartmentOptions}
+				selectedDepartment={formData.department}
+				onClose={handleCloseDepartmentDropdown}
+				onSearchChange={setDepartmentSearch}
+				onSelect={handleSelectDepartment}
+			/>
 
 			<SuccessModal visible={showSuccessModal} onConfirm={handleConfirmSuccess} />
 		</SafeAreaView>
