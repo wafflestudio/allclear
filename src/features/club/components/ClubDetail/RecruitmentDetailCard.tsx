@@ -65,7 +65,10 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 		<View style={styles.container}>
 			<View style={styles.titleSection}>
 				<Text style={styles.title}>{content.title}</Text>
-				<Text style={styles.deadline}>~ {formatRecruitmentDeadline(content.deadline)} 모집</Text>
+				<View style={styles.deadlineSection}>
+					<Text style={styles.deadlineLabel}>모집 마감</Text>
+					<Text style={styles.deadline}>{formatRecruitmentDeadline(content.deadline)}</Text>
+				</View>
 			</View>
 
 			{content.image_urls.length > 0 && (
@@ -202,6 +205,8 @@ const styles = StyleSheet.create({
 	container: { gap: vs(20) },
 	titleSection: { gap: vs(5) },
 	title: { ...typography.headerXL, color: Colors.BODYTEXT_MAIN },
+	deadlineSection: { gap: vs(4) },
+	deadlineLabel: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB_2 },
 	deadline: { ...typography.bodyMMedium, color: Colors.POINTCOLOR },
 	imageList: { gap: s(10) },
 	recruitmentImage: { width: s(164), height: s(112), borderRadius: ms(12) },
