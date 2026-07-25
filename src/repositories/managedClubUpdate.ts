@@ -11,6 +11,7 @@ export type ManagedClubManagerData = {
 }
 
 export type ManagedClubUpdateBody<TClubData extends object> = {
+	resubmit?: boolean
 	club_data?: TClubData
 	manager_data?: ManagedClubManagerData
 }
@@ -18,6 +19,7 @@ export type ManagedClubUpdateBody<TClubData extends object> = {
 export const buildManagedClubUpdateBody = <TClubData extends object>(
 	clubData: TClubData,
 	managerData?: ManagedClubManagerPatch,
+	resubmit = false,
 ): ManagedClubUpdateBody<TClubData> => {
 	const managerPayload = managerData
 		? {
@@ -27,6 +29,7 @@ export const buildManagedClubUpdateBody = <TClubData extends object>(
 			}
 		: undefined
 	const body: ManagedClubUpdateBody<TClubData> = {
+		...(resubmit && { resubmit: true }),
 		...(Object.keys(clubData).length > 0 && { club_data: clubData }),
 		...(managerPayload &&
 			Object.keys(managerPayload).length > 0 && {
@@ -34,7 +37,7 @@ export const buildManagedClubUpdateBody = <TClubData extends object>(
 			}),
 	}
 
-	if (!body.club_data && !body.manager_data) {
+	if (!body.resubmit && !body.club_data && !body.manager_data) {
 		throw new Error('At least one managed club field is required')
 	}
 

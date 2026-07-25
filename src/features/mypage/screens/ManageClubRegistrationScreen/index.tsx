@@ -39,6 +39,7 @@ const ManageClubRegistrationScreen = () => {
 	const route = useRoute<RouteProp<StackParamList, typeof SCREEN_TYPE.MANAGE_CLUB_REGISTRATION>>()
 	const editClubId = route.params?.clubId
 	const editMode = route.params?.editMode
+	const isResubmission = route.params?.isResubmission ?? false
 	const isManagerRequestEditMode = editMode === 'managerRequest'
 	const isClubRegistrationEditMode = editMode === 'clubRegistration'
 	const isEditMode = editClubId !== undefined && editMode !== undefined
@@ -220,21 +221,29 @@ const ManageClubRegistrationScreen = () => {
 			navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, {
 				clubId: editClubId,
 				fromClubRegistrationEdit: true,
+				isResubmission,
 				managerData,
 			})
 			return
 		}
 
 		if (editClubId && isManagerRequestEditMode) {
-			if (isSubmittingRequest || !hasManagerInfoChanges) return
+			if (isSubmittingRequest || (!isResubmission && !hasManagerInfoChanges)) return
 
 			setIsSubmittingRequest(true)
 			try {
 				await clubService.updateClubManagerRequest({
 					clubId: editClubId,
-					name: adminForm.name,
-					phone: adminForm.phone,
-					studentId: adminForm.studentId,
+					...(adminForm.name !== initialManagerInfo?.name && {
+						name: adminForm.name,
+					}),
+					...(adminForm.phone !== initialManagerInfo?.phone && {
+						phone: adminForm.phone,
+					}),
+					...(adminForm.studentId !== initialManagerInfo?.studentId && {
+						studentId: adminForm.studentId,
+					}),
+					...(isResubmission && { resubmit: true }),
 				})
 				queryClient.setQueryData(['clubManagerInfo', editMode, editClubId], adminForm)
 				setIsSuccessModalVisible(true)
@@ -325,9 +334,11 @@ const ManageClubRegistrationScreen = () => {
 				visible={isSuccessModalVisible}
 				onClose={() => setIsSuccessModalVisible(false)}
 				title={
-					isEditMode
-						? '운영진 권한 신청 내용이\n수정되었어요!'
-						: '운영진 권한 요청이\n정상적으로 완료되었어요!'
+					isResubmission
+						? '운영진 권한을\n재신청했어요.'
+						: isEditMode
+							? '운영진 권한 신청 내용이\n수정되었어요!'
+							: '운영진 권한 요청이\n정상적으로 완료되었어요!'
 				}
 				buttonLabel="확인"
 				onButtonPress={handleSuccessConfirm}
@@ -360,14 +371,14 @@ const ManageClubRegistrationScreen = () => {
 			footer={
 				<FlowScreenFooter
 					backLabel="이전"
-					nextLabel={isManagerRequestEditMode ? '수정' : '다음'}
+					nextLabel={isManagerRequestEditMode ? (isResubmission ? '재신청' : '수정') : '다음'}
 					onBack={handleBack}
 					onNext={() => void handleFormNext()}
 					nextDisabled={
 						!isFormFieldsValid ||
 						isSubmittingRequest ||
 						isManagerInfoPrefillLoading ||
-						(isManagerRequestEditMode && !hasManagerInfoChanges)
+						(isManagerRequestEditMode && !isResubmission && !hasManagerInfoChanges)
 					}
 				/>
 			}>

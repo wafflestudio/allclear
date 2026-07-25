@@ -35,6 +35,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons'
 
 const snuLogo = require('@/assets/images/club-management-snu-logo.png') as number
 
+const isRejectedRequest = (club: ManagedClubListItem) =>
+	club.managementStatus === 'REJECTED' || club.managementStatus === 'MANAGER_REQUEST_REJECTED'
+
 const MyPageScreen = () => {
 	const { authService, clubService, userService } = useContext(serviceContext)
 	const { openBottomSheet: openUserVoice } = useUserVoiceBottomSheet()
@@ -47,7 +50,9 @@ const MyPageScreen = () => {
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false)
 	const [statusBlurEnabled, setStatusBlurEnabled] = useState(true)
 	const [cancelRequestClub, setCancelRequestClub] = useState<ManagedClubListItem | null>(null)
-	const [cancelRequestSuccessVisible, setCancelRequestSuccessVisible] = useState(false)
+	const [requestRemovalSuccess, setRequestRemovalSuccess] = useState<
+		'cancelled' | 'deleted' | null
+	>(null)
 
 	const { data: manageClubsData, refetch: refetchManageClubs } = useQuery({
 		queryKey: ['manageClubs'],
@@ -82,6 +87,9 @@ const MyPageScreen = () => {
 	const notificationModalContent = currentNotification
 		? getUserNotificationContent(currentNotification, manageClubs)
 		: null
+	const notificationActionDisabled =
+		currentNotification?.type === 'MANAGER_REQUEST_REJECTED' &&
+		getNotificationClub(currentNotification, manageClubs)?.hasManager === true
 
 	const handleLeave = () => setLeaveModalVisible(true)
 
@@ -144,21 +152,21 @@ const MyPageScreen = () => {
 
 	const cancelRequestMutation = useMutation({
 		mutationFn: async (club: ManagedClubListItem) => {
-			if (club.managementStatus === 'PENDING') {
+			if (club.managementStatus === 'PENDING' || club.managementStatus === 'REJECTED') {
 				return clubService.cancelManagedClubRequest({ uuid: club.uuid })
 			}
 
 			return clubService.cancelClubManagerRequest({ clubId: club.uuid })
 		},
-		onSuccess: () => {
+		onSuccess: (_data, club) => {
 			setCancelRequestClub(null)
-			setCancelRequestSuccessVisible(true)
+			setRequestRemovalSuccess(isRejectedRequest(club) ? 'deleted' : 'cancelled')
 			queryClient.invalidateQueries({ queryKey: ['manageClubs'] })
 		},
-		onError: () => {
+		onError: (_error, club) => {
 			Toast.show({
 				type: 'error',
-				text1: '신청을 취소하지 못했어요',
+				text1: isRejectedRequest(club) ? '신청을 삭제하지 못했어요' : '신청을 취소하지 못했어요',
 				text2: '잠시 후 다시 시도해주세요',
 			})
 		},
@@ -171,6 +179,7 @@ const MyPageScreen = () => {
 			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
 				clubId: club.uuid,
 				editMode: 'clubRegistration',
+				isResubmission: club.managementStatus === 'REJECTED',
 			})
 			return
 		}
@@ -178,6 +187,7 @@ const MyPageScreen = () => {
 		navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
 			clubId: club.uuid,
 			editMode: 'managerRequest',
+			isResubmission: club.managementStatus === 'MANAGER_REQUEST_REJECTED',
 		})
 	}
 
@@ -208,6 +218,17 @@ const MyPageScreen = () => {
 			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
 				clubId: currentNotification.clubId,
 				editMode: 'clubRegistration',
+				isResubmission: true,
+			})
+			return
+		}
+
+		if (currentNotification.type === 'MANAGER_REQUEST_REJECTED' && currentNotification.clubId) {
+			setStatusBlurEnabled(false)
+			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
+				clubId: currentNotification.clubId,
+				editMode: 'managerRequest',
+				isResubmission: true,
 			})
 		}
 	}
@@ -232,14 +253,36 @@ const MyPageScreen = () => {
 			)
 		}
 
-		if (club.managementStatus === 'REJECTED') {
+		if (
+			club.managementStatus === 'REJECTED' ||
+			club.managementStatus === 'MANAGER_REQUEST_REJECTED'
+		) {
+			const isResubmissionDisabled =
+				club.managementStatus === 'MANAGER_REQUEST_REJECTED' && club.hasManager
+
 			return (
 				<View style={styles.manageClubButtons}>
 					<TouchableOpacity
-						style={styles.manageClubBtnFilled}
+						style={styles.manageClubBtnOutline}
 						activeOpacity={0.7}
+						onPress={() => setCancelRequestClub(club)}>
+						<Text style={styles.manageClubBtnOutlineText}>삭제</Text>
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={[
+							styles.manageClubBtnFilled,
+							isResubmissionDisabled && styles.manageClubBtnDisabled,
+						]}
+						activeOpacity={0.7}
+						disabled={isResubmissionDisabled}
 						onPress={() => handleEditRequest(club)}>
-						<Text style={styles.manageClubBtnFilledText}>수정 및 재신청</Text>
+						<Text
+							style={[
+								styles.manageClubBtnFilledText,
+								isResubmissionDisabled && styles.manageClubBtnDisabledText,
+							]}>
+							수정 및 재신청
+						</Text>
 					</TouchableOpacity>
 				</View>
 			)
@@ -267,21 +310,7 @@ const MyPageScreen = () => {
 			)
 		}
 
-		const overlay = MANAGE_CLUB_STATUS_OVERLAY[club.managementStatus]
-
-		return (
-			<View style={styles.manageClubButtons}>
-				<View style={styles.manageClubStatusButton}>
-					<Text
-						style={styles.manageClubStatusButtonText}
-						numberOfLines={1}
-						adjustsFontSizeToFit
-						minimumFontScale={0.85}>
-						{overlay.label}
-					</Text>
-				</View>
-			</View>
-		)
+		return null
 	}
 
 	return (
@@ -431,18 +460,31 @@ const MyPageScreen = () => {
 			<AlertModal
 				visible={cancelRequestClub !== null}
 				onClose={handleCloseCancelRequestModal}
-				title="신청을 취소하시겠어요?"
-				description="취소한 신청은 복구할 수 없어요."
-				buttonLabel="신청 취소"
+				title={
+					cancelRequestClub && isRejectedRequest(cancelRequestClub)
+						? '신청을 삭제하시겠어요?'
+						: '신청을 취소하시겠어요?'
+				}
+				description={
+					cancelRequestClub && isRejectedRequest(cancelRequestClub)
+						? '삭제한 신청은 복구할 수 없어요.'
+						: '취소한 신청은 복구할 수 없어요.'
+				}
+				buttonLabel={
+					cancelRequestClub && isRejectedRequest(cancelRequestClub) ? '삭제' : '신청 취소'
+				}
 				buttonVariant="destructive"
 				onButtonPress={handleConfirmCancelRequest}
 				hasCancel
 				cancelLabel="돌아가기"
 				dismissOnBackdropPress={!cancelRequestMutation.isPending}
 			/>
-			<CancelRequestSuccessModal
-				visible={cancelRequestSuccessVisible}
-				onClose={() => setCancelRequestSuccessVisible(false)}
+			<RequestRemovalSuccessModal
+				visible={requestRemovalSuccess !== null}
+				message={
+					requestRemovalSuccess === 'deleted' ? '신청이 삭제되었어요.' : '신청이 취소되었어요.'
+				}
+				onClose={() => setRequestRemovalSuccess(null)}
 			/>
 			<AlertModal
 				visible={!!currentNotification && !!notificationModalContent}
@@ -451,6 +493,7 @@ const MyPageScreen = () => {
 				description={notificationModalContent?.description}
 				buttonLabel={notificationModalContent?.buttonLabel ?? '확인'}
 				onButtonPress={handleCurrentNotificationAction}
+				buttonDisabled={notificationActionDisabled}
 				hasCancel={notificationModalContent?.hasCancel}
 				cancelLabel={notificationModalContent?.cancelLabel}
 				dismissOnBackdropPress={false}
@@ -462,11 +505,13 @@ const MyPageScreen = () => {
 
 export default MyPageScreen
 
-const CancelRequestSuccessModal = ({
+const RequestRemovalSuccessModal = ({
 	visible,
+	message,
 	onClose,
 }: {
 	visible: boolean
+	message: string
 	onClose: () => void
 }) => (
 	<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -480,7 +525,7 @@ const CancelRequestSuccessModal = ({
 			/>
 			<Pressable style={styles.cancelSuccessCard} onPress={event => event.stopPropagation()}>
 				<View style={styles.cancelSuccessContents}>
-					<Text style={styles.cancelSuccessTitle}>신청이 취소되었어요.</Text>
+					<Text style={styles.cancelSuccessTitle}>{message}</Text>
 				</View>
 				<TouchableOpacity style={styles.cancelSuccessButton} activeOpacity={0.6} onPress={onClose}>
 					<Text style={styles.cancelSuccessButtonText}>확인</Text>
@@ -582,7 +627,9 @@ const USER_NOTIFICATION_CONTENT: Record<UserNotificationType, UserNotificationMo
 	MANAGER_REQUEST_REJECTED: {
 		title: '운영진 등록 신청이 반려되었어요',
 		description: '',
-		buttonLabel: '확인',
+		buttonLabel: '수정 및 재신청',
+		hasCancel: true,
+		cancelLabel: '취소',
 	},
 }
 
@@ -603,7 +650,7 @@ const getUserNotificationContent = (
 
 	return {
 		...content,
-		description: rejectReason ? `사유(${rejectReason})` : '사유가 등록되지 않았어요',
+		description: rejectReason ? `${rejectReason}` : '사유가 등록되지 않았어요',
 	}
 }
 
@@ -621,15 +668,16 @@ const getNotificationRejectReason = (
 		return undefined
 	}
 
-	const rejectedClub = manageClubs.find(
+	return getNotificationClub(notification, manageClubs)?.rejectReason?.trim() || undefined
+}
+
+const getNotificationClub = (notification: UserNotification, manageClubs: ManagedClubListItem[]) =>
+	manageClubs.find(
 		club =>
 			club.uuid === notification.clubId ||
 			club.id === notification.clubId ||
 			club.uuid === notification.sourceId,
 	)
-
-	return rejectedClub?.rejectReason?.trim() || undefined
-}
 
 const styles = StyleSheet.create({
 	safeArea: {
@@ -816,24 +864,12 @@ const styles = StyleSheet.create({
 		letterSpacing: -0.02 * 14,
 		color: Colors.WHITE,
 	},
-	manageClubStatusButton: {
-		flex: 1,
-		height: vs(35),
-		justifyContent: 'center',
-		alignItems: 'center',
+	manageClubBtnDisabled: {
 		backgroundColor: Colors.TEXTBOX_UNSELECTED,
-		borderRadius: ms(8),
-		paddingHorizontal: s(10),
 	},
-	manageClubStatusButtonText: {
-		fontFamily: 'Apple SD Gothic Neo',
-		fontWeight: '600',
-		fontSize: ms(14),
-		lineHeight: ms(24),
-		textAlign: 'center',
+	manageClubBtnDisabledText: {
 		color: Colors.TEXT_BUTTON_UNSELECTED,
 	},
-
 	// 메뉴
 	menuItem: {
 		paddingVertical: vs(10),

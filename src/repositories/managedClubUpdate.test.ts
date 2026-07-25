@@ -35,4 +35,10 @@ describe('buildManagedClubUpdateBody', () => {
 			'At least one managed club field is required',
 		)
 	})
+
+	it('재신청은 변경 필드 없이 resubmit만 담을 수 있다', () => {
+		expect(buildManagedClubUpdateBody({}, undefined, true)).toEqual({
+			resubmit: true,
+		})
+	})
 })

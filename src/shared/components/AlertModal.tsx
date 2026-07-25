@@ -10,6 +10,7 @@ export type AlertModalProps = {
 	description?: string
 	buttonLabel: string
 	onButtonPress: () => void
+	buttonDisabled?: boolean
 	buttonVariant?: ButtonVariant
 	hasCancel?: boolean
 	cancelLabel?: string
@@ -25,6 +26,7 @@ const AlertModal = ({
 	description,
 	buttonLabel,
 	onButtonPress,
+	buttonDisabled = false,
 	buttonVariant = 'primary',
 	hasCancel = false,
 	cancelLabel = '취소',
@@ -59,6 +61,7 @@ const AlertModal = ({
 						<Button
 							label={buttonLabel}
 							onPress={onButtonPress}
+							disabled={buttonDisabled}
 							variant={buttonVariant}
 							style={styles.button}
 						/>

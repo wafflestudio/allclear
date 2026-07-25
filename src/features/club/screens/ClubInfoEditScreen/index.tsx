@@ -497,17 +497,20 @@ type ClubEditFooterProps = {
 	paddingBottom: number
 	disabled: boolean
 	isSubmitting: boolean
+	submitLabel: string
 	onSubmit: () => void
 }
 
 const ClubEditFooter = memo(
-	({ paddingBottom, disabled, isSubmitting, onSubmit }: ClubEditFooterProps) => (
+	({ paddingBottom, disabled, isSubmitting, submitLabel, onSubmit }: ClubEditFooterProps) => (
 		<View style={[styles.footer, { paddingBottom }]}>
 			<Pressable
 				style={[styles.submitButton, disabled && styles.submitButtonDisabled]}
 				onPress={onSubmit}
 				disabled={disabled}>
-				<Text style={styles.submitButtonText}>{isSubmitting ? '수정 중...' : '수정'}</Text>
+				<Text style={styles.submitButtonText}>
+					{isSubmitting ? `${submitLabel} 중...` : submitLabel}
+				</Text>
 			</Pressable>
 		</View>
 	),
@@ -579,7 +582,12 @@ DepartmentModal.displayName = 'DepartmentModal'
 
 const ClubInfoEditScreen = () => {
 	const route = useRoute<RouteProps>()
-	const { clubId, fromClubRegistrationEdit = false, managerData } = route.params
+	const {
+		clubId,
+		fromClubRegistrationEdit = false,
+		isResubmission = false,
+		managerData,
+	} = route.params
 	const { clubService, userService } = useContext(serviceContext)
 	const queryClient = useQueryClient()
 	const insets = useSafeAreaInsets()
@@ -783,7 +791,7 @@ const ClubInfoEditScreen = () => {
 		newActivityImageFiles.length > 0 ||
 		JSON.stringify(retainedActivityImageUrls) !== JSON.stringify(initialActivityImageUrls)
 	const hasChanges = !!imageFile || !!updateRequest || activityImagesChanged
-	const hasAnyChanges = hasChanges || managerData !== undefined
+	const hasAnyChanges = hasChanges || managerData !== undefined || isResubmission
 
 	const { mutate: updateClub, isPending: isSubmitting } = useMutation({
 		mutationFn: async () => {
@@ -814,6 +822,10 @@ const ClubInfoEditScreen = () => {
 
 			if (managerData) {
 				request.manager_data = managerData
+			}
+
+			if (isResubmission) {
+				request.resubmit = true
 			}
 
 			if (Object.keys(request).length > 1) {
@@ -933,6 +945,7 @@ const ClubInfoEditScreen = () => {
 							paddingBottom={insets.bottom + vs(14)}
 							disabled={!isComplete || !hasAnyChanges || isSubmitting}
 							isSubmitting={isSubmitting}
+							submitLabel={isResubmission ? '재신청' : '수정'}
 							onSubmit={handleSubmit}
 						/>
 					</ScrollView>
@@ -952,9 +965,11 @@ const ClubInfoEditScreen = () => {
 			<SuccessModal
 				visible={showSuccessModal}
 				title={
-					fromClubRegistrationEdit
-						? '신청 내용이 정상적으로 수정되었어요'
-						: '동아리 정보가 정상적으로 수정되었어요'
+					isResubmission
+						? '동아리 등록을 재신청했어요.'
+						: fromClubRegistrationEdit
+							? '신청 내용이 정상적으로 수정되었어요'
+							: '동아리 정보가 정상적으로 수정되었어요'
 				}
 				onConfirm={handleConfirmSuccess}
 			/>

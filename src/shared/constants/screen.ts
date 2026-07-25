@@ -62,6 +62,7 @@ export type StackParamList = {
 		| {
 				clubId: Club['uuid']
 				editMode: 'managerRequest' | 'clubRegistration'
+				isResubmission?: boolean
 		  }
 		| undefined
 
@@ -71,6 +72,7 @@ export type StackParamList = {
 	[SCREEN_TYPE.CLUB_INFO_EDIT]: {
 		clubId: string
 		fromClubRegistrationEdit?: boolean
+		isResubmission?: boolean
 		managerData?: {
 			name?: string
 			phone?: string

@@ -73,12 +73,16 @@ export type ListManageClubsResponse = {
 	totalSize: number
 }
 
+type ManagedClubListItemResponse = Omit<ManagedClubListItem, 'hasManager'> & {
+	hasManager?: boolean
+}
+
 type ListManageClubsV2Response = {
 	success: boolean
 	message: string
 	data: {
 		total_count: number
-		clubs: ManagedClubListItem[]
+		clubs: ManagedClubListItemResponse[]
 	}
 }
 
@@ -98,7 +102,13 @@ export type RequestClubmanagerRequest = {
 	studentId: string
 }
 
-export type UpdateClubManagerRequest = RequestClubmanagerRequest
+export type UpdateClubManagerRequest = {
+	clubId: Club['uuid']
+	name?: string
+	phone?: string
+	studentId?: string
+	resubmit?: boolean
+}
 
 export type ClubRequestTarget = {
 	clubId: Club['uuid']
@@ -185,6 +195,7 @@ export type UpdateManagedClubRequest = {
 	introduction?: string
 	activity_image_urls?: string[]
 	manager_data?: ManagedClubManagerPatch
+	resubmit?: boolean
 }
 
 export type UpdateManagedClubResponse = {
@@ -319,7 +330,10 @@ export const getClubRepository = (): ClubRepository => ({
 	listManageClubs: async () => {
 		const response = await apiConnector.get<ListManageClubsV2Response>('/v2/managers/me/clubs')
 		return {
-			clubs: response.data.clubs,
+			clubs: response.data.clubs.map(club => ({
+				...club,
+				hasManager: club.hasManager ?? false,
+			})),
 			totalSize: response.data.total_count,
 		}
 	},
@@ -350,9 +364,10 @@ export const getClubRepository = (): ClubRepository => ({
 	},
 	updateClubManagerRequest: async req => {
 		await apiConnector.patch<void>(`/v2/clubs/${req.clubId}/manager-requests`, {
-			name: req.name,
-			phone: req.phone,
-			student_id: req.studentId,
+			...(req.name !== undefined && { name: req.name }),
+			...(req.phone !== undefined && { phone: req.phone }),
+			...(req.studentId !== undefined && { student_id: req.studentId }),
+			...(req.resubmit && { resubmit: true }),
 		})
 	},
 	getManagedClubManager: async req => {
@@ -401,10 +416,10 @@ export const getClubRepository = (): ClubRepository => ({
 		return response
 	},
 	updateManagedClub: async req => {
-		const { uuid, manager_data: managerData, ...clubData } = req
+		const { uuid, manager_data: managerData, resubmit, ...clubData } = req
 		const response = await apiConnector.patch<UpdateManagedClubResponse>(
 			`/v2/managers/me/clubs/${uuid}`,
-			buildManagedClubUpdateBody(clubData, managerData),
+			buildManagedClubUpdateBody(clubData, managerData, resubmit),
 		)
 
 		return response
