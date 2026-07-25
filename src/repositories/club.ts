@@ -1,5 +1,9 @@
 import { Club, ClubRanking, ManagedClubListItem } from '@/entities/club'
 import { apiConnector } from '@/shared/utils/api'
+import { buildManagedClubUpdateBody } from '@/repositories/managedClubUpdate'
+import type { ManagedClubManagerPatch } from '@/repositories/managedClubUpdate'
+
+export type { ManagedClubManagerPatch } from '@/repositories/managedClubUpdate'
 
 export type ClubSearchAffiliationType = '전체' | '중앙동아리' | '학과/단과대동아리'
 export type ClubSearchRecruitType = '정기' | '상시'
@@ -69,12 +73,16 @@ export type ListManageClubsResponse = {
 	totalSize: number
 }
 
+type ManagedClubListItemResponse = Omit<ManagedClubListItem, 'hasManager'> & {
+	hasManager?: boolean
+}
+
 type ListManageClubsV2Response = {
 	success: boolean
 	message: string
 	data: {
 		total_count: number
-		clubs: ManagedClubListItem[]
+		clubs: ManagedClubListItemResponse[]
 	}
 }
 
@@ -92,6 +100,34 @@ export type RequestClubmanagerRequest = {
 	name: string
 	phone: string
 	studentId: string
+}
+
+export type UpdateClubManagerRequest = {
+	clubId: Club['uuid']
+	name?: string
+	phone?: string
+	studentId?: string
+	resubmit?: boolean
+}
+
+export type ClubRequestTarget = {
+	clubId: Club['uuid']
+}
+
+export type ClubManagerRequestDetail = {
+	name: string
+	phone: string
+	studentId: string
+}
+
+type ClubManagerRequestDetailResponse = {
+	name: string
+	phone: string
+	student_id: string
+}
+
+export type ManagedClubRequestTarget = {
+	uuid: Club['uuid']
 }
 
 export type ListSavedClubsResponse = {
@@ -158,6 +194,8 @@ export type UpdateManagedClubRequest = {
 	sns_urls?: string[]
 	introduction?: string
 	activity_image_urls?: string[]
+	manager_data?: ManagedClubManagerPatch
+	resubmit?: boolean
 }
 
 export type UpdateManagedClubResponse = {
@@ -206,6 +244,11 @@ export type ClubRepository = {
 	listManageClubs: () => Promise<ListManageClubsResponse>
 	listClubRankings: (req: ListClubRankingsRequest) => Promise<ListClubRankingsResponse>
 	requestClubManager: (req: RequestClubmanagerRequest) => Promise<void>
+	getClubManagerRequest: (req: ClubRequestTarget) => Promise<ClubManagerRequestDetail>
+	updateClubManagerRequest: (req: UpdateClubManagerRequest) => Promise<void>
+	getManagedClubManager: (req: ManagedClubRequestTarget) => Promise<ClubManagerRequestDetail>
+	cancelClubManagerRequest: (req: ClubRequestTarget) => Promise<void>
+	cancelManagedClubRequest: (req: ManagedClubRequestTarget) => Promise<void>
 	listSavedClubs: () => Promise<ListSavedClubsResponse>
 	createSavedClub: (req: CreateSavedClubRequest) => Promise<void>
 	removeSavedClub: (req: RemoveSavedClubRequest) => Promise<void>
@@ -287,7 +330,10 @@ export const getClubRepository = (): ClubRepository => ({
 	listManageClubs: async () => {
 		const response = await apiConnector.get<ListManageClubsV2Response>('/v2/managers/me/clubs')
 		return {
-			clubs: response.data.clubs,
+			clubs: response.data.clubs.map(club => ({
+				...club,
+				hasManager: club.hasManager ?? false,
+			})),
 			totalSize: response.data.total_count,
 		}
 	},
@@ -304,6 +350,42 @@ export const getClubRepository = (): ClubRepository => ({
 			phone: req.phone,
 			student_id: req.studentId,
 		})
+	},
+	getClubManagerRequest: async req => {
+		const response = await apiConnector.get<ClubManagerRequestDetailResponse>(
+			`/v2/clubs/${req.clubId}/manager-requests`,
+		)
+
+		return {
+			name: response.name,
+			phone: response.phone,
+			studentId: response.student_id,
+		}
+	},
+	updateClubManagerRequest: async req => {
+		await apiConnector.patch<void>(`/v2/clubs/${req.clubId}/manager-requests`, {
+			...(req.name !== undefined && { name: req.name }),
+			...(req.phone !== undefined && { phone: req.phone }),
+			...(req.studentId !== undefined && { student_id: req.studentId }),
+			...(req.resubmit && { resubmit: true }),
+		})
+	},
+	getManagedClubManager: async req => {
+		const response = await apiConnector.get<ClubManagerRequestDetailResponse>(
+			`/v2/managers/me/clubs/${req.uuid}/manager`,
+		)
+
+		return {
+			name: response.name,
+			phone: response.phone,
+			studentId: response.student_id,
+		}
+	},
+	cancelClubManagerRequest: async req => {
+		await apiConnector.delete<void>(`/v2/clubs/${req.clubId}/manager-requests`)
+	},
+	cancelManagedClubRequest: async req => {
+		await apiConnector.delete<void>(`/v2/managers/me/clubs/${req.uuid}`)
 	},
 	listSavedClubs: async () => {
 		const response = await apiConnector.get<ListSavedClubsResponse>('/v2/users/me/clubs/saved')
@@ -334,10 +416,10 @@ export const getClubRepository = (): ClubRepository => ({
 		return response
 	},
 	updateManagedClub: async req => {
-		const { uuid, ...body } = req
+		const { uuid, manager_data: managerData, resubmit, ...clubData } = req
 		const response = await apiConnector.patch<UpdateManagedClubResponse>(
 			`/v2/managers/me/clubs/${uuid}`,
-			body,
+			buildManagedClubUpdateBody(clubData, managerData, resubmit),
 		)
 
 		return response

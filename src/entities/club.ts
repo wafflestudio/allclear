@@ -53,6 +53,7 @@ export type ManagedClubManagementStatus =
 	| 'REJECTED'
 	| 'PENDING'
 	| 'MANAGER_REQUEST_PENDING'
+	| 'MANAGER_REQUEST_REJECTED'
 
 export type ManagedClubListItem = Club & {
 	managementStatus: ManagedClubManagementStatus

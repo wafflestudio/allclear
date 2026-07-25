@@ -58,12 +58,27 @@ export type StackParamList = {
 
 	[SCREEN_TYPE.EDIT_PROFILE]: undefined
 	[SCREEN_TYPE.MYPAGE]: undefined
-	[SCREEN_TYPE.MANAGE_CLUB_REGISTRATION]: undefined
+	[SCREEN_TYPE.MANAGE_CLUB_REGISTRATION]:
+		| {
+				clubId: Club['uuid']
+				editMode: 'managerRequest' | 'clubRegistration'
+				isResubmission?: boolean
+		  }
+		| undefined
 
 	[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION]: { clubId: string }
 	[SCREEN_TYPE.ANNOUNCEMENT_EDIT]: { recruitmentId: number }
 	[SCREEN_TYPE.CLUB_MANAGEMENT]: { clubId: string }
-	[SCREEN_TYPE.CLUB_INFO_EDIT]: { clubId: string }
+	[SCREEN_TYPE.CLUB_INFO_EDIT]: {
+		clubId: string
+		fromClubRegistrationEdit?: boolean
+		isResubmission?: boolean
+		managerData?: {
+			name?: string
+			phone?: string
+			studentId?: string
+		}
+	}
 
 	[SCREEN_TYPE.WEBVIEW]: { uri: string; title?: string; authorization?: string }
 }

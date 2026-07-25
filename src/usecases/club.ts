@@ -1,6 +1,8 @@
 import { Club } from '@/entities/club'
 import {
 	ClubRepository,
+	ClubManagerRequestDetail,
+	ClubRequestTarget,
 	CreateSavedClubRequest,
 	GetClubRequest,
 	GetManagedClubDetailRequest,
@@ -15,6 +17,7 @@ import {
 	ListRandomRecommendationsResponse,
 	ListSavedClubsResponse,
 	ManagedClubDetail,
+	ManagedClubRequestTarget,
 	RegisterClubRequest,
 	RegisterClubResponse,
 	RemoveSavedClubRequest,
@@ -23,6 +26,7 @@ import {
 	SearchClubsResponse,
 	UpdateManagedClubRequest,
 	UpdateManagedClubResponse,
+	UpdateClubManagerRequest,
 	UploadManagedClubImageRequest,
 	UploadManagedClubImageResponse,
 	UploadClubActivityImageRequest,
@@ -39,6 +43,11 @@ export type ClubService = {
 	listManageClubs: () => Promise<ListManageClubsResponse>
 	listClubRankings: (req: ListClubRankingsRequest) => Promise<ListClubRankingsResponse>
 	requestClubManager: (req: RequestClubmanagerRequest) => Promise<void>
+	getClubManagerRequest: (req: ClubRequestTarget) => Promise<ClubManagerRequestDetail>
+	updateClubManagerRequest: (req: UpdateClubManagerRequest) => Promise<void>
+	getManagedClubManager: (req: ManagedClubRequestTarget) => Promise<ClubManagerRequestDetail>
+	cancelClubManagerRequest: (req: ClubRequestTarget) => Promise<void>
+	cancelManagedClubRequest: (req: ManagedClubRequestTarget) => Promise<void>
 	listSavedClubs: () => Promise<ListSavedClubsResponse>
 	createSavedClub: (req: CreateSavedClubRequest) => Promise<void>
 	removeSavedClub: (req: RemoveSavedClubRequest) => Promise<void>
@@ -68,6 +77,11 @@ export const getClubService = ({ repositories }: Deps): ClubService => ({
 	listManageClubs: () => repositories[0].listManageClubs(),
 	listClubRankings: req => repositories[0].listClubRankings(req),
 	requestClubManager: req => repositories[0].requestClubManager(req),
+	getClubManagerRequest: req => repositories[0].getClubManagerRequest(req),
+	updateClubManagerRequest: req => repositories[0].updateClubManagerRequest(req),
+	getManagedClubManager: req => repositories[0].getManagedClubManager(req),
+	cancelClubManagerRequest: req => repositories[0].cancelClubManagerRequest(req),
+	cancelManagedClubRequest: req => repositories[0].cancelManagedClubRequest(req),
 	listSavedClubs: () => repositories[0].listSavedClubs(),
 	createSavedClub: req => repositories[0].createSavedClub(req),
 	removeSavedClub: req => repositories[0].removeSavedClub(req),
