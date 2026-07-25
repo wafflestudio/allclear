@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { BlurView } from '@react-native-community/blur'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
@@ -173,6 +174,8 @@ const MyPageScreen = () => {
 			)
 		}
 
+		const overlay = MANAGE_CLUB_STATUS_OVERLAY[club.managementStatus]
+
 		return (
 			<View style={styles.manageClubButtons}>
 				<View style={styles.manageClubStatusButton}>
@@ -181,7 +184,7 @@ const MyPageScreen = () => {
 						numberOfLines={1}
 						adjustsFontSizeToFit
 						minimumFontScale={0.85}>
-						{MANAGE_CLUB_STATUS_LABEL[club.managementStatus]}
+						{overlay.label}
 					</Text>
 				</View>
 			</View>
@@ -237,28 +240,32 @@ const MyPageScreen = () => {
 						{manageClubs.map(club => (
 							<View key={club.uuid} style={styles.manageClubItem}>
 								{/* 동아리 정보 카드 */}
-								<View style={styles.manageClubInfoCard}>
-									<View style={styles.manageClubThumbnail}>
-										{club.imageUri ? (
-											<Image
-												source={{ uri: club.imageUri }}
-												style={styles.manageClubThumbnailImage}
-											/>
-										) : null}
-									</View>
-									<View style={styles.manageClubTexts}>
-										<Text style={styles.manageClubName} numberOfLines={1}>
-											{club.name}
-										</Text>
-										<View style={styles.manageClubSubTexts}>
-											<Text style={styles.manageClubSub} numberOfLines={1}>
-												{getClubAffiliationLabel(club)}
-											</Text>
-											<Text style={styles.manageClubSub} numberOfLines={1}>
-												{club.shortDescription}
-											</Text>
+								<View style={styles.manageClubInfoCardWrapper}>
+									<View style={styles.manageClubInfoCard}>
+										<View style={styles.manageClubThumbnail}>
+											{club.imageUri ? (
+												<Image
+													source={{ uri: club.imageUri }}
+													style={styles.manageClubThumbnailImage}
+												/>
+											) : null}
 										</View>
+										<View style={styles.manageClubTexts}>
+											<Text style={styles.manageClubName} numberOfLines={1}>
+												{club.name}
+											</Text>
+											<View style={styles.manageClubSubTexts}>
+												<Text style={styles.manageClubSub} numberOfLines={1}>
+													{getClubAffiliationLabel(club)}
+												</Text>
+												<Text style={styles.manageClubSub} numberOfLines={1}>
+													{club.shortDescription}
+												</Text>
+											</View>
+										</View>
+										<ManageClubStatusBlurLayer status={club.managementStatus} />
 									</View>
+									<ManageClubStatusTextLayer status={club.managementStatus} />
 								</View>
 
 								{renderManageClubButtons(club)}
@@ -343,11 +350,59 @@ const MyPageScreen = () => {
 
 export default MyPageScreen
 
-const MANAGE_CLUB_STATUS_LABEL: Record<ManagedClubManagementStatus, string> = {
-	APPROVED: '동아리 관리',
-	REJECTED: '미승인(신청 반려)',
-	PENDING: '승인 대기',
-	MANAGER_REQUEST_PENDING: '운영진 권한 승인 대기',
+type ManagedClubOverlayStatus = Exclude<ManagedClubManagementStatus, 'APPROVED'>
+
+const MANAGE_CLUB_STATUS_OVERLAY: Record<
+	ManagedClubOverlayStatus,
+	{ label: string; backgroundColor: string }
+> = {
+	PENDING: {
+		label: '승인 대기 중',
+		backgroundColor: 'rgba(135, 79, 255, 0.2)',
+	},
+	REJECTED: {
+		label: '미승인(신청 반려)',
+		backgroundColor: Colors.BACKGROUND_DIM,
+	},
+	MANAGER_REQUEST_PENDING: {
+		label: '운영진 권한 승인 대기 중',
+		backgroundColor: 'rgba(135, 79, 255, 0.2)',
+	},
+	MANAGER_REQUEST_REJECTED: {
+		label: '미승인(운영진 권한 신청 반려)',
+		backgroundColor: Colors.BACKGROUND_DIM,
+	},
+}
+
+const ManageClubStatusBlurLayer = ({ status }: { status: ManagedClubManagementStatus }) => {
+	if (status === 'APPROVED') return null
+
+	const overlay = MANAGE_CLUB_STATUS_OVERLAY[status]
+
+	return (
+		<View style={styles.manageClubStatusBlurLayer} pointerEvents="none">
+			<BlurView
+				style={StyleSheet.absoluteFillObject}
+				blurType="light"
+				blurAmount={1}
+				overlayColor="transparent"
+				reducedTransparencyFallbackColor="transparent"
+			/>
+			<View style={[StyleSheet.absoluteFillObject, { backgroundColor: overlay.backgroundColor }]} />
+		</View>
+	)
+}
+
+const ManageClubStatusTextLayer = ({ status }: { status: ManagedClubManagementStatus }) => {
+	if (status === 'APPROVED') return null
+
+	const overlay = MANAGE_CLUB_STATUS_OVERLAY[status]
+
+	return (
+		<View style={styles.manageClubStatusTextLayer} pointerEvents="none">
+			<Text style={styles.manageClubStatusOverlayText}>{overlay.label}</Text>
+		</View>
+	)
 }
 
 type UserNotificationModalContent = {
@@ -502,6 +557,10 @@ const styles = StyleSheet.create({
 		width: s(330),
 		gap: vs(10),
 	},
+	manageClubInfoCardWrapper: {
+		position: 'relative',
+		height: vs(120),
+	},
 	manageClubInfoCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -511,7 +570,26 @@ const styles = StyleSheet.create({
 		gap: s(30),
 		backgroundColor: '#FAFAFA',
 		borderRadius: ms(10),
-		height: vs(120),
+		height: '100%',
+		overflow: 'hidden',
+	},
+	manageClubStatusBlurLayer: {
+		...StyleSheet.absoluteFillObject,
+		zIndex: 1,
+	},
+	manageClubStatusTextLayer: {
+		...StyleSheet.absoluteFillObject,
+		justifyContent: 'center',
+		alignItems: 'center',
+		zIndex: 2,
+	},
+	manageClubStatusOverlayText: {
+		fontFamily: 'Pretendard-Bold',
+		fontSize: ms(14),
+		lineHeight: vs(24),
+		letterSpacing: -0.28,
+		textAlign: 'center',
+		color: Colors.POINTCOLOR,
 	},
 	manageClubThumbnail: {
 		width: ms(75),
