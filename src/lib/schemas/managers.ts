@@ -71,6 +71,9 @@ export const ClubManagerRequestResponseSchema = z
 export type ClubManagerRequestResponse = z.infer<typeof ClubManagerRequestResponseSchema>
 
 export const ClubManagerRequestPatchSchema = ClubManagerRequestSchema.partial()
+  .extend({
+    resubmit: z.literal(true).optional(),
+  })
   .refine((data) => Object.keys(data).length > 0, {
     message: 'At least one field is required',
   })
@@ -176,11 +179,13 @@ export const ManagedClubPatchSchema = z
   .object({
     club_data: ClubDataSchema.partial().optional(),
     manager_data: ClubRegistrationManagerPatchSchema.optional(),
+    resubmit: z.literal(true).optional(),
   })
   .refine(
     (data) =>
       (data.club_data !== undefined && Object.keys(data.club_data).length > 0) ||
-      data.manager_data !== undefined,
+      data.manager_data !== undefined ||
+      data.resubmit === true,
     {
       message: 'At least one field is required',
     },

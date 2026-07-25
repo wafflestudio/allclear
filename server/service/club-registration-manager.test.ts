@@ -142,13 +142,13 @@ describe('club registration manager information', () => {
     ).rejects.toBeInstanceOf(NotFoundError)
   })
 
-  it('updates club and manager information in one transaction', async () => {
+  it('rejects a rejected registration update without resubmit', async () => {
     const clubRepository = {
-      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'PENDING' }),
+      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'REJECTED' }),
       update: vi.fn().mockResolvedValue({ affected: 1 }),
       findOneByOrFail: vi.fn().mockResolvedValue({
         uuid: clubUuid,
-        status: 'PENDING',
+        status: 'REJECTED',
         updatedAt: '2026-07-26T00:00:00.000Z',
       }),
     }
@@ -189,14 +189,16 @@ describe('club registration manager information', () => {
       },
     })
 
-    await service.patchManagedClub(clubUuid, serviceUserId, {
-      club_data: {
-        short_description: '수정된 한줄소개',
-      },
-      manager_data: {
-        phone: '010-9876-5432',
-      },
-    })
+    await expect(
+      service.patchManagedClub(clubUuid, serviceUserId, {
+        club_data: {
+          short_description: '수정된 한줄소개',
+        },
+        manager_data: {
+          phone: '010-9876-5432',
+        },
+      }),
+    ).rejects.toBeInstanceOf(ConflictError)
 
     expect(clubRepository.findOne).toHaveBeenCalledWith({
       where: {
@@ -208,17 +210,76 @@ describe('club registration manager information', () => {
         mode: 'pessimistic_write',
       },
     })
-    expect(clubManagerRepository.update).toHaveBeenCalledWith({ id: 1 }, { phone: '010-9876-5432' })
+    expect(clubManagerRepository.update).not.toHaveBeenCalled()
+    expect(clubRepository.update).not.toHaveBeenCalled()
+    expect(clubHistoryRepository.insert).not.toHaveBeenCalled()
+    expect(userNotificationRepository.delete).not.toHaveBeenCalled()
+  })
+
+  it('resubmits a rejected registration without other changes when explicitly requested', async () => {
+    const clubRepository = {
+      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'REJECTED' }),
+      update: vi.fn().mockResolvedValue({ affected: 1 }),
+      findOneByOrFail: vi.fn().mockResolvedValue({
+        uuid: clubUuid,
+        status: 'PENDING',
+        updatedAt: '2026-07-26T00:00:00.000Z',
+      }),
+    }
+    const clubManagerRepository = {
+      findOneBy: vi.fn().mockResolvedValue({
+        id: 1,
+        clubId: clubUuid,
+        serviceUserId,
+      }),
+      update: vi.fn(),
+    }
+    const clubManagerRegisterRequestRepository = {
+      findOneBy: vi.fn().mockResolvedValue(null),
+    }
+    const clubHistoryRepository = {
+      insert: vi.fn(),
+    }
+    const userNotificationRepository = {
+      delete: vi.fn(),
+    }
+    const entityManager = {
+      getRepository: vi.fn((entity) => {
+        if (entity === ClubEntity) return clubRepository
+        if (entity === ClubManagerEntity) return clubManagerRepository
+        if (entity === ClubManagerRegisterRequestEntity) {
+          return clubManagerRegisterRequestRepository
+        }
+        if (entity === ClubHistoryEntity) return clubHistoryRepository
+        if (entity === UserNotificationEntity) return userNotificationRepository
+        throw new Error('unexpected repository')
+      }),
+    }
+    const transaction = vi.fn(async (callback) => callback(entityManager))
+    const service = Object.create(ClubService.prototype) as ClubService
+    Object.defineProperty(service, 'clubRepository', {
+      value: {
+        manager: { transaction },
+      },
+    })
+
+    await service.patchManagedClub(clubUuid, serviceUserId, { resubmit: true })
+
     expect(clubRepository.update).toHaveBeenCalledWith(
       {
         uuid: clubUuid,
         deletedAt: expect.anything(),
       },
       {
-        shortDescription: '수정된 한줄소개',
+        status: 'PENDING',
+        rejectReason: '',
       },
     )
-    expect(clubHistoryRepository.insert).not.toHaveBeenCalled()
-    expect(userNotificationRepository.delete).not.toHaveBeenCalled()
+    expect(clubManagerRepository.update).not.toHaveBeenCalled()
+    expect(userNotificationRepository.delete).toHaveBeenCalledWith({
+      sourceType: 'CLUB',
+      sourceId: clubUuid,
+      type: 'CLUB_REGISTRATION_REJECTED',
+    })
   })
 })

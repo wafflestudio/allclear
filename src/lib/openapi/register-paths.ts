@@ -1141,7 +1141,7 @@ registry.registerPath({
   tags: ['Clubs'],
   summary: '동아리 관리 권한 신청 수정',
   description:
-    '로그인한 사용자가 해당 동아리에 제출한 PENDING 상태의 관리자 권한 신청을 수정합니다. name, phone, student_id 중 최소 하나가 필요하며 신청 상태와 신청 시각은 변경하지 않습니다.',
+    '로그인한 사용자가 해당 동아리에 제출한 관리자 권한 신청을 수정합니다. PENDING 신청은 전달한 정보만 수정하고 상태와 신청 시각을 유지합니다. REJECTED 신청은 resubmit: true를 포함한 경우에만 PENDING으로 변경하며 반려 사유와 반려 알림을 삭제하고 신청 시각을 갱신합니다. 수정 필드 없이 resubmit: true만 전달할 수도 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -1152,6 +1152,7 @@ registry.registerPath({
           example: {
             phone: '010-9876-5432',
             student_id: '2022-12345',
+            resubmit: true,
           },
         },
       },
@@ -1894,7 +1895,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '관리 중인 동아리 수정',
   description:
-    '동아리 관리자가 본인 동아리와 신규 등록 신청의 운영진 정보를 하나의 트랜잭션에서 수정합니다. club_data와 manager_data에 포함된 필드만 반영하며 둘 중 최소 하나가 필요합니다. manager_data는 직접 등록한 PENDING 또는 REJECTED 상태의 신규 동아리 신청에서만 수정할 수 있고 기존 manager-requests 관계와 APPROVED 상태에서는 수정할 수 없습니다. APPROVED 상태의 동아리 정보 수정만 수정 전후 스냅샷을 club_history에 기록합니다. REJECTED 상태의 신청을 최종 수정하면 PENDING으로 변경되고 rejectReason이 초기화되며 기존 CLUB_REGISTRATION_REJECTED 알림이 삭제됩니다.',
+    '동아리 관리자가 본인 동아리와 신규 등록 신청의 운영진 정보를 하나의 트랜잭션에서 수정합니다. club_data와 manager_data에 포함된 필드만 반영합니다. REJECTED 신청을 수정하려면 반드시 resubmit: true를 전달해야 하며, 누락하면 409를 반환합니다. 재신청이 성공하면 PENDING으로 변경되고 반려 사유와 반려 알림이 삭제됩니다. manager_data는 직접 등록한 PENDING 또는 REJECTED 상태의 신규 동아리 신청에서만 수정할 수 있고 기존 manager-requests 관계와 APPROVED 상태에서는 수정할 수 없습니다. APPROVED 상태의 동아리 정보 수정만 수정 전후 스냅샷을 club_history에 기록합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -1911,6 +1912,7 @@ registry.registerPath({
               phone: '010-9876-5432',
               student_id: '2022-12345',
             },
+            resubmit: true,
           },
         },
       },

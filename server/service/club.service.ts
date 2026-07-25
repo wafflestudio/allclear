@@ -691,7 +691,7 @@ export class ClubService {
     body: ManagedClubPatch,
   ): Promise<{ clubUuid: string; updatedAt: string }> {
     const clubPatch = body.club_data ? await this.buildClubPatchFromClubData(body.club_data) : {}
-    if (Object.keys(clubPatch).length === 0 && !body.manager_data) {
+    if (Object.keys(clubPatch).length === 0 && !body.manager_data && !body.resubmit) {
       throw new BadRequestError('수정할 필드가 없습니다.')
     }
 
@@ -726,7 +726,7 @@ export class ClubService {
         throw new ForbiddenError('club manager permission required')
       }
 
-      if (body.manager_data) {
+      if (body.manager_data || body.resubmit) {
         const managerRequest = await clubManagerRegisterRequestRepository.findOneBy({
           clubId: clubUuid,
           serviceUserId,
@@ -734,6 +734,16 @@ export class ClubService {
         if (managerRequest) {
           throw new ForbiddenError('manager request is not a club registration')
         }
+      }
+
+      if (body.resubmit && club.status !== REJECTED_CLUB_STATUS) {
+        throw new ConflictError('only rejected club registrations can be resubmitted')
+      }
+      if (club.status === REJECTED_CLUB_STATUS && !body.resubmit) {
+        throw new ConflictError('rejected club registration requires resubmit')
+      }
+
+      if (body.manager_data) {
         this.assertEditableClubRegistrationStatus(club.status)
 
         await clubManagerRepository.update(
@@ -748,7 +758,7 @@ export class ClubService {
         )
       }
 
-      const statusPatch = getClubResubmissionStatusPatch(club.status)
+      const statusPatch = body.resubmit ? getClubResubmissionStatusPatch(club.status) : {}
       const patchWithStatus = {
         ...clubPatch,
         ...statusPatch,
@@ -765,7 +775,7 @@ export class ClubService {
         )
       }
 
-      if (club.status === REJECTED_CLUB_STATUS) {
+      if (body.resubmit && club.status === REJECTED_CLUB_STATUS) {
         await userNotificationRepository.delete({
           sourceType: 'CLUB',
           sourceId: clubUuid,
@@ -1093,21 +1103,54 @@ export class ClubService {
     serviceUserId: string,
     request: ClubManagerRequestPatch,
   ): Promise<void> {
-    const updated = await this.clubManagerRegisterRequestRepository.update(
-      {
-        clubId: clubUuid,
-        serviceUserId,
-        status: PENDING_CLUB_STATUS,
-      },
-      {
-        ...(request.name !== undefined && { name: request.name }),
-        ...(request.phone !== undefined && { phone: request.phone }),
-        ...(request.student_id !== undefined && { studentId: request.student_id }),
-      },
-    )
-    if (!updated.affected) {
-      throw new NotFoundError('pending manager request not found')
-    }
+    await this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
+      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
+      const targetStatus = request.resubmit ? REJECTED_CLUB_STATUS : PENDING_CLUB_STATUS
+      const managerRequest = await managerRequestRepository.findOne({
+        where: {
+          clubId: clubUuid,
+          serviceUserId,
+          status: targetStatus,
+        },
+        order: {
+          createdAt: 'DESC',
+          id: 'DESC',
+        },
+        lock: {
+          mode: 'pessimistic_write',
+        },
+      })
+      if (!managerRequest) {
+        throw new NotFoundError(
+          request.resubmit
+            ? 'rejected manager request not found'
+            : 'pending manager request not found',
+        )
+      }
+
+      await managerRequestRepository.update(
+        { id: managerRequest.id },
+        {
+          ...(request.name !== undefined && { name: request.name }),
+          ...(request.phone !== undefined && { phone: request.phone }),
+          ...(request.student_id !== undefined && { studentId: request.student_id }),
+          ...(request.resubmit && {
+            status: PENDING_CLUB_STATUS,
+            rejectReason: '',
+            createdAt: new Date().toISOString(),
+          }),
+        },
+      )
+
+      if (request.resubmit) {
+        await userNotificationRepository.delete({
+          sourceType: 'CLUB_MANAGER_REQUEST',
+          sourceId: managerRequest.id,
+          type: 'MANAGER_REQUEST_REJECTED',
+        })
+      }
+    })
   }
 
   async registerClubManager(serviceUserId: string, clubUuid: string) {

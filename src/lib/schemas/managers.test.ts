@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ClubManagerRequestPatchSchema,
   ClubManagerRequestResponseSchema,
   ClubRegisterRequestSchema,
   ClubRegistrationManagerPatchSchema,
@@ -37,6 +38,11 @@ describe('manager club information schemas', () => {
       phone: '010-1234-5678',
       student_id: '2021-12345',
     })
+  })
+
+  it('accepts an explicit manager request resubmission but rejects false', () => {
+    expect(ClubManagerRequestPatchSchema.parse({ resubmit: true })).toEqual({ resubmit: true })
+    expect(() => ClubManagerRequestPatchSchema.parse({ resubmit: false })).toThrow()
   })
 
   it('maps registration manager information to the API response shape', () => {
@@ -113,7 +119,7 @@ describe('manager club information schemas', () => {
     })
   })
 
-  it('accepts a manager-only patch but rejects an empty final submission', () => {
+  it('accepts manager-only and explicit resubmission requests but rejects an empty submission', () => {
     expect(
       ManagedClubPatchSchema.parse({
         manager_data: {
@@ -125,8 +131,10 @@ describe('manager club information schemas', () => {
         name: '홍길동',
       },
     })
+    expect(ManagedClubPatchSchema.parse({ resubmit: true })).toEqual({ resubmit: true })
     expect(() => ManagedClubPatchSchema.parse({})).toThrow()
     expect(() => ManagedClubPatchSchema.parse({ club_data: {} })).toThrow()
+    expect(() => ManagedClubPatchSchema.parse({ resubmit: false })).toThrow()
   })
 
   it('rejects more than three SNS URLs', () => {
