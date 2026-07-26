@@ -64,9 +64,18 @@ const ManageClubRegistrationScreen = () => {
 	const [selectedClubId, setSelectedClubId] = useState<string>('')
 	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(null)
 	const [isExistingManagerModalVisible, setIsExistingManagerModalVisible] = useState(false)
+	const [isPendingManagerRequestModalVisible, setIsPendingManagerRequestModalVisible] =
+		useState(false)
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
+
+	const { data: manageClubs = [] } = useQuery({
+		queryKey: ['manageClubs'],
+		queryFn: () => clubService.listManageClubs(),
+		select: data => data.clubs,
+		enabled: !isEditMode,
+	})
 
 	const {
 		data: initialManagerInfo,
@@ -283,6 +292,17 @@ const ManageClubRegistrationScreen = () => {
 
 	const handleClubAddPress = (club: Club) => {
 		setSelectedClubId(club.uuid)
+
+		const hasPendingManagerRequest = manageClubs.some(
+			managedClub =>
+				managedClub.uuid === club.uuid &&
+				managedClub.managementStatus === 'MANAGER_REQUEST_PENDING',
+		)
+
+		if (hasPendingManagerRequest) {
+			setIsPendingManagerRequestModalVisible(true)
+			return
+		}
 
 		if (club.hasManager) {
 			setIsExistingManagerModalVisible(true)
@@ -525,6 +545,15 @@ const ManageClubRegistrationScreen = () => {
 				description="동아리당 한 명의 운영진만 등록할 수 있어요"
 				buttonLabel="확인"
 				onButtonPress={() => setIsExistingManagerModalVisible(false)}
+				dismissOnBackdropPress
+			/>
+			<AlertModal
+				visible={isPendingManagerRequestModalVisible}
+				onClose={() => setIsPendingManagerRequestModalVisible(false)}
+				title="이미 운영진 등록을 신청했어요"
+				description="신청이 승인될 때까지 기다려주세요"
+				buttonLabel="확인"
+				onButtonPress={() => setIsPendingManagerRequestModalVisible(false)}
 				dismissOnBackdropPress
 			/>
 			<AlertModal
