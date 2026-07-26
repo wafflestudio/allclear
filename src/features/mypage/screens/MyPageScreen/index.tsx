@@ -297,14 +297,14 @@ const MyPageScreen = () => {
 					<TouchableOpacity
 						style={styles.manageClubBtnOutline}
 						activeOpacity={0.7}
-						onPress={() => handleEditRequest(club)}>
-						<Text style={styles.manageClubBtnOutlineText}>신청 내용 수정</Text>
+						onPress={() => setCancelRequestClub(club)}>
+						<Text style={styles.manageClubBtnOutlineText}>신청 취소</Text>
 					</TouchableOpacity>
 					<TouchableOpacity
 						style={styles.manageClubBtnFilled}
 						activeOpacity={0.7}
-						onPress={() => setCancelRequestClub(club)}>
-						<Text style={styles.manageClubBtnFilledText}>신청 취소</Text>
+						onPress={() => handleEditRequest(club)}>
+						<Text style={styles.manageClubBtnFilledText}>신청 내용 수정</Text>
 					</TouchableOpacity>
 				</View>
 			)
