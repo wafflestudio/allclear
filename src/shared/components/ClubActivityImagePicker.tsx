@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import type { EditableImage } from '@/shared/types/image'
+import { isActivityImageFileSizeAllowed } from '@/shared/utils/activityImage'
 import { ms, s, vs } from '@/shared/utils/scale'
 
 const MAX_ACTIVITY_IMAGES = 5
@@ -38,7 +39,12 @@ const ClubActivityImagePicker = ({ images, onChange }: Props) => {
 			return
 		}
 
-		const selectedImages: EditableImage[] = (result.assets ?? []).flatMap((asset, index) => {
+		const assets = result.assets ?? []
+		const oversizedImageCount = assets.filter(
+			asset => !isActivityImageFileSizeAllowed(asset.fileSize),
+		).length
+		const selectedImages: EditableImage[] = assets.flatMap((asset, index) => {
+			if (!isActivityImageFileSizeAllowed(asset.fileSize)) return []
 			if (!asset.uri) return []
 			const name = asset.fileName ?? `club_activity_${Date.now()}_${index}.jpg`
 			return [
@@ -54,7 +60,18 @@ const ClubActivityImagePicker = ({ images, onChange }: Props) => {
 			]
 		})
 
-		onChange([...images, ...selectedImages].slice(0, MAX_ACTIVITY_IMAGES))
+		if (oversizedImageCount > 0) {
+			Toast.show({
+				type: 'error',
+				text1: '10MB 이하 사진만 등록할 수 있어요',
+				text2: `${oversizedImageCount}장의 활동 사진을 제외했어요`,
+				position: 'top',
+			})
+		}
+
+		if (selectedImages.length > 0) {
+			onChange([...images, ...selectedImages].slice(0, MAX_ACTIVITY_IMAGES))
+		}
 	}
 
 	return (
