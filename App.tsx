@@ -6,10 +6,10 @@ import { ManageClubBottomSheetProvider } from '@/shared/contexts/manageClubBotto
 import { ProfileProvider } from '@/shared/contexts/profileContext'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { UserVoiceBottomSheetProvider } from '@/shared/contexts/userVoiceBottomSheetContext'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { initialWindowMetrics, SafeAreaProvider } from 'react-native-safe-area-context'
 import Toast, { ToastConfig } from 'react-native-toast-message'
 import { getAnnouncementRepository } from '@/repositories/announcement'
 import { getAppVersionRepository } from '@/repositories/appVersion'
@@ -45,6 +45,7 @@ import { typography } from '@/shared/constants/typography'
 import { ms, s, vs } from '@/shared/utils/scale'
 import ForceUpdateGate from '@/shared/components/ForceUpdateGate'
 import AppModalManager from '@/shared/components/AppModalManager'
+import { shouldShowGlobalAppModals } from '@/shared/utils/entrySplash'
 
 const RootStack = createNativeStackNavigator()
 
@@ -100,6 +101,8 @@ function App(): React.JSX.Element {
 	// 토큰을 메모리로 복원한 뒤에야 인증 요청을 하는 트리(ProfileProvider 등)를 마운트한다.
 	// 그렇지 않으면 _token이 채워지기 전에 /v2/users/me가 게스트로 나가 자동로그인이 깨진다.
 	const [isBootstrapped, setIsBootstrapped] = useState(false)
+	const [entryPresentationReady, setEntryPresentationReady] = useState(false)
+	const handleEntryPresentationComplete = useCallback(() => setEntryPresentationReady(true), [])
 
 	useEffect(() => {
 		const bootstrap = async () => {
@@ -119,13 +122,14 @@ function App(): React.JSX.Element {
 		<ServiceProvider value={services}>
 			<QueryClientProvider client={queryClient}>
 				<ProfileProvider>
-					<SafeAreaProvider>
+					<SafeAreaProvider initialMetrics={initialWindowMetrics}>
 						<GestureHandlerRootView style={{ flex: 1 }}>
 							<BottomSheetModalProvider>
 								<LoginBottomSheetProvider>
 									<UserVoiceBottomSheetProvider>
 										<ManageClubBottomSheetProvider>
-											<ForceUpdateGate>
+											<ForceUpdateGate
+												onEntryPresentationComplete={handleEntryPresentationComplete}>
 												<NavigationContainer ref={_navigationRef} linking={linking}>
 													<RootStack.Navigator screenOptions={{ headerShown: false }}>
 														<RootStack.Screen name="Main" component={TabNavigator} />
@@ -139,7 +143,7 @@ function App(): React.JSX.Element {
 														/>
 													</RootStack.Navigator>
 												</NavigationContainer>
-												<AppModalManager />
+												{shouldShowGlobalAppModals(entryPresentationReady) && <AppModalManager />}
 											</ForceUpdateGate>
 										</ManageClubBottomSheetProvider>
 									</UserVoiceBottomSheetProvider>

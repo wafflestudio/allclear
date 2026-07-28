@@ -1,20 +1,28 @@
 import React, { useMemo } from 'react'
 import { Image, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Colors } from '@/shared/constants/colors'
-
-const DESIGN_WIDTH = 402
-const DESIGN_HEIGHT = 874
+import { getEntrySplashViewport } from '@/shared/utils/entrySplash'
 
 const symbolSource = require('@/assets/images/brand/entry-symbol-white.png') as number
 const wordmarkSource = require('@/assets/images/brand/entry-wordmark-small.png') as number
 
 const AppInitializationScreen = () => {
 	const { width, height } = useWindowDimensions()
-	const scaleX = width / DESIGN_WIDTH
-	const scaleY = height / DESIGN_HEIGHT
+	const insets = useSafeAreaInsets()
+	const { contentTop, contentBottom, scaleX, scaleY } = getEntrySplashViewport({
+		width,
+		height,
+		topInset: insets.top,
+		bottomInset: insets.bottom,
+	})
 
 	const layoutStyles = useMemo(
 		() => ({
+			content: {
+				top: contentTop,
+				bottom: contentBottom,
+			},
 			symbol: {
 				left: 160.556 * scaleX,
 				top: 396.562 * scaleY,
@@ -36,7 +44,7 @@ const AppInitializationScreen = () => {
 				height: 29.294 * scaleX,
 			},
 		}),
-		[scaleX, scaleY],
+		[contentBottom, contentTop, scaleX, scaleY],
 	)
 
 	return (
@@ -46,12 +54,14 @@ const AppInitializationScreen = () => {
 			accessibilityLabel="앱을 준비하고 있습니다"
 			style={styles.screen}>
 			<StatusBar barStyle="light-content" backgroundColor={Colors.POINTCOLOR} />
-			<Image source={symbolSource} style={[styles.asset, layoutStyles.symbol]} />
-			<Text style={[styles.tagline, layoutStyles.tagline]}>이번 학기엔 동아리까지,</Text>
-			<Image
-				source={wordmarkSource}
-				style={[styles.asset, styles.wordmark, layoutStyles.wordmark]}
-			/>
+			<View style={[styles.content, layoutStyles.content]}>
+				<Image source={symbolSource} style={[styles.asset, layoutStyles.symbol]} />
+				<Text style={[styles.tagline, layoutStyles.tagline]}>이번 학기엔 동아리까지,</Text>
+				<Image
+					source={wordmarkSource}
+					style={[styles.asset, styles.wordmark, layoutStyles.wordmark]}
+				/>
+			</View>
 		</View>
 	)
 }
@@ -63,6 +73,11 @@ const styles = StyleSheet.create({
 		...StyleSheet.absoluteFillObject,
 		zIndex: 100,
 		backgroundColor: Colors.POINTCOLOR,
+	},
+	content: {
+		position: 'absolute',
+		left: 0,
+		right: 0,
 	},
 	asset: {
 		position: 'absolute',
