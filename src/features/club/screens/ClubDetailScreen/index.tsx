@@ -239,6 +239,20 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									<Text style={styles.clubName} numberOfLines={1}>
 										{club.name}
 									</Text>
+									{club.officialVerificationStatus === 'VERIFIED' && (
+										<Image
+											source={require('@/assets/icons/clubInfo/verification-mark.png')}
+											style={styles.verificationMark}
+											resizeMode="contain"
+										/>
+									)}
+									{club.officialVerificationStatus === 'PENDING' && (
+										<Image
+											source={require('@/assets/icons/clubInfo/verification-pending-mark.png')}
+											style={styles.verificationMark}
+											resizeMode="contain"
+										/>
+									)}
 								</View>
 								<View style={styles.headerActions}>
 									<Pressable
@@ -434,7 +448,7 @@ const styles = StyleSheet.create({
 	cardTitleRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: s(5),
+		gap: s(4),
 		flexShrink: 1,
 	},
 	headerActions: {
@@ -450,6 +464,11 @@ const styles = StyleSheet.create({
 		...typography.headerXL,
 		color: Colors.BODYTEXT_MAIN,
 		flexShrink: 1,
+	},
+	verificationMark: {
+		width: ms(20),
+		height: ms(20),
+		flexShrink: 0,
 	},
 	description: {
 		...typography.bodyMRegular,
