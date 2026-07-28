@@ -1,18 +1,9 @@
-import appleAuth from '@invertase/react-native-apple-authentication'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { login as kakaoLogin } from '@react-native-seoul/kakao-login'
-import { useQueryClient } from '@tanstack/react-query'
-import { useProfile } from '@/shared/contexts/profileContext'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import React, { useContext, useState } from 'react'
+import React, { useCallback } from 'react'
 import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
-import Toast from 'react-native-toast-message'
-import { AuthProvider } from '@/usecases/auth'
-import { LOGIN_TOKEN } from '@/shared/constants/localStorage'
-import { setToken } from '@/shared/utils/api'
 import { Colors } from '@/shared/constants/colors'
 import { SCREEN_TYPE } from '@/shared/constants/screen'
 import { typography } from '@/shared/constants/typography'
+import useLoginActions from '@/shared/hooks/useLoginActions'
 import { ms, s, vs } from '@/shared/utils/scale'
 import { navigation } from '@/shared/utils/navigation'
 
@@ -22,66 +13,11 @@ type Props = {
 }
 
 const LoginView = ({ closeBottomSheet, onSuccess }: Props) => {
-	const queryClient = useQueryClient()
-	const { setUser } = useProfile()
-	const { authService, userService, clubService, recentSearchService } = useContext(serviceContext)
-	const [isLoading, setIsLoading] = useState(false)
-
-	const handleLoginSuccess = async (token: string) => {
-		await AsyncStorage.setItem(LOGIN_TOKEN, token)
-		setToken(token)
-		const user = await userService.getUser()
-		setUser(user)
-		// 저장한 동아리 및 최근 검색어는 prefetch하여 로그인 직후에 바로 보여줌
-		queryClient.invalidateQueries(['savedClubs'])
-		await Promise.all([
-			queryClient.prefetchQuery(['savedClubs'], () => clubService.listSavedClubs(), {
-				staleTime: Infinity,
-			}),
-			queryClient.prefetchQuery(['recentSearches'], () => recentSearchService.listRecentSearches()),
-		])
+	const handleLoginSuccess = useCallback(() => {
 		closeBottomSheet()
 		onSuccess?.()
-		queryClient.invalidateQueries(['manageClubs'])
-		Toast.show({ type: 'info', text1: '로그인 되었어요!' })
-	}
-
-	const onAppleButtonPress = async () => {
-		try {
-			setIsLoading(true)
-			const appleAuthRequestResponse = await appleAuth.performRequest({
-				requestedOperation: appleAuth.Operation.LOGIN,
-				requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
-			})
-
-			if (!appleAuthRequestResponse.identityToken) {
-				return
-			}
-
-			const token = await authService.callback(
-				AuthProvider.APPLE,
-				appleAuthRequestResponse.identityToken,
-			)
-			await handleLoginSuccess(token)
-		} catch {
-			Toast.show({ type: 'info', text1: '로그인에 실패했어요!' })
-		} finally {
-			setIsLoading(false)
-		}
-	}
-
-	const onKakaoButtonPress = async () => {
-		try {
-			setIsLoading(true)
-			const result = await kakaoLogin()
-			const token = await authService.callback(AuthProvider.KAKAO, result.accessToken)
-			await handleLoginSuccess(token)
-		} catch {
-			Toast.show({ type: 'info', text1: '로그인에 실패했어요!' })
-		} finally {
-			setIsLoading(false)
-		}
-	}
+	}, [closeBottomSheet, onSuccess])
+	const { isLoading, onAppleButtonPress, onKakaoButtonPress } = useLoginActions(handleLoginSuccess)
 
 	return (
 		<View style={styles.mainWrapper}>
@@ -199,7 +135,7 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 	},
 	kakao: {
-		backgroundColor: '#FEE500', // 카카오 컬러
+		backgroundColor: Colors.KAKAO,
 	},
 	kakaoText: {
 		...typography.bodyMMedium,

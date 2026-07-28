@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { Linking } from 'react-native'
 import SplashScreen from 'react-native-splash-screen'
 import AlertModal from '@/shared/components/AlertModal'
+import EntrySplashScreen from '@/shared/components/EntrySplashScreen'
 import useForceUpdateCheck from '@/shared/hooks/useForceUpdateCheck'
 
 const SPLASH_MIN_DURATION_MS = 1000
@@ -10,6 +11,7 @@ const ForceUpdateGate = ({ children }: { children: React.ReactNode }) => {
 	const state = useForceUpdateCheck()
 	const [minDelayElapsed, setMinDelayElapsed] = useState(false)
 	const [splashHidden, setSplashHidden] = useState(false)
+	const [entryComplete, setEntryComplete] = useState(false)
 
 	useEffect(() => {
 		const timer = setTimeout(() => setMinDelayElapsed(true), SPLASH_MIN_DURATION_MS)
@@ -34,6 +36,9 @@ const ForceUpdateGate = ({ children }: { children: React.ReactNode }) => {
 	return (
 		<>
 			{children}
+			{!entryComplete && (
+				<EntrySplashScreen active={splashHidden} onComplete={() => setEntryComplete(true)} />
+			)}
 			{showUpdateModal && (
 				<AlertModal
 					visible

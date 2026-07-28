@@ -42,7 +42,7 @@ const HomeScreen = ({ navigation }: Props) => {
 			<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
 				<View style={styles.headerContainer}>
 					<Text style={styles.subtitle}>서울대 모든 동아리</Text>
-					<Image style={styles.logo} source={require('@/assets/images/header/allclear.png')} />
+					<Image style={styles.logo} source={require('@/assets/images/brand/header-logo.png')} />
 				</View>
 
 				<View style={styles.categoryContainer}>
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
 	},
 	logo: {
 		width: s(106),
-		height: s(34),
+		height: s(37),
 		marginTop: vs(6),
 		resizeMode: 'contain',
 	},
