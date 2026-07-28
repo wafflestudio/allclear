@@ -34,6 +34,7 @@ export const Colors = {
 	POINTCOLOR: '#874FFF',
 	POINTCOLOR_10: 'rgba(135, 79, 255, 0.1)',
 	POINTCOLOR_SUB: '#FFFFFF',
+	KAKAO: '#FEE500',
 
 	// Icon
 	ICON_SELECTED: '#202020',
