@@ -1,21 +1,14 @@
 import React, { useMemo } from 'react'
-import { Image, StatusBar, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Image, StatusBar, StyleSheet, Text, View } from 'react-native'
 import { Colors } from '@/shared/constants/colors'
-import { getEntrySplashViewport } from '@/shared/utils/entrySplash'
+import useEntrySplashViewport from '@/shared/hooks/useEntrySplashViewport'
+import { ENTRY_SPLASH_SYMBOL_SIZE, getCenteredScaledAssetOrigin } from '@/shared/utils/entrySplash'
 
 const symbolSource = require('@/assets/images/brand/entry-symbol-white.png') as number
 const wordmarkSource = require('@/assets/images/brand/entry-wordmark-small.png') as number
 
 const AppInitializationScreen = () => {
-	const { width, height } = useWindowDimensions()
-	const insets = useSafeAreaInsets()
-	const { contentTop, contentBottom, scaleX, scaleY } = getEntrySplashViewport({
-		width,
-		height,
-		topInset: insets.top,
-		bottomInset: insets.bottom,
-	})
+	const { contentTop, contentBottom, scaleX, scaleY } = useEntrySplashViewport()
 
 	const layoutStyles = useMemo(
 		() => ({
@@ -24,10 +17,20 @@ const AppInitializationScreen = () => {
 				bottom: contentBottom,
 			},
 			symbol: {
-				left: 160.556 * scaleX,
-				top: 396.562 * scaleY,
-				width: 80.906 * scaleX,
-				height: 80.876 * scaleX,
+				left: getCenteredScaledAssetOrigin({
+					designOrigin: 160.556,
+					designSize: 80.906,
+					renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+					scale: scaleX,
+				}),
+				top: getCenteredScaledAssetOrigin({
+					designOrigin: 396.562,
+					designSize: 80.876,
+					renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+					scale: scaleY,
+				}),
+				width: ENTRY_SPLASH_SYMBOL_SIZE,
+				height: ENTRY_SPLASH_SYMBOL_SIZE,
 			},
 			tagline: {
 				left: 117.556 * scaleX,

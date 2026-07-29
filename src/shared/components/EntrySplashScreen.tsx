@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { StatusBar, StyleSheet, useWindowDimensions, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { StatusBar, StyleSheet, View } from 'react-native'
 import Animated, {
 	Easing,
 	runOnJS,
@@ -15,12 +14,13 @@ import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { useProfile } from '@/shared/contexts/profileContext'
 import useEntrySplashAnimatedStyles from '@/shared/hooks/useEntrySplashAnimatedStyles'
+import useEntrySplashViewport from '@/shared/hooks/useEntrySplashViewport'
 import useLoginActions from '@/shared/hooks/useLoginActions'
 import {
 	ENTRY_SPLASH_HOLD_MS,
 	ENTRY_SPLASH_TRANSITION_MS,
-	getEntrySplashViewport,
 	getEntrySplashStages,
+	shouldExitEntrySplash,
 } from '@/shared/utils/entrySplash'
 
 const FIGMA_EASE_OUT = Easing.bezier(0, 0, 0.58, 1)
@@ -34,12 +34,9 @@ const wordmarkSource = require('@/assets/images/brand/entry-wordmark.png') as nu
 type Props = {
 	active: boolean
 	onComplete: () => void
-	onPresentationComplete: () => void
 }
 
-const EntrySplashScreen = ({ active, onComplete, onPresentationComplete }: Props) => {
-	const { width, height } = useWindowDimensions()
-	const insets = useSafeAreaInsets()
+const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	const { user, isLoading: isProfileLoading } = useProfile()
 	const reduceMotion = useReducedMotion()
 	const introProgress = useSharedValue(0)
@@ -47,15 +44,16 @@ const EntrySplashScreen = ({ active, onComplete, onPresentationComplete }: Props
 	const screenOpacity = useSharedValue(1)
 	const [brandRevealComplete, setBrandRevealComplete] = useState(false)
 	const [loginReady, setLoginReady] = useState(false)
+	const [guestEntryRequested, setGuestEntryRequested] = useState(false)
 	const [finished, setFinished] = useState(false)
 	const { isLoading, onAppleButtonPress, onKakaoButtonPress } = useLoginActions()
-	const shouldShowLogin = getEntrySplashStages(Boolean(user)).includes(4)
-	const { contentTop, contentBottom, scaleX, scaleY } = getEntrySplashViewport({
-		width,
-		height,
-		topInset: insets.top,
-		bottomInset: insets.bottom,
+	const isAuthenticated = Boolean(user)
+	const shouldShowLogin = getEntrySplashStages(isAuthenticated).includes(4)
+	const shouldExitSplash = shouldExitEntrySplash({
+		isAuthenticated,
+		guestEntryRequested,
 	})
+	const { contentTop, contentBottom, scaleX, scaleY } = useEntrySplashViewport()
 	const contentStyle = useMemo(
 		() => ({
 			top: contentTop,
@@ -81,15 +79,12 @@ const EntrySplashScreen = ({ active, onComplete, onPresentationComplete }: Props
 		screenOpacity,
 	})
 	const markBrandRevealComplete = useCallback(() => setBrandRevealComplete(true), [])
-	const markLoginReady = useCallback(() => {
-		setLoginReady(true)
-		onPresentationComplete()
-	}, [onPresentationComplete])
+	const markLoginReady = useCallback(() => setLoginReady(true), [])
+	const handleGuestEntryPress = useCallback(() => setGuestEntryRequested(true), [])
 	const finishEntry = useCallback(() => {
 		setFinished(true)
-		onPresentationComplete()
 		onComplete()
-	}, [onComplete, onPresentationComplete])
+	}, [onComplete])
 
 	useEffect(() => {
 		if (!active) return
@@ -127,8 +122,8 @@ const EntrySplashScreen = ({ active, onComplete, onPresentationComplete }: Props
 	useEffect(() => {
 		if (!active || !brandRevealComplete || isProfileLoading || finished) return
 
-		if (!shouldShowLogin) {
-			const exitDelay = reduceMotion || loginReady ? 0 : ENTRY_SPLASH_HOLD_MS
+		if (shouldExitSplash) {
+			const exitDelay = reduceMotion || loginReady || guestEntryRequested ? 0 : ENTRY_SPLASH_HOLD_MS
 			screenOpacity.value = withDelay(
 				exitDelay,
 				withTiming(
@@ -171,12 +166,14 @@ const EntrySplashScreen = ({ active, onComplete, onPresentationComplete }: Props
 		brandRevealComplete,
 		finishEntry,
 		finished,
+		guestEntryRequested,
 		isProfileLoading,
 		loginReady,
 		loginProgress,
 		markLoginReady,
 		reduceMotion,
 		screenOpacity,
+		shouldExitSplash,
 		shouldShowLogin,
 	])
 
@@ -202,6 +199,7 @@ const EntrySplashScreen = ({ active, onComplete, onPresentationComplete }: Props
 					isLoading={isLoading}
 					isReady={loginReady}
 					onAppleButtonPress={onAppleButtonPress}
+					onGuestEntryPress={handleGuestEntryPress}
 					onKakaoButtonPress={onKakaoButtonPress}
 					scaleX={scaleX}
 					scaleY={scaleY}
