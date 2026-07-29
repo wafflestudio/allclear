@@ -1,9 +1,13 @@
 import {
 	APP_INITIALIZATION_LOADING_DELAY_MS,
 	ENTRY_SPLASH_HOLD_MS,
+	ENTRY_SPLASH_SYMBOL_SIZE,
 	ENTRY_SPLASH_TRANSITION_MS,
+	getCenteredScaledAssetOrigin,
 	getEntrySplashViewport,
 	getEntrySplashStages,
+	resolveEntrySplashLayoutMetrics,
+	shouldExitEntrySplash,
 	shouldShowGlobalAppModals,
 	shouldShowAppInitializationLoading,
 } from '@/shared/utils/entrySplash'
@@ -57,9 +61,63 @@ describe('entry splash timeline', () => {
 		expect(wordmarkBottom).toBeLessThanOrEqual(874 - viewport.contentBottom)
 	})
 
-	it('shows global app modals only after the entry presentation is ready', () => {
-		expect(shouldShowGlobalAppModals(false)).toBe(false)
-		expect(shouldShowGlobalAppModals(true)).toBe(true)
+	it('keeps the first native layout when Android system bar metrics update', () => {
+		const initialMetrics = {
+			width: 402,
+			height: 802,
+			topInset: 24,
+			bottomInset: 48,
+		}
+		const updatedMetrics = {
+			width: 402,
+			height: 874,
+			topInset: 24,
+			bottomInset: 48,
+		}
+		const lockedMetrics = resolveEntrySplashLayoutMetrics(null, initialMetrics)
+
+		expect(resolveEntrySplashLayoutMetrics(lockedMetrics, updatedMetrics)).toBe(initialMetrics)
+	})
+
+	it('renders the app symbol at 81px while preserving its scaled center', () => {
+		expect(ENTRY_SPLASH_SYMBOL_SIZE).toBe(81)
+		expect(
+			getCenteredScaledAssetOrigin({
+				designOrigin: 160.556,
+				designSize: 80.906,
+				renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+				scale: 360 / 402,
+			}),
+		).toBeCloseTo(((160.556 + 80.906 / 2) * 360) / 402 - 81 / 2)
+	})
+
+	it('keeps unauthenticated users on the login screen until they choose guest entry', () => {
+		expect(
+			shouldExitEntrySplash({
+				isAuthenticated: false,
+				guestEntryRequested: false,
+			}),
+		).toBe(false)
+		expect(
+			shouldExitEntrySplash({
+				isAuthenticated: false,
+				guestEntryRequested: true,
+			}),
+		).toBe(true)
+	})
+
+	it('exits the entry screen automatically for authenticated users', () => {
+		expect(
+			shouldExitEntrySplash({
+				isAuthenticated: true,
+				guestEntryRequested: false,
+			}),
+		).toBe(true)
+	})
+
+	it('shows global app modals only after the entry flow has completed', () => {
+		expect(shouldShowGlobalAppModals({ entryFlowComplete: false })).toBe(false)
+		expect(shouldShowGlobalAppModals({ entryFlowComplete: true })).toBe(true)
 	})
 
 	it('waits two seconds before showing the app initialization screen', () => {

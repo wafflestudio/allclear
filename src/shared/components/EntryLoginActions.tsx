@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text } from 'react-native'
+import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, {
 	Extrapolation,
 	interpolate,
@@ -13,6 +13,7 @@ type Props = {
 	isLoading: boolean
 	isReady: boolean
 	onAppleButtonPress: () => void
+	onGuestEntryPress: () => void
 	onKakaoButtonPress: () => void
 	scaleX: number
 	scaleY: number
@@ -23,6 +24,7 @@ const EntryLoginActions = ({
 	isLoading,
 	isReady,
 	onAppleButtonPress,
+	onGuestEntryPress,
 	onKakaoButtonPress,
 	scaleX,
 	scaleY,
@@ -46,6 +48,11 @@ const EntryLoginActions = ({
 				width: 16 * scaleX,
 				height: 16 * scaleX,
 			},
+			guestAction: {
+				top: 812 * scaleY,
+				left: 53.5 * scaleX,
+				width: 295 * scaleX,
+			},
 		}),
 		[scaleX, scaleY],
 	)
@@ -63,56 +70,72 @@ const EntryLoginActions = ({
 	return (
 		<Animated.View
 			pointerEvents={isReady ? 'auto' : 'none'}
-			style={[styles.actions, layoutStyles.actions, animatedStyle]}>
-			<Pressable
-				accessibilityRole="button"
-				accessibilityLabel="카카오톡으로 계속하기"
-				disabled={isLoading}
-				onPress={onKakaoButtonPress}
-				style={({ pressed }) => [
-					styles.button,
-					styles.kakaoButton,
-					layoutStyles.button,
-					(pressed || isLoading) && styles.buttonPressed,
-				]}>
-				{isLoading ? (
-					<ActivityIndicator color={Colors.BLACK} />
-				) : (
-					<>
-						<Image
-							source={require('@/assets/icons/kakao.png')}
-							style={[styles.icon, layoutStyles.icon]}
-						/>
-						<Text style={styles.kakaoText}>카카오톡으로 계속하기</Text>
-					</>
-				)}
-			</Pressable>
-
-			{Platform.OS === 'ios' && (
+			style={[styles.loginLayer, animatedStyle]}>
+			<View style={[styles.actions, layoutStyles.actions]}>
 				<Pressable
 					accessibilityRole="button"
-					accessibilityLabel="Apple로 계속하기"
+					accessibilityLabel="카카오톡으로 계속하기"
 					disabled={isLoading}
-					onPress={onAppleButtonPress}
+					onPress={onKakaoButtonPress}
 					style={({ pressed }) => [
 						styles.button,
-						styles.appleButton,
+						styles.kakaoButton,
 						layoutStyles.button,
 						(pressed || isLoading) && styles.buttonPressed,
 					]}>
 					{isLoading ? (
-						<ActivityIndicator color={Colors.WHITE} />
+						<ActivityIndicator color={Colors.BLACK} />
 					) : (
 						<>
 							<Image
-								source={require('@/assets/icons/apple.png')}
+								source={require('@/assets/icons/kakao.png')}
 								style={[styles.icon, layoutStyles.icon]}
 							/>
-							<Text style={styles.appleText}>Apple로 계속하기</Text>
+							<Text style={styles.kakaoText}>카카오톡으로 계속하기</Text>
 						</>
 					)}
 				</Pressable>
-			)}
+
+				{Platform.OS === 'ios' && (
+					<Pressable
+						accessibilityRole="button"
+						accessibilityLabel="Apple로 계속하기"
+						disabled={isLoading}
+						onPress={onAppleButtonPress}
+						style={({ pressed }) => [
+							styles.button,
+							styles.appleButton,
+							layoutStyles.button,
+							(pressed || isLoading) && styles.buttonPressed,
+						]}>
+						{isLoading ? (
+							<ActivityIndicator color={Colors.WHITE} />
+						) : (
+							<>
+								<Image
+									source={require('@/assets/icons/apple.png')}
+									style={[styles.icon, layoutStyles.icon]}
+								/>
+								<Text style={styles.appleText}>Apple로 계속하기</Text>
+							</>
+						)}
+					</Pressable>
+				)}
+			</View>
+
+			<Pressable
+				accessibilityRole="button"
+				accessibilityLabel="나중에 로그인하기"
+				disabled={isLoading}
+				hitSlop={12}
+				onPress={onGuestEntryPress}
+				style={({ pressed }) => [
+					styles.guestAction,
+					layoutStyles.guestAction,
+					(pressed || isLoading) && styles.buttonPressed,
+				]}>
+				<Text style={styles.guestActionText}>나중에 로그인 할게요</Text>
+			</Pressable>
 		</Animated.View>
 	)
 }
@@ -120,6 +143,9 @@ const EntryLoginActions = ({
 export default EntryLoginActions
 
 const styles = StyleSheet.create({
+	loginLayer: {
+		...StyleSheet.absoluteFillObject,
+	},
 	actions: {
 		position: 'absolute',
 	},
@@ -146,5 +172,14 @@ const styles = StyleSheet.create({
 	appleText: {
 		...typography.bodyMMedium,
 		color: Colors.WHITE,
+	},
+	guestAction: {
+		position: 'absolute',
+		alignItems: 'center',
+	},
+	guestActionText: {
+		...typography.bodyMRegular,
+		color: Colors.BODYTEXT_SUB,
+		textDecorationLine: 'underline',
 	},
 })

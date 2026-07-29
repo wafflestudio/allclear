@@ -6,6 +6,7 @@ import {
 	useAnimatedStyle,
 	useDerivedValue,
 } from 'react-native-reanimated'
+import { ENTRY_SPLASH_SYMBOL_SIZE, getCenteredScaledAssetOrigin } from '@/shared/utils/entrySplash'
 
 type Params = {
 	introProgress: SharedValue<number>
@@ -38,24 +39,37 @@ const useEntrySplashAnimatedStyles = ({
 		opacity: screenOpacity.value,
 	}))
 
-	const symbolStyle = useAnimatedStyle(() => ({
-		left:
-			interpolate(
-				visualProgress.value,
-				[0, 1, 2, 3],
-				[160.556, 111.03, 79, 78.59],
-				Extrapolation.CLAMP,
-			) * scaleX,
-		top:
-			interpolate(
-				visualProgress.value,
-				[0, 1, 2, 3],
-				[396.561, 396.56, 396.56, 337.56],
-				Extrapolation.CLAMP,
-			) * scaleY,
-		width: 80.906 * scaleX,
-		height: 80.906 * scaleX,
-	}))
+	const symbolStyle = useAnimatedStyle(() => {
+		const designLeft = interpolate(
+			visualProgress.value,
+			[0, 1, 2, 3],
+			[160.556, 111.03, 79, 78.59],
+			Extrapolation.CLAMP,
+		)
+		const designTop = interpolate(
+			visualProgress.value,
+			[0, 1, 2, 3],
+			[396.561, 396.56, 396.56, 337.56],
+			Extrapolation.CLAMP,
+		)
+
+		return {
+			left: getCenteredScaledAssetOrigin({
+				designOrigin: designLeft,
+				designSize: 80.906,
+				renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+				scale: scaleX,
+			}),
+			top: getCenteredScaledAssetOrigin({
+				designOrigin: designTop,
+				designSize: 80.906,
+				renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+				scale: scaleY,
+			}),
+			width: ENTRY_SPLASH_SYMBOL_SIZE,
+			height: ENTRY_SPLASH_SYMBOL_SIZE,
+		}
+	})
 
 	const taglineStyle = useAnimatedStyle(() => ({
 		left:

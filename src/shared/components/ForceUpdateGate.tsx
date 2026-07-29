@@ -15,10 +15,10 @@ const SPLASH_MIN_DURATION_MS = 1000
 
 type Props = {
 	children: React.ReactNode
-	onEntryPresentationComplete: () => void
+	onEntryComplete: () => void
 }
 
-const ForceUpdateGate = ({ children, onEntryPresentationComplete }: Props) => {
+const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	const state = useForceUpdateCheck()
 	const { isLoading: isProfileLoading } = useProfile()
 	const [minDelayElapsed, setMinDelayElapsed] = useState(false)
@@ -62,7 +62,10 @@ const ForceUpdateGate = ({ children, onEntryPresentationComplete }: Props) => {
 	}, [])
 
 	const noop = useCallback(() => {}, [])
-	const handleEntryComplete = useCallback(() => setEntryComplete(true), [])
+	const handleEntryComplete = useCallback(() => {
+		setEntryComplete(true)
+		onEntryComplete()
+	}, [onEntryComplete])
 
 	const showUpdateModal = state.status === 'ready' && state.updateRequired
 
@@ -70,11 +73,7 @@ const ForceUpdateGate = ({ children, onEntryPresentationComplete }: Props) => {
 		<>
 			{children}
 			{!entryComplete && isInitializationReady && (
-				<EntrySplashScreen
-					active={splashHidden}
-					onComplete={handleEntryComplete}
-					onPresentationComplete={onEntryPresentationComplete}
-				/>
+				<EntrySplashScreen active={splashHidden} onComplete={handleEntryComplete} />
 			)}
 			{showInitializationScreen && splashHidden && <AppInitializationScreen />}
 			{showUpdateModal && (
