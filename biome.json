@@ -1,0 +1,64 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"includes": [
+			"**/*.{js,jsx,ts,tsx,json,jsonc}",
+			"!android",
+			"!ios",
+			"!vendor",
+			"!.history",
+			"!.bundle-check",
+			"!.claude",
+			"!app.json"
+		]
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineEnding": "lf",
+		"lineWidth": 100,
+		"bracketSpacing": true,
+		"bracketSameLine": true
+	},
+	"linter": {
+		"enabled": true,
+		"domains": {
+			"react": "none",
+			"test": "none"
+		},
+		"rules": {
+			"preset": "none",
+			"correctness": {
+				"noUnusedFunctionParameters": {
+					"level": "warn",
+					"options": {
+						"ignoreRestSiblings": false
+					}
+				},
+				"noUnusedVariables": "warn",
+				"useExhaustiveDependencies": "warn",
+				"useHookAtTopLevel": "error"
+			}
+		}
+	},
+	"assist": {
+		"enabled": false
+	},
+	"javascript": {
+		"globals": ["__DEV__"],
+		"formatter": {
+			"jsxQuoteStyle": "double",
+			"quoteProperties": "asNeeded",
+			"trailingCommas": "all",
+			"semicolons": "asNeeded",
+			"arrowParentheses": "asNeeded",
+			"quoteStyle": "single"
+		}
+	}
+}
