@@ -45,6 +45,8 @@ import ClubDetailTabBar, {
 import InfoTab from '@/features/club/components/ClubDetail/InfoTab'
 import RecruitTab from '@/features/club/components/ClubDetail/RecruitTab'
 import ReviewTab from '@/features/club/components/ClubDetail/ReviewTab'
+import VerificationMarkButton from '@/features/club/components/ClubDetail/VerificationMarkButton'
+import VerificationOverlay from '@/features/club/components/ClubDetail/VerificationOverlay'
 import { Colors } from '@/shared/constants/colors'
 import { typography } from '@/shared/constants/typography'
 import { getClubSnsUrls, getSnsIcon, getSnsIconSize } from '@/shared/utils/clubSns'
@@ -97,8 +99,11 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 	const requireLogin = useRequireLogin()
 	const { data: club, isLoading } = useClub({ uuid })
 	const { isSaved, handleToggle } = useSaveClub(club)
+	const verificationStatus = club?.officialVerificationStatus
 
 	const [activeTab, setActiveTab] = useState<ClubDetailTabKey>('detail')
+	const [isVerificationOverlayVisible, setIsVerificationOverlayVisible] = useState(false)
+	const [verificationOverlayHeight, setVerificationOverlayHeight] = useState(0)
 	// 인플로우 탭바가 헤더 하단에 닿아 고정 탭바로 전환됐는지. 헤더 라벨 노출도 이 값으로 함께 제어한다.
 	const [isTabBarPinned, setIsTabBarPinned] = useState(false)
 
@@ -231,7 +236,6 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 								style={styles.logoFade}
 							/>
 						</View>
-
 						{/* Hero 카드: marginTop 음수(styles.card)로 로고 하단을 LOGO_HERO_OVERLAP만큼 덮고 올라온다. */}
 						<BackgroundCard style={styles.card}>
 							<View style={styles.cardHeader}>
@@ -239,6 +243,10 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									<Text style={styles.clubName} numberOfLines={1}>
 										{club.name}
 									</Text>
+									<VerificationMarkButton
+										status={verificationStatus}
+										onPress={() => setIsVerificationOverlayVisible(prev => !prev)}
+									/>
 								</View>
 								<View style={styles.headerActions}>
 									<Pressable
@@ -267,6 +275,17 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									</Pressable>
 								</View>
 							</View>
+							<VerificationOverlay
+								status={verificationStatus}
+								visible={isVerificationOverlayVisible}
+								style={[
+									styles.verificationOverlay,
+									{
+										transform: [{ translateY: -(verificationOverlayHeight + vs(8)) }],
+									},
+								]}
+								onLayout={event => setVerificationOverlayHeight(event.nativeEvent.layout.height)}
+							/>
 							{!!heroDescription && <Text style={styles.description}>{heroDescription}</Text>}
 							{club.reviewKeywords.length > 0 && (
 								<View style={styles.keywordRow}>
@@ -421,9 +440,14 @@ const styles = StyleSheet.create({
 		right: 0,
 	},
 	card: {
+		position: 'relative',
+		overflow: 'visible',
 		marginTop: -LOGO_HERO_OVERLAP, // 로고 하단을 덮으며 올라오게(overlap)
 		marginHorizontal: s(16),
 		marginBottom: vs(12),
+	},
+	verificationOverlay: {
+		right: s(0),
 	},
 	cardHeader: {
 		flexDirection: 'row',
@@ -434,7 +458,7 @@ const styles = StyleSheet.create({
 	cardTitleRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: s(5),
+		gap: s(4),
 		flexShrink: 1,
 	},
 	headerActions: {

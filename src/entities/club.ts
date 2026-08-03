@@ -6,6 +6,8 @@ export type ClubCollegeMajor = {
 	major: string
 }
 
+export type OfficialVerificationStatus = 'VERIFIED' | 'PENDING' | 'UNVERIFIED'
+
 export type Club = {
 	id: string
 	uuid: string // id와 동일한 필드. 기존의 id는 number 타입이었으나, string 타입으로 변경되었다.
@@ -40,6 +42,7 @@ export type Club = {
 	status?: string
 	rejectReason?: string | null
 	isOfficialVerified?: boolean
+	officialVerificationStatus?: OfficialVerificationStatus
 	verifiedAt?: string | null
 	// v240121
 	avgRating: number
