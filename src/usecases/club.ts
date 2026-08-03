@@ -21,6 +21,8 @@ import {
 	RegisterClubRequest,
 	RegisterClubResponse,
 	RemoveSavedClubRequest,
+	RequestOfficialVerificationRequest,
+	RequestOfficialVerificationResponse,
 	RequestClubmanagerRequest,
 	SearchClubsRequest,
 	SearchClubsResponse,
@@ -46,6 +48,9 @@ export type ClubService = {
 	getClubManagerRequest: (req: ClubRequestTarget) => Promise<ClubManagerRequestDetail>
 	updateClubManagerRequest: (req: UpdateClubManagerRequest) => Promise<void>
 	getManagedClubManager: (req: ManagedClubRequestTarget) => Promise<ClubManagerRequestDetail>
+	requestOfficialVerification: (
+		req: RequestOfficialVerificationRequest,
+	) => Promise<RequestOfficialVerificationResponse>
 	cancelClubManagerRequest: (req: ClubRequestTarget) => Promise<void>
 	cancelManagedClubRequest: (req: ManagedClubRequestTarget) => Promise<void>
 	listSavedClubs: () => Promise<ListSavedClubsResponse>
@@ -80,6 +85,7 @@ export const getClubService = ({ repositories }: Deps): ClubService => ({
 	getClubManagerRequest: req => repositories[0].getClubManagerRequest(req),
 	updateClubManagerRequest: req => repositories[0].updateClubManagerRequest(req),
 	getManagedClubManager: req => repositories[0].getManagedClubManager(req),
+	requestOfficialVerification: req => repositories[0].requestOfficialVerification(req),
 	cancelClubManagerRequest: req => repositories[0].cancelClubManagerRequest(req),
 	cancelManagedClubRequest: req => repositories[0].cancelManagedClubRequest(req),
 	listSavedClubs: () => repositories[0].listSavedClubs(),
