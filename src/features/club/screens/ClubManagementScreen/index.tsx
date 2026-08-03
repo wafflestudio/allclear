@@ -16,10 +16,13 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import Icon from 'react-native-vector-icons/MaterialIcons'
+import Toast from 'react-native-toast-message'
 
 const clubManagementSnuLogo = require('@/assets/images/club-management-snu-logo.png') as number
 
 import { Colors } from '@/shared/constants/colors'
+import OfficialVerificationRequestButton from '@/features/club/components/OfficialVerificationRequestButton'
+import { getOfficialVerificationRequestErrorContent } from '@/features/club/utils/officialVerificationRequest'
 import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
 import { serviceContext } from '@/shared/contexts/serviceContext'
 import { getClubAffiliationLabel } from '@/shared/utils/club'
@@ -44,10 +47,15 @@ const ClubManagementScreen = () => {
 	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
 	const [deletedTitle, setDeletedTitle] = useState<string | null>(null)
 	const [showEditConfirm, setShowEditConfirm] = useState(false)
+	const [hasRequestedVerification, setHasRequestedVerification] = useState(false)
 
 	const { data: club } = useQuery({
 		queryKey: ['managedClub', clubId],
 		queryFn: () => clubService.getManagedClubDetail({ uuid: clubId }),
+	})
+	const { data: publicClub, isLoading: isVerificationStatusLoading } = useQuery({
+		queryKey: ['clubs', clubId],
+		queryFn: () => clubService.getClub({ uuid: clubId }),
 	})
 
 	const {
@@ -89,6 +97,28 @@ const ClubManagementScreen = () => {
 		},
 	})
 
+	const { mutate: requestOfficialVerification, isPending: isRequestingVerification } = useMutation({
+		mutationFn: () => clubService.requestOfficialVerification({ clubId }),
+		onSuccess: () => {
+			setHasRequestedVerification(true)
+			queryClient.invalidateQueries({ queryKey: ['clubs', clubId] })
+			Toast.show({
+				type: 'success',
+				text1: '총동연 공식 인증을 신청했어요',
+				text2: '운영진 검토 후 결과를 반영할게요',
+			})
+		},
+		onError: error => {
+			const errorContent = getOfficialVerificationRequestErrorContent(error)
+			queryClient.invalidateQueries({ queryKey: ['clubs', clubId] })
+			Toast.show({
+				type: 'error',
+				text1: errorContent.title,
+				text2: errorContent.description,
+			})
+		},
+	})
+
 	const recruitments = recruitmentsData?.recruitments ?? []
 	const representativeRecruitmentId = representativeRecruitment?.id ?? null
 	const currentRecruitment =
@@ -103,6 +133,9 @@ const ClubManagementScreen = () => {
 	const isRecruitmentsLoading = isLoading || isRepresentativeLoading
 	const clubAffiliation = club ? getClubAffiliationLabel(club) : ''
 	const shortIntro = club?.shortDescription || ''
+	const officialVerificationStatus =
+		(hasRequestedVerification ? 'PENDING' : publicClub?.officialVerificationStatus) ??
+		(club?.isOfficialVerified ? 'VERIFIED' : undefined)
 
 	return (
 		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
@@ -151,6 +184,13 @@ const ClubManagementScreen = () => {
 						/>
 					</View>
 				</View>
+
+				<OfficialVerificationRequestButton
+					status={officialVerificationStatus}
+					isStatusLoading={isVerificationStatusLoading}
+					isRequesting={isRequestingVerification}
+					onPress={() => requestOfficialVerification()}
+				/>
 
 				{/* 공고 관리 */}
 				<View style={styles.section}>
