@@ -130,6 +130,21 @@ export type ManagedClubRequestTarget = {
 	uuid: Club['uuid']
 }
 
+export type RequestOfficialVerificationRequest = {
+	clubId: Club['uuid']
+}
+
+export type RequestOfficialVerificationResponse = {
+	success: true
+	message: string
+	data: {
+		request_id: number
+		club_uuid: Club['uuid']
+		status: 'PENDING'
+		created_at: string
+	}
+}
+
 export type ListSavedClubsResponse = {
 	clubs: Club[]
 	totalSize: number
@@ -247,6 +262,9 @@ export type ClubRepository = {
 	getClubManagerRequest: (req: ClubRequestTarget) => Promise<ClubManagerRequestDetail>
 	updateClubManagerRequest: (req: UpdateClubManagerRequest) => Promise<void>
 	getManagedClubManager: (req: ManagedClubRequestTarget) => Promise<ClubManagerRequestDetail>
+	requestOfficialVerification: (
+		req: RequestOfficialVerificationRequest,
+	) => Promise<RequestOfficialVerificationResponse>
 	cancelClubManagerRequest: (req: ClubRequestTarget) => Promise<void>
 	cancelManagedClubRequest: (req: ManagedClubRequestTarget) => Promise<void>
 	listSavedClubs: () => Promise<ListSavedClubsResponse>
@@ -381,6 +399,10 @@ export const getClubRepository = (): ClubRepository => ({
 			studentId: response.student_id,
 		}
 	},
+	requestOfficialVerification: req =>
+		apiConnector.post<RequestOfficialVerificationResponse>(
+			`/v2/managers/me/clubs/${req.clubId}/verifications`,
+		),
 	cancelClubManagerRequest: async req => {
 		await apiConnector.delete<void>(`/v2/clubs/${req.clubId}/manager-requests`)
 	},
