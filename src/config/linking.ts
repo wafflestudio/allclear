@@ -1,19 +1,24 @@
-import { SCREEN_TYPE } from '@/shared/constants/screen'
-import { ENV } from '@/config/ENV'
+import { ENV } from "@/config/ENV";
+import { SCREEN_TYPE } from "@/shared/constants/screen";
 
 export const linking = {
-	prefixes: ['allclear://', 'https://all-clear.cc', 'https://dev.all-clear.cc', ENV.WEB_URL],
+	prefixes: [
+		"allclear://",
+		"https://all-clear.cc",
+		"https://dev.all-clear.cc",
+		ENV.WEB_URL,
+	],
 	config: {
 		screens: {
 			Main: {
 				screens: {
 					홈: {
 						screens: {
-							[SCREEN_TYPE.CLUB_DETAIL]: 'club/:uuid',
+							[SCREEN_TYPE.CLUB_DETAIL]: "club/:uuid",
 						},
 					},
 				},
 			},
 		},
 	},
-}
+};

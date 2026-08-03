@@ -1,45 +1,44 @@
-import React from 'react'
-import { StyleSheet, View } from 'react-native'
-import Animated from 'react-native-reanimated'
+import { StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 
-import { Club } from '@/entities/club'
-import ClubPreviewCard from '@/shared/components/ClubPreviewCard'
-import useAutoScroll from '@/shared/hooks/useAutoScroll'
-import { s } from '@/shared/utils/scale'
+import type { Club } from "@/entities/club";
+import ClubPreviewCard from "@/shared/components/ClubPreviewCard";
+import useAutoScroll from "@/shared/hooks/useAutoScroll";
+import { s } from "@/shared/utils/scale";
 
-export const HORIZONTAL_CAROUSEL_BOTTOM_PADDING = s(2)
+export const HORIZONTAL_CAROUSEL_BOTTOM_PADDING = s(2);
 
 type Props = {
-	clubs: Club[]
-	onPressClub: (club: Club) => void
-}
+	clubs: Club[];
+	onPressClub: (club: Club) => void;
+};
 
 const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
-	const { listRef, pauseAutoScroll, resumeAutoScroll, ...scrollEventProps } = useAutoScroll<Club>(
-		clubs.length,
-	)
+	const { listRef, pauseAutoScroll, resumeAutoScroll, ...scrollEventProps } =
+		useAutoScroll<Club>(clubs.length);
 
 	const handleScrollBeginDrag = () => {
-		pauseAutoScroll()
-	}
+		pauseAutoScroll();
+	};
 
 	const handleScrollEndDrag = () => {
-		resumeAutoScroll(350)
-	}
+		resumeAutoScroll(350);
+	};
 
 	const handleMomentumScrollBegin = () => {
-		pauseAutoScroll()
-	}
+		pauseAutoScroll();
+	};
 
 	const handleMomentumScrollEnd = () => {
-		resumeAutoScroll(450)
-	}
+		resumeAutoScroll(450);
+	};
 
 	return (
 		<View
 			onTouchStart={pauseAutoScroll}
 			onTouchEnd={() => resumeAutoScroll(300)}
-			onTouchCancel={() => resumeAutoScroll(300)}>
+			onTouchCancel={() => resumeAutoScroll(300)}
+		>
 			<Animated.FlatList
 				ref={listRef}
 				{...scrollEventProps}
@@ -54,27 +53,27 @@ const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
 				onMomentumScrollBegin={handleMomentumScrollBegin}
 				onMomentumScrollEnd={handleMomentumScrollEnd}
 				data={clubs}
-				keyExtractor={item => item.id}
+				keyExtractor={(item) => item.id}
 				ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
 				renderItem={({ item }) => (
 					<ClubPreviewCard
 						title={item.name}
-						description={item.description ?? ''}
+						description={item.description ?? ""}
 						imageSource={{ uri: item.imageUri }}
 						onPress={() => onPressClub(item)}
 					/>
 				)}
 			/>
 		</View>
-	)
-}
+	);
+};
 
-export default HorizontalCarousel
+export default HorizontalCarousel;
 
 const styles = StyleSheet.create({
 	list: {
-		width: '100%',
-		overflow: 'visible',
+		width: "100%",
+		overflow: "visible",
 	},
 	contentContainer: {
 		paddingHorizontal: s(20),
@@ -83,4 +82,4 @@ const styles = StyleSheet.create({
 	itemSeparator: {
 		width: 10,
 	},
-})
+});

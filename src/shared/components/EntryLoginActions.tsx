@@ -1,24 +1,32 @@
-import React, { useMemo } from 'react'
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { useMemo } from "react";
+import {
+	ActivityIndicator,
+	Image,
+	Platform,
+	Pressable,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
 import Animated, {
 	Extrapolation,
 	interpolate,
 	type SharedValue,
 	useAnimatedStyle,
-} from 'react-native-reanimated'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
+} from "react-native-reanimated";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
 
 type Props = {
-	isLoading: boolean
-	isReady: boolean
-	onAppleButtonPress: () => void
-	onGuestEntryPress: () => void
-	onKakaoButtonPress: () => void
-	scaleX: number
-	scaleY: number
-	visualProgress: SharedValue<number>
-}
+	isLoading: boolean;
+	isReady: boolean;
+	onAppleButtonPress: () => void;
+	onGuestEntryPress: () => void;
+	onKakaoButtonPress: () => void;
+	scaleX: number;
+	scaleY: number;
+	visualProgress: SharedValue<number>;
+};
 
 const EntryLoginActions = ({
 	isLoading,
@@ -55,22 +63,33 @@ const EntryLoginActions = ({
 			},
 		}),
 		[scaleX, scaleY],
-	)
+	);
 
 	const animatedStyle = useAnimatedStyle(() => ({
-		opacity: interpolate(visualProgress.value, [2, 3], [0, 1], Extrapolation.CLAMP),
+		opacity: interpolate(
+			visualProgress.value,
+			[2, 3],
+			[0, 1],
+			Extrapolation.CLAMP,
+		),
 		transform: [
 			{
 				translateY:
-					interpolate(visualProgress.value, [2, 3], [12, 0], Extrapolation.CLAMP) * scaleY,
+					interpolate(
+						visualProgress.value,
+						[2, 3],
+						[12, 0],
+						Extrapolation.CLAMP,
+					) * scaleY,
 			},
 		],
-	}))
+	}));
 
 	return (
 		<Animated.View
-			pointerEvents={isReady ? 'auto' : 'none'}
-			style={[styles.loginLayer, animatedStyle]}>
+			pointerEvents={isReady ? "auto" : "none"}
+			style={[styles.loginLayer, animatedStyle]}
+		>
 			<View style={[styles.actions, layoutStyles.actions]}>
 				<Pressable
 					accessibilityRole="button"
@@ -82,13 +101,14 @@ const EntryLoginActions = ({
 						styles.kakaoButton,
 						layoutStyles.button,
 						(pressed || isLoading) && styles.buttonPressed,
-					]}>
+					]}
+				>
 					{isLoading ? (
 						<ActivityIndicator color={Colors.BLACK} />
 					) : (
 						<>
 							<Image
-								source={require('@/assets/icons/kakao.png')}
+								source={require("@/assets/icons/kakao.png")}
 								style={[styles.icon, layoutStyles.icon]}
 							/>
 							<Text style={styles.kakaoText}>카카오톡으로 계속하기</Text>
@@ -96,7 +116,7 @@ const EntryLoginActions = ({
 					)}
 				</Pressable>
 
-				{Platform.OS === 'ios' && (
+				{Platform.OS === "ios" && (
 					<Pressable
 						accessibilityRole="button"
 						accessibilityLabel="Apple로 계속하기"
@@ -107,13 +127,14 @@ const EntryLoginActions = ({
 							styles.appleButton,
 							layoutStyles.button,
 							(pressed || isLoading) && styles.buttonPressed,
-						]}>
+						]}
+					>
 						{isLoading ? (
 							<ActivityIndicator color={Colors.WHITE} />
 						) : (
 							<>
 								<Image
-									source={require('@/assets/icons/apple.png')}
+									source={require("@/assets/icons/apple.png")}
 									style={[styles.icon, layoutStyles.icon]}
 								/>
 								<Text style={styles.appleText}>Apple로 계속하기</Text>
@@ -133,25 +154,26 @@ const EntryLoginActions = ({
 					styles.guestAction,
 					layoutStyles.guestAction,
 					(pressed || isLoading) && styles.buttonPressed,
-				]}>
+				]}
+			>
 				<Text style={styles.guestActionText}>나중에 로그인 할게요</Text>
 			</Pressable>
 		</Animated.View>
-	)
-}
+	);
+};
 
-export default EntryLoginActions
+export default EntryLoginActions;
 
 const styles = StyleSheet.create({
 	loginLayer: {
 		...StyleSheet.absoluteFillObject,
 	},
 	actions: {
-		position: 'absolute',
+		position: "absolute",
 	},
 	button: {
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	buttonPressed: {
 		opacity: 0.6,
@@ -163,7 +185,7 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BLACK,
 	},
 	icon: {
-		position: 'absolute',
+		position: "absolute",
 	},
 	kakaoText: {
 		...typography.bodyMMedium,
@@ -174,12 +196,12 @@ const styles = StyleSheet.create({
 		color: Colors.WHITE,
 	},
 	guestAction: {
-		position: 'absolute',
-		alignItems: 'center',
+		position: "absolute",
+		alignItems: "center",
 	},
 	guestActionText: {
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_SUB,
-		textDecorationLine: 'underline',
+		textDecorationLine: "underline",
 	},
-})
+});

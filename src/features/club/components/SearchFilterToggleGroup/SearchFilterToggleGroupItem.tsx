@@ -1,26 +1,32 @@
-import { useEffect } from 'react'
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native'
+import { useEffect } from "react";
+import {
+	Pressable,
+	type StyleProp,
+	StyleSheet,
+	Text,
+	type ViewStyle,
+} from "react-native";
 import Animated, {
 	interpolateColor,
 	useAnimatedStyle,
 	useSharedValue,
 	withTiming,
-} from 'react-native-reanimated'
+} from "react-native-reanimated";
 
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable)
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const SELECTED_BACKGROUND_COLOR = Colors.BUTTON_SELECTED
-const UNSELECTED_BACKGROUND_COLOR = 'rgba(255, 255, 255, 0)'
+const SELECTED_BACKGROUND_COLOR = Colors.BUTTON_SELECTED;
+const UNSELECTED_BACKGROUND_COLOR = "rgba(255, 255, 255, 0)";
 
 export type SearchFilterToggleGroupItemProps = {
-	label: string
-	selected: boolean
-	onPress: () => void
-	style?: StyleProp<ViewStyle>
-}
+	label: string;
+	selected: boolean;
+	onPress: () => void;
+	style?: StyleProp<ViewStyle>;
+};
 
 export const SearchFilterToggleGroupItem = ({
 	label,
@@ -28,11 +34,11 @@ export const SearchFilterToggleGroupItem = ({
 	onPress,
 	style,
 }: SearchFilterToggleGroupItemProps) => {
-	const progress = useSharedValue(selected ? 1 : 0)
+	const progress = useSharedValue(selected ? 1 : 0);
 
 	useEffect(() => {
-		progress.value = withTiming(selected ? 1 : 0, { duration: 160 })
-	}, [progress, selected])
+		progress.value = withTiming(selected ? 1 : 0, { duration: 160 });
+	}, [progress, selected]);
 
 	const animatedStyle = useAnimatedStyle(() => ({
 		backgroundColor: interpolateColor(
@@ -40,7 +46,7 @@ export const SearchFilterToggleGroupItem = ({
 			[0, 1],
 			[UNSELECTED_BACKGROUND_COLOR, SELECTED_BACKGROUND_COLOR],
 		),
-	}))
+	}));
 
 	return (
 		<AnimatedPressable
@@ -51,13 +57,19 @@ export const SearchFilterToggleGroupItem = ({
 				selected ? styles.selected : styles.unselected,
 				animatedStyle,
 				style,
-			]}>
-			<Text style={[styles.text, selected ? styles.textSelected : styles.textUnselected]}>
+			]}
+		>
+			<Text
+				style={[
+					styles.text,
+					selected ? styles.textSelected : styles.textUnselected,
+				]}
+			>
 				{label}
 			</Text>
 		</AnimatedPressable>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
@@ -68,7 +80,7 @@ const styles = StyleSheet.create({
 	},
 	selected: {
 		borderWidth: 1,
-		borderColor: 'transparent',
+		borderColor: "transparent",
 	},
 	unselected: {
 		borderWidth: 1,
@@ -84,4 +96,4 @@ const styles = StyleSheet.create({
 	textUnselected: {
 		color: Colors.TEXT_BUTTON_UNSELECTED,
 	},
-})
+});

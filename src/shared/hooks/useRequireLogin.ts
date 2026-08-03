@@ -1,17 +1,17 @@
-import { useLoginBottomSheet } from '@/shared/contexts/loginBottomSheetContext'
-import { useProfile } from '@/shared/contexts/profileContext'
+import { useLoginBottomSheet } from "@/shared/contexts/loginBottomSheetContext";
+import { useProfile } from "@/shared/contexts/profileContext";
 
 const useRequireLogin = () => {
-	const { user } = useProfile()
-	const { openBottomSheet } = useLoginBottomSheet()
+	const { user } = useProfile();
+	const { openBottomSheet } = useLoginBottomSheet();
 
 	return (action: () => void) => {
 		if (!user) {
-			openBottomSheet(action)
-			return
+			openBottomSheet(action);
+			return;
 		}
-		action()
-	}
-}
+		action();
+	};
+};
 
-export default useRequireLogin
+export default useRequireLogin;

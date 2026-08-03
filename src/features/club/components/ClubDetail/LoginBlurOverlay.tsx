@@ -1,17 +1,16 @@
-import { BlurView } from '@react-native-community/blur'
-import React from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { BlurView } from "@react-native-community/blur";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
-import { ClubDetailTabLabel } from './ClubDetailTabBar'
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
+import type { ClubDetailTabLabel } from "./ClubDetailTabBar";
 
 type Props = {
-	clubName: string
-	tabLabel: ClubDetailTabLabel
-	onLoginPress: () => void
-}
+	clubName: string;
+	tabLabel: ClubDetailTabLabel;
+	onLoginPress: () => void;
+};
 
 const LoginBlurOverlay = ({ clubName, tabLabel, onLoginPress }: Props) => (
 	<>
@@ -28,25 +27,29 @@ const LoginBlurOverlay = ({ clubName, tabLabel, onLoginPress }: Props) => (
 		<View style={styles.loginOverlay}>
 			<Text style={styles.loginText}>
 				<Text style={styles.clubName}>{clubName}</Text>
-				{'의 ' + tabLabel + '를 보려면'}
+				{`의 ${tabLabel}를 보려면`}
 			</Text>
 			<Text style={styles.loginText}>로그인이 필요해요!</Text>
 			<Pressable
-				style={({ pressed }) => [styles.loginButton, pressed && styles.loginButtonPressed]}
-				onPress={onLoginPress}>
+				style={({ pressed }) => [
+					styles.loginButton,
+					pressed && styles.loginButtonPressed,
+				]}
+				onPress={onLoginPress}
+			>
 				<Text style={styles.loginButtonText}>로그인 하러 가기</Text>
 			</Pressable>
 		</View>
 	</>
-)
+);
 
-export default LoginBlurOverlay
+export default LoginBlurOverlay;
 
 const styles = StyleSheet.create({
 	blurWrapper: {
 		borderRadius: ms(16),
-		overflow: 'hidden',
-		position: 'absolute',
+		overflow: "hidden",
+		position: "absolute",
 		top: 0,
 		left: 0,
 		bottom: 0,
@@ -54,17 +57,17 @@ const styles = StyleSheet.create({
 		zIndex: 1,
 	},
 	loginOverlay: {
-		position: 'absolute',
+		position: "absolute",
 		left: 0,
 		right: 0,
 		zIndex: 2,
 		top: vs(40),
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	loginText: {
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_SUB,
-		textAlign: 'center',
+		textAlign: "center",
 		marginTop: vs(8),
 	},
 	clubName: {
@@ -82,6 +85,6 @@ const styles = StyleSheet.create({
 	loginButtonText: {
 		...typography.bodyMSemibold,
 		color: Colors.BODYTEXT_MAIN,
-		textDecorationLine: 'underline',
+		textDecorationLine: "underline",
 	},
-})
+});

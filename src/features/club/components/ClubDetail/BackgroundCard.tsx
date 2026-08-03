@@ -1,19 +1,19 @@
-import React from 'react'
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native'
+import type React from "react";
+import { type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
 
-import { Colors } from '@/shared/constants/colors'
-import { ms, s } from '@/shared/utils/scale'
+import { Colors } from "@/shared/constants/colors";
+import { ms, s } from "@/shared/utils/scale";
 
 type Props = {
-	children: React.ReactNode
-	style?: StyleProp<ViewStyle>
-}
+	children: React.ReactNode;
+	style?: StyleProp<ViewStyle>;
+};
 
 const BackgroundCard = ({ children, style }: Props) => {
-	return <View style={[styles.card, style]}>{children}</View>
-}
+	return <View style={[styles.card, style]}>{children}</View>;
+};
 
-export default BackgroundCard
+export default BackgroundCard;
 
 const styles = StyleSheet.create({
 	card: {
@@ -26,4 +26,4 @@ const styles = StyleSheet.create({
 		shadowRadius: 8,
 		elevation: 1,
 	},
-})
+});

@@ -1,115 +1,117 @@
-import { useCallback } from 'react'
+import { useCallback } from "react";
 import type {
 	SearchFilterToggleGroupSelection,
 	SearchFilterToggleGroupSelectionMode,
-} from './types'
+} from "./types";
 
 export type UseSearchFilterToggleGroupParams = {
-	selectionMode?: SearchFilterToggleGroupSelectionMode
-	value: SearchFilterToggleGroupSelection
-	onChange: (value: SearchFilterToggleGroupSelection) => void
-}
+	selectionMode?: SearchFilterToggleGroupSelectionMode;
+	value: SearchFilterToggleGroupSelection;
+	onChange: (value: SearchFilterToggleGroupSelection) => void;
+};
 
 export type UseSearchFilterToggleGroupReturn = {
-	selection: SearchFilterToggleGroupSelection
-	isAllSelected: boolean
-	isSelected: (value: string) => boolean
-	toggle: (value: string) => void
-	selectAll: () => void
-	reset: () => void
-}
+	selection: SearchFilterToggleGroupSelection;
+	isAllSelected: boolean;
+	isSelected: (value: string) => boolean;
+	toggle: (value: string) => void;
+	selectAll: () => void;
+	reset: () => void;
+};
 
-const NONE_SELECTION: SearchFilterToggleGroupSelection = { kind: 'none' }
-const ALL_SELECTION: SearchFilterToggleGroupSelection = { kind: 'all' }
+const NONE_SELECTION: SearchFilterToggleGroupSelection = { kind: "none" };
+const ALL_SELECTION: SearchFilterToggleGroupSelection = { kind: "all" };
 
 const sanitizeExternalSelection = ({
 	selection,
 	selectionMode,
 }: {
-	selection: SearchFilterToggleGroupSelection
-	selectionMode: SearchFilterToggleGroupSelectionMode
+	selection: SearchFilterToggleGroupSelection;
+	selectionMode: SearchFilterToggleGroupSelectionMode;
 }): SearchFilterToggleGroupSelection => {
-	if (selection.kind !== 'values') {
-		return selection
+	if (selection.kind !== "values") {
+		return selection;
 	}
 
-	const uniqueValues = [...new Set(selection.values)]
+	const uniqueValues = [...new Set(selection.values)];
 
 	if (uniqueValues.length === 0) {
-		return NONE_SELECTION
+		return NONE_SELECTION;
 	}
 
-	if (selectionMode === 'single') {
+	if (selectionMode === "single") {
 		return {
-			kind: 'values',
+			kind: "values",
 			values: uniqueValues.slice(0, 1),
-		}
+		};
 	}
 
 	return {
-		kind: 'values',
+		kind: "values",
 		values: uniqueValues,
-	}
-}
+	};
+};
 
 const getNextSelection = ({
 	selection,
 	value,
 	selectionMode,
 }: {
-	selection: SearchFilterToggleGroupSelection
-	value: string
-	selectionMode: SearchFilterToggleGroupSelectionMode
+	selection: SearchFilterToggleGroupSelection;
+	value: string;
+	selectionMode: SearchFilterToggleGroupSelectionMode;
 }): SearchFilterToggleGroupSelection => {
-	if (selection.kind !== 'values') {
-		return { kind: 'values', values: [value] }
+	if (selection.kind !== "values") {
+		return { kind: "values", values: [value] };
 	}
 
-	const isCurrentlySelected = selection.values.includes(value)
+	const isCurrentlySelected = selection.values.includes(value);
 
-	if (selectionMode === 'single') {
+	if (selectionMode === "single") {
 		if (isCurrentlySelected) {
-			return NONE_SELECTION
+			return NONE_SELECTION;
 		}
 
-		return { kind: 'values', values: [value] }
+		return { kind: "values", values: [value] };
 	}
 
 	if (isCurrentlySelected) {
-		const nextValues = selection.values.filter(selectedValue => selectedValue !== value)
+		const nextValues = selection.values.filter(
+			(selectedValue) => selectedValue !== value,
+		);
 
 		if (nextValues.length === 0) {
-			return NONE_SELECTION
+			return NONE_SELECTION;
 		}
 
-		return { kind: 'values', values: nextValues }
+		return { kind: "values", values: nextValues };
 	}
 
 	return {
-		kind: 'values',
+		kind: "values",
 		values: [...selection.values, value],
-	}
-}
+	};
+};
 
 export const useSearchFilterToggleGroup = ({
-	selectionMode = 'multiple',
+	selectionMode = "multiple",
 	value,
 	onChange,
 }: UseSearchFilterToggleGroupParams): UseSearchFilterToggleGroupReturn => {
 	const selection = sanitizeExternalSelection({
 		selection: value,
 		selectionMode,
-	})
+	});
 
 	const updateSelection = useCallback(
 		(nextSelection: SearchFilterToggleGroupSelection) => {
-			onChange(nextSelection)
+			onChange(nextSelection);
 		},
 		[onChange],
-	)
+	);
 
 	const isSelected = (optionValue: string) =>
-		selection.kind === 'values' && selection.values.includes(optionValue)
+		selection.kind === "values" && selection.values.includes(optionValue);
 
 	const toggle = useCallback(
 		(nextSelectedValue: string) => {
@@ -117,27 +119,27 @@ export const useSearchFilterToggleGroup = ({
 				selection,
 				value: nextSelectedValue,
 				selectionMode,
-			})
+			});
 
-			updateSelection(nextSelection)
+			updateSelection(nextSelection);
 		},
 		[selection, selectionMode, updateSelection],
-	)
+	);
 
 	const selectAll = () => {
-		updateSelection(ALL_SELECTION)
-	}
+		updateSelection(ALL_SELECTION);
+	};
 
 	const reset = () => {
-		updateSelection(NONE_SELECTION)
-	}
+		updateSelection(NONE_SELECTION);
+	};
 
 	return {
 		selection,
-		isAllSelected: selection.kind === 'all',
+		isAllSelected: selection.kind === "all",
 		isSelected,
 		toggle,
 		selectAll,
 		reset,
-	}
-}
+	};
+};

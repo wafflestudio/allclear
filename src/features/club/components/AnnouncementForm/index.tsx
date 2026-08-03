@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from "react";
 import {
 	ActivityIndicator,
 	Alert,
@@ -10,132 +10,163 @@ import {
 	TextInput,
 	TouchableOpacity,
 	View,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { launchImageLibrary } from 'react-native-image-picker'
-import Icon from 'react-native-vector-icons/MaterialIcons'
+} from "react-native";
+import { launchImageLibrary } from "react-native-image-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
 import {
 	getRecruitmentApplicationRequestFields,
 	getRecruitmentDeadlineFormFields,
 	getRecruitmentDeadlineRequestValue,
-} from '@/features/club/utils/recruitmentPresentation'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import { typography } from '@/shared/constants/typography'
-import { navigation } from '@/shared/utils/navigation'
+} from "@/features/club/utils/recruitmentPresentation";
+import { typography } from "@/shared/constants/typography";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import { navigation } from "@/shared/utils/navigation";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PRIMARY = '#874fff'
-const BORDER = '#c1c1c1'
-const HELPER_COLOR = '#874fff'
-const FORM_TEXT_COLOR = '#757474'
-const PLACEHOLDER_COLOR = FORM_TEXT_COLOR
-const BG = '#ffffff'
+const PRIMARY = "#874fff";
+const BORDER = "#c1c1c1";
+const HELPER_COLOR = "#874fff";
+const FORM_TEXT_COLOR = "#757474";
+const PLACEHOLDER_COLOR = FORM_TEXT_COLOR;
+const BG = "#ffffff";
 const FONT_FAMILY = {
 	regular: typography.bodyMRegular.fontFamily,
 	medium: typography.bodyMMedium.fontFamily,
 	semibold: typography.headerXLSemibold.fontFamily,
 	bold: typography.headerXL.fontFamily,
-} as const
+} as const;
 const HELPER_TEXT_STYLE = {
 	fontFamily: FONT_FAMILY.regular,
 	fontSize: 14,
-	fontWeight: '400',
+	fontWeight: "400",
 	color: HELPER_COLOR,
-} as const
+} as const;
 
-const YEARS = Array.from({ length: 8 }, (_, i) => String(new Date().getFullYear() + 2 - i))
-const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'))
-const DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0'))
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'))
-const MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'))
-const DAYS_OF_WEEK = ['월요일', '화요일', '수요일', '목요일', '금요일', '토요일', '일요일']
+const YEARS = Array.from({ length: 8 }, (_, i) =>
+	String(new Date().getFullYear() + 2 - i),
+);
+const MONTHS = Array.from({ length: 12 }, (_, i) =>
+	String(i + 1).padStart(2, "0"),
+);
+const DAYS = Array.from({ length: 31 }, (_, i) =>
+	String(i + 1).padStart(2, "0"),
+);
+const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const MINUTES = Array.from({ length: 60 }, (_, i) =>
+	String(i).padStart(2, "0"),
+);
+const DAYS_OF_WEEK = [
+	"월요일",
+	"화요일",
+	"수요일",
+	"목요일",
+	"금요일",
+	"토요일",
+	"일요일",
+];
 const MEETING_TIMES = Array.from({ length: 48 }, (_, i) => {
 	const h = Math.floor(i / 2)
 		.toString()
-		.padStart(2, '0')
-	const m = i % 2 === 0 ? '00' : '30'
-	return `${h}:${m}`
-})
+		.padStart(2, "0");
+	const m = i % 2 === 0 ? "00" : "30";
+	return `${h}:${m}`;
+});
 const DROPDOWN_WIDTHS = {
 	year: 88,
 	datePart: 68,
 	weekday: 92,
 	meetingTime: 76,
-} as const
+} as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ImageAsset = {
-	uri: string
-	type: string
-	name: string
-	isRemote?: boolean
-}
+	uri: string;
+	type: string;
+	name: string;
+	isRemote?: boolean;
+};
 
 type RegularMeeting = {
-	id: number
-	day: string
-	startTime: string
-	endTime: string
-}
+	id: number;
+	day: string;
+	startTime: string;
+	endTime: string;
+};
 
 export type AnnouncementFormProps =
-	| { mode: 'create'; clubId: string; onSuccess: () => void }
-	| { mode: 'edit'; recruitmentId: number; onSuccess: () => void }
+	| { mode: "create"; clubId: string; onSuccess: () => void }
+	| { mode: "edit"; recruitmentId: number; onSuccess: () => void };
 
 // ─── CustomDropdown ───────────────────────────────────────────────────────────
 
 type DropdownProps = {
-	value: string
-	options: string[]
-	onChange: (val: string) => void
-	triggerWidth: number
-	menuWidth?: number
-}
+	value: string;
+	options: string[];
+	onChange: (val: string) => void;
+	triggerWidth: number;
+	menuWidth?: number;
+};
 
 type DropdownPosition = {
-	x: number
-	y: number
-	width: number
-}
+	x: number;
+	y: number;
+	width: number;
+};
 
-const isValidLayoutNumber = (value: number) => Number.isFinite(value)
+const isValidLayoutNumber = (value: number) => Number.isFinite(value);
 
-const CustomDropdown = ({ value, options, onChange, triggerWidth, menuWidth }: DropdownProps) => {
-	const [open, setOpen] = useState(false)
-	const [pos, setPos] = useState<DropdownPosition | null>(null)
-	const btnRef = useRef<View>(null)
+const CustomDropdown = ({
+	value,
+	options,
+	onChange,
+	triggerWidth,
+	menuWidth,
+}: DropdownProps) => {
+	const [open, setOpen] = useState(false);
+	const [pos, setPos] = useState<DropdownPosition | null>(null);
+	const btnRef = useRef<View>(null);
 
 	const closeDropdown = () => {
-		setOpen(false)
-		setPos(null)
-	}
+		setOpen(false);
+		setPos(null);
+	};
 
 	const handleOpen = () => {
 		requestAnimationFrame(() => {
 			btnRef.current?.measureInWindow((x, y, w, h) => {
-				const resolvedMenuWidth = menuWidth ?? triggerWidth
-				const layoutValues = [x, y, w, h, triggerWidth, resolvedMenuWidth]
+				const resolvedMenuWidth = menuWidth ?? triggerWidth;
+				const layoutValues = [x, y, w, h, triggerWidth, resolvedMenuWidth];
 
-				if (!layoutValues.every(isValidLayoutNumber) || h <= 0 || resolvedMenuWidth <= 0) {
-					closeDropdown()
-					return
+				if (
+					!layoutValues.every(isValidLayoutNumber) ||
+					h <= 0 ||
+					resolvedMenuWidth <= 0
+				) {
+					closeDropdown();
+					return;
 				}
 
-				setPos({ x, y: y + h, width: resolvedMenuWidth })
-				setOpen(true)
-			})
-		})
-	}
+				setPos({ x, y: y + h, width: resolvedMenuWidth });
+				setOpen(true);
+			});
+		});
+	};
 
 	return (
 		<View style={{ width: triggerWidth }} ref={btnRef} collapsable={false}>
-			<TouchableOpacity style={[styles.dropdown, open && styles.dropdownOpen]} onPress={handleOpen}>
-				<Text style={[styles.dropdownText, open && { color: PRIMARY }]}>{value}</Text>
+			<TouchableOpacity
+				style={[styles.dropdown, open && styles.dropdownOpen]}
+				onPress={handleOpen}
+			>
+				<Text style={[styles.dropdownText, open && { color: PRIMARY }]}>
+					{value}
+				</Text>
 				<Icon
-					name={open ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+					name={open ? "keyboard-arrow-up" : "keyboard-arrow-down"}
 					size={16}
 					color={open ? PRIMARY : BORDER}
 				/>
@@ -145,30 +176,45 @@ const CustomDropdown = ({ value, options, onChange, triggerWidth, menuWidth }: D
 				<View
 					style={StyleSheet.absoluteFill}
 					onStartShouldSetResponder={() => true}
-					onResponderGrant={closeDropdown}>
+					onResponderGrant={closeDropdown}
+				>
 					{pos && (
 						<View
 							style={[
 								styles.dropdownList,
 								styles.dropdownListOpen,
-								{ position: 'absolute', top: pos.y, left: pos.x, width: pos.width },
+								{
+									position: "absolute",
+									top: pos.y,
+									left: pos.x,
+									width: pos.width,
+								},
 							]}
 							onStartShouldSetResponder={() => true}
-							onResponderGrant={() => {}}>
-							<ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 220 }}>
-								{options.map(opt => (
+							onResponderGrant={() => {}}
+						>
+							<ScrollView
+								showsVerticalScrollIndicator={false}
+								style={{ maxHeight: 220 }}
+							>
+								{options.map((opt) => (
 									<TouchableOpacity
 										key={opt}
-										style={[styles.dropdownItem, opt === value && styles.dropdownItemSelected]}
+										style={[
+											styles.dropdownItem,
+											opt === value && styles.dropdownItemSelected,
+										]}
 										onPress={() => {
-											onChange(opt)
-											closeDropdown()
-										}}>
+											onChange(opt);
+											closeDropdown();
+										}}
+									>
 										<Text
 											style={[
 												styles.dropdownItemText,
 												opt === value && styles.dropdownItemTextSelected,
-											]}>
+											]}
+										>
 											{opt}
 										</Text>
 									</TouchableOpacity>
@@ -179,262 +225,301 @@ const CustomDropdown = ({ value, options, onChange, triggerWidth, menuWidth }: D
 				</View>
 			</Modal>
 		</View>
-	)
-}
+	);
+};
 
 type LabeledDropdownProps = DropdownProps & {
-	unit: string
-}
+	unit: string;
+};
 
 const LabeledDropdown = ({ unit, ...dropdownProps }: LabeledDropdownProps) => (
 	<View style={styles.dateField}>
 		<CustomDropdown {...dropdownProps} />
 		<Text style={styles.dateUnitLabel}>{unit}</Text>
 	</View>
-)
+);
 
 // ─── ConfirmModal ─────────────────────────────────────────────────────────────
 
 type ConfirmModalProps = {
-	visible: boolean
-	title: string
-	submitLabel: string
-	onCancel: () => void
-	onConfirm: () => void
-}
+	visible: boolean;
+	title: string;
+	submitLabel: string;
+	onCancel: () => void;
+	onConfirm: () => void;
+};
 
-const ConfirmModal = ({ visible, title, submitLabel, onCancel, onConfirm }: ConfirmModalProps) => (
+const ConfirmModal = ({
+	visible,
+	title,
+	submitLabel,
+	onCancel,
+	onConfirm,
+}: ConfirmModalProps) => (
 	<Modal visible={visible} transparent animationType="fade">
 		<View style={styles.confirmOverlay}>
 			<View style={styles.confirmBox}>
 				<Text style={[styles.confirmTitle, { marginBottom: 12 }]}>{title}</Text>
 				<Text style={[styles.confirmDesc, { marginBottom: 20 }]}>
-					{'공고는 언제든 동아리 관리 → 공고 관리 탭에서\n수정/등록 가능해요'}
+					{"공고는 언제든 동아리 관리 → 공고 관리 탭에서\n수정/등록 가능해요"}
 				</Text>
 				<View style={styles.confirmButtons}>
-					<TouchableOpacity style={styles.confirmCancel} onPress={onCancel} activeOpacity={0.6}>
+					<TouchableOpacity
+						style={styles.confirmCancel}
+						onPress={onCancel}
+						activeOpacity={0.6}
+					>
 						<Text style={styles.confirmCancelText}>취소</Text>
 					</TouchableOpacity>
-					<TouchableOpacity style={styles.confirmSubmit} onPress={onConfirm} activeOpacity={0.6}>
+					<TouchableOpacity
+						style={styles.confirmSubmit}
+						onPress={onConfirm}
+						activeOpacity={0.6}
+					>
 						<Text style={styles.confirmSubmitText}>{submitLabel}</Text>
 					</TouchableOpacity>
 				</View>
 			</View>
 		</View>
 	</Modal>
-)
+);
 
 // ─── SuccessModal ─────────────────────────────────────────────────────────────
 
 type SuccessModalProps = {
-	visible: boolean
-	message: string
-	onConfirm: () => void
-}
+	visible: boolean;
+	message: string;
+	onConfirm: () => void;
+};
 
 const SuccessModal = ({ visible, message, onConfirm }: SuccessModalProps) => (
 	<Modal visible={visible} transparent animationType="fade">
 		<View style={styles.confirmOverlay}>
 			<View style={styles.confirmBox}>
-				<Text style={[styles.confirmTitle, { marginBottom: 20 }]}>{message}</Text>
+				<Text style={[styles.confirmTitle, { marginBottom: 20 }]}>
+					{message}
+				</Text>
 				<TouchableOpacity
-					style={[styles.confirmSubmit, { alignSelf: 'stretch', flex: 0 }]}
+					style={[styles.confirmSubmit, { alignSelf: "stretch", flex: 0 }]}
 					onPress={onConfirm}
-					activeOpacity={0.6}>
+					activeOpacity={0.6}
+				>
 					<Text style={styles.confirmSubmitText}>확인</Text>
 				</TouchableOpacity>
 			</View>
 		</View>
 	</Modal>
-)
+);
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const AnnouncementForm = (props: AnnouncementFormProps) => {
-	const { recruitmentService } = useContext(serviceContext)
-	const initialDeadline = getRecruitmentDeadlineFormFields(new Date().toISOString())
+	const { recruitmentService } = useContext(serviceContext);
+	const initialDeadline = getRecruitmentDeadlineFormFields(
+		new Date().toISOString(),
+	);
 
-	const isEdit = props.mode === 'edit'
-	const recruitmentIdForEdit = isEdit ? props.recruitmentId : null
+	const isEdit = props.mode === "edit";
+	const recruitmentIdForEdit = isEdit ? props.recruitmentId : null;
 
 	// clubId: create 모드엔 props에서, edit 모드엔 detail 로드 시 저장
-	const clubIdRef = useRef<string>(props.mode === 'create' ? props.clubId : '')
+	const clubIdRef = useRef<string>(props.mode === "create" ? props.clubId : "");
 
 	// 로딩 (edit 모드만 초기 로딩 있음)
-	const [isLoadingDetail, setIsLoadingDetail] = useState(isEdit)
+	const [isLoadingDetail, setIsLoadingDetail] = useState(isEdit);
 
 	// 공고 제목
-	const [title, setTitle] = useState('')
+	const [title, setTitle] = useState("");
 
 	// 모집 기간
-	const [year, setYear] = useState(initialDeadline.year)
-	const [month, setMonth] = useState(initialDeadline.month)
-	const [day, setDay] = useState(initialDeadline.day)
-	const [hour, setHour] = useState('23')
-	const [minute, setMinute] = useState('59')
+	const [year, setYear] = useState(initialDeadline.year);
+	const [month, setMonth] = useState(initialDeadline.month);
+	const [day, setDay] = useState(initialDeadline.day);
+	const [hour, setHour] = useState("23");
+	const [minute, setMinute] = useState("59");
 
 	// 필참 활동 여부
-	const [hasRequiredActivity, setHasRequiredActivity] = useState<boolean | null>(null)
+	const [hasRequiredActivity, setHasRequiredActivity] = useState<
+		boolean | null
+	>(null);
 
 	// 정기 모임 일시
-	const [hasRegularMeeting, setHasRegularMeeting] = useState<boolean | null>(null)
+	const [hasRegularMeeting, setHasRegularMeeting] = useState<boolean | null>(
+		null,
+	);
 	const [regularMeetings, setRegularMeetings] = useState<RegularMeeting[]>([
-		{ id: 1, day: '월요일', startTime: '09:00', endTime: '10:00' },
-	])
+		{ id: 1, day: "월요일", startTime: "09:00", endTime: "10:00" },
+	]);
 
 	// 활동 장소
-	const [activityLocation, setActivityLocation] = useState<'동방' | '동방 외' | '미정' | null>(null)
-	const [locationText, setLocationText] = useState('')
+	const [activityLocation, setActivityLocation] = useState<
+		"동방" | "동방 외" | "미정" | null
+	>(null);
+	const [locationText, setLocationText] = useState("");
 
 	// 지원 자격
-	const [qualification, setQualification] = useState<'제한 없음' | '제한 있음' | null>(null)
-	const [qualificationText, setQualificationText] = useState('')
+	const [qualification, setQualification] = useState<
+		"제한 없음" | "제한 있음" | null
+	>(null);
+	const [qualificationText, setQualificationText] = useState("");
 
 	// 모집 인원
-	const [recruitCount, setRecruitCount] = useState<'제한 없음' | '정원 있음' | null>(null)
-	const [recruitCountText, setRecruitCountText] = useState('')
+	const [recruitCount, setRecruitCount] = useState<
+		"제한 없음" | "정원 있음" | null
+	>(null);
+	const [recruitCountText, setRecruitCountText] = useState("");
 
 	// 회비
-	const [hasFee, setHasFee] = useState<boolean | null>(null)
-	const [feeText, setFeeText] = useState('')
+	const [hasFee, setHasFee] = useState<boolean | null>(null);
+	const [feeText, setFeeText] = useState("");
 
 	// 가입 절차
-	const [joinUrl, setJoinUrl] = useState('')
-	const [joinDescription, setJoinDescription] = useState('')
+	const [joinUrl, setJoinUrl] = useState("");
+	const [joinDescription, setJoinDescription] = useState("");
 
 	// 공고 본문
-	const [existingAnnouncement, setExistingAnnouncement] = useState('')
+	const [existingAnnouncement, setExistingAnnouncement] = useState("");
 
 	// 공고 이미지
-	const [images, setImages] = useState<ImageAsset[]>([])
+	const [images, setImages] = useState<ImageAsset[]>([]);
 
 	// 모달
-	const [showConfirm, setShowConfirm] = useState(false)
-	const [showSuccess, setShowSuccess] = useState(false)
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [showConfirm, setShowConfirm] = useState(false);
+	const [showSuccess, setShowSuccess] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
 	// 이전 공고 불러오기
-	const [showPrevList, setShowPrevList] = useState(false)
-	const [prevRecruitments, setPrevRecruitments] = useState<{ id: number; display_title: string }[]>(
-		[],
-	)
-	const [isLoadingPrev, setIsLoadingPrev] = useState(false)
-	const [isLoadingPrevDetail, setIsLoadingPrevDetail] = useState(false)
+	const [showPrevList, setShowPrevList] = useState(false);
+	const [prevRecruitments, setPrevRecruitments] = useState<
+		{ id: number; display_title: string }[]
+	>([]);
+	const [isLoadingPrev, setIsLoadingPrev] = useState(false);
+	const [isLoadingPrevDetail, setIsLoadingPrevDetail] = useState(false);
 
 	// ─── edit 모드: 상세 데이터 불러와서 필드 채우기 ─────────────────────────────
 
 	useEffect(() => {
-		if (recruitmentIdForEdit === null) return
+		if (recruitmentIdForEdit === null) return;
 
 		const load = async () => {
 			try {
 				const detail = await recruitmentService.getRecruitmentDetail({
 					recruitmentId: recruitmentIdForEdit,
-				})
-				const c = detail.content
+				});
+				const c = detail.content;
 
-				clubIdRef.current = detail.club_id
+				clubIdRef.current = detail.club_id;
 
-				setTitle(c.title)
+				setTitle(c.title);
 
-				const deadline = getRecruitmentDeadlineFormFields(c.deadline)
-				setYear(deadline.year)
-				setMonth(deadline.month)
-				setDay(deadline.day)
-				setHour(deadline.hour)
-				setMinute(deadline.minute)
+				const deadline = getRecruitmentDeadlineFormFields(c.deadline);
+				setYear(deadline.year);
+				setMonth(deadline.month);
+				setDay(deadline.day);
+				setHour(deadline.hour);
+				setMinute(deadline.minute);
 
-				setHasRequiredActivity(c.is_mandatory)
-				setHasRegularMeeting(c.has_regular_meeting)
+				setHasRequiredActivity(c.is_mandatory);
+				setHasRegularMeeting(c.has_regular_meeting);
 
 				if (c.regular_meetings.length > 0) {
 					setRegularMeetings(
 						c.regular_meetings.map((m, i) => ({
 							id: i + 1,
 							day: m.day_of_week,
-							startTime: m.start_time?.slice(0, 5) ?? '',
-							endTime: m.end_time?.slice(0, 5) ?? '',
+							startTime: m.start_time?.slice(0, 5) ?? "",
+							endTime: m.end_time?.slice(0, 5) ?? "",
 						})),
-					)
+					);
 				}
 
-				const locType = c.activity_location_type as '동방' | '동방 외' | '미정'
-				setActivityLocation(locType)
-				setLocationText(c.activity_location_text)
+				const locType = c.activity_location_type as "동방" | "동방 외" | "미정";
+				setActivityLocation(locType);
+				setLocationText(c.activity_location_text);
 
-				setQualification(c.has_eligibility ? '제한 있음' : '제한 없음')
-				setQualificationText(c.eligibility_text)
+				setQualification(c.has_eligibility ? "제한 있음" : "제한 없음");
+				setQualificationText(c.eligibility_text);
 
-				setRecruitCount(c.has_capacity_limit ? '정원 있음' : '제한 없음')
-				setRecruitCountText(c.capacity_limit_text)
+				setRecruitCount(c.has_capacity_limit ? "정원 있음" : "제한 없음");
+				setRecruitCountText(c.capacity_limit_text);
 
-				setHasFee(c.has_membership_fee)
-				setFeeText(c.membership_fee_text)
+				setHasFee(c.has_membership_fee);
+				setFeeText(c.membership_fee_text);
 
-				setJoinUrl(c.application_url)
-				setJoinDescription(c.application_process)
+				setJoinUrl(c.application_url);
+				setJoinDescription(c.application_process);
 
-				setExistingAnnouncement(c.full_recruitment_text ?? '')
+				setExistingAnnouncement(c.full_recruitment_text ?? "");
 
 				if (c.image_urls.length > 0) {
 					setImages(
-						c.image_urls.map(url => ({
+						c.image_urls.map((url) => ({
 							uri: url,
-							type: 'image/jpeg',
-							name: '',
+							type: "image/jpeg",
+							name: "",
 							isRemote: true,
 						})),
-					)
+					);
 				}
 			} catch {
-				Alert.alert('오류', '공고 정보를 불러오는데 실패했어요.')
-				navigation.goBack()
+				Alert.alert("오류", "공고 정보를 불러오는데 실패했어요.");
+				navigation.goBack();
 			} finally {
-				setIsLoadingDetail(false)
+				setIsLoadingDetail(false);
 			}
-		}
-		load()
-	}, [recruitmentIdForEdit, recruitmentService])
+		};
+		load();
+	}, [recruitmentIdForEdit, recruitmentService]);
 
 	// ─── 정기 모임 관리 ─────────────────────────────────────────────────────────
 
 	const addRegularMeeting = () => {
-		setRegularMeetings(prev => [
+		setRegularMeetings((prev) => [
 			...prev,
-			{ id: Date.now(), day: '월요일', startTime: '09:00', endTime: '10:00' },
-		])
-	}
+			{ id: Date.now(), day: "월요일", startTime: "09:00", endTime: "10:00" },
+		]);
+	};
 
 	const removeRegularMeeting = (id: number) => {
-		setRegularMeetings(prev => prev.filter(m => m.id !== id))
-	}
+		setRegularMeetings((prev) => prev.filter((m) => m.id !== id));
+	};
 
-	const updateRegularMeeting = (id: number, field: keyof RegularMeeting, value: string) => {
-		setRegularMeetings(prev => prev.map(m => (m.id === id ? { ...m, [field]: value } : m)))
-	}
+	const updateRegularMeeting = (
+		id: number,
+		field: keyof RegularMeeting,
+		value: string,
+	) => {
+		setRegularMeetings((prev) =>
+			prev.map((m) => (m.id === id ? { ...m, [field]: value } : m)),
+		);
+	};
 
 	// ─── 이미지 ──────────────────────────────────────────────────────────────────
 
 	const handleAddImage = () => {
-		launchImageLibrary({ mediaType: 'photo', selectionLimit: 1 }, response => {
-			const asset = response.assets?.[0]
-			if (asset?.uri) {
-				setImages(prev => [
-					...prev,
-					{
-						uri: asset.uri!,
-						type: asset.type ?? 'image/jpeg',
-						name: asset.fileName ?? `image_${Date.now()}.jpg`,
-						isRemote: false,
-					},
-				])
-			}
-		})
-	}
+		launchImageLibrary(
+			{ mediaType: "photo", selectionLimit: 1 },
+			(response) => {
+				const asset = response.assets?.[0];
+				const uri = asset?.uri;
+				if (uri) {
+					setImages((prev) => [
+						...prev,
+						{
+							uri,
+							type: asset.type ?? "image/jpeg",
+							name: asset.fileName ?? `image_${Date.now()}.jpg`,
+							isRemote: false,
+						},
+					]);
+				}
+			},
+		);
+	};
 
 	const handleRemoveImage = (index: number) => {
-		setImages(prev => prev.filter((_, i) => i !== index))
-	}
+		setImages((prev) => prev.filter((_, i) => i !== index));
+	};
 
 	// ─── 폼 유효성 ──────────────────────────────────────────────────────────────
 
@@ -443,31 +528,33 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 		hasRequiredActivity !== null &&
 		hasRegularMeeting !== null &&
 		activityLocation !== null &&
-		(activityLocation !== '동방 외' || locationText.trim().length > 0) &&
+		(activityLocation !== "동방 외" || locationText.trim().length > 0) &&
 		qualification !== null &&
-		(qualification !== '제한 있음' || qualificationText.trim().length > 0) &&
+		(qualification !== "제한 있음" || qualificationText.trim().length > 0) &&
 		recruitCount !== null &&
-		(recruitCount !== '정원 있음' || recruitCountText.trim().length > 0) &&
+		(recruitCount !== "정원 있음" || recruitCountText.trim().length > 0) &&
 		hasFee !== null &&
 		(hasFee !== true || feeText.trim().length > 0) &&
 		joinUrl.trim().length > 0 &&
-		joinDescription.trim().length > 0
+		joinDescription.trim().length > 0;
 
 	const handleSubmit = () => {
-		setShowConfirm(true)
-	}
+		setShowConfirm(true);
+	};
 
 	// ─── 제출 ─────────────────────────────────────────────────────────────────────
 
 	const handleConfirm = async () => {
-		setShowConfirm(false)
-		setIsSubmitting(true)
+		setShowConfirm(false);
+		setIsSubmitting(true);
 
 		try {
 			// 기존 remote URL은 그대로 유지, 새 로컬 이미지만 업로드
-			const remoteUrls = images.filter(img => img.isRemote).map(img => img.uri)
-			const newLocalImages = images.filter(img => !img.isRemote)
-			const newUploadedUrls: string[] = []
+			const remoteUrls = images
+				.filter((img) => img.isRemote)
+				.map((img) => img.uri);
+			const newLocalImages = images.filter((img) => !img.isRemote);
+			const newUploadedUrls: string[] = [];
 
 			for (const img of newLocalImages) {
 				const res = await recruitmentService.uploadRecruitmentImage({
@@ -475,18 +562,18 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					uri: img.uri,
 					type: img.type,
 					name: img.name,
-				})
-				newUploadedUrls.push(res.url)
+				});
+				newUploadedUrls.push(res.url);
 			}
 
-			const imageUrls = [...remoteUrls, ...newUploadedUrls]
+			const imageUrls = [...remoteUrls, ...newUploadedUrls];
 			const deadline = getRecruitmentDeadlineRequestValue({
 				year,
 				month,
 				day,
 				hour,
 				minute,
-			})
+			});
 
 			const payload = {
 				title,
@@ -495,17 +582,17 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				has_regular_meeting: hasRegularMeeting ?? false,
 				regular_meetings:
 					hasRegularMeeting === true
-						? regularMeetings.map(m => ({
+						? regularMeetings.map((m) => ({
 								day_of_week: m.day,
 								start_time: m.startTime,
 								end_time: m.endTime,
 							}))
 						: [],
-				activity_location_type: activityLocation ?? '',
+				activity_location_type: activityLocation ?? "",
 				activity_location_text: locationText,
-				has_eligibility: qualification === '제한 있음',
+				has_eligibility: qualification === "제한 있음",
 				eligibility_text: qualificationText,
-				has_capacity_limit: recruitCount === '정원 있음',
+				has_capacity_limit: recruitCount === "정원 있음",
 				capacity_limit_text: recruitCountText,
 				has_membership_fee: hasFee ?? false,
 				membership_fee_text: feeText,
@@ -513,146 +600,164 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				application_process: joinDescription,
 				full_recruitment_text: existingAnnouncement,
 				image_urls: imageUrls,
-			}
+			};
 
-			if (props.mode === 'create') {
-				await recruitmentService.createRecruitment({ clubId: clubIdRef.current, ...payload })
+			if (props.mode === "create") {
+				await recruitmentService.createRecruitment({
+					clubId: clubIdRef.current,
+					...payload,
+				});
 			} else {
 				await recruitmentService.updateRecruitment({
 					recruitmentId: props.recruitmentId,
 					...payload,
-				})
+				});
 			}
 
-			setShowSuccess(true)
+			setShowSuccess(true);
 		} catch (err: unknown) {
-			if (props.mode === 'create') {
-				console.log('[DEV] 공고 등록 실패:', JSON.stringify(err))
-				const status = (err as { status?: number })?.status
+			if (props.mode === "create") {
+				console.log("[DEV] 공고 등록 실패:", JSON.stringify(err));
+				const status = (err as { status?: number })?.status;
 				const message =
 					status === 409
-						? '이번 달에 이미 등록된 공고가 있어요.\n공고는 월 1회만 등록할 수 있어요.'
-						: '공고 등록 중 오류가 발생했어요. 다시 시도해주세요.'
-				Alert.alert('등록 실패', message)
+						? "이번 달에 이미 등록된 공고가 있어요.\n공고는 월 1회만 등록할 수 있어요."
+						: "공고 등록 중 오류가 발생했어요. 다시 시도해주세요.";
+				Alert.alert("등록 실패", message);
 			} else {
-				Alert.alert('수정 실패', '공고 수정 중 오류가 발생했어요. 다시 시도해주세요.')
+				Alert.alert(
+					"수정 실패",
+					"공고 수정 중 오류가 발생했어요. 다시 시도해주세요.",
+				);
 			}
 		} finally {
-			setIsSubmitting(false)
+			setIsSubmitting(false);
 		}
-	}
+	};
 
 	const handleSuccessConfirm = () => {
-		setShowSuccess(false)
-		props.onSuccess()
-	}
+		setShowSuccess(false);
+		props.onSuccess();
+	};
 
 	// ─── 이전 공고 불러오기 ──────────────────────────────────────────────────────
 
 	const handleOpenPrevList = async () => {
-		setShowPrevList(true)
-		setIsLoadingPrev(true)
+		setShowPrevList(true);
+		setIsLoadingPrev(true);
 		try {
-			const data = await recruitmentService.listClubRecruitments({ clubId: clubIdRef.current })
-			setPrevRecruitments(data.recruitments)
+			const data = await recruitmentService.listClubRecruitments({
+				clubId: clubIdRef.current,
+			});
+			setPrevRecruitments(data.recruitments);
 		} catch {
-			Alert.alert('오류', '공고 목록을 불러오는데 실패했어요.')
-			setShowPrevList(false)
+			Alert.alert("오류", "공고 목록을 불러오는데 실패했어요.");
+			setShowPrevList(false);
 		} finally {
-			setIsLoadingPrev(false)
+			setIsLoadingPrev(false);
 		}
-	}
+	};
 
 	const handleSelectPrevRecruitment = async (recruitmentId: number) => {
-		setIsLoadingPrevDetail(true)
+		setIsLoadingPrevDetail(true);
 		try {
-			const detail = await recruitmentService.getRecruitmentDetail({ recruitmentId })
-			const c = detail.content
+			const detail = await recruitmentService.getRecruitmentDetail({
+				recruitmentId,
+			});
+			const c = detail.content;
 
-			setTitle(c.title)
+			setTitle(c.title);
 
-			const deadline = getRecruitmentDeadlineFormFields(c.deadline)
-			setYear(deadline.year)
-			setMonth(deadline.month)
-			setDay(deadline.day)
-			setHour(deadline.hour)
-			setMinute(deadline.minute)
+			const deadline = getRecruitmentDeadlineFormFields(c.deadline);
+			setYear(deadline.year);
+			setMonth(deadline.month);
+			setDay(deadline.day);
+			setHour(deadline.hour);
+			setMinute(deadline.minute);
 
-			setHasRequiredActivity(c.is_mandatory)
-			setHasRegularMeeting(c.has_regular_meeting)
+			setHasRequiredActivity(c.is_mandatory);
+			setHasRegularMeeting(c.has_regular_meeting);
 
 			if (c.regular_meetings.length > 0) {
 				setRegularMeetings(
 					c.regular_meetings.map((m, i) => ({
 						id: i + 1,
 						day: m.day_of_week,
-						startTime: m.start_time?.slice(0, 5) ?? '',
-						endTime: m.end_time?.slice(0, 5) ?? '',
+						startTime: m.start_time?.slice(0, 5) ?? "",
+						endTime: m.end_time?.slice(0, 5) ?? "",
 					})),
-				)
+				);
 			}
 
-			const locType = c.activity_location_type as '동방' | '동방 외' | '미정'
-			setActivityLocation(locType)
-			setLocationText(c.activity_location_text)
+			const locType = c.activity_location_type as "동방" | "동방 외" | "미정";
+			setActivityLocation(locType);
+			setLocationText(c.activity_location_text);
 
-			setQualification(c.has_eligibility ? '제한 있음' : '제한 없음')
-			setQualificationText(c.eligibility_text)
+			setQualification(c.has_eligibility ? "제한 있음" : "제한 없음");
+			setQualificationText(c.eligibility_text);
 
-			setRecruitCount(c.has_capacity_limit ? '정원 있음' : '제한 없음')
-			setRecruitCountText(c.capacity_limit_text)
+			setRecruitCount(c.has_capacity_limit ? "정원 있음" : "제한 없음");
+			setRecruitCountText(c.capacity_limit_text);
 
-			setHasFee(c.has_membership_fee)
-			setFeeText(c.membership_fee_text)
+			setHasFee(c.has_membership_fee);
+			setFeeText(c.membership_fee_text);
 
-			setJoinUrl(c.application_url)
-			setJoinDescription(c.application_process)
+			setJoinUrl(c.application_url);
+			setJoinDescription(c.application_process);
 
-			setExistingAnnouncement(c.full_recruitment_text ?? '')
+			setExistingAnnouncement(c.full_recruitment_text ?? "");
 
 			if (c.image_urls.length > 0) {
 				setImages(
-					c.image_urls.map(url => ({
+					c.image_urls.map((url) => ({
 						uri: url,
-						type: 'image/jpeg',
-						name: '',
+						type: "image/jpeg",
+						name: "",
 						isRemote: true,
 					})),
-				)
+				);
 			}
 
-			setShowPrevList(false)
+			setShowPrevList(false);
 		} catch {
-			Alert.alert('오류', '공고 정보를 불러오는데 실패했어요.')
+			Alert.alert("오류", "공고 정보를 불러오는데 실패했어요.");
 		} finally {
-			setIsLoadingPrevDetail(false)
+			setIsLoadingPrevDetail(false);
 		}
-	}
+	};
 
 	// ─── mode별 텍스트 ───────────────────────────────────────────────────────────
 
-	const screenTitle = isEdit ? '공고 관리' : '모집 공고를 작성해주세요'
-	const submitLabel = isEdit ? '수정' : '완료'
-	const confirmTitle = isEdit ? '공고를 수정할까요?' : '공고를 등록할까요?'
-	const confirmSubmitLabel = isEdit ? '수정' : '등록'
+	const screenTitle = isEdit ? "공고 관리" : "모집 공고를 작성해주세요";
+	const submitLabel = isEdit ? "수정" : "완료";
+	const confirmTitle = isEdit ? "공고를 수정할까요?" : "공고를 등록할까요?";
+	const confirmSubmitLabel = isEdit ? "수정" : "등록";
 	const successMessage = isEdit
-		? '공고 수정이 정상적으로\n완료되었어요!'
-		: '공고 등록이 정상적으로\n완료되었어요!'
+		? "공고 수정이 정상적으로\n완료되었어요!"
+		: "공고 등록이 정상적으로\n완료되었어요!";
 
 	// ─── edit 모드 로딩 중 ────────────────────────────────────────────────────────
 
 	if (isLoadingDetail) {
 		return (
-			<SafeAreaView style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+			<SafeAreaView
+				style={[
+					styles.container,
+					{ justifyContent: "center", alignItems: "center" },
+				]}
+			>
 				<ActivityIndicator size="large" color={PRIMARY} />
 			</SafeAreaView>
-		)
+		);
 	}
 
 	// ─── 렌더 ────────────────────────────────────────────────────────────────────
 
 	return (
-		<SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={styles.container}>
+		<SafeAreaView
+			edges={["top", "left", "right", "bottom"]}
+			style={styles.container}
+		>
 			{/* 헤더 (edit 모드만) */}
 			{isEdit && (
 				<View style={styles.header}>
@@ -667,7 +772,8 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 			<ScrollView
 				style={styles.scrollView}
 				showsVerticalScrollIndicator={false}
-				keyboardShouldPersistTaps="handled">
+				keyboardShouldPersistTaps="handled"
+			>
 				{/* create 모드: 기존 스타일 타이틀 */}
 				{!isEdit && <Text style={styles.screenTitle}>{screenTitle}</Text>}
 
@@ -676,7 +782,8 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<TouchableOpacity
 						style={styles.loadPreviousButton}
 						onPress={handleOpenPrevList}
-						activeOpacity={0.7}>
+						activeOpacity={0.7}
+					>
 						<Text style={styles.loadPreviousText}>이전 공고 불러오기</Text>
 					</TouchableOpacity>
 				)}
@@ -686,47 +793,65 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					visible={showPrevList}
 					transparent
 					animationType="fade"
-					onRequestClose={() => !isLoadingPrevDetail && setShowPrevList(false)}>
+					onRequestClose={() => !isLoadingPrevDetail && setShowPrevList(false)}
+				>
 					<View
 						style={styles.prevModalOverlay}
 						onStartShouldSetResponder={() => true}
-						onResponderGrant={() => !isLoadingPrevDetail && setShowPrevList(false)}>
+						onResponderGrant={() =>
+							!isLoadingPrevDetail && setShowPrevList(false)
+						}
+					>
 						<View
 							style={styles.prevModalCard}
 							onStartShouldSetResponder={() => true}
-							onResponderGrant={() => {}}>
+							onResponderGrant={() => {}}
+						>
 							<View style={styles.prevModalHeader}>
 								<Text style={styles.prevModalTitle}>이전 공고 불러오기</Text>
 								<TouchableOpacity
 									onPress={() => !isLoadingPrevDetail && setShowPrevList(false)}
-									hitSlop={8}>
+									hitSlop={8}
+								>
 									<Icon name="close" size={20} color="#757474" />
 								</TouchableOpacity>
 							</View>
 
 							{isLoadingPrev ? (
-								<ActivityIndicator color={PRIMARY} style={{ marginVertical: 24 }} />
+								<ActivityIndicator
+									color={PRIMARY}
+									style={{ marginVertical: 24 }}
+								/>
 							) : isLoadingPrevDetail ? (
-								<View style={{ alignItems: 'center', paddingVertical: 24 }}>
+								<View style={{ alignItems: "center", paddingVertical: 24 }}>
 									<ActivityIndicator color={PRIMARY} />
-									<Text style={styles.prevLoadingText}>공고 불러오는 중...</Text>
+									<Text style={styles.prevLoadingText}>
+										공고 불러오는 중...
+									</Text>
 								</View>
 							) : prevRecruitments.length === 0 ? (
 								<View style={styles.prevEmptyRow}>
 									<Text style={styles.prevEmptyText}>등록된 공고가 없어요</Text>
 								</View>
 							) : (
-								<ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 320 }}>
+								<ScrollView
+									showsVerticalScrollIndicator={false}
+									style={{ maxHeight: 320 }}
+								>
 									{prevRecruitments.map((item, index) => (
 										<TouchableOpacity
 											key={item.id}
 											style={[
 												styles.prevRow,
-												index < prevRecruitments.length - 1 && styles.prevRowBorder,
+												index < prevRecruitments.length - 1 &&
+													styles.prevRowBorder,
 											]}
 											onPress={() => handleSelectPrevRecruitment(item.id)}
-											activeOpacity={0.6}>
-											<Text style={styles.prevRowText}>{item.display_title}</Text>
+											activeOpacity={0.6}
+										>
+											<Text style={styles.prevRowText}>
+												{item.display_title}
+											</Text>
 											<Icon name="chevron-right" size={18} color={BORDER} />
 										</TouchableOpacity>
 									))}
@@ -799,23 +924,41 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>*필참 활동 여부</Text>
 					<View style={styles.toggleRow}>
 						<TouchableOpacity
-							style={[styles.toggleButton, hasRequiredActivity === true && styles.toggleButtonOn]}
-							onPress={() => setHasRequiredActivity(true)}>
+							style={[
+								styles.toggleButton,
+								hasRequiredActivity === true && styles.toggleButtonOn,
+							]}
+							onPress={() => setHasRequiredActivity(true)}
+						>
 							<Text
-								style={[styles.toggleText, hasRequiredActivity === true && styles.toggleTextOn]}>
+								style={[
+									styles.toggleText,
+									hasRequiredActivity === true && styles.toggleTextOn,
+								]}
+							>
 								있음
 							</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
-							style={[styles.toggleButton, hasRequiredActivity === false && styles.toggleButtonOn]}
-							onPress={() => setHasRequiredActivity(false)}>
+							style={[
+								styles.toggleButton,
+								hasRequiredActivity === false && styles.toggleButtonOn,
+							]}
+							onPress={() => setHasRequiredActivity(false)}
+						>
 							<Text
-								style={[styles.toggleText, hasRequiredActivity === false && styles.toggleTextOn]}>
+								style={[
+									styles.toggleText,
+									hasRequiredActivity === false && styles.toggleTextOn,
+								]}
+							>
 								없음
 							</Text>
 						</TouchableOpacity>
 					</View>
-					<Text style={styles.helperText}>필참 활동 여부는 필수 입력 정보예요</Text>
+					<Text style={styles.helperText}>
+						필참 활동 여부는 필수 입력 정보예요
+					</Text>
 				</View>
 
 				{/* 정기 모임 일시 */}
@@ -823,16 +966,34 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>*정기 모임 일시</Text>
 					<View style={styles.toggleRow}>
 						<TouchableOpacity
-							style={[styles.toggleButton, hasRegularMeeting === true && styles.toggleButtonOn]}
-							onPress={() => setHasRegularMeeting(true)}>
-							<Text style={[styles.toggleText, hasRegularMeeting === true && styles.toggleTextOn]}>
+							style={[
+								styles.toggleButton,
+								hasRegularMeeting === true && styles.toggleButtonOn,
+							]}
+							onPress={() => setHasRegularMeeting(true)}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									hasRegularMeeting === true && styles.toggleTextOn,
+								]}
+							>
 								정기 모임 있음
 							</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
-							style={[styles.toggleButton, hasRegularMeeting === false && styles.toggleButtonOn]}
-							onPress={() => setHasRegularMeeting(false)}>
-							<Text style={[styles.toggleText, hasRegularMeeting === false && styles.toggleTextOn]}>
+							style={[
+								styles.toggleButton,
+								hasRegularMeeting === false && styles.toggleButtonOn,
+							]}
+							onPress={() => setHasRegularMeeting(false)}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									hasRegularMeeting === false && styles.toggleTextOn,
+								]}
+							>
 								정기 모임 없음
 							</Text>
 						</TouchableOpacity>
@@ -840,65 +1001,88 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 
 					{hasRegularMeeting === true && (
 						<>
-							{regularMeetings.map(meeting => (
+							{regularMeetings.map((meeting) => (
 								<View key={meeting.id} style={styles.meetingRow}>
 									<CustomDropdown
 										value={meeting.day}
 										options={DAYS_OF_WEEK}
-										onChange={v => updateRegularMeeting(meeting.id, 'day', v)}
+										onChange={(v) => updateRegularMeeting(meeting.id, "day", v)}
 										triggerWidth={DROPDOWN_WIDTHS.weekday}
 									/>
 									<CustomDropdown
 										value={meeting.startTime}
 										options={MEETING_TIMES}
-										onChange={v => updateRegularMeeting(meeting.id, 'startTime', v)}
+										onChange={(v) =>
+											updateRegularMeeting(meeting.id, "startTime", v)
+										}
 										triggerWidth={DROPDOWN_WIDTHS.meetingTime}
 									/>
 									<Text style={styles.tilde}>~</Text>
 									<CustomDropdown
 										value={meeting.endTime}
 										options={MEETING_TIMES}
-										onChange={v => updateRegularMeeting(meeting.id, 'endTime', v)}
+										onChange={(v) =>
+											updateRegularMeeting(meeting.id, "endTime", v)
+										}
 										triggerWidth={DROPDOWN_WIDTHS.meetingTime}
 									/>
 									<TouchableOpacity
 										onPress={() => removeRegularMeeting(meeting.id)}
-										disabled={regularMeetings.length === 1}>
+										disabled={regularMeetings.length === 1}
+									>
 										<Icon
 											name="delete-outline"
 											size={20}
-											color={regularMeetings.length === 1 ? '#e0e0e0' : '#999'}
+											color={regularMeetings.length === 1 ? "#e0e0e0" : "#999"}
 										/>
 									</TouchableOpacity>
 								</View>
 							))}
-							<TouchableOpacity style={styles.addTimeButton} onPress={addRegularMeeting}>
+							<TouchableOpacity
+								style={styles.addTimeButton}
+								onPress={addRegularMeeting}
+							>
 								<Text style={styles.addTimeText}>+ 시간 추가</Text>
 							</TouchableOpacity>
 						</>
 					)}
-					<Text style={styles.helperText}>정기 모임 유무는 필수 입력 정보예요</Text>
+					<Text style={styles.helperText}>
+						정기 모임 유무는 필수 입력 정보예요
+					</Text>
 				</View>
 
 				{/* 활동 장소 */}
 				<View style={styles.section}>
 					<Text style={styles.sectionLabel}>*활동 장소</Text>
 					<View style={styles.toggleRow}>
-						{(['동방', '동방 외', '미정'] as const).map(option => (
+						{(["동방", "동방 외", "미정"] as const).map((option) => (
 							<TouchableOpacity
 								key={option}
-								style={[styles.toggleButton, activityLocation === option && styles.toggleButtonOn]}
-								onPress={() => setActivityLocation(option)}>
+								style={[
+									styles.toggleButton,
+									activityLocation === option && styles.toggleButtonOn,
+								]}
+								onPress={() => setActivityLocation(option)}
+							>
 								<Text
-									style={[styles.toggleText, activityLocation === option && styles.toggleTextOn]}>
+									style={[
+										styles.toggleText,
+										activityLocation === option && styles.toggleTextOn,
+									]}
+								>
 									{option}
 								</Text>
 							</TouchableOpacity>
 						))}
 					</View>
-					{activityLocation === '동방 외' && (
+					{activityLocation === "동방 외" && (
 						<View style={styles.iconInputWrapper}>
-							<Icon name="place" size={16} color="#999" style={{ marginRight: 6 }} />
+							<Icon
+								name="place"
+								size={16}
+								color="#999"
+								style={{ marginRight: 6 }}
+							/>
 							<TextInput
 								style={styles.iconInput}
 								placeholder="장소를 입력하세요"
@@ -916,23 +1100,39 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>*지원 자격</Text>
 					<View style={styles.toggleRow}>
 						<TouchableOpacity
-							style={[styles.toggleButton, qualification === '제한 없음' && styles.toggleButtonOn]}
-							onPress={() => setQualification('제한 없음')}>
+							style={[
+								styles.toggleButton,
+								qualification === "제한 없음" && styles.toggleButtonOn,
+							]}
+							onPress={() => setQualification("제한 없음")}
+						>
 							<Text
-								style={[styles.toggleText, qualification === '제한 없음' && styles.toggleTextOn]}>
+								style={[
+									styles.toggleText,
+									qualification === "제한 없음" && styles.toggleTextOn,
+								]}
+							>
 								제한 없음
 							</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
-							style={[styles.toggleButton, qualification === '제한 있음' && styles.toggleButtonOn]}
-							onPress={() => setQualification('제한 있음')}>
+							style={[
+								styles.toggleButton,
+								qualification === "제한 있음" && styles.toggleButtonOn,
+							]}
+							onPress={() => setQualification("제한 있음")}
+						>
 							<Text
-								style={[styles.toggleText, qualification === '제한 있음' && styles.toggleTextOn]}>
+								style={[
+									styles.toggleText,
+									qualification === "제한 있음" && styles.toggleTextOn,
+								]}
+							>
 								제한 있음
 							</Text>
 						</TouchableOpacity>
 					</View>
-					{qualification === '제한 있음' && (
+					{qualification === "제한 있음" && (
 						<TextInput
 							style={[styles.textInput, { marginTop: 8 }]}
 							placeholder="지원 자격에 대해 설명해주세요"
@@ -950,23 +1150,39 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>*모집 인원</Text>
 					<View style={styles.toggleRow}>
 						<TouchableOpacity
-							style={[styles.toggleButton, recruitCount === '제한 없음' && styles.toggleButtonOn]}
-							onPress={() => setRecruitCount('제한 없음')}>
+							style={[
+								styles.toggleButton,
+								recruitCount === "제한 없음" && styles.toggleButtonOn,
+							]}
+							onPress={() => setRecruitCount("제한 없음")}
+						>
 							<Text
-								style={[styles.toggleText, recruitCount === '제한 없음' && styles.toggleTextOn]}>
+								style={[
+									styles.toggleText,
+									recruitCount === "제한 없음" && styles.toggleTextOn,
+								]}
+							>
 								제한 없음
 							</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
-							style={[styles.toggleButton, recruitCount === '정원 있음' && styles.toggleButtonOn]}
-							onPress={() => setRecruitCount('정원 있음')}>
+							style={[
+								styles.toggleButton,
+								recruitCount === "정원 있음" && styles.toggleButtonOn,
+							]}
+							onPress={() => setRecruitCount("정원 있음")}
+						>
 							<Text
-								style={[styles.toggleText, recruitCount === '정원 있음' && styles.toggleTextOn]}>
+								style={[
+									styles.toggleText,
+									recruitCount === "정원 있음" && styles.toggleTextOn,
+								]}
+							>
 								정원 있음
 							</Text>
 						</TouchableOpacity>
 					</View>
-					{recruitCount === '정원 있음' && (
+					{recruitCount === "정원 있음" && (
 						<TextInput
 							style={[styles.textInput, { marginTop: 8 }]}
 							placeholder="모집 인원에 대해 설명해주세요"
@@ -976,7 +1192,9 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 							multiline
 						/>
 					)}
-					<Text style={styles.helperText}>모집 예정 인원은 필수 입력 정보예요</Text>
+					<Text style={styles.helperText}>
+						모집 예정 인원은 필수 입력 정보예요
+					</Text>
 				</View>
 
 				{/* 회비 */}
@@ -984,16 +1202,34 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>*회비</Text>
 					<View style={styles.toggleRow}>
 						<TouchableOpacity
-							style={[styles.toggleButton, hasFee === true && styles.toggleButtonOn]}
-							onPress={() => setHasFee(true)}>
-							<Text style={[styles.toggleText, hasFee === true && styles.toggleTextOn]}>
+							style={[
+								styles.toggleButton,
+								hasFee === true && styles.toggleButtonOn,
+							]}
+							onPress={() => setHasFee(true)}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									hasFee === true && styles.toggleTextOn,
+								]}
+							>
 								회비 O
 							</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
-							style={[styles.toggleButton, hasFee === false && styles.toggleButtonOn]}
-							onPress={() => setHasFee(false)}>
-							<Text style={[styles.toggleText, hasFee === false && styles.toggleTextOn]}>
+							style={[
+								styles.toggleButton,
+								hasFee === false && styles.toggleButtonOn,
+							]}
+							onPress={() => setHasFee(false)}
+						>
+							<Text
+								style={[
+									styles.toggleText,
+									hasFee === false && styles.toggleTextOn,
+								]}
+							>
 								회비 X
 							</Text>
 						</TouchableOpacity>
@@ -1015,7 +1251,12 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				<View style={styles.section}>
 					<Text style={styles.sectionLabel}>*가입 절차</Text>
 					<View style={styles.iconInputWrapper}>
-						<Icon name="link" size={16} color="#999" style={{ marginRight: 6 }} />
+						<Icon
+							name="link"
+							size={16}
+							color="#999"
+							style={{ marginRight: 6 }}
+						/>
 						<TextInput
 							style={styles.iconInput}
 							placeholder="지원 사이트의 url을 입력하세요"
@@ -1034,7 +1275,9 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 						onChangeText={setJoinDescription}
 						multiline
 					/>
-					<Text style={styles.helperText}>동아리 가입 절차는 필수 입력 정보예요</Text>
+					<Text style={styles.helperText}>
+						동아리 가입 절차는 필수 입력 정보예요
+					</Text>
 				</View>
 
 				{/* 공고 본문 */}
@@ -1056,16 +1299,20 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<Text style={styles.sectionLabel}>공고 이미지</Text>
 					<View style={styles.imageRow}>
 						{images.map((img, idx) => (
-							<View key={idx} style={styles.imageThumbnail}>
+							<View key={img.uri} style={styles.imageThumbnail}>
 								<Image source={{ uri: img.uri }} style={styles.thumbnailImg} />
 								<TouchableOpacity
 									style={styles.deleteImageBtn}
-									onPress={() => handleRemoveImage(idx)}>
+									onPress={() => handleRemoveImage(idx)}
+								>
 									<Icon name="close" size={14} color="#fff" />
 								</TouchableOpacity>
 							</View>
 						))}
-						<TouchableOpacity style={styles.addImageButton} onPress={handleAddImage}>
+						<TouchableOpacity
+							style={styles.addImageButton}
+							onPress={handleAddImage}
+						>
 							<Icon name="add" size={24} color={BORDER} />
 						</TouchableOpacity>
 					</View>
@@ -1076,14 +1323,19 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					<TouchableOpacity
 						style={styles.prevButton}
 						onPress={() => navigation.goBack()}
-						disabled={isSubmitting}>
+						disabled={isSubmitting}
+					>
 						<Text style={styles.prevButtonText}>이전</Text>
 					</TouchableOpacity>
 					<TouchableOpacity
-						style={[styles.submitButton, (!isFormValid || isSubmitting) && { opacity: 0.4 }]}
+						style={[
+							styles.submitButton,
+							(!isFormValid || isSubmitting) && { opacity: 0.4 },
+						]}
 						onPress={handleSubmit}
 						disabled={!isFormValid || isSubmitting}
-						activeOpacity={0.6}>
+						activeOpacity={0.6}
+					>
 						{isSubmitting ? (
 							<ActivityIndicator color="#fff" size="small" />
 						) : (
@@ -1109,10 +1361,10 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				onConfirm={handleSuccessConfirm}
 			/>
 		</SafeAreaView>
-	)
-}
+	);
+};
 
-export default AnnouncementForm
+export default AnnouncementForm;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -1126,94 +1378,94 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 	},
 	header: {
-		flexDirection: 'row',
-		alignItems: 'flex-end',
-		justifyContent: 'space-between',
+		flexDirection: "row",
+		alignItems: "flex-end",
+		justifyContent: "space-between",
 		paddingHorizontal: 20,
 		paddingBottom: 10,
 		paddingTop: 4,
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 	},
 	headerTitle: {
 		fontSize: 17,
-		fontWeight: '600',
-		color: '#111',
-		textAlign: 'center',
+		fontWeight: "600",
+		color: "#111",
+		textAlign: "center",
 	},
 	screenTitle: {
 		fontSize: 24,
-		fontWeight: '700',
-		color: '#111',
+		fontWeight: "700",
+		color: "#111",
 		marginTop: 24,
 		marginBottom: 20,
 	},
 	loadPreviousButton: {
-		alignSelf: 'flex-start',
+		alignSelf: "flex-start",
 		backgroundColor: PRIMARY,
 		padding: 10,
 		borderRadius: 8,
 		marginBottom: 20,
 	},
 	loadPreviousText: {
-		color: '#fafafa',
+		color: "#fafafa",
 		fontSize: 12,
-		fontWeight: '700',
+		fontWeight: "700",
 	},
 	prevModalOverlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.35)',
-		justifyContent: 'center',
-		alignItems: 'center',
+		backgroundColor: "rgba(0,0,0,0.35)",
+		justifyContent: "center",
+		alignItems: "center",
 		paddingHorizontal: 24,
 	},
 	prevModalCard: {
-		width: '100%',
-		backgroundColor: '#fff',
+		width: "100%",
+		backgroundColor: "#fff",
 		borderRadius: 16,
 		paddingTop: 20,
 		paddingBottom: 8,
-		overflow: 'hidden',
+		overflow: "hidden",
 	},
 	prevModalHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		paddingHorizontal: 20,
 		marginBottom: 12,
 	},
 	prevModalTitle: {
 		fontSize: 15,
-		fontWeight: '700',
-		color: '#111',
+		fontWeight: "700",
+		color: "#111",
 	},
 	prevRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		paddingVertical: 14,
 		paddingHorizontal: 20,
 	},
 	prevRowBorder: {
 		borderBottomWidth: 1,
-		borderBottomColor: '#F3F0F5',
+		borderBottomColor: "#F3F0F5",
 	},
 	prevRowText: {
 		fontSize: 14,
-		fontWeight: '500',
-		color: '#333',
+		fontWeight: "500",
+		color: "#333",
 	},
 	prevEmptyRow: {
 		paddingVertical: 24,
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	prevEmptyText: {
 		fontSize: 13,
-		color: '#999',
+		color: "#999",
 	},
 	prevLoadingText: {
 		marginTop: 8,
 		fontSize: 13,
-		color: '#999',
+		color: "#999",
 	},
 	section: {
 		marginBottom: 20,
@@ -1221,14 +1473,14 @@ const styles = StyleSheet.create({
 	sectionLabel: {
 		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 20,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: FORM_TEXT_COLOR,
 		marginBottom: 5,
 		paddingTop: 10,
 		paddingBottom: 5,
 	},
 	textInput: {
-		backgroundColor: '#fff',
+		backgroundColor: "#fff",
 		borderWidth: 1,
 		borderColor: BORDER,
 		borderRadius: 8,
@@ -1236,7 +1488,7 @@ const styles = StyleSheet.create({
 		paddingVertical: 18,
 		fontFamily: FONT_FAMILY.medium,
 		fontSize: 16,
-		fontWeight: '500',
+		fontWeight: "500",
 		color: FORM_TEXT_COLOR,
 		minHeight: 60,
 	},
@@ -1252,29 +1504,29 @@ const styles = StyleSheet.create({
 
 	// 날짜 행
 	dateRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		flexWrap: 'wrap',
+		flexDirection: "row",
+		alignItems: "center",
+		flexWrap: "wrap",
 		gap: 8,
 		rowGap: 8,
 	},
 	dateField: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		gap: 5,
 	},
 	dateUnitLabel: {
 		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 20,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: FORM_TEXT_COLOR,
 	},
 	// 드롭다운
 	dropdown: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		backgroundColor: '#fff',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+		backgroundColor: "#fff",
 		borderWidth: 1,
 		borderColor: BORDER,
 		borderRadius: 8,
@@ -1290,7 +1542,7 @@ const styles = StyleSheet.create({
 	dropdownText: {
 		fontFamily: FONT_FAMILY.regular,
 		fontSize: 16,
-		fontWeight: '400',
+		fontWeight: "400",
 		color: FORM_TEXT_COLOR,
 		marginRight: 2,
 	},
@@ -1303,14 +1555,14 @@ const styles = StyleSheet.create({
 		elevation: 0,
 	},
 	dropdownList: {
-		backgroundColor: '#fff',
+		backgroundColor: "#fff",
 		borderRadius: 10,
-		shadowColor: '#000',
+		shadowColor: "#000",
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.12,
 		shadowRadius: 10,
 		elevation: 6,
-		overflow: 'hidden',
+		overflow: "hidden",
 	},
 	dropdownItem: {
 		paddingHorizontal: 13,
@@ -1322,17 +1574,17 @@ const styles = StyleSheet.create({
 	dropdownItemText: {
 		fontFamily: FONT_FAMILY.regular,
 		fontSize: 16,
-		fontWeight: '400',
+		fontWeight: "400",
 		color: FORM_TEXT_COLOR,
 	},
 	dropdownItemTextSelected: {
 		color: PRIMARY,
-		fontWeight: '400',
+		fontWeight: "400",
 	},
 
 	// 토글 버튼
 	toggleRow: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		gap: 10,
 	},
 	toggleButton: {
@@ -1341,9 +1593,9 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		borderWidth: 1,
 		borderColor: BORDER,
-		backgroundColor: '#fff',
-		alignItems: 'center',
-		justifyContent: 'center',
+		backgroundColor: "#fff",
+		alignItems: "center",
+		justifyContent: "center",
 		paddingHorizontal: 4,
 	},
 	toggleButtonOn: {
@@ -1354,19 +1606,19 @@ const styles = StyleSheet.create({
 		fontFamily: FONT_FAMILY.semibold,
 		fontSize: 16,
 		color: FORM_TEXT_COLOR,
-		fontWeight: '600',
-		textAlign: 'center',
+		fontWeight: "600",
+		textAlign: "center",
 	},
 	toggleTextOn: {
-		color: '#fff',
-		fontWeight: '600',
-		textAlign: 'center',
+		color: "#fff",
+		fontWeight: "600",
+		textAlign: "center",
 	},
 
 	// 정기 모임 행
 	meetingRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		gap: 5,
 		marginTop: 10,
 	},
@@ -1375,20 +1627,20 @@ const styles = StyleSheet.create({
 		color: FORM_TEXT_COLOR,
 	},
 	addTimeButton: {
-		alignSelf: 'center',
+		alignSelf: "center",
 		marginTop: 12,
 	},
 	addTimeText: {
 		fontSize: 14,
 		color: PRIMARY,
-		fontWeight: '600',
+		fontWeight: "600",
 	},
 
 	// 아이콘 + 인풋
 	iconInputWrapper: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: '#fff',
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#fff",
 		borderWidth: 1,
 		borderColor: BORDER,
 		borderRadius: 8,
@@ -1401,38 +1653,38 @@ const styles = StyleSheet.create({
 		flex: 1,
 		fontFamily: FONT_FAMILY.medium,
 		fontSize: 16,
-		fontWeight: '500',
+		fontWeight: "500",
 		color: FORM_TEXT_COLOR,
 	},
 
 	// 이미지
 	imageRow: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
+		flexDirection: "row",
+		flexWrap: "wrap",
 		gap: 8,
 	},
 	imageThumbnail: {
 		width: 72,
 		height: 72,
 		borderRadius: 8,
-		overflow: 'hidden',
-		position: 'relative',
+		overflow: "hidden",
+		position: "relative",
 	},
 	thumbnailImg: {
-		width: '100%',
-		height: '100%',
-		resizeMode: 'cover',
+		width: "100%",
+		height: "100%",
+		resizeMode: "cover",
 	},
 	deleteImageBtn: {
-		position: 'absolute',
+		position: "absolute",
 		top: 4,
 		right: 4,
-		backgroundColor: 'rgba(0,0,0,0.5)',
+		backgroundColor: "rgba(0,0,0,0.5)",
 		borderRadius: 10,
 		width: 20,
 		height: 20,
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	addImageButton: {
 		width: 72,
@@ -1440,14 +1692,14 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		borderWidth: 1,
 		borderColor: BORDER,
-		backgroundColor: '#fff',
-		justifyContent: 'center',
-		alignItems: 'center',
+		backgroundColor: "#fff",
+		justifyContent: "center",
+		alignItems: "center",
 	},
 
 	// 하단 버튼
 	bottomBar: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		gap: 10,
 		paddingHorizontal: 20,
 		paddingTop: 12,
@@ -1459,60 +1711,60 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		borderWidth: 1,
 		borderColor: BORDER,
-		backgroundColor: '#fff',
-		alignItems: 'center',
-		justifyContent: 'center',
+		backgroundColor: "#fff",
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	prevButtonText: {
 		fontSize: 16,
 		color: BORDER,
-		fontWeight: '700',
+		fontWeight: "700",
 	},
 	submitButton: {
 		flex: 1,
 		height: 44,
 		borderRadius: 8,
 		backgroundColor: PRIMARY,
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	submitButtonText: {
 		fontSize: 16,
-		color: '#fff',
-		fontWeight: '600',
+		color: "#fff",
+		fontWeight: "600",
 	},
 
 	// 확인 모달
 	confirmOverlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.2)',
-		justifyContent: 'center',
-		alignItems: 'center',
+		backgroundColor: "rgba(0,0,0,0.2)",
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	confirmBox: {
-		backgroundColor: '#fff',
+		backgroundColor: "#fff",
 		borderRadius: 12,
 		padding: 24,
 		width: 320,
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	confirmTitle: {
 		fontSize: 16,
-		fontWeight: '700',
-		color: '#000000',
-		textAlign: 'center',
+		fontWeight: "700",
+		color: "#000000",
+		textAlign: "center",
 	},
 	confirmDesc: {
 		fontSize: 14,
-		fontWeight: '500',
-		color: '#000000',
-		textAlign: 'center',
+		fontWeight: "500",
+		color: "#000000",
+		textAlign: "center",
 		lineHeight: 24,
 	},
 	confirmButtons: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		gap: 7,
-		alignSelf: 'stretch',
+		alignSelf: "stretch",
 	},
 	confirmCancel: {
 		flex: 1,
@@ -1520,25 +1772,25 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		borderWidth: 1,
 		borderColor: PRIMARY,
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	confirmCancelText: {
 		fontSize: 16,
 		color: PRIMARY,
-		fontWeight: '700',
+		fontWeight: "700",
 	},
 	confirmSubmit: {
 		flex: 1,
 		height: 44,
 		borderRadius: 8,
 		backgroundColor: PRIMARY,
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	confirmSubmitText: {
 		fontSize: 16,
-		color: '#fff',
-		fontWeight: '600',
+		color: "#fff",
+		fontWeight: "600",
 	},
-})
+});

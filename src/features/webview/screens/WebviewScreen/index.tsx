@@ -1,29 +1,29 @@
-import { NativeStackScreenProps } from '@react-navigation/native-stack'
-import { Colors } from '@/shared/constants/colors'
-import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
-import { navigation } from '@/shared/utils/navigation'
-import Header from '@/shared/components/BackHeader'
-import React, { useState } from 'react'
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import WebView, { WebViewMessageEvent } from 'react-native-webview'
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import WebView, { type WebViewMessageEvent } from "react-native-webview";
+import Header from "@/shared/components/BackHeader";
+import { Colors } from "@/shared/constants/colors";
+import type { SCREEN_TYPE, StackParamList } from "@/shared/constants/screen";
+import { navigation } from "@/shared/utils/navigation";
 
-type WebviewType = NativeStackScreenProps<StackParamList, SCREEN_TYPE.WEBVIEW>
+type WebviewType = NativeStackScreenProps<StackParamList, SCREEN_TYPE.WEBVIEW>;
 
 const WebViewScreen = ({ route }: WebviewType) => {
-	const { uri, title = '', authorization } = route.params
-	const insets = useSafeAreaInsets()
+	const { uri, title = "", authorization } = route.params;
+	const insets = useSafeAreaInsets();
 
-	const [isLoading, setLoading] = useState(true)
+	const [isLoading, setLoading] = useState(true);
 
 	const onMessage = (e: WebViewMessageEvent) => {
-		const event = JSON.parse(e.nativeEvent.data)
+		const event = JSON.parse(e.nativeEvent.data);
 
 		switch (event.method) {
-			case 'CLOSE_WEBVIEW':
-				return navigation.goBack()
+			case "CLOSE_WEBVIEW":
+				return navigation.goBack();
 		}
-	}
+	};
 
 	return (
 		<View
@@ -35,7 +35,8 @@ const WebViewScreen = ({ route }: WebviewType) => {
 					paddingLeft: insets.left,
 					paddingRight: insets.right,
 				},
-			]}>
+			]}
+		>
 			<Header title={title} onBack={() => navigation.goBack()} />
 			{isLoading && (
 				<View style={styles.loadingContainer}>
@@ -46,7 +47,9 @@ const WebViewScreen = ({ route }: WebviewType) => {
 				style={styles.webview}
 				source={{
 					uri,
-					headers: authorization ? { 'x-authorization': `Bearer ${authorization}` } : {},
+					headers: authorization
+						? { "x-authorization": `Bearer ${authorization}` }
+						: {},
 				}}
 				onLoadStart={() => setLoading(true)}
 				onLoadEnd={() => setLoading(false)}
@@ -61,10 +64,10 @@ const WebViewScreen = ({ route }: WebviewType) => {
 				overScrollMode="never"
 			/>
 		</View>
-	)
-}
+	);
+};
 
-export default WebViewScreen
+export default WebViewScreen;
 
 const styles = StyleSheet.create({
 	container: {
@@ -75,12 +78,12 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	loadingContainer: {
-		position: 'absolute',
+		position: "absolute",
 		left: 0,
 		right: 0,
 		top: 0,
 		bottom: 0,
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 	},
-})
+});

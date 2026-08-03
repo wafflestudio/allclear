@@ -1,22 +1,28 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack'
-import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
-import ClubDetailScreen from '@/features/club/screens/ClubDetailScreen'
-import ClubInfoEditScreen from '@/features/club/screens/ClubInfoEditScreen'
-import ClubManagementScreen from '@/features/club/screens/ClubManagementScreen'
-import SavedClubListScreen from '@/features/club/screens/SavedClubListScreen'
-import EditProfileScreen from '@/features/mypage/screens/EditProfileScreen'
-import ManageClubRegistrationScreen from '@/features/mypage/screens/ManageClubRegistrationScreen'
-import MyPageScreen from '@/features/mypage/screens/MyPageScreen'
-import WebViewScreen from '@/features/webview/screens/WebviewScreen'
-import PreviousRecruitmentsScreen from '@/features/club/screens/PreviousRecruitmentsScreen'
-import ClubReviewScreen from '@/features/club/screens/ClubReviewScreen'
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import ClubDetailScreen from "@/features/club/screens/ClubDetailScreen";
+import ClubInfoEditScreen from "@/features/club/screens/ClubInfoEditScreen";
+import ClubManagementScreen from "@/features/club/screens/ClubManagementScreen";
+import ClubReviewScreen from "@/features/club/screens/ClubReviewScreen";
+import PreviousRecruitmentsScreen from "@/features/club/screens/PreviousRecruitmentsScreen";
+import SavedClubListScreen from "@/features/club/screens/SavedClubListScreen";
+import EditProfileScreen from "@/features/mypage/screens/EditProfileScreen";
+import ManageClubRegistrationScreen from "@/features/mypage/screens/ManageClubRegistrationScreen";
+import MyPageScreen from "@/features/mypage/screens/MyPageScreen";
+import WebViewScreen from "@/features/webview/screens/WebviewScreen";
+import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
 
-const Stack = createNativeStackNavigator<StackParamList>()
+const Stack = createNativeStackNavigator<StackParamList>();
 
 export function MyPageTab() {
 	return (
-		<Stack.Navigator screenOptions={{ headerBackTitleVisible: false, headerShown: false }}>
-			<Stack.Screen key={SCREEN_TYPE.MYPAGE} name={SCREEN_TYPE.MYPAGE} component={MyPageScreen} />
+		<Stack.Navigator
+			screenOptions={{ headerBackTitleVisible: false, headerShown: false }}
+		>
+			<Stack.Screen
+				key={SCREEN_TYPE.MYPAGE}
+				name={SCREEN_TYPE.MYPAGE}
+				component={MyPageScreen}
+			/>
 			<Stack.Screen
 				key={SCREEN_TYPE.EDIT_PROFILE}
 				name={SCREEN_TYPE.EDIT_PROFILE}
@@ -63,5 +69,5 @@ export function MyPageTab() {
 				component={ClubInfoEditScreen}
 			/>
 		</Stack.Navigator>
-	)
+	);
 }

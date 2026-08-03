@@ -1,46 +1,55 @@
-import React from 'react'
+import type React from "react";
 import {
 	Image,
-	ImageSourcePropType,
-	ImageStyle,
-	PressableStateCallbackType,
-	StyleProp,
+	type ImageSourcePropType,
+	type ImageStyle,
+	type PressableStateCallbackType,
+	type StyleProp,
 	StyleSheet,
 	Text,
 	View,
-	ViewStyle,
-} from 'react-native'
-import { Pressable } from 'react-native-gesture-handler'
-import SkeletonPlaceholder from 'react-native-skeleton-placeholder'
+	type ViewStyle,
+} from "react-native";
+import { Pressable } from "react-native-gesture-handler";
+import SkeletonPlaceholder from "react-native-skeleton-placeholder";
 
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
 
-export const CLUB_PREVIEW_CARD_WIDTH = s(110)
-export const CLUB_PREVIEW_CARD_TEXT_HEIGHT = vs(54)
-export const CLUB_PREVIEW_CARD_HEIGHT = CLUB_PREVIEW_CARD_WIDTH + CLUB_PREVIEW_CARD_TEXT_HEIGHT
+export const CLUB_PREVIEW_CARD_WIDTH = s(110);
+export const CLUB_PREVIEW_CARD_TEXT_HEIGHT = vs(54);
+export const CLUB_PREVIEW_CARD_HEIGHT =
+	CLUB_PREVIEW_CARD_WIDTH + CLUB_PREVIEW_CARD_TEXT_HEIGHT;
 
 type Props = {
-	title: string
-	description: string
-	imageSource: ImageSourcePropType
-	onPress?: () => void
-	style?: StyleProp<ViewStyle>
-	imageStyle?: StyleProp<ImageStyle>
-}
+	title: string;
+	description: string;
+	imageSource: ImageSourcePropType;
+	onPress?: () => void;
+	style?: StyleProp<ViewStyle>;
+	imageStyle?: StyleProp<ImageStyle>;
+};
 
 type ClubPreviewCardFrameProps = {
-	children: React.ReactNode
-	onPress?: () => void
-	style?: StyleProp<ViewStyle>
-}
+	children: React.ReactNode;
+	onPress?: () => void;
+	style?: StyleProp<ViewStyle>;
+};
 
-const ClubPreviewCardFrame = ({ children, onPress, style }: ClubPreviewCardFrameProps) => {
-	const content = <View style={styles.cardContainer}>{children}</View>
+const ClubPreviewCardFrame = ({
+	children,
+	onPress,
+	style,
+}: ClubPreviewCardFrameProps) => {
+	const content = <View style={styles.cardContainer}>{children}</View>;
 
 	if (!onPress) {
-		return <View style={[styles.shadowContainer, styles.cardWidth, style]}>{content}</View>
+		return (
+			<View style={[styles.shadowContainer, styles.cardWidth, style]}>
+				{content}
+			</View>
+		);
 	}
 
 	const getContainerStyle = ({ pressed }: PressableStateCallbackType) => [
@@ -48,17 +57,18 @@ const ClubPreviewCardFrame = ({ children, onPress, style }: ClubPreviewCardFrame
 		styles.cardWidth,
 		style,
 		pressed && styles.pressed,
-	]
+	];
 
 	return (
 		<Pressable
 			style={getContainerStyle}
 			pressRetentionOffset={{ top: 12, right: 12, bottom: 12, left: 12 }}
-			onPress={onPress}>
+			onPress={onPress}
+		>
 			{content}
 		</Pressable>
-	)
-}
+	);
+};
 
 const ClubPreviewCard = ({
 	title,
@@ -71,7 +81,11 @@ const ClubPreviewCard = ({
 	return (
 		<ClubPreviewCardFrame onPress={onPress} style={style}>
 			<View style={styles.imageWrapper}>
-				<Image source={imageSource} style={[styles.image, imageStyle]} resizeMode="cover" />
+				<Image
+					source={imageSource}
+					style={[styles.image, imageStyle]}
+					resizeMode="cover"
+				/>
 			</View>
 			<View style={styles.textWrapper}>
 				<Text numberOfLines={1} ellipsizeMode="tail" style={styles.title}>
@@ -82,18 +96,24 @@ const ClubPreviewCard = ({
 				</Text>
 			</View>
 		</ClubPreviewCardFrame>
-	)
-}
+	);
+};
 
 export const ClubPreviewCardSkeleton = () => (
 	<ClubPreviewCardFrame>
 		<View style={styles.imageWrapper}>
-			<SkeletonPlaceholder backgroundColor={Colors.BACKGROUND_MAIN} highlightColor={Colors.WHITE}>
-				<SkeletonPlaceholder.Item width={'100%'} height={'100%'} />
+			<SkeletonPlaceholder
+				backgroundColor={Colors.BACKGROUND_MAIN}
+				highlightColor={Colors.WHITE}
+			>
+				<SkeletonPlaceholder.Item width={"100%"} height={"100%"} />
 			</SkeletonPlaceholder>
 		</View>
 		<View style={styles.textWrapper}>
-			<SkeletonPlaceholder backgroundColor={Colors.BACKGROUND_MAIN} highlightColor={Colors.WHITE}>
+			<SkeletonPlaceholder
+				backgroundColor={Colors.BACKGROUND_MAIN}
+				highlightColor={Colors.WHITE}
+			>
 				<SkeletonPlaceholder.Item>
 					<SkeletonPlaceholder.Item
 						width={s(72)}
@@ -101,14 +121,18 @@ export const ClubPreviewCardSkeleton = () => (
 						borderRadius={ms(4)}
 						marginBottom={vs(3)}
 					/>
-					<SkeletonPlaceholder.Item width={s(88)} height={vs(15)} borderRadius={ms(4)} />
+					<SkeletonPlaceholder.Item
+						width={s(88)}
+						height={vs(15)}
+						borderRadius={ms(4)}
+					/>
 				</SkeletonPlaceholder.Item>
 			</SkeletonPlaceholder>
 		</View>
 	</ClubPreviewCardFrame>
-)
+);
 
-export default ClubPreviewCard
+export default ClubPreviewCard;
 
 const styles = StyleSheet.create({
 	shadowContainer: {
@@ -130,17 +154,17 @@ const styles = StyleSheet.create({
 		width: CLUB_PREVIEW_CARD_WIDTH,
 	},
 	cardContainer: {
-		overflow: 'hidden',
+		overflow: "hidden",
 		backgroundColor: Colors.WHITE,
 		borderRadius: ms(15),
 	},
 	imageWrapper: {
-		width: '100%',
+		width: "100%",
 		aspectRatio: 1,
 	},
 	image: {
-		width: '100%',
-		height: '100%',
+		width: "100%",
+		height: "100%",
 	},
 	textWrapper: {
 		height: CLUB_PREVIEW_CARD_TEXT_HEIGHT,
@@ -159,4 +183,4 @@ const styles = StyleSheet.create({
 		lineHeight: ms(15),
 		color: Colors.BODYTEXT_SUB,
 	},
-})
+});

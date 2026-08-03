@@ -1,39 +1,49 @@
-import { useQuery } from '@tanstack/react-query'
-import { Colors } from '@/shared/constants/colors'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import { Club } from '@/entities/club'
-import { SCREEN_TYPE } from '@/shared/constants/screen'
-import WithViewEventLog from '@/shared/hocs/WithViewEventLog'
-import React, { useContext } from 'react'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { navigation } from '@/shared/utils/navigation'
-import ClubList from '@/features/club/components/ClubList/ClubList'
-import Header from '@/shared/components/BackHeader'
+import { useQuery } from "@tanstack/react-query";
+import { useContext } from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import type { Club } from "@/entities/club";
+import ClubList from "@/features/club/components/ClubList/ClubList";
+import Header from "@/shared/components/BackHeader";
+import { Colors } from "@/shared/constants/colors";
+import { SCREEN_TYPE } from "@/shared/constants/screen";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import WithViewEventLog from "@/shared/hocs/WithViewEventLog";
+import { navigation } from "@/shared/utils/navigation";
 
 const SavedClubListScreen = () => {
-	const { data: savedClubs, isLoading } = useSavedClubs()
+	const { data: savedClubs, isLoading } = useSavedClubs();
 
 	const openDetailPage = (club: Club) => {
 		navigation.navigate(SCREEN_TYPE.CLUB_DETAIL, {
 			uuid: club.uuid,
 			category: club.category,
-			entry_point: 'saved_club_list',
-		})
-	}
+			entry_point: "saved_club_list",
+		});
+	};
 
 	const handleBack = () => {
-		navigation.goBack()
-	}
+		navigation.goBack();
+	};
 
 	return (
 		<WithViewEventLog
 			params={{
-				screen_name: 'saved_club_list_screen',
-			}}>
+				screen_name: "saved_club_list_screen",
+			}}
+		>
 			<SafeAreaView
-				edges={['top', 'left', 'right']}
-				style={{ flex: 1, backgroundColor: Colors.BACKGROUND_MAIN, overflow: 'scroll' }}>
-				<Header title="저장한 동아리" onBack={handleBack} showBackButton={false} />
+				edges={["top", "left", "right"]}
+				style={{
+					flex: 1,
+					backgroundColor: Colors.BACKGROUND_MAIN,
+					overflow: "scroll",
+				}}
+			>
+				<Header
+					title="저장한 동아리"
+					onBack={handleBack}
+					showBackButton={false}
+				/>
 				<ClubList
 					clubs={savedClubs}
 					openDetailPage={openDetailPage}
@@ -42,16 +52,16 @@ const SavedClubListScreen = () => {
 				/>
 			</SafeAreaView>
 		</WithViewEventLog>
-	)
-}
+	);
+};
 
-export default SavedClubListScreen
+export default SavedClubListScreen;
 
 const useSavedClubs = () => {
-	const { clubService } = useContext(serviceContext)
+	const { clubService } = useContext(serviceContext);
 
-	return useQuery(['savedClubs'], () => clubService.listSavedClubs(), {
+	return useQuery(["savedClubs"], () => clubService.listSavedClubs(), {
 		staleTime: Infinity,
-		select: data => data.clubs,
-	})
-}
+		select: (data) => data.clubs,
+	});
+};

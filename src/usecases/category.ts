@@ -1,13 +1,18 @@
-import { CategoryRepository, ListCategoriesResponse } from '@/repositories/category'
+import type {
+	CategoryRepository,
+	ListCategoriesResponse,
+} from "@/repositories/category";
 
 export type CategoryService = {
-	listCategories: () => Promise<ListCategoriesResponse>
-}
+	listCategories: () => Promise<ListCategoriesResponse>;
+};
 
 type Deps = {
-	repositories: [CategoryRepository]
-}
+	repositories: [CategoryRepository];
+};
 
-export const getCategoryService = ({ repositories }: Deps): CategoryService => ({
+export const getCategoryService = ({
+	repositories,
+}: Deps): CategoryService => ({
 	listCategories: repositories[0].listCategories,
-})
+});

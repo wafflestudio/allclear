@@ -1,81 +1,102 @@
-import React, { useContext, useEffect, useState } from 'react'
-import { RouteProp, useNavigation, useRoute } from '@react-navigation/native'
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
-import AlertModal from '@/shared/components/AlertModal'
-import FlowScreenFooter from '@/shared/components/FlowScreenFooter'
-import FlowScreenLayout from '@/shared/components/FlowScreenLayout'
-import { Colors } from '@/shared/constants/colors'
+import {
+	type RouteProp,
+	useNavigation,
+	useRoute,
+} from "@react-navigation/native";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useContext, useEffect, useState } from "react";
+import {
+	Image,
+	StyleSheet,
+	Text,
+	TextInput,
+	TouchableOpacity,
+	View,
+} from "react-native";
+import type { Club } from "@/entities/club";
+import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
+import AlertModal from "@/shared/components/AlertModal";
+import FlowScreenFooter from "@/shared/components/FlowScreenFooter";
+import FlowScreenLayout from "@/shared/components/FlowScreenLayout";
+import { Colors } from "@/shared/constants/colors";
+import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
+import { useProfile } from "@/shared/contexts/profileContext";
+import { serviceContext } from "@/shared/contexts/serviceContext";
 import {
 	formatPhoneNumberInput,
 	formatStudentIdInput,
 	getPhoneNumberPrefill,
 	getStudentIdPrefill,
-} from '@/shared/utils/managerInfo'
-import { useProfile } from '@/shared/contexts/profileContext'
-import { navigation } from '@/shared/utils/navigation'
-import { Club } from '@/entities/club'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { getManagedClubUpdateErrorContent } from '@/features/club/utils/managedClubUpdateError'
+} from "@/shared/utils/managerInfo";
+import { navigation } from "@/shared/utils/navigation";
 
 type AdminFormData = {
-	name: string
-	phone: string
-	studentId: string
-}
+	name: string;
+	phone: string;
+	studentId: string;
+};
 
 type AdminFormErrors = {
-	name?: string
-	phone?: string
-	studentId?: string
-}
+	name?: string;
+	phone?: string;
+	studentId?: string;
+};
 
 const ManageClubRegistrationScreen = () => {
-	const { clubService } = useContext(serviceContext)
-	const { user } = useProfile()
-	const nav = useNavigation()
-	const queryClient = useQueryClient()
-	const route = useRoute<RouteProp<StackParamList, typeof SCREEN_TYPE.MANAGE_CLUB_REGISTRATION>>()
-	const editClubId = route.params?.clubId
-	const editMode = route.params?.editMode
-	const isResubmission = route.params?.isResubmission ?? false
-	const isManagerRequestEditMode = editMode === 'managerRequest'
-	const isClubRegistrationEditMode = editMode === 'clubRegistration'
-	const isEditMode = editClubId !== undefined && editMode !== undefined
+	const { clubService } = useContext(serviceContext);
+	const { user } = useProfile();
+	const nav = useNavigation();
+	const queryClient = useQueryClient();
+	const route =
+		useRoute<
+			RouteProp<StackParamList, typeof SCREEN_TYPE.MANAGE_CLUB_REGISTRATION>
+		>();
+	const editClubId = route.params?.clubId;
+	const editMode = route.params?.editMode;
+	const isResubmission = route.params?.isResubmission ?? false;
+	const isManagerRequestEditMode = editMode === "managerRequest";
+	const isClubRegistrationEditMode = editMode === "clubRegistration";
+	const isEditMode = editClubId !== undefined && editMode !== undefined;
 
 	useEffect(() => {
-		const parent = nav.getParent()
-		parent?.setOptions({ tabBarStyle: { display: 'none' } })
+		const parent = nav.getParent();
+		parent?.setOptions({ tabBarStyle: { display: "none" } });
 
 		return () => {
-			parent?.setOptions({ tabBarStyle: undefined })
-		}
-	}, [nav])
-	const [formStep, setFormStep] = useState<'form' | 'clubSearch'>('form')
+			parent?.setOptions({ tabBarStyle: undefined });
+		};
+	}, [nav]);
+	const [formStep, setFormStep] = useState<"form" | "clubSearch">("form");
 	const [adminForm, setAdminForm] = useState<AdminFormData>({
-		name: isEditMode ? '' : (user?.name ?? ''),
-		phone: isEditMode ? '' : getPhoneNumberPrefill(user?.phone ?? ''),
-		studentId: isEditMode ? '' : getStudentIdPrefill(user?.admissionClass ?? null),
-	})
-	const [adminFormErrors, setAdminFormErrors] = useState<AdminFormErrors>({})
-	const [clubSearchQuery, setClubSearchQuery] = useState<string>('')
-	const [searchResults, setSearchResults] = useState<Club[]>([])
-	const [selectedClubId, setSelectedClubId] = useState<string>('')
-	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(null)
-	const [isExistingManagerModalVisible, setIsExistingManagerModalVisible] = useState(false)
-	const [isPendingManagerRequestModalVisible, setIsPendingManagerRequestModalVisible] =
-		useState(false)
-	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false)
-	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false)
-	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false)
+		name: isEditMode ? "" : (user?.name ?? ""),
+		phone: isEditMode ? "" : getPhoneNumberPrefill(user?.phone ?? ""),
+		studentId: isEditMode
+			? ""
+			: getStudentIdPrefill(user?.admissionClass ?? null),
+	});
+	const [adminFormErrors, setAdminFormErrors] = useState<AdminFormErrors>({});
+	const [clubSearchQuery, setClubSearchQuery] = useState<string>("");
+	const [searchResults, setSearchResults] = useState<Club[]>([]);
+	const [selectedClubId, setSelectedClubId] = useState<string>("");
+	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(
+		null,
+	);
+	const [isExistingManagerModalVisible, setIsExistingManagerModalVisible] =
+		useState(false);
+	const [
+		isPendingManagerRequestModalVisible,
+		setIsPendingManagerRequestModalVisible,
+	] = useState(false);
+	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
 	const { data: manageClubs = [] } = useQuery({
-		queryKey: ['manageClubs'],
+		queryKey: ["manageClubs"],
 		queryFn: () => clubService.listManageClubs(),
-		select: data => data.clubs,
+		select: (data) => data.clubs,
 		enabled: !isEditMode,
-	})
+	});
 
 	const {
 		data: initialManagerInfo,
@@ -84,133 +105,144 @@ const ManageClubRegistrationScreen = () => {
 		error: managerInfoError,
 		refetch: refetchManagerInfo,
 	} = useQuery({
-		queryKey: ['clubManagerInfo', editMode, editClubId],
+		queryKey: ["clubManagerInfo", editMode, editClubId],
 		queryFn: () => {
 			if (!editClubId || !editMode) {
-				throw new Error('Club id and edit mode are required to load manager info')
+				throw new Error(
+					"Club id and edit mode are required to load manager info",
+				);
 			}
 
-			if (editMode === 'clubRegistration') {
-				return clubService.getManagedClubManager({ uuid: editClubId })
+			if (editMode === "clubRegistration") {
+				return clubService.getManagedClubManager({ uuid: editClubId });
 			}
 
-			return clubService.getClubManagerRequest({ clubId: editClubId })
+			return clubService.getClubManagerRequest({ clubId: editClubId });
 		},
 		enabled: isEditMode,
-	})
+	});
 
 	useEffect(() => {
-		if (!initialManagerInfo) return
+		if (!initialManagerInfo) return;
 
 		setAdminForm({
 			name: initialManagerInfo.name,
 			phone: initialManagerInfo.phone,
 			studentId: initialManagerInfo.studentId,
-		})
-	}, [initialManagerInfo])
+		});
+	}, [initialManagerInfo]);
 
 	useEffect(() => {
 		if (isManagerInfoError) {
-			setIsErrorModalVisible(true)
+			setIsErrorModalVisible(true);
 		}
-	}, [isManagerInfoError])
+	}, [isManagerInfoError]);
 
 	useEffect(() => {
 		if (!user || isEditMode) {
-			return
+			return;
 		}
 
-		const phone = getPhoneNumberPrefill(user.phone)
-		const studentId = getStudentIdPrefill(user.admissionClass)
-		setAdminForm(prev => ({
+		const phone = getPhoneNumberPrefill(user.phone);
+		const studentId = getStudentIdPrefill(user.admissionClass);
+		setAdminForm((prev) => ({
 			...prev,
 			name: prev.name || user.name,
 			phone: prev.phone || phone,
 			studentId: prev.studentId || studentId,
-		}))
-	}, [isEditMode, user])
+		}));
+	}, [isEditMode, user]);
 
 	useEffect(() => {
 		const timer = setTimeout(async () => {
 			if (!clubSearchQuery.trim()) {
-				setSearchResults([])
-				return
+				setSearchResults([]);
+				return;
 			}
 
 			try {
-				const { clubs } = await clubService.searchClubs({ query: clubSearchQuery })
-				setSearchResults(clubs)
+				const { clubs } = await clubService.searchClubs({
+					query: clubSearchQuery,
+				});
+				setSearchResults(clubs);
 			} catch {
-				setSearchResults([])
+				setSearchResults([]);
 			}
-		}, 500)
+		}, 500);
 
-		return () => clearTimeout(timer)
-	}, [clubSearchQuery, clubService])
+		return () => clearTimeout(timer);
+	}, [clubSearchQuery, clubService]);
 
 	useEffect(() => {
-		if (selectedClubId && !searchResults.some(club => club.uuid === selectedClubId)) {
-			setSelectedClubId('')
+		if (
+			selectedClubId &&
+			!searchResults.some((club) => club.uuid === selectedClubId)
+		) {
+			setSelectedClubId("");
 		}
-	}, [searchResults, selectedClubId])
+	}, [searchResults, selectedClubId]);
 
 	const validatePhoneNumber = (phone: string): boolean => {
-		const phoneRegex = /^01[0-9]\d{8}$/
-		return phoneRegex.test(phone.replace(/-/g, ''))
-	}
+		const phoneRegex = /^01[0-9]\d{8}$/;
+		return phoneRegex.test(phone.replace(/-/g, ""));
+	};
 
 	const validateStudentId = (studentId: string): boolean => {
-		const studentIdRegex = /^\d{4}-\d{5}$/
-		return studentIdRegex.test(studentId)
-	}
+		const studentIdRegex = /^\d{4}-\d{5}$/;
+		return studentIdRegex.test(studentId);
+	};
 
 	const validateAdminForm = (): boolean => {
-		const errors: AdminFormErrors = {}
+		const errors: AdminFormErrors = {};
 
 		if (!adminForm.name.trim()) {
-			errors.name = '이름을 입력해주세요'
+			errors.name = "이름을 입력해주세요";
 		}
 
 		if (!adminForm.phone.trim() || !validatePhoneNumber(adminForm.phone)) {
-			errors.phone = '올바른 전화번호 형식으로 입력해주세요'
+			errors.phone = "올바른 전화번호 형식으로 입력해주세요";
 		}
 
-		if (!adminForm.studentId.trim() || !validateStudentId(adminForm.studentId)) {
-			errors.studentId = '2023-12345 형식으로 입력해주세요'
+		if (
+			!adminForm.studentId.trim() ||
+			!validateStudentId(adminForm.studentId)
+		) {
+			errors.studentId = "2023-12345 형식으로 입력해주세요";
 		}
 
-		setAdminFormErrors(errors)
-		return Object.keys(errors).length === 0
-	}
+		setAdminFormErrors(errors);
+		return Object.keys(errors).length === 0;
+	};
 
 	const isFormFieldsValid =
-		adminForm.name.trim() !== '' &&
-		adminForm.phone.trim() !== '' &&
+		adminForm.name.trim() !== "" &&
+		adminForm.phone.trim() !== "" &&
 		validatePhoneNumber(adminForm.phone) &&
-		adminForm.studentId.trim() !== '' &&
-		validateStudentId(adminForm.studentId)
+		adminForm.studentId.trim() !== "" &&
+		validateStudentId(adminForm.studentId);
 	const hasManagerInfoChanges =
 		initialManagerInfo !== undefined &&
 		(adminForm.name !== initialManagerInfo.name ||
 			adminForm.phone !== initialManagerInfo.phone ||
-			adminForm.studentId !== initialManagerInfo.studentId)
-	const isManagerInfoPrefillLoading = isEditMode && isManagerInfoLoading
-	const managerInfoErrorContent = getManagedClubUpdateErrorContent(managerInfoError)
+			adminForm.studentId !== initialManagerInfo.studentId);
+	const isManagerInfoPrefillLoading = isEditMode && isManagerInfoLoading;
+	const managerInfoErrorContent =
+		getManagedClubUpdateErrorContent(managerInfoError);
 
 	const handleBack = () => {
-		if (formStep === 'clubSearch') {
-			setFormStep('form')
-			setClubSearchQuery('')
-			setSearchResults([])
-			setSelectedClubId('')
-			return
+		if (formStep === "clubSearch") {
+			setFormStep("form");
+			setClubSearchQuery("");
+			setSearchResults([]);
+			setSelectedClubId("");
+			return;
 		}
 
-		navigation.goBack()
-	}
+		navigation.goBack();
+	};
 
 	const handleFormNext = async () => {
-		if (!validateAdminForm()) return
+		if (!validateAdminForm()) return;
 
 		if (editClubId && isClubRegistrationEditMode) {
 			const managerData = hasManagerInfoChanges
@@ -225,21 +257,22 @@ const ManageClubRegistrationScreen = () => {
 							studentId: adminForm.studentId,
 						}),
 					}
-				: undefined
+				: undefined;
 
 			navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, {
 				clubId: editClubId,
 				fromClubRegistrationEdit: true,
 				isResubmission,
 				managerData,
-			})
-			return
+			});
+			return;
 		}
 
 		if (editClubId && isManagerRequestEditMode) {
-			if (isSubmittingRequest || (!isResubmission && !hasManagerInfoChanges)) return
+			if (isSubmittingRequest || (!isResubmission && !hasManagerInfoChanges))
+				return;
 
-			setIsSubmittingRequest(true)
+			setIsSubmittingRequest(true);
 			try {
 				await clubService.updateClubManagerRequest({
 					clubId: editClubId,
@@ -253,100 +286,103 @@ const ManageClubRegistrationScreen = () => {
 						studentId: adminForm.studentId,
 					}),
 					...(isResubmission && { resubmit: true }),
-				})
-				queryClient.setQueryData(['clubManagerInfo', editMode, editClubId], adminForm)
-				setIsSuccessModalVisible(true)
+				});
+				queryClient.setQueryData(
+					["clubManagerInfo", editMode, editClubId],
+					adminForm,
+				);
+				setIsSuccessModalVisible(true);
 			} catch {
-				setIsErrorModalVisible(true)
+				setIsErrorModalVisible(true);
 			} finally {
-				setIsSubmittingRequest(false)
+				setIsSubmittingRequest(false);
 			}
-			return
+			return;
 		}
 
-		setFormStep('clubSearch')
-	}
+		setFormStep("clubSearch");
+	};
 
 	const handleClubSelect = (clubId: string) => {
-		setSelectedClubId(clubId)
-	}
+		setSelectedClubId(clubId);
+	};
 
 	const submitClubRequest = async (club: Club) => {
-		if (isSubmittingRequest) return
+		if (isSubmittingRequest) return;
 
-		setIsSubmittingRequest(true)
+		setIsSubmittingRequest(true);
 		try {
 			await clubService.requestClubManager({
 				clubId: club.uuid,
 				name: adminForm.name,
 				phone: adminForm.phone,
 				studentId: adminForm.studentId,
-			})
-			setIsSuccessModalVisible(true)
+			});
+			setIsSuccessModalVisible(true);
 		} catch {
-			setIsErrorModalVisible(true)
+			setIsErrorModalVisible(true);
 		} finally {
-			setIsSubmittingRequest(false)
+			setIsSubmittingRequest(false);
 		}
-	}
+	};
 
 	const handleClubAddPress = (club: Club) => {
-		setSelectedClubId(club.uuid)
+		setSelectedClubId(club.uuid);
 
 		const hasPendingManagerRequest = manageClubs.some(
-			managedClub =>
+			(managedClub) =>
 				managedClub.uuid === club.uuid &&
-				managedClub.managementStatus === 'MANAGER_REQUEST_PENDING',
-		)
+				managedClub.managementStatus === "MANAGER_REQUEST_PENDING",
+		);
 
 		if (hasPendingManagerRequest) {
-			setIsPendingManagerRequestModalVisible(true)
-			return
+			setIsPendingManagerRequestModalVisible(true);
+			return;
 		}
 
 		if (club.hasManager) {
-			setIsExistingManagerModalVisible(true)
-			return
+			setIsExistingManagerModalVisible(true);
+			return;
 		}
 
-		setClubPendingRequest(club)
-	}
+		setClubPendingRequest(club);
+	};
 
 	const handleClubRequestConfirm = () => {
-		if (!clubPendingRequest) return
+		if (!clubPendingRequest) return;
 
-		const club = clubPendingRequest
-		setClubPendingRequest(null)
-		void submitClubRequest(club)
-	}
+		const club = clubPendingRequest;
+		setClubPendingRequest(null);
+		void submitClubRequest(club);
+	};
 
 	const handleSuccessConfirm = () => {
-		setIsSuccessModalVisible(false)
-		setFormStep('form')
+		setIsSuccessModalVisible(false);
+		setFormStep("form");
 		setAdminForm({
-			name: user?.name ?? '',
-			phone: getPhoneNumberPrefill(user?.phone ?? ''),
+			name: user?.name ?? "",
+			phone: getPhoneNumberPrefill(user?.phone ?? ""),
 			studentId: getStudentIdPrefill(user?.admissionClass ?? null),
-		})
-		setAdminFormErrors({})
-		setClubSearchQuery('')
-		setSearchResults([])
-		setSelectedClubId('')
+		});
+		setAdminFormErrors({});
+		setClubSearchQuery("");
+		setSearchResults([]);
+		setSelectedClubId("");
 		if (isEditMode) {
-			navigation.goBack()
-			return
+			navigation.goBack();
+			return;
 		}
 
-		navigation.setRoot('마이')
-	}
+		navigation.setRoot("마이");
+	};
 
 	const handleRetryManagerInfo = async () => {
-		setIsErrorModalVisible(false)
-		const result = await refetchManagerInfo()
+		setIsErrorModalVisible(false);
+		const result = await refetchManagerInfo();
 		if (result.isError) {
-			setIsErrorModalVisible(true)
+			setIsErrorModalVisible(true);
 		}
-	}
+	};
 
 	const renderResultModals = () => (
 		<>
@@ -355,10 +391,10 @@ const ManageClubRegistrationScreen = () => {
 				onClose={() => setIsSuccessModalVisible(false)}
 				title={
 					isResubmission
-						? '운영진 권한을\n재신청했어요.'
+						? "운영진 권한을\n재신청했어요."
 						: isEditMode
-							? '운영진 권한 신청 내용이\n수정되었어요!'
-							: '운영진 권한 요청이\n정상적으로 완료되었어요!'
+							? "운영진 권한 신청 내용이\n수정되었어요!"
+							: "운영진 권한 요청이\n정상적으로 완료되었어요!"
 				}
 				buttonLabel="확인"
 				onButtonPress={handleSuccessConfirm}
@@ -367,56 +403,72 @@ const ManageClubRegistrationScreen = () => {
 			<AlertModal
 				visible={isErrorModalVisible}
 				onClose={() => setIsErrorModalVisible(false)}
-				title={isManagerInfoError ? managerInfoErrorContent.title : '실행이 완료되지 않았어요'}
+				title={
+					isManagerInfoError
+						? managerInfoErrorContent.title
+						: "실행이 완료되지 않았어요"
+				}
 				description={
 					isManagerInfoError
 						? managerInfoErrorContent.description
-						: '네트워크 문제로 실행이 완료되지 않았어요\n네트워크 상태를 확인한 후, 다시 시도해주세요'
+						: "네트워크 문제로 실행이 완료되지 않았어요\n네트워크 상태를 확인한 후, 다시 시도해주세요"
 				}
-				buttonLabel={isManagerInfoError ? '다시 시도' : '확인'}
+				buttonLabel={isManagerInfoError ? "다시 시도" : "확인"}
 				onButtonPress={() => {
 					if (isManagerInfoError) {
-						void handleRetryManagerInfo()
-						return
+						void handleRetryManagerInfo();
+						return;
 					}
-					setIsErrorModalVisible(false)
+					setIsErrorModalVisible(false);
 				}}
 				dismissOnBackdropPress={false}
 			/>
 		</>
-	)
+	);
 
 	const renderForm = () => (
 		<FlowScreenLayout
 			footer={
 				<FlowScreenFooter
 					backLabel="이전"
-					nextLabel={isManagerRequestEditMode ? (isResubmission ? '재신청' : '수정') : '다음'}
+					nextLabel={
+						isManagerRequestEditMode
+							? isResubmission
+								? "재신청"
+								: "수정"
+							: "다음"
+					}
 					onBack={handleBack}
 					onNext={() => void handleFormNext()}
 					nextDisabled={
 						!isFormFieldsValid ||
 						isSubmittingRequest ||
 						isManagerInfoPrefillLoading ||
-						(isManagerRequestEditMode && !isResubmission && !hasManagerInfoChanges)
+						(isManagerRequestEditMode &&
+							!isResubmission &&
+							!hasManagerInfoChanges)
 					}
 				/>
-			}>
-			<Text style={styles.title}>운영진 기본 정보를{'\n'}입력해주세요</Text>
+			}
+		>
+			<Text style={styles.title}>운영진 기본 정보를{"\n"}입력해주세요</Text>
 
 			<View style={styles.formFieldGroup}>
 				<Text style={styles.formFieldLabel}>이름</Text>
 				<TextInput
-					style={[styles.formInput, adminFormErrors.name && styles.formInputError]}
+					style={[
+						styles.formInput,
+						adminFormErrors.name && styles.formInputError,
+					]}
 					placeholder="홍길동"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					maxLength={50}
 					value={adminForm.name}
 					editable={!isManagerInfoPrefillLoading}
-					onChangeText={text => {
-						setAdminForm(prev => ({ ...prev, name: text }))
+					onChangeText={(text) => {
+						setAdminForm((prev) => ({ ...prev, name: text }));
 						if (adminFormErrors.name) {
-							setAdminFormErrors(prev => ({ ...prev, name: undefined }))
+							setAdminFormErrors((prev) => ({ ...prev, name: undefined }));
 						}
 					}}
 				/>
@@ -426,51 +478,61 @@ const ManageClubRegistrationScreen = () => {
 			<View style={styles.formFieldGroup}>
 				<Text style={styles.formFieldLabel}>전화번호</Text>
 				<TextInput
-					style={[styles.formInput, adminFormErrors.phone && styles.formInputError]}
+					style={[
+						styles.formInput,
+						adminFormErrors.phone && styles.formInputError,
+					]}
 					placeholder="010-1234-5678"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					keyboardType="number-pad"
 					maxLength={13}
 					value={adminForm.phone}
 					editable={!isManagerInfoPrefillLoading}
-					onChangeText={text => {
-						setAdminForm(prev => ({
+					onChangeText={(text) => {
+						setAdminForm((prev) => ({
 							...prev,
 							phone: formatPhoneNumberInput(text, prev.phone),
-						}))
+						}));
 						if (adminFormErrors.phone) {
-							setAdminFormErrors(prev => ({ ...prev, phone: undefined }))
+							setAdminFormErrors((prev) => ({ ...prev, phone: undefined }));
 						}
 					}}
 				/>
-				<Text style={styles.formErrorText}>올바른 전화번호 형식으로 입력해주세요</Text>
+				<Text style={styles.formErrorText}>
+					올바른 전화번호 형식으로 입력해주세요
+				</Text>
 			</View>
 
 			<View style={styles.formFieldGroup}>
 				<Text style={styles.formFieldLabel}>학번</Text>
 				<TextInput
-					style={[styles.formInput, adminFormErrors.studentId && styles.formInputError]}
+					style={[
+						styles.formInput,
+						adminFormErrors.studentId && styles.formInputError,
+					]}
 					placeholder="1970-12345"
 					placeholderTextColor={Colors.BODYTEXT_DISABLED}
 					keyboardType="number-pad"
 					maxLength={10}
 					value={adminForm.studentId}
 					editable={!isManagerInfoPrefillLoading}
-					onChangeText={text => {
-						setAdminForm(prev => ({
+					onChangeText={(text) => {
+						setAdminForm((prev) => ({
 							...prev,
 							studentId: formatStudentIdInput(text, prev.studentId),
-						}))
+						}));
 						if (adminFormErrors.studentId) {
-							setAdminFormErrors(prev => ({ ...prev, studentId: undefined }))
+							setAdminFormErrors((prev) => ({ ...prev, studentId: undefined }));
 						}
 					}}
 				/>
-				<Text style={styles.formErrorText}>2023-12345 형식으로 입력해주세요</Text>
+				<Text style={styles.formErrorText}>
+					2023-12345 형식으로 입력해주세요
+				</Text>
 			</View>
 			{renderResultModals()}
 		</FlowScreenLayout>
-	)
+	);
 
 	const renderClubSearch = () => (
 		<FlowScreenLayout
@@ -480,8 +542,11 @@ const ManageClubRegistrationScreen = () => {
 					onBack={handleBack}
 					rightSlot={<View style={styles.footerSpacer} />}
 				/>
-			}>
-			<Text style={styles.title}>운영진 권한을 요청할{'\n'}동아리를 선택해주세요</Text>
+			}
+		>
+			<Text style={styles.title}>
+				운영진 권한을 요청할{"\n"}동아리를 선택해주세요
+			</Text>
 
 			<View style={styles.searchInputContainer}>
 				<TextInput
@@ -495,16 +560,20 @@ const ManageClubRegistrationScreen = () => {
 
 			{searchResults.length > 0 && (
 				<View style={styles.searchResultsContainer}>
-					{searchResults.map(club => (
+					{searchResults.map((club) => (
 						<TouchableOpacity
 							key={club.uuid}
 							style={[
 								styles.clubResultItem,
 								selectedClubId === club.uuid && styles.clubResultItemSelected,
 							]}
-							onPress={() => handleClubSelect(club.uuid)}>
+							onPress={() => handleClubSelect(club.uuid)}
+						>
 							{club.imageUri ? (
-								<Image source={{ uri: club.imageUri }} style={styles.clubIconPlaceholder} />
+								<Image
+									source={{ uri: club.imageUri }}
+									style={styles.clubIconPlaceholder}
+								/>
 							) : (
 								<View style={styles.clubIconPlaceholder} />
 							)}
@@ -523,13 +592,16 @@ const ManageClubRegistrationScreen = () => {
 									isSubmittingRequest && styles.clubAddButtonDisabled,
 								]}
 								onPress={() => handleClubAddPress(club)}
-								disabled={isSubmittingRequest}>
+								disabled={isSubmittingRequest}
+							>
 								<Text
 									style={[
 										styles.clubAddButtonText,
-										selectedClubId === club.uuid && styles.clubAddButtonTextSelected,
+										selectedClubId === club.uuid &&
+											styles.clubAddButtonTextSelected,
 										isSubmittingRequest && styles.clubAddButtonTextDisabled,
-									]}>
+									]}
+								>
 									+
 								</Text>
 							</TouchableOpacity>
@@ -569,17 +641,17 @@ const ManageClubRegistrationScreen = () => {
 			/>
 			{renderResultModals()}
 		</FlowScreenLayout>
-	)
+	);
 
-	return formStep === 'form' ? renderForm() : renderClubSearch()
-}
+	return formStep === "form" ? renderForm() : renderClubSearch();
+};
 
-export default ManageClubRegistrationScreen
+export default ManageClubRegistrationScreen;
 
 const styles = StyleSheet.create({
 	title: {
 		fontSize: 25,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: Colors.BODYTEXT_MAIN,
 		lineHeight: 30,
 		marginBottom: 15,
@@ -589,7 +661,7 @@ const styles = StyleSheet.create({
 	},
 	formFieldLabel: {
 		fontSize: 18,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: Colors.BODYTEXT_SUB,
 		marginBottom: 5,
 		paddingHorizontal: 5,
@@ -601,7 +673,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 15,
 		paddingVertical: 18,
 		fontSize: 16,
-		fontWeight: '500',
+		fontWeight: "500",
 		color: Colors.BODYTEXT_MAIN,
 		height: 54,
 	},
@@ -620,13 +692,13 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingVertical: 16,
 		height: 49,
-		justifyContent: 'center',
+		justifyContent: "center",
 	},
 	searchInput: {
 		flex: 1,
 		padding: 0,
 		fontSize: 14,
-		fontWeight: '500',
+		fontWeight: "500",
 		color: Colors.BODYTEXT_MAIN,
 	},
 	searchResultsContainer: {
@@ -634,14 +706,14 @@ const styles = StyleSheet.create({
 		gap: 10,
 	},
 	clubResultItem: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		backgroundColor: Colors.WHITE,
 		borderRadius: 10,
 		paddingHorizontal: 15,
 		paddingVertical: 16,
 		borderWidth: 1,
-		borderColor: 'transparent',
+		borderColor: "transparent",
 		gap: 10,
 		minHeight: 92,
 	},
@@ -664,13 +736,13 @@ const styles = StyleSheet.create({
 	},
 	clubName: {
 		fontSize: 16,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: Colors.BODYTEXT_MAIN,
 		lineHeight: 19,
 	},
 	clubDescription: {
 		fontSize: 14,
-		fontWeight: '400',
+		fontWeight: "400",
 		color: Colors.BODYTEXT_SUB,
 		lineHeight: 17,
 	},
@@ -679,8 +751,8 @@ const styles = StyleSheet.create({
 		height: 24,
 		borderRadius: 12,
 		backgroundColor: Colors.BODYTEXT_DISABLED,
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 		flexShrink: 0,
 	},
 	clubAddButtonSelected: {
@@ -691,7 +763,7 @@ const styles = StyleSheet.create({
 	},
 	clubAddButtonText: {
 		fontSize: 16,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: Colors.WHITE,
 		lineHeight: 16,
 	},
@@ -705,4 +777,4 @@ const styles = StyleSheet.create({
 		width: 128,
 		height: 44,
 	},
-})
+});

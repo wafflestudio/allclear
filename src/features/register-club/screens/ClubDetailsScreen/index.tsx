@@ -1,30 +1,37 @@
-import React, { useState } from 'react'
-import { View, Text, ScrollView, StyleSheet, Pressable, TextInput } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors } from '@/shared/constants/colors'
-import { CLUB_RECRUIT_TYPES } from '@/shared/constants/club'
-import { typography } from '@/shared/constants/typography'
-import { s, vs } from '@/shared/utils/scale'
-import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
-import { RegisterClubFormData } from '@/features/register-club/types'
-import { areValidSnsUrls } from '@/features/register-club/validation'
+import { useState } from "react";
 import {
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	TextInput,
+	View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import MaterialIcons from "react-native-vector-icons/MaterialIcons";
+import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import type { RegisterClubFormData } from "@/features/register-club/types";
+import { areValidSnsUrls } from "@/features/register-club/validation";
+import ClubActivityImagePicker from "@/shared/components/ClubActivityImagePicker";
+import ClubSnsInputList from "@/shared/components/ClubSnsInputList";
+import { CLUB_RECRUIT_TYPES } from "@/shared/constants/club";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import {
+	type ActivityCycleMode,
 	decrementActivityCycleValue,
 	incrementActivityCycleValue,
-	type ActivityCycleMode,
-} from '@/shared/utils/activityCycle'
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
-import ClubActivityImagePicker from '@/shared/components/ClubActivityImagePicker'
-import ClubSnsInputList from '@/shared/components/ClubSnsInputList'
+} from "@/shared/utils/activityCycle";
+import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	formData: RegisterClubFormData
-	onFormDataChange: (data: Partial<RegisterClubFormData>) => void
-	onComplete: () => void
-	onPrevious: () => void
-	isLoading?: boolean
-	progress?: number
-}
+	formData: RegisterClubFormData;
+	onFormDataChange: (data: Partial<RegisterClubFormData>) => void;
+	onComplete: () => void;
+	onPrevious: () => void;
+	isLoading?: boolean;
+	progress?: number;
+};
 
 export const ClubDetailsScreen = ({
 	formData,
@@ -35,49 +42,55 @@ export const ClubDetailsScreen = ({
 	progress,
 }: Props) => {
 	const [activityCycleMode, setActivityCycleMode] = useState<ActivityCycleMode>(
-		formData.activityCycle ? 'number' : 'none',
-	)
+		formData.activityCycle ? "number" : "none",
+	);
 
-	const activitySemesters = parseInt(formData.activityCycle, 10) || 0
+	const activitySemesters = parseInt(formData.activityCycle, 10) || 0;
 
 	const setHasDongbang = (value: boolean) => {
-		onFormDataChange(value ? { hasDongbang: true } : { hasDongbang: false, dongbangLocation: '' })
-	}
+		onFormDataChange(
+			value
+				? { hasDongbang: true }
+				: { hasDongbang: false, dongbangLocation: "" },
+		);
+	};
 
 	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
-		setActivityCycleMode(mode)
-		onFormDataChange({ activityCycle: mode === 'number' ? '1' : '' })
-	}
+		setActivityCycleMode(mode);
+		onFormDataChange({ activityCycle: mode === "number" ? "1" : "" });
+	};
 
 	const incrementActivityCycle = () => {
-		const next = incrementActivityCycleValue(activitySemesters)
-		setActivityCycleMode(next.mode)
-		onFormDataChange({ activityCycle: next.value })
-	}
+		const next = incrementActivityCycleValue(activitySemesters);
+		setActivityCycleMode(next.mode);
+		onFormDataChange({ activityCycle: next.value });
+	};
 
 	const decrementActivityCycle = () => {
-		const next = decrementActivityCycleValue(activitySemesters)
-		setActivityCycleMode(next.mode)
-		onFormDataChange({ activityCycle: next.value })
-	}
+		const next = decrementActivityCycleValue(activitySemesters);
+		setActivityCycleMode(next.mode);
+		onFormDataChange({ activityCycle: next.value });
+	};
 
 	const isComplete =
 		formData.recruitType.trim() &&
 		areValidSnsUrls(formData.clubSNSUrls) &&
 		formData.clubDescription.trim() &&
-		(activityCycleMode === 'none' || formData.activityCycle.trim())
+		(activityCycleMode === "none" || formData.activityCycle.trim());
 
 	return (
-		<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 			<ScrollView contentContainerStyle={styles.content}>
 				<View style={styles.header}>
 					<Text style={styles.title}>
 						<Text style={styles.clubName}>{formData.clubName}</Text>
 						<Text>의</Text>
-						{'\n'}
+						{"\n"}
 						<Text>세부정보를 입력해주세요</Text>
 					</Text>
-					<Text style={styles.subtitle}>관리하기 탭에서 언제든 수정할 수 있어요</Text>
+					<Text style={styles.subtitle}>
+						관리하기 탭에서 언제든 수정할 수 있어요
+					</Text>
 				</View>
 
 				<View style={styles.form}>
@@ -85,19 +98,22 @@ export const ClubDetailsScreen = ({
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.fieldLabel}>모집 형태</Text>
 						<View style={styles.buttonGroup}>
-							{CLUB_RECRUIT_TYPES.map(type => (
+							{CLUB_RECRUIT_TYPES.map((type) => (
 								<Pressable
 									key={type}
 									style={[
 										styles.typeButton,
 										formData.recruitType === type && styles.typeButtonSelected,
 									]}
-									onPress={() => onFormDataChange({ recruitType: type })}>
+									onPress={() => onFormDataChange({ recruitType: type })}
+								>
 									<Text
 										style={[
 											styles.typeButtonText,
-											formData.recruitType === type && styles.typeButtonTextSelected,
-										]}>
+											formData.recruitType === type &&
+												styles.typeButtonTextSelected,
+										]}
+									>
 										{type}
 									</Text>
 								</Pressable>
@@ -114,42 +130,64 @@ export const ClubDetailsScreen = ({
 								<Pressable
 									style={[
 										styles.typeButton,
-										activityCycleMode === 'none' && styles.typeButtonSelected,
+										activityCycleMode === "none" && styles.typeButtonSelected,
 									]}
-									onPress={() => handleActivityCycleModeChange('none')}>
+									onPress={() => handleActivityCycleModeChange("none")}
+								>
 									<Text
 										style={[
 											styles.typeButtonText,
-											activityCycleMode === 'none' && styles.typeButtonTextSelected,
-										]}>
+											activityCycleMode === "none" &&
+												styles.typeButtonTextSelected,
+										]}
+									>
 										없음
 									</Text>
 								</Pressable>
 								<Pressable
 									style={[
 										styles.typeButton,
-										activityCycleMode === 'number' && styles.typeButtonSelected,
+										activityCycleMode === "number" && styles.typeButtonSelected,
 									]}
-									onPress={() => handleActivityCycleModeChange('number')}>
+									onPress={() => handleActivityCycleModeChange("number")}
+								>
 									<Text
 										style={[
 											styles.typeButtonText,
-											activityCycleMode === 'number' && styles.typeButtonTextSelected,
-										]}>
+											activityCycleMode === "number" &&
+												styles.typeButtonTextSelected,
+										]}
+									>
 										있음
 									</Text>
 								</Pressable>
 							</View>
 
 							<View style={styles.periodStepper}>
-								<Text style={styles.semesterValue}>{activitySemesters}학기</Text>
+								<Text style={styles.semesterValue}>
+									{activitySemesters}학기
+								</Text>
 								<View style={styles.stepperPill}>
-									<Pressable style={styles.stepperButton} onPress={decrementActivityCycle}>
-										<MaterialIcons name="remove" size={18} color={Colors.BODYTEXT_SUB} />
+									<Pressable
+										style={styles.stepperButton}
+										onPress={decrementActivityCycle}
+									>
+										<MaterialIcons
+											name="remove"
+											size={18}
+											color={Colors.BODYTEXT_SUB}
+										/>
 									</Pressable>
 									<View style={styles.stepperDivider} />
-									<Pressable style={styles.stepperButton} onPress={incrementActivityCycle}>
-										<MaterialIcons name="add" size={18} color={Colors.BODYTEXT_SUB} />
+									<Pressable
+										style={styles.stepperButton}
+										onPress={incrementActivityCycle}
+									>
+										<MaterialIcons
+											name="add"
+											size={18}
+											color={Colors.BODYTEXT_SUB}
+										/>
 									</Pressable>
 								</View>
 							</View>
@@ -161,24 +199,34 @@ export const ClubDetailsScreen = ({
 						<Text style={styles.fieldLabel}>동방 보유 여부</Text>
 						<View style={styles.buttonGroup}>
 							<Pressable
-								style={[styles.typeButton, formData.hasDongbang && styles.typeButtonSelected]}
-								onPress={() => setHasDongbang(true)}>
+								style={[
+									styles.typeButton,
+									formData.hasDongbang && styles.typeButtonSelected,
+								]}
+								onPress={() => setHasDongbang(true)}
+							>
 								<Text
 									style={[
 										styles.typeButtonText,
 										formData.hasDongbang && styles.typeButtonTextSelected,
-									]}>
+									]}
+								>
 									보유
 								</Text>
 							</Pressable>
 							<Pressable
-								style={[styles.typeButton, !formData.hasDongbang && styles.typeButtonSelected]}
-								onPress={() => setHasDongbang(false)}>
+								style={[
+									styles.typeButton,
+									!formData.hasDongbang && styles.typeButtonSelected,
+								]}
+								onPress={() => setHasDongbang(false)}
+							>
 								<Text
 									style={[
 										styles.typeButtonText,
 										!formData.hasDongbang && styles.typeButtonTextSelected,
-									]}>
+									]}
+								>
 									미보유
 								</Text>
 							</Pressable>
@@ -186,28 +234,36 @@ export const ClubDetailsScreen = ({
 
 						{formData.hasDongbang && (
 							<View style={styles.iconInputRow}>
-								<MaterialIcons name="location-on" size={20} color={Colors.BODYTEXT_DISABLED} />
+								<MaterialIcons
+									name="location-on"
+									size={20}
+									color={Colors.BODYTEXT_DISABLED}
+								/>
 								<TextInput
 									style={styles.iconInput}
 									placeholder="활동 장소를 입력하세요"
 									placeholderTextColor={Colors.BODYTEXT_DISABLED}
 									value={formData.dongbangLocation}
-									onChangeText={text => onFormDataChange({ dongbangLocation: text })}
+									onChangeText={(text) =>
+										onFormDataChange({ dongbangLocation: text })
+									}
 									maxLength={100}
 								/>
 							</View>
 						)}
-						<Text style={styles.validationText}>동방 보유 여부를 알려주세요</Text>
+						<Text style={styles.validationText}>
+							동방 보유 여부를 알려주세요
+						</Text>
 					</View>
 
 					<ClubSnsInputList
 						urls={formData.clubSNSUrls}
-						onChange={clubSNSUrls => onFormDataChange({ clubSNSUrls })}
+						onChange={(clubSNSUrls) => onFormDataChange({ clubSNSUrls })}
 					/>
 
 					<ClubActivityImagePicker
 						images={formData.activityImages}
-						onChange={activityImages => onFormDataChange({ activityImages })}
+						onChange={(activityImages) => onFormDataChange({ activityImages })}
 					/>
 
 					{/* Description */}
@@ -218,12 +274,16 @@ export const ClubDetailsScreen = ({
 							placeholder="동아리에 대해 자세히 설명해주세요"
 							placeholderTextColor={Colors.BODYTEXT_DISABLED}
 							value={formData.clubDescription}
-							onChangeText={text => onFormDataChange({ clubDescription: text })}
+							onChangeText={(text) =>
+								onFormDataChange({ clubDescription: text })
+							}
 							maxLength={500}
 							multiline
 							textAlignVertical="top"
 						/>
-						<Text style={styles.validationText}>동아리 추가 설명은 필수 입력 정보예요.</Text>
+						<Text style={styles.validationText}>
+							동아리 추가 설명은 필수 입력 정보예요.
+						</Text>
 					</View>
 				</View>
 			</ScrollView>
@@ -235,8 +295,8 @@ export const ClubDetailsScreen = ({
 				progress={progress}
 			/>
 		</SafeAreaView>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
@@ -257,7 +317,7 @@ const styles = StyleSheet.create({
 	},
 	clubName: {
 		color: Colors.BUTTON_SELECTED,
-		fontWeight: '800',
+		fontWeight: "800",
 	},
 	subtitle: {
 		...typography.bodyMRegular,
@@ -274,7 +334,7 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_SUB,
 	},
 	buttonGroup: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		gap: s(8),
 	},
 	typeButton: {
@@ -285,7 +345,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
 		backgroundColor: Colors.WHITE,
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	typeButtonSelected: {
 		backgroundColor: Colors.BUTTON_SELECTED,
@@ -297,20 +357,20 @@ const styles = StyleSheet.create({
 	},
 	typeButtonTextSelected: {
 		color: Colors.WHITE,
-		fontWeight: '600',
+		fontWeight: "600",
 	},
 	periodRow: {
-		flexDirection: 'row',
-		alignItems: 'flex-end',
+		flexDirection: "row",
+		alignItems: "flex-end",
 		gap: s(16),
 	},
 	modeButtons: {
 		flex: 1,
-		flexDirection: 'row',
+		flexDirection: "row",
 		gap: s(8),
 	},
 	periodStepper: {
-		alignItems: 'center',
+		alignItems: "center",
 		gap: vs(6),
 	},
 	semesterValue: {
@@ -318,16 +378,16 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_MAIN,
 	},
 	stepperPill: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		borderRadius: 8,
 		backgroundColor: Colors.BACKGROUND_SUB,
 	},
 	stepperButton: {
 		paddingHorizontal: s(16),
 		paddingVertical: vs(8),
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	stepperDivider: {
 		width: 1,
@@ -335,8 +395,8 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BODYTEXT_DISABLED,
 	},
 	iconInputRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		gap: s(8),
 	},
 	iconInput: {
@@ -365,4 +425,4 @@ const styles = StyleSheet.create({
 		...typography.bodyMRegular,
 		color: Colors.POINTCOLOR,
 	},
-})
+});

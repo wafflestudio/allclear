@@ -1,11 +1,11 @@
 export type ImageFile = {
-	uri: string
-	type: string
-	name: string
-}
+	uri: string;
+	type: string;
+	name: string;
+};
 
 export type EditableImage = {
-	id: string
-	uri: string
-	file?: ImageFile
-}
+	id: string;
+	uri: string;
+	file?: ImageFile;
+};

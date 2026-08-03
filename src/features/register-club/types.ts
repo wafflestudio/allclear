@@ -1,54 +1,54 @@
-import { Category } from '@/entities/category'
-import type { EditableImage, ImageFile } from '@/shared/types/image'
+import type { Category } from "@/entities/category";
+import type { EditableImage, ImageFile } from "@/shared/types/image";
 
-export type RegisterClubImageFile = ImageFile
+export type RegisterClubImageFile = ImageFile;
 
 export type RegisterClubFormData = {
-	clubType: '교내' | '교외'
+	clubType: "교내" | "교외";
 
 	// Page 1: Manager basic info
-	managerName: string
-	managerPhone: string
-	studentId: string
+	managerName: string;
+	managerPhone: string;
+	studentId: string;
 
 	// Page 2: Club basic info
-	clubImage: string | null
-	clubImageFile: RegisterClubImageFile | null
-	clubName: string
+	clubImage: string | null;
+	clubImageFile: RegisterClubImageFile | null;
+	clubName: string;
 
 	// Page 3: Categories
-	selectedCategories: Category['name'][]
+	selectedCategories: Category["name"][];
 
 	// Page 4: Club intro & affiliation
-	department: string
-	shortIntro: string
+	department: string;
+	shortIntro: string;
 
 	// Page 5: Club details
-	recruitType: string
-	activityCycle: string
-	hasDongbang: boolean
-	dongbangLocation: string
-	clubSNSUrls: string[]
-	activityImages: EditableImage[]
-	clubDescription: string
-}
+	recruitType: string;
+	activityCycle: string;
+	hasDongbang: boolean;
+	dongbangLocation: string;
+	clubSNSUrls: string[];
+	activityImages: EditableImage[];
+	clubDescription: string;
+};
 
 export const initialFormData: RegisterClubFormData = {
-	clubType: '교내',
-	managerName: '',
-	managerPhone: '',
-	studentId: '',
+	clubType: "교내",
+	managerName: "",
+	managerPhone: "",
+	studentId: "",
 	clubImage: null,
 	clubImageFile: null,
-	clubName: '',
+	clubName: "",
 	selectedCategories: [],
-	department: '',
-	shortIntro: '',
-	recruitType: '',
-	activityCycle: '',
+	department: "",
+	shortIntro: "",
+	recruitType: "",
+	activityCycle: "",
 	hasDongbang: false,
-	dongbangLocation: '',
-	clubSNSUrls: [''],
+	dongbangLocation: "",
+	clubSNSUrls: [""],
 	activityImages: [],
-	clubDescription: '',
-}
+	clubDescription: "",
+};

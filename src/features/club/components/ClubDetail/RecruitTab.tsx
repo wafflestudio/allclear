@@ -1,29 +1,35 @@
-import dayjs from 'dayjs'
-import 'dayjs/locale/ko'
-import React, { useContext } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { useQuery } from '@tanstack/react-query'
-import { Club } from '@/entities/club'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
-import BackgroundCard from './BackgroundCard'
-import { ClubDetailTabLabel } from './ClubDetailTabBar'
-import LoginBlurOverlay from './LoginBlurOverlay'
-import RecruitmentDetailCard from './RecruitmentDetailCard'
+import dayjs from "dayjs";
+import "dayjs/locale/ko";
+import { useQuery } from "@tanstack/react-query";
+import { useContext } from "react";
+import {
+	ActivityIndicator,
+	Pressable,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import type { Club } from "@/entities/club";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import { ms, s, vs } from "@/shared/utils/scale";
+import BackgroundCard from "./BackgroundCard";
+import type { ClubDetailTabLabel } from "./ClubDetailTabBar";
+import LoginBlurOverlay from "./LoginBlurOverlay";
+import RecruitmentDetailCard from "./RecruitmentDetailCard";
 
-dayjs.locale('ko')
+dayjs.locale("ko");
 
 type Props = {
-	club: Club
-	tabLabel: ClubDetailTabLabel
-	contentWidth: number
-	isLoggedIn: boolean
-	onLoginPress: () => void
-	onPreviousPress: (representativeRecruitmentId: number | null) => void
-}
+	club: Club;
+	tabLabel: ClubDetailTabLabel;
+	contentWidth: number;
+	isLoggedIn: boolean;
+	onLoginPress: () => void;
+	onPreviousPress: (representativeRecruitmentId: number | null) => void;
+};
 
 const RecruitTab = ({
 	club,
@@ -33,21 +39,29 @@ const RecruitTab = ({
 	onLoginPress,
 	onPreviousPress,
 }: Props) => {
-	const { recruitmentService } = useContext(serviceContext)
-	const representativeQuery = useQuery(['representativeRecruitment', club.uuid], () =>
-		recruitmentService.getRepresentativeRecruitment({ clubId: club.uuid }),
-	)
-	const representativeId = representativeQuery.data?.id ?? null
+	const { recruitmentService } = useContext(serviceContext);
+	const representativeQuery = useQuery(
+		["representativeRecruitment", club.uuid],
+		() =>
+			recruitmentService.getRepresentativeRecruitment({ clubId: club.uuid }),
+	);
+	const representativeId = representativeQuery.data?.id ?? null;
 	const detailQuery = useQuery(
-		['recruitmentDetail', representativeId],
-		() => recruitmentService.getRecruitmentDetail({ recruitmentId: representativeId as number }),
+		["recruitmentDetail", representativeId],
+		() =>
+			recruitmentService.getRecruitmentDetail({
+				recruitmentId: representativeId as number,
+			}),
 		{ enabled: representativeId !== null },
-	)
+	);
 	const isLoading =
-		representativeQuery.isLoading || (representativeId !== null && detailQuery.isLoading)
-	const isError = representativeQuery.isError || detailQuery.isError
-	const content = detailQuery.data?.content
-	const updatedAt = club.articleUploadedAt ? dayjs(club.articleUploadedAt) : null
+		representativeQuery.isLoading ||
+		(representativeId !== null && detailQuery.isLoading);
+	const isError = representativeQuery.isError || detailQuery.isError;
+	const content = detailQuery.data?.content;
+	const updatedAt = club.articleUploadedAt
+		? dayjs(club.articleUploadedAt)
+		: null;
 
 	return (
 		<View style={styles.tabSection}>
@@ -62,9 +76,10 @@ const RecruitTab = ({
 						<Pressable
 							style={styles.retryButton}
 							onPress={() => {
-								representativeQuery.refetch()
-								if (representativeId !== null) detailQuery.refetch()
-							}}>
+								representativeQuery.refetch();
+								if (representativeId !== null) detailQuery.refetch();
+							}}
+						>
 							<Text style={styles.retryText}>다시 시도</Text>
 						</Pressable>
 					</View>
@@ -77,7 +92,10 @@ const RecruitTab = ({
 								onLoginPress={onLoginPress}
 							/>
 						)}
-						<RecruitmentDetailCard content={content} contentWidth={contentWidth} />
+						<RecruitmentDetailCard
+							content={content}
+							contentWidth={contentWidth}
+						/>
 					</>
 				) : (
 					<View style={styles.centerState}>
@@ -91,8 +109,8 @@ const RecruitTab = ({
 					{updatedAt && (
 						<Text style={styles.sectionMeta}>
 							{updatedAt.format(
-								(updatedAt.year() === dayjs().year() ? '' : 'YY년 ') +
-									'M월 D일 dddd A h시에 업데이트 되었어요',
+								(updatedAt.year() === dayjs().year() ? "" : "YY년 ") +
+									"M월 D일 dddd A h시에 업데이트 되었어요",
 							)}
 						</Text>
 					)}
@@ -101,22 +119,35 @@ const RecruitTab = ({
 
 			<Pressable
 				accessibilityRole="button"
-				style={({ pressed }) => [styles.previousButton, pressed && styles.pressed]}
-				onPress={() => onPreviousPress(representativeId)}>
+				style={({ pressed }) => [
+					styles.previousButton,
+					pressed && styles.pressed,
+				]}
+				onPress={() => onPreviousPress(representativeId)}
+			>
 				<Text style={styles.previousButtonText}>이전 공고 확인하기</Text>
 				<Icon name="chevron-right" size={ms(20)} color={Colors.POINTCOLOR} />
 			</Pressable>
 		</View>
-	)
-}
+	);
+};
 
-export default RecruitTab
+export default RecruitTab;
 
 const styles = StyleSheet.create({
 	tabSection: { marginTop: vs(16), gap: vs(12) },
 	articleCard: { minHeight: vs(200) },
-	centerState: { minHeight: vs(160), justifyContent: 'center', alignItems: 'center', gap: vs(10) },
-	emptyText: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB, textAlign: 'center' },
+	centerState: {
+		minHeight: vs(160),
+		justifyContent: "center",
+		alignItems: "center",
+		gap: vs(10),
+	},
+	emptyText: {
+		...typography.bodySRegular,
+		color: Colors.BODYTEXT_SUB,
+		textAlign: "center",
+	},
 	retryButton: {
 		paddingHorizontal: s(14),
 		paddingVertical: vs(8),
@@ -130,11 +161,11 @@ const styles = StyleSheet.create({
 		minHeight: ms(48),
 		borderRadius: ms(12),
 		backgroundColor: Colors.POINTCOLOR_10,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
 		gap: s(4),
 	},
 	previousButtonText: { ...typography.bodyMSemibold, color: Colors.POINTCOLOR },
 	pressed: { opacity: 0.6 },
-})
+});

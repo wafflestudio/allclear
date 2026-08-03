@@ -18,47 +18,27 @@
 		]
 	},
 	"formatter": {
-		"enabled": true,
-		"indentStyle": "tab",
-		"indentWidth": 2,
-		"lineEnding": "lf",
-		"lineWidth": 100,
-		"bracketSpacing": true,
-		"bracketSameLine": true
+		"enabled": true
 	},
 	"linter": {
 		"enabled": true,
 		"domains": {
-			"react": "none",
-			"test": "none"
+			"react": "recommended",
+			"test": "recommended"
 		},
 		"rules": {
-			"preset": "none",
-			"correctness": {
-				"noUnusedFunctionParameters": {
-					"level": "warn",
-					"options": {
-						"ignoreRestSiblings": false
-					}
-				},
-				"noUnusedVariables": "warn",
-				"useExhaustiveDependencies": "warn",
-				"useHookAtTopLevel": "error"
-			}
+			"preset": "recommended"
 		}
 	},
 	"assist": {
-		"enabled": false
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"javascript": {
-		"globals": ["__DEV__"],
-		"formatter": {
-			"jsxQuoteStyle": "double",
-			"quoteProperties": "asNeeded",
-			"trailingCommas": "all",
-			"semicolons": "asNeeded",
-			"arrowParentheses": "asNeeded",
-			"quoteStyle": "single"
-		}
+		"globals": ["__DEV__"]
 	}
 }

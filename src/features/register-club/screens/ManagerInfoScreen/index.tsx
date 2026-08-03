@@ -1,22 +1,27 @@
-import React from 'react'
-import { View, Text, ScrollView, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { s, vs } from '@/shared/utils/scale'
-import TextField from '@/shared/components/TextField'
-import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
-import { RegisterClubFormData } from '@/features/register-club/types'
-import { isValidPhoneNumber, isValidStudentId } from '@/features/register-club/validation'
-import { formatPhoneNumberInput, formatStudentIdInput } from '@/shared/utils/managerInfo'
+import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import type { RegisterClubFormData } from "@/features/register-club/types";
+import {
+	isValidPhoneNumber,
+	isValidStudentId,
+} from "@/features/register-club/validation";
+import TextField from "@/shared/components/TextField";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import {
+	formatPhoneNumberInput,
+	formatStudentIdInput,
+} from "@/shared/utils/managerInfo";
+import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	formData: RegisterClubFormData
-	onFormDataChange: (data: Partial<RegisterClubFormData>) => void
-	onNext: () => void
-	onPrevious?: () => void
-	progress?: number
-}
+	formData: RegisterClubFormData;
+	onFormDataChange: (data: Partial<RegisterClubFormData>) => void;
+	onNext: () => void;
+	onPrevious?: () => void;
+	progress?: number;
+};
 
 export const ManagerInfoScreen = ({
 	formData,
@@ -26,12 +31,12 @@ export const ManagerInfoScreen = ({
 	progress,
 }: Props) => {
 	const isComplete =
-		formData.managerName.trim() !== '' &&
+		formData.managerName.trim() !== "" &&
 		isValidPhoneNumber(formData.managerPhone) &&
-		isValidStudentId(formData.studentId)
+		isValidStudentId(formData.studentId);
 
 	return (
-		<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 			<ScrollView contentContainerStyle={styles.content}>
 				<View style={styles.header}>
 					<Text style={styles.title}>운영진 기본 정보를</Text>
@@ -44,7 +49,7 @@ export const ManagerInfoScreen = ({
 						<TextField
 							placeholder="홍길동"
 							value={formData.managerName}
-							onChangeText={text => onFormDataChange({ managerName: text })}
+							onChangeText={(text) => onFormDataChange({ managerName: text })}
 							maxLength={50}
 						/>
 						<Text style={styles.helperText}>이름을 입력해주세요</Text>
@@ -55,15 +60,20 @@ export const ManagerInfoScreen = ({
 						<TextField
 							placeholder="010-1234-5678"
 							value={formData.managerPhone}
-							onChangeText={text =>
+							onChangeText={(text) =>
 								onFormDataChange({
-									managerPhone: formatPhoneNumberInput(text, formData.managerPhone),
+									managerPhone: formatPhoneNumberInput(
+										text,
+										formData.managerPhone,
+									),
 								})
 							}
 							keyboardType="number-pad"
 							maxLength={13}
 						/>
-						<Text style={styles.helperText}>올바른 전화번호 형식으로 입력해주세요</Text>
+						<Text style={styles.helperText}>
+							올바른 전화번호 형식으로 입력해주세요
+						</Text>
 					</View>
 
 					<View style={styles.fieldWrapper}>
@@ -71,7 +81,7 @@ export const ManagerInfoScreen = ({
 						<TextField
 							placeholder="1970-12345"
 							value={formData.studentId}
-							onChangeText={text =>
+							onChangeText={(text) =>
 								onFormDataChange({
 									studentId: formatStudentIdInput(text, formData.studentId),
 								})
@@ -79,7 +89,9 @@ export const ManagerInfoScreen = ({
 							keyboardType="number-pad"
 							maxLength={10}
 						/>
-						<Text style={styles.helperText}>2023-12345 형식으로 입력해주세요</Text>
+						<Text style={styles.helperText}>
+							2023-12345 형식으로 입력해주세요
+						</Text>
 					</View>
 				</View>
 			</ScrollView>
@@ -91,8 +103,8 @@ export const ManagerInfoScreen = ({
 				progress={progress}
 			/>
 		</SafeAreaView>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
@@ -125,4 +137,4 @@ const styles = StyleSheet.create({
 		color: Colors.POINTCOLOR,
 		marginTop: vs(5),
 	},
-})
+});

@@ -1,9 +1,9 @@
-import axios from 'axios'
+import axios from "axios";
 
 export const getApiErrorStatus = (error: unknown): number | undefined => {
 	if (!axios.isAxiosError(error)) {
-		return undefined
+		return undefined;
 	}
 
-	return error.response?.status
-}
+	return error.response?.status;
+};

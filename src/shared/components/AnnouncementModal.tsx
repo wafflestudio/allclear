@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { BlurView } from '@react-native-community/blur'
+import { BlurView } from "@react-native-community/blur";
+import { useEffect, useState } from "react";
 import {
 	Modal,
 	Pressable,
@@ -8,24 +8,24 @@ import {
 	Text,
 	useWindowDimensions,
 	View,
-} from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import Button from '@/shared/components/Button'
-import Checkbox from '@/shared/components/Checkbox'
-import { Colors } from '@/shared/constants/colors'
-import { useProfile } from '@/shared/contexts/profileContext'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import Button from "@/shared/components/Button";
+import Checkbox from "@/shared/components/Checkbox";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { useProfile } from "@/shared/contexts/profileContext";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	visible: boolean
-	announcementUuid: string
-	title: string
-	description: string
-	onHide: () => void
-	onClose: () => void
-}
+	visible: boolean;
+	announcementUuid: string;
+	title: string;
+	description: string;
+	onHide: () => void;
+	onClose: () => void;
+};
 
 const AnnouncementModal = ({
 	visible,
@@ -35,29 +35,38 @@ const AnnouncementModal = ({
 	onHide,
 	onClose,
 }: Props) => {
-	const { height: windowHeight } = useWindowDimensions()
-	const insets = useSafeAreaInsets()
-	const { user } = useProfile()
-	const showHideOption = !!user
-	const [hideChecked, setHideChecked] = useState(false)
+	const { height: windowHeight } = useWindowDimensions();
+	const insets = useSafeAreaInsets();
+	const { user } = useProfile();
+	const showHideOption = !!user;
+	const [hideChecked, setHideChecked] = useState(false);
 
-	const modalHeight = Math.min(vs(500), windowHeight - insets.top - insets.bottom - vs(40))
+	const modalHeight = Math.min(
+		vs(500),
+		windowHeight - insets.top - insets.bottom - vs(40),
+	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: A new announcement must reset the local checkbox state.
 	useEffect(() => {
-		setHideChecked(false)
-	}, [announcementUuid])
+		setHideChecked(false);
+	}, [announcementUuid]);
 
 	const handleDismiss = () => {
 		if (showHideOption && hideChecked) {
-			onHide()
-			return
+			onHide();
+			return;
 		}
 
-		onClose()
-	}
+		onClose();
+	};
 
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+		<Modal
+			visible={visible}
+			transparent
+			animationType="fade"
+			onRequestClose={onClose}
+		>
 			<View style={styles.overlay}>
 				<Pressable style={styles.backdrop} onPress={handleDismiss}>
 					<BlurView
@@ -74,7 +83,11 @@ const AnnouncementModal = ({
 							<View style={styles.badge}>
 								<Text style={styles.badgeText}>공지</Text>
 							</View>
-							<Pressable style={styles.closeButton} hitSlop={8} onPress={handleDismiss}>
+							<Pressable
+								style={styles.closeButton}
+								hitSlop={8}
+								onPress={handleDismiss}
+							>
 								<Icon name="close" size={ms(22)} color={Colors.BODYTEXT_SUB} />
 							</Pressable>
 						</View>
@@ -85,7 +98,8 @@ const AnnouncementModal = ({
 							style={styles.descriptionScroll}
 							showsVerticalScrollIndicator={true}
 							bounces={false}
-							contentContainerStyle={styles.descriptionContent}>
+							contentContainerStyle={styles.descriptionContent}
+						>
 							<Text style={styles.description}>{description}</Text>
 						</ScrollView>
 					</View>
@@ -94,26 +108,31 @@ const AnnouncementModal = ({
 							<Checkbox
 								label="다시 보지 않기"
 								checked={hideChecked}
-								onPressIn={() => setHideChecked(prev => !prev)}
+								onPressIn={() => setHideChecked((prev) => !prev)}
 								style={styles.checkbox}
 								textStyle={styles.checkboxLabel}
 							/>
 						)}
 						<View style={styles.buttonWrapper}>
-							<Button label="확인" onPress={handleDismiss} width={s(188)} style={styles.button} />
+							<Button
+								label="확인"
+								onPress={handleDismiss}
+								width={s(188)}
+								style={styles.button}
+							/>
 						</View>
 					</View>
 				</View>
 			</View>
 		</Modal>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	overlay: {
 		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 		paddingHorizontal: s(20),
 	},
 	backdrop: {
@@ -124,7 +143,7 @@ const styles = StyleSheet.create({
 		...StyleSheet.absoluteFillObject,
 	},
 	container: {
-		width: '100%',
+		width: "100%",
 		backgroundColor: Colors.POINTCOLOR_SUB,
 		borderRadius: ms(28),
 		paddingHorizontal: s(24),
@@ -135,9 +154,9 @@ const styles = StyleSheet.create({
 		gap: vs(18),
 	},
 	header: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 	},
 	badge: {
 		backgroundColor: Colors.POINTCOLOR_10,
@@ -178,7 +197,7 @@ const styles = StyleSheet.create({
 		gap: vs(40),
 	},
 	checkbox: {
-		alignSelf: 'flex-start',
+		alignSelf: "flex-start",
 	},
 	checkboxLabel: {
 		...typography.bodySSmallMedium,
@@ -187,11 +206,11 @@ const styles = StyleSheet.create({
 		color: Colors.POINTCOLOR,
 	},
 	buttonWrapper: {
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	button: {
 		borderRadius: ms(12),
 	},
-})
+});
 
-export default AnnouncementModal
+export default AnnouncementModal;

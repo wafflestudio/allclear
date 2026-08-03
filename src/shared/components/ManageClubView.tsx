@@ -1,3 +1,3 @@
-import ManageClubView from './ManageClubView/index'
+import ManageClubView from "./ManageClubView/index";
 
-export default ManageClubView
+export default ManageClubView;

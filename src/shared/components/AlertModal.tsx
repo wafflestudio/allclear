@@ -1,23 +1,23 @@
-import { Modal, Pressable, View, StyleSheet, Text } from 'react-native'
-import { BlurView } from '@react-native-community/blur'
-import { Colors } from '@/shared/constants/colors'
-import Button, { type ButtonVariant } from '@/shared/components/Button'
+import { BlurView } from "@react-native-community/blur";
+import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import Button, { type ButtonVariant } from "@/shared/components/Button";
+import { Colors } from "@/shared/constants/colors";
 
 export type AlertModalProps = {
-	visible: boolean
-	onClose: () => void
-	title: string
-	description?: string
-	buttonLabel: string
-	onButtonPress: () => void
-	buttonDisabled?: boolean
-	buttonVariant?: ButtonVariant
-	hasCancel?: boolean
-	cancelLabel?: string
-	dismissOnBackdropPress?: boolean
-	overlayColor?: string
-	blurAmount?: number
-}
+	visible: boolean;
+	onClose: () => void;
+	title: string;
+	description?: string;
+	buttonLabel: string;
+	onButtonPress: () => void;
+	buttonDisabled?: boolean;
+	buttonVariant?: ButtonVariant;
+	hasCancel?: boolean;
+	cancelLabel?: string;
+	dismissOnBackdropPress?: boolean;
+	overlayColor?: string;
+	blurAmount?: number;
+};
 
 const AlertModal = ({
 	visible,
@@ -27,18 +27,24 @@ const AlertModal = ({
 	buttonLabel,
 	onButtonPress,
 	buttonDisabled = false,
-	buttonVariant = 'primary',
+	buttonVariant = "primary",
 	hasCancel = false,
-	cancelLabel = '취소',
+	cancelLabel = "취소",
 	dismissOnBackdropPress = true,
 	overlayColor = Colors.BACKGROUND_DIM_STRONG,
 	blurAmount = 1,
 }: AlertModalProps) => {
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+		<Modal
+			visible={visible}
+			transparent
+			animationType="fade"
+			onRequestClose={onClose}
+		>
 			<Pressable
 				style={[styles.overlay, { backgroundColor: overlayColor }]}
-				onPress={dismissOnBackdropPress ? onClose : undefined}>
+				onPress={dismissOnBackdropPress ? onClose : undefined}
+			>
 				<BlurView
 					style={styles.blur}
 					blurType="light"
@@ -46,9 +52,14 @@ const AlertModal = ({
 					overlayColor="transparent"
 					reducedTransparencyFallbackColor="transparent"
 				/>
-				<Pressable style={styles.container} onPress={e => e.stopPropagation()}>
+				<Pressable
+					style={styles.container}
+					onPress={(e) => e.stopPropagation()}
+				>
 					<Text style={styles.title}>{title}</Text>
-					{description ? <Text style={styles.description}>{description}</Text> : null}
+					{description ? (
+						<Text style={styles.description}>{description}</Text>
+					) : null}
 					<View style={styles.buttonArea}>
 						{hasCancel && (
 							<Button
@@ -69,46 +80,46 @@ const AlertModal = ({
 				</Pressable>
 			</Pressable>
 		</Modal>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	overlay: {
 		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 		paddingHorizontal: 24,
 	},
 	blur: {
 		...StyleSheet.absoluteFillObject,
 	},
 	container: {
-		width: '100%',
+		width: "100%",
 		backgroundColor: Colors.WHITE,
 		borderRadius: 16,
 		padding: 24,
 	},
 	title: {
 		fontSize: 18,
-		fontWeight: '700',
+		fontWeight: "700",
 		color: Colors.BLACK,
-		textAlign: 'center',
+		textAlign: "center",
 	},
 	description: {
 		fontSize: 14,
-		fontWeight: '400',
+		fontWeight: "400",
 		color: Colors.BLACK,
-		textAlign: 'center',
+		textAlign: "center",
 		marginTop: 12,
 	},
 	buttonArea: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		gap: 8,
 		marginTop: 24,
 	},
 	button: {
 		paddingHorizontal: 16,
 	},
-})
+});
 
-export default AlertModal
+export default AlertModal;

@@ -1,177 +1,203 @@
-import { RouteProp, useFocusEffect } from '@react-navigation/native'
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { Keyboard, Pressable, StyleSheet, Text, View } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { type RouteProp, useFocusEffect } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Club } from '@/entities/club'
-import ClubList from '@/features/club/components/ClubList/ClubList'
-import PopularClubs from '@/features/club/components/PopularClubs/PopularClubs'
+import type { Club } from "@/entities/club";
+import ClubList from "@/features/club/components/ClubList/ClubList";
+import PopularClubs from "@/features/club/components/PopularClubs/PopularClubs";
 import RandomRecommendations, {
 	RandomRecommendationsSkeleton,
-} from '@/features/club/components/RandomRecommendations/RandomRecommendations'
-import RecentSearches from '@/features/club/components/RecentSearches/RecentSearches'
-import SearchBar from '@/features/club/components/SearchBar/SearchBar'
-import SearchFilterBar from '@/features/club/components/SearchBar/SearchFilterBar'
-import SearchFilterOverlay from '@/features/club/components/SearchBar/SearchFilterOverlay'
-import TypoCorrectionNotice from '@/features/club/components/TypoCorrectionNotice/TypoCorrectionNotice'
+} from "@/features/club/components/RandomRecommendations/RandomRecommendations";
+import RecentSearches from "@/features/club/components/RecentSearches/RecentSearches";
+import SearchBar from "@/features/club/components/SearchBar/SearchBar";
+import SearchFilterBar from "@/features/club/components/SearchBar/SearchFilterBar";
+import SearchFilterOverlay from "@/features/club/components/SearchBar/SearchFilterOverlay";
+import TypoCorrectionNotice from "@/features/club/components/TypoCorrectionNotice/TypoCorrectionNotice";
 import {
 	type ClubSearchFilters,
 	createSearchClubsRequest,
 	DEFAULT_CLUB_SEARCH_FILTERS,
 	resetClubSearchOverlayFilters,
-} from '@/features/search/types/clubSearchForm'
-import { ListRandomRecommendationsResponse, SearchClubsResponse } from '@/repositories/club'
-import { ListRecentSearchesResponse } from '@/repositories/recentSearch'
-import { Colors } from '@/shared/constants/colors'
-import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
-import { typography } from '@/shared/constants/typography'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import WithViewEventLog from '@/shared/hocs/WithViewEventLog'
-import { s, vs } from '@/shared/utils/scale'
+} from "@/features/search/types/clubSearchForm";
+import type {
+	ListRandomRecommendationsResponse,
+	SearchClubsResponse,
+} from "@/repositories/club";
+import type { ListRecentSearchesResponse } from "@/repositories/recentSearch";
+import { Colors } from "@/shared/constants/colors";
+import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
+import { typography } from "@/shared/constants/typography";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import WithViewEventLog from "@/shared/hocs/WithViewEventLog";
+import { s, vs } from "@/shared/utils/scale";
 
-const RECENT_SEARCHES_QUERY_KEY = ['recentSearches'] as const
+const RECENT_SEARCHES_QUERY_KEY = ["recentSearches"] as const;
 
-type SearchScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.SEARCH>
-type SearchScreenNavigationProp = NativeStackNavigationProp<StackParamList, SCREEN_TYPE.SEARCH>
+type SearchScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.SEARCH>;
+type SearchScreenNavigationProp = NativeStackNavigationProp<
+	StackParamList,
+	SCREEN_TYPE.SEARCH
+>;
 
 type Props = {
-	route: SearchScreenRouteProp
-	navigation: SearchScreenNavigationProp
-}
+	route: SearchScreenRouteProp;
+	navigation: SearchScreenNavigationProp;
+};
 
 const SearchScreen = ({ navigation }: Props) => {
-	const [inputValue, setInputValue] = useState('')
-	const [submittedQuery, setSubmittedQuery] = useState('')
-	const [submittedSearchId, setSubmittedSearchId] = useState(0)
-	const [isTypoNoticeVisible, setIsTypoNoticeVisible] = useState(true)
-	const [filters, setFilters] = useState<ClubSearchFilters>(DEFAULT_CLUB_SEARCH_FILTERS)
-	const [isFilterOverlayVisible, setIsFilterOverlayVisible] = useState(false)
+	const [inputValue, setInputValue] = useState("");
+	const [submittedQuery, setSubmittedQuery] = useState("");
+	const [submittedSearchId, setSubmittedSearchId] = useState(0);
+	const [isTypoNoticeVisible, setIsTypoNoticeVisible] = useState(true);
+	const [filters, setFilters] = useState<ClubSearchFilters>(
+		DEFAULT_CLUB_SEARCH_FILTERS,
+	);
+	const [isFilterOverlayVisible, setIsFilterOverlayVisible] = useState(false);
 
-	const queryClient = useQueryClient()
+	const queryClient = useQueryClient();
 	const request = useMemo(
 		() => createSearchClubsRequest({ query: submittedQuery, filters }),
 		[filters, submittedQuery],
-	)
-	const { data: searchResult, isFetching } = useSearchClubs({ query: submittedQuery, request })
-	const { data: recentSearches } = useRecentSearches()
-	const { mutate: clearRecentSearches } = useClearRecentSearches()
+	);
+	const { data: searchResult, isFetching } = useSearchClubs({
+		query: submittedQuery,
+		request,
+	});
+	const { data: recentSearches } = useRecentSearches();
+	const { mutate: clearRecentSearches } = useClearRecentSearches();
 	const {
 		data: randomRecommendations,
 		isError: isRandomRecommendationsError,
 		isLoading: isFetchingRandomRecommendations,
 		mutate: fetchRandomRecommendations,
 		reset: resetRandomRecommendations,
-	} = useRandomRecommendations()
+	} = useRandomRecommendations();
 
-	const clubs = searchResult?.clubs
+	const clubs = searchResult?.clubs;
 
-	const hasSubmittedQuery = submittedQuery.length > 0
-	const shouldShowRandomRecommendations = hasSubmittedQuery && clubs?.length === 0 && !isFetching
+	const hasSubmittedQuery = submittedQuery.length > 0;
+	const shouldShowRandomRecommendations =
+		hasSubmittedQuery && clubs?.length === 0 && !isFetching;
 	const isRandomRecommendationsLoading =
 		shouldShowRandomRecommendations &&
-		(isFetchingRandomRecommendations || (!randomRecommendations && !isRandomRecommendationsError))
-	const shouldShowTypoNotice =
-		isTypoNoticeVisible && !!searchResult?.isTypoCorrected && !!searchResult.correctedQuery
+		(isFetchingRandomRecommendations ||
+			(!randomRecommendations && !isRandomRecommendationsError));
+	const correctedQuery = searchResult?.isTypoCorrected
+		? searchResult.correctedQuery
+		: undefined;
+	const shouldShowTypoNotice = isTypoNoticeVisible && !!correctedQuery;
 
 	const resetSearchState = useCallback(() => {
-		setInputValue('')
-		setSubmittedQuery('')
-		setSubmittedSearchId(0)
-		resetRandomRecommendations()
-		setIsTypoNoticeVisible(true)
-		setFilters(DEFAULT_CLUB_SEARCH_FILTERS)
-		setIsFilterOverlayVisible(false)
-	}, [resetRandomRecommendations])
+		setInputValue("");
+		setSubmittedQuery("");
+		setSubmittedSearchId(0);
+		resetRandomRecommendations();
+		setIsTypoNoticeVisible(true);
+		setFilters(DEFAULT_CLUB_SEARCH_FILTERS);
+		setIsFilterOverlayVisible(false);
+	}, [resetRandomRecommendations]);
 
 	const resetToInitialState = useCallback(() => {
 		navigation.reset({
 			index: 0,
 			routes: [{ name: SCREEN_TYPE.SEARCH }],
-		})
-		resetSearchState()
-	}, [navigation, resetSearchState])
+		});
+		resetSearchState();
+	}, [navigation, resetSearchState]);
 
 	useEffect(() => {
-		const parent = navigation.getParent()
-		if (!parent) return undefined
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		const unsubscribe = (parent as any).addListener('tabPress', () => {
+		const parent = navigation.getParent();
+		if (!parent) return undefined;
+		// biome-ignore lint/suspicious/noExplicitAny: Parent navigator event typing is unavailable through this nested navigator type.
+		const unsubscribe = (parent as any).addListener("tabPress", () => {
 			if (navigation.isFocused()) {
-				resetToInitialState()
+				resetToInitialState();
 			}
-		})
-		return unsubscribe
-	}, [navigation, resetToInitialState])
+		});
+		return unsubscribe;
+	}, [navigation, resetToInitialState]);
 
 	useFocusEffect(
 		useCallback(() => {
-			return () => setIsFilterOverlayVisible(false)
+			return () => setIsFilterOverlayVisible(false);
 		}, []),
-	)
+	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Request changes intentionally trigger recommendation resets.
 	useEffect(() => {
-		resetRandomRecommendations()
-	}, [request, resetRandomRecommendations])
+		resetRandomRecommendations();
+	}, [request, resetRandomRecommendations]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Request submission changes intentionally trigger a refetch.
 	useEffect(() => {
-		if (!shouldShowRandomRecommendations) return
+		if (!shouldShowRandomRecommendations) return;
 
-		fetchRandomRecommendations()
-	}, [fetchRandomRecommendations, request, shouldShowRandomRecommendations, submittedSearchId])
+		fetchRandomRecommendations();
+	}, [
+		fetchRandomRecommendations,
+		request,
+		shouldShowRandomRecommendations,
+		submittedSearchId,
+	]);
 
 	const handleSubmitQuery = (nextQuery: string) => {
-		queryClient.cancelQueries({ queryKey: ['searchClubs'] })
-		resetRandomRecommendations()
-		setSubmittedQuery(nextQuery)
-		setSubmittedSearchId(prev => prev + 1)
-		setIsTypoNoticeVisible(true)
-		setIsFilterOverlayVisible(false)
-	}
+		queryClient.cancelQueries({ queryKey: ["searchClubs"] });
+		resetRandomRecommendations();
+		setSubmittedQuery(nextQuery);
+		setSubmittedSearchId((prev) => prev + 1);
+		setIsTypoNoticeVisible(true);
+		setIsFilterOverlayVisible(false);
+	};
 
 	const handleChangeFilters = useCallback((nextFilters: ClubSearchFilters) => {
-		Keyboard.dismiss()
-		setFilters(nextFilters)
-	}, [])
+		Keyboard.dismiss();
+		setFilters(nextFilters);
+	}, []);
 
 	const handleToggleFilterOverlay = useCallback(() => {
-		Keyboard.dismiss()
-		setIsFilterOverlayVisible(prev => !prev)
-	}, [])
+		Keyboard.dismiss();
+		setIsFilterOverlayVisible((prev) => !prev);
+	}, []);
 
 	const handleSelectRecentSearch = (query: string) => {
-		setInputValue(query)
-		handleSubmitQuery(query)
-	}
+		setInputValue(query);
+		handleSubmitQuery(query);
+	};
 
 	const handleClearRecentSearches = () => {
-		clearRecentSearches()
-	}
+		clearRecentSearches();
+	};
 
 	const openDetailPage = (club: Club) => {
 		navigation.navigate(SCREEN_TYPE.CLUB_DETAIL, {
 			uuid: club.uuid,
 			category: club.category,
-			entry_point: 'search_result',
-		})
-	}
+			entry_point: "search_result",
+		});
+	};
 
 	return (
-		<WithViewEventLog params={{ screen_name: 'search_screen' }}>
-			<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+		<WithViewEventLog params={{ screen_name: "search_screen" }}>
+			<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 				<View style={styles.headerContainer}>
 					<Pressable onPress={resetToInitialState}>
 						<Text style={styles.headerText}>어떤 동아리를 찾아볼까요?</Text>
 					</Pressable>
-					<SearchBar value={inputValue} onChangeText={setInputValue} onSubmit={handleSubmitQuery} />
+					<SearchBar
+						value={inputValue}
+						onChangeText={setInputValue}
+						onSubmit={handleSubmitQuery}
+					/>
 				</View>
 				{hasSubmittedQuery ? (
 					<>
 						<View style={styles.searchControls}>
-							{shouldShowTypoNotice ? (
+							{shouldShowTypoNotice && correctedQuery ? (
 								<TypoCorrectionNotice
-									correctedQuery={searchResult!.correctedQuery!}
+									correctedQuery={correctedQuery}
 									onClose={() => setIsTypoNoticeVisible(false)}
 								/>
 							) : null}
@@ -185,7 +211,9 @@ const SearchScreen = ({ navigation }: Props) => {
 							<ClubList
 								clubs={clubs}
 								openDetailPage={openDetailPage}
-								emptyPlaceholder={'앗 검색 결과가 없어요!\n다른 키워드로 검색해주세요'}
+								emptyPlaceholder={
+									"앗 검색 결과가 없어요!\n다른 키워드로 검색해주세요"
+								}
 								isLoading={isFetching}
 							/>
 							{shouldShowRandomRecommendations ? (
@@ -202,7 +230,9 @@ const SearchScreen = ({ navigation }: Props) => {
 								<SearchFilterOverlay
 									value={filters}
 									onChange={handleChangeFilters}
-									onReset={() => setFilters(resetClubSearchOverlayFilters(filters))}
+									onReset={() =>
+										setFilters(resetClubSearchOverlayFilters(filters))
+									}
 									onClose={() => setIsFilterOverlayVisible(false)}
 								/>
 							) : null}
@@ -220,86 +250,98 @@ const SearchScreen = ({ navigation }: Props) => {
 				)}
 			</SafeAreaView>
 		</WithViewEventLog>
-	)
-}
+	);
+};
 
-export default SearchScreen
+export default SearchScreen;
 
 type UseSearchClubsProps = {
-	query: string
-	request: ReturnType<typeof createSearchClubsRequest>
-}
+	query: string;
+	request: ReturnType<typeof createSearchClubsRequest>;
+};
 
 const useSearchClubs = ({ query, request }: UseSearchClubsProps) => {
-	const { clubService } = useContext(serviceContext)
-	const queryClient = useQueryClient()
+	const { clubService } = useContext(serviceContext);
+	const queryClient = useQueryClient();
 
 	return useQuery<SearchClubsResponse>(
-		['searchClubs', request],
+		["searchClubs", request],
 		({ signal }) => clubService.searchClubs(request, signal),
 		{
 			enabled: query.length > 0,
 			keepPreviousData: true,
 			staleTime: 0,
 			onSuccess: () => {
-				queryClient.cancelQueries({ queryKey: RECENT_SEARCHES_QUERY_KEY })
-				queryClient.invalidateQueries(RECENT_SEARCHES_QUERY_KEY)
+				queryClient.cancelQueries({ queryKey: RECENT_SEARCHES_QUERY_KEY });
+				queryClient.invalidateQueries(RECENT_SEARCHES_QUERY_KEY);
 			},
 		},
-	)
-}
+	);
+};
 
 const useRecentSearches = () => {
-	const { recentSearchService } = useContext(serviceContext)
+	const { recentSearchService } = useContext(serviceContext);
 
-	return useQuery(RECENT_SEARCHES_QUERY_KEY, () => recentSearchService.listRecentSearches(), {
-		staleTime: 0,
-		select: data => data.recentSearches.map(it => it.query),
-	})
-}
+	return useQuery(
+		RECENT_SEARCHES_QUERY_KEY,
+		() => recentSearchService.listRecentSearches(),
+		{
+			staleTime: 0,
+			select: (data) => data.recentSearches.map((it) => it.query),
+		},
+	);
+};
 
 const useClearRecentSearches = () => {
-	const { recentSearchService } = useContext(serviceContext)
-	const queryClient = useQueryClient()
+	const { recentSearchService } = useContext(serviceContext);
+	const queryClient = useQueryClient();
 
 	return useMutation(() => recentSearchService.deleteAllRecentSearches(), {
 		onMutate: async () => {
-			await queryClient.cancelQueries({ queryKey: RECENT_SEARCHES_QUERY_KEY })
+			await queryClient.cancelQueries({ queryKey: RECENT_SEARCHES_QUERY_KEY });
 
 			const previousRecentSearches =
-				queryClient.getQueryData<ListRecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY)
+				queryClient.getQueryData<ListRecentSearchesResponse>(
+					RECENT_SEARCHES_QUERY_KEY,
+				);
 
-			queryClient.setQueryData<ListRecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY, {
-				recentSearches: [],
-				totalSize: 0,
-			})
+			queryClient.setQueryData<ListRecentSearchesResponse>(
+				RECENT_SEARCHES_QUERY_KEY,
+				{
+					recentSearches: [],
+					totalSize: 0,
+				},
+			);
 
-			return { previousRecentSearches }
+			return { previousRecentSearches };
 		},
 		onError: (_error, _variables, context) => {
 			if (context?.previousRecentSearches) {
 				queryClient.setQueryData<ListRecentSearchesResponse>(
 					RECENT_SEARCHES_QUERY_KEY,
 					context.previousRecentSearches,
-				)
+				);
 			}
 		},
 		onSuccess: () => {
-			queryClient.setQueryData<ListRecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY, {
-				recentSearches: [],
-				totalSize: 0,
-			})
+			queryClient.setQueryData<ListRecentSearchesResponse>(
+				RECENT_SEARCHES_QUERY_KEY,
+				{
+					recentSearches: [],
+					totalSize: 0,
+				},
+			);
 		},
-	})
-}
+	});
+};
 
 const useRandomRecommendations = () => {
-	const { clubService } = useContext(serviceContext)
+	const { clubService } = useContext(serviceContext);
 
 	return useMutation<ListRandomRecommendationsResponse>(() =>
 		clubService.listRandomRecommendations(),
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
@@ -320,7 +362,7 @@ const styles = StyleSheet.create({
 		paddingLeft: s(5),
 	},
 	searchControls: {
-		width: '100%',
+		width: "100%",
 		gap: vs(14),
 		paddingHorizontal: s(20),
 		paddingTop: vs(14),
@@ -329,11 +371,11 @@ const styles = StyleSheet.create({
 	},
 	contentContainer: {
 		flex: 1,
-		position: 'relative',
+		position: "relative",
 	},
 	placeholderContainer: {
 		paddingHorizontal: s(20),
 		paddingTop: vs(14),
 		gap: vs(30),
 	},
-})
+});

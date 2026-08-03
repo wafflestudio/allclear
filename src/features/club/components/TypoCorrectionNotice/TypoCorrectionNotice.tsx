@@ -1,14 +1,13 @@
-import React from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	correctedQuery: string
-	onClose?: () => void
-}
+	correctedQuery: string;
+	onClose?: () => void;
+};
 
 const TypoCorrectionNotice = ({ correctedQuery, onClose }: Props) => {
 	return (
@@ -20,7 +19,8 @@ const TypoCorrectionNotice = ({ correctedQuery, onClose }: Props) => {
 				<View>
 					<Text style={styles.message}>올클이 오타를 감지했어요!</Text>
 					<Text style={styles.message}>
-						유사 검색어 ‘<Text style={styles.highlight}>{correctedQuery}</Text>’로 검색한 결과예요
+						유사 검색어 ‘<Text style={styles.highlight}>{correctedQuery}</Text>
+						’로 검색한 결과예요
 					</Text>
 				</View>
 			</View>
@@ -30,23 +30,23 @@ const TypoCorrectionNotice = ({ correctedQuery, onClose }: Props) => {
 				</Pressable>
 			) : null}
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
-		width: '100%',
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+		width: "100%",
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
 		paddingHorizontal: s(17),
 		paddingVertical: vs(13),
 		borderRadius: ms(10),
-		backgroundColor: 'rgba(243, 240, 245, 0.5)',
+		backgroundColor: "rgba(243, 240, 245, 0.5)",
 	},
 	messageGroup: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		gap: s(8),
 		flex: 1,
 	},
@@ -54,8 +54,8 @@ const styles = StyleSheet.create({
 		width: ms(34),
 		height: ms(34),
 		borderRadius: ms(17),
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 		backgroundColor: Colors.WHITE,
 	},
 	message: {
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
 		width: ms(16),
 		height: ms(16),
 		borderRadius: ms(8),
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 		backgroundColor: Colors.BODYTEXT_DISABLED,
 		marginLeft: s(12),
 	},
-})
+});
 
-export default TypoCorrectionNotice
+export default TypoCorrectionNotice;
