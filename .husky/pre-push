@@ -1,1 +1,1 @@
-yarn tsc --noEmit
+yarn verify
