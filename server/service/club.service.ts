@@ -12,9 +12,11 @@ import { ClubCategory } from '../domain/model/ClubCategory'
 import { CATEGORIES } from '../../src/fixtures/category'
 import {
   Club,
+  ClubDetail,
   ManagedClubDetail,
   ManagedClubListItem,
   ReviewKeyword,
+  toClubDetailDomain,
   toClubDomain,
 } from 'server/domain/model/Club'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
@@ -23,6 +25,7 @@ import { groupBy, round, toPairs } from 'lodash-es'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import { UserSavedClubEntity } from '../infra/database/entities/user-saved-club.entity'
 import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import dayjs from 'dayjs'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { sortByPopularAndEachRandom } from '../util/club-sort'
@@ -86,6 +89,8 @@ export class ClubService {
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
   @InjectRepository(ClubManagerRegisterRequestEntity)
   private readonly clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>
+  @InjectRepository(ClubVerificationRequestEntity)
+  private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
   @InjectRepository(CollegeMajorEntity)
   private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
   @InjectRepository(ClubHistoryEntity)
@@ -107,7 +112,7 @@ export class ClubService {
     return toClubDomain(club, clubReview.get(club.uuid))
   }
 
-  async findPublicByUuid(uuid: string): Promise<Club> {
+  async findPublicByUuid(uuid: string): Promise<ClubDetail> {
     this.userActivityLogRepository
       .insert({
         type: UserActivityLogType.CALL_GET_CLUB_API,
@@ -115,8 +120,17 @@ export class ClubService {
       })
       .catch(console.error)
     const club = await this.clubAccessService.getPublicClub(uuid)
-    const clubReview = await this.getClubReviews([club.uuid])
-    return toClubDomain(club, clubReview.get(club.uuid))
+    const [clubReview, latestVerificationRequest] = await Promise.all([
+      this.getClubReviews([club.uuid]),
+      this.clubVerificationRequestRepository.findOne({
+        where: { clubId: club.uuid },
+        order: {
+          createdAt: 'DESC',
+          id: 'DESC',
+        },
+      }),
+    ])
+    return toClubDetailDomain(club, clubReview.get(club.uuid), latestVerificationRequest)
   }
 
   async findByAuthKey(authkey: string): Promise<Club> {

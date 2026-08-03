@@ -1,14 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
-import { Club } from 'server/domain/model/Club'
+import { ClubDetail } from 'server/domain/model/Club'
 import { z, ZodIssue } from 'zod'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { NotFoundError } from 'server/domain/error'
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Club | string | ZodIssue[]>,
+  res: NextApiResponse<ClubDetail | string | ZodIssue[]>,
 ) {
   try {
     const clubService = Provider.getService(ClubService)

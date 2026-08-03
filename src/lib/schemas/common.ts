@@ -1,6 +1,7 @@
 import { z } from 'src/lib/schemas/zod'
 import { CLUB_STATUSES } from 'src/common/constants/club-status'
 import { CLUB_RECRUIT_TYPES } from 'src/common/constants/club-recruit-type'
+import { OFFICIAL_VERIFICATION_STATUSES } from 'src/common/constants/official-verification-status'
 
 export const ValidationIssueSchema = z
   .object({
@@ -147,6 +148,10 @@ export const ClubSchema = z
     latestComment: z.string(),
   })
   .openapi('Club')
+
+export const ClubDetailSchema = ClubSchema.extend({
+  officialVerificationStatus: z.enum(OFFICIAL_VERIFICATION_STATUSES),
+}).openapi('ClubDetail')
 
 export const ClubManagerSchema = z
   .object({

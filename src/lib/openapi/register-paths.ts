@@ -5,7 +5,7 @@ import {
   OkResponseSchema,
   TokenResponseSchema,
   UserSchema,
-  ClubSchema,
+  ClubDetailSchema,
   ManagedClubDetailSchema,
   ValidationIssueSchema,
 } from 'src/lib/schemas/common'
@@ -1005,7 +1005,7 @@ registry.registerPath({
       description: '조회 성공',
       content: {
         'application/json': {
-          schema: ClubSchema,
+          schema: ClubDetailSchema,
         },
       },
     },

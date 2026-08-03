@@ -2,8 +2,10 @@ import { ClubEntity } from '../../infra/database/entities'
 import { ENV } from '../../ENV'
 import { CollegeMajor } from './CollegeMajor'
 import type { ClubStatus } from 'src/common/constants/club-status'
+import { PENDING_CLUB_STATUS } from 'src/common/constants/club-status'
 import type { ClubRecruitType } from 'src/common/constants/club-recruit-type'
 import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
+import type { OfficialVerificationStatus } from 'src/common/constants/official-verification-status'
 
 export type ClubManager = {
   serviceUserId: string
@@ -35,6 +37,13 @@ export type ReviewKeyword = {
   color: string
   iconUri: string
   totalUpvotes: number
+}
+
+type ClubReviewSummary = {
+  totalReviews: number
+  avgRating: number
+  reviewKeywords: ReviewKeyword[]
+  latestComment: string
 }
 
 export type Club = {
@@ -78,15 +87,11 @@ export type Club = {
   latestComment: string
 }
 
-export const toClubDomain = (
-  it: ClubEntity,
-  review?: {
-    totalReviews: number
-    avgRating: number
-    reviewKeywords: ReviewKeyword[]
-    latestComment: string
-  },
-): Club => ({
+export type ClubDetail = Club & {
+  officialVerificationStatus: OfficialVerificationStatus
+}
+
+export const toClubDomain = (it: ClubEntity, review?: ClubReviewSummary): Club => ({
   id: it.uuid,
   uuid: it.uuid,
   name: it.name,
@@ -131,6 +136,32 @@ export const toClubDomain = (
   reviewKeywords: review?.reviewKeywords ?? [],
   latestComment: review?.latestComment ?? '',
 })
+
+export const toClubDetailDomain = (
+  club: ClubEntity,
+  review?: ClubReviewSummary,
+  latestVerificationRequest?: {
+    status: string
+  } | null,
+): ClubDetail => ({
+  ...toClubDomain(club, review),
+  officialVerificationStatus: getOfficialVerificationStatus(club, latestVerificationRequest),
+})
+
+function getOfficialVerificationStatus(
+  club: ClubEntity,
+  latestVerificationRequest?: { status: string } | null,
+): OfficialVerificationStatus {
+  if (club.isOfficialVerified) {
+    return 'VERIFIED'
+  }
+
+  if (latestVerificationRequest?.status === PENDING_CLUB_STATUS) {
+    return 'PENDING'
+  }
+
+  return 'UNVERIFIED'
+}
 
 function encode(imageUri: string | undefined): string {
   if (!imageUri) {
