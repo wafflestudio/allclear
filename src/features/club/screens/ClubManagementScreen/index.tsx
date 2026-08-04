@@ -1,4 +1,11 @@
-import React, { useCallback, useContext, useState } from 'react'
+import { BlurView } from "@react-native-community/blur";
+import {
+	type RouteProp,
+	useFocusEffect,
+	useRoute,
+} from "@react-navigation/native";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useContext, useState } from "react";
 import {
 	ActivityIndicator,
 	Image,
@@ -10,138 +17,153 @@ import {
 	Text,
 	TouchableOpacity,
 	View,
-} from 'react-native'
-import { BlurView } from '@react-native-community/blur'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { RouteProp, useFocusEffect, useRoute } from '@react-navigation/native'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import Icon from 'react-native-vector-icons/MaterialIcons'
-import Toast from 'react-native-toast-message'
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import Icon from "react-native-vector-icons/MaterialIcons";
 
-const clubManagementSnuLogo = require('@/assets/images/club-management-snu-logo.png') as number
+const clubManagementSnuLogo =
+	require("@/assets/images/club-management-snu-logo.png") as number;
 
-import { Colors } from '@/shared/constants/colors'
-import OfficialVerificationRequestButton from '@/features/club/components/OfficialVerificationRequestButton'
-import { getOfficialVerificationRequestErrorContent } from '@/features/club/utils/officialVerificationRequest'
-import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import { getClubAffiliationLabel } from '@/shared/utils/club'
-import { ms, s, vs } from '@/shared/utils/scale'
-import { navigation } from '@/shared/utils/navigation'
-import EditPencilButton from '@/shared/components/EditPencilButton'
+import OfficialVerificationRequestButton from "@/features/club/components/OfficialVerificationRequestButton";
+import { getOfficialVerificationRequestErrorContent } from "@/features/club/utils/officialVerificationRequest";
+import EditPencilButton from "@/shared/components/EditPencilButton";
+import { Colors } from "@/shared/constants/colors";
+import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import { getClubAffiliationLabel } from "@/shared/utils/club";
+import { navigation } from "@/shared/utils/navigation";
+import { ms, s, vs } from "@/shared/utils/scale";
 
-type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_MANAGEMENT>
+type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_MANAGEMENT>;
 
-const VISIBLE_COUNT = 2
+const VISIBLE_COUNT = 2;
 
-type DeleteTarget = { id: number; title: string } | null
+type DeleteTarget = { id: number; title: string } | null;
 
 const ClubManagementScreen = () => {
-	const route = useRoute<RouteProps>()
-	const { clubId } = route.params
+	const route = useRoute<RouteProps>();
+	const { clubId } = route.params;
 
-	const { clubService, recruitmentService } = useContext(serviceContext)
-	const queryClient = useQueryClient()
+	const { clubService, recruitmentService } = useContext(serviceContext);
+	const queryClient = useQueryClient();
 
-	const [showMore, setShowMore] = useState(false)
-	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null)
-	const [deletedTitle, setDeletedTitle] = useState<string | null>(null)
-	const [showEditConfirm, setShowEditConfirm] = useState(false)
-	const [hasRequestedVerification, setHasRequestedVerification] = useState(false)
+	const [showMore, setShowMore] = useState(false);
+	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
+	const [deletedTitle, setDeletedTitle] = useState<string | null>(null);
+	const [showEditConfirm, setShowEditConfirm] = useState(false);
+	const [hasRequestedVerification, setHasRequestedVerification] =
+		useState(false);
 
 	const { data: club } = useQuery({
-		queryKey: ['managedClub', clubId],
+		queryKey: ["managedClub", clubId],
 		queryFn: () => clubService.getManagedClubDetail({ uuid: clubId }),
-	})
-	const { data: publicClub, isLoading: isVerificationStatusLoading } = useQuery({
-		queryKey: ['clubs', clubId],
-		queryFn: () => clubService.getClub({ uuid: clubId }),
-	})
+	});
+	const { data: publicClub, isLoading: isVerificationStatusLoading } = useQuery(
+		{
+			queryKey: ["clubs", clubId],
+			queryFn: () => clubService.getClub({ uuid: clubId }),
+		},
+	);
 
 	const {
 		data: recruitmentsData,
 		isLoading,
 		refetch: refetchRecruitments,
 	} = useQuery({
-		queryKey: ['clubRecruitments', clubId],
+		queryKey: ["clubRecruitments", clubId],
 		queryFn: () => recruitmentService.listClubRecruitments({ clubId }),
-	})
+	});
 
 	const {
 		data: representativeRecruitment,
 		isLoading: isRepresentativeLoading,
 		refetch: refetchRepresentativeRecruitment,
 	} = useQuery({
-		queryKey: ['clubRepresentativeRecruitment', clubId],
+		queryKey: ["clubRepresentativeRecruitment", clubId],
 		queryFn: () => recruitmentService.getRepresentativeRecruitment({ clubId }),
-	})
+	});
 
 	useFocusEffect(
 		useCallback(() => {
-			refetchRecruitments()
-			refetchRepresentativeRecruitment()
+			refetchRecruitments();
+			refetchRepresentativeRecruitment();
 		}, [refetchRecruitments, refetchRepresentativeRecruitment]),
-	)
+	);
 
 	const { mutate: deleteRecruitment, isPending: isDeleting } = useMutation({
-		mutationFn: (recruitmentId: number) => recruitmentService.deleteRecruitment({ recruitmentId }),
+		mutationFn: (recruitmentId: number) =>
+			recruitmentService.deleteRecruitment({ recruitmentId }),
 		onSuccess: () => {
-			const title = deleteTarget?.title ?? ''
-			setDeleteTarget(null)
-			setDeletedTitle(title)
-			queryClient.invalidateQueries({ queryKey: ['clubRecruitments', clubId] })
-			queryClient.invalidateQueries({ queryKey: ['clubRepresentativeRecruitment', clubId] })
+			const title = deleteTarget?.title ?? "";
+			setDeleteTarget(null);
+			setDeletedTitle(title);
+			queryClient.invalidateQueries({ queryKey: ["clubRecruitments", clubId] });
+			queryClient.invalidateQueries({
+				queryKey: ["clubRepresentativeRecruitment", clubId],
+			});
 		},
 		onError: () => {
-			setDeleteTarget(null)
+			setDeleteTarget(null);
 		},
-	})
+	});
 
-	const { mutate: requestOfficialVerification, isPending: isRequestingVerification } = useMutation({
+	const {
+		mutate: requestOfficialVerification,
+		isPending: isRequestingVerification,
+	} = useMutation({
 		mutationFn: () => clubService.requestOfficialVerification({ clubId }),
 		onSuccess: () => {
-			setHasRequestedVerification(true)
-			queryClient.invalidateQueries({ queryKey: ['clubs', clubId] })
+			setHasRequestedVerification(true);
+			queryClient.invalidateQueries({ queryKey: ["clubs", clubId] });
 			Toast.show({
-				type: 'success',
-				text1: '총동연 공식 인증을 신청했어요',
-				text2: '운영진 검토 후 결과를 반영할게요',
-			})
+				type: "success",
+				text1: "총동연 공식 인증을 신청했어요",
+				text2: "운영진 검토 후 결과를 반영할게요",
+			});
 		},
-		onError: error => {
-			const errorContent = getOfficialVerificationRequestErrorContent(error)
-			queryClient.invalidateQueries({ queryKey: ['clubs', clubId] })
+		onError: (error) => {
+			const errorContent = getOfficialVerificationRequestErrorContent(error);
+			queryClient.invalidateQueries({ queryKey: ["clubs", clubId] });
 			Toast.show({
-				type: 'error',
+				type: "error",
 				text1: errorContent.title,
 				text2: errorContent.description,
-			})
+			});
 		},
-	})
+	});
 
-	const recruitments = recruitmentsData?.recruitments ?? []
-	const representativeRecruitmentId = representativeRecruitment?.id ?? null
+	const recruitments = recruitmentsData?.recruitments ?? [];
+	const representativeRecruitmentId = representativeRecruitment?.id ?? null;
 	const currentRecruitment =
-		recruitments.find(r => String(r.id) === String(representativeRecruitmentId)) ??
+		recruitments.find(
+			(r) => String(r.id) === String(representativeRecruitmentId),
+		) ??
 		recruitments[0] ??
-		null
-	const currentRecruitmentId = currentRecruitment?.id ?? null
+		null;
+	const currentRecruitmentId = currentRecruitment?.id ?? null;
 	const previousRecruitments = currentRecruitment
-		? recruitments.filter(r => r.id !== currentRecruitmentId)
-		: recruitments
-	const hasMore = previousRecruitments.length > VISIBLE_COUNT
-	const isRecruitmentsLoading = isLoading || isRepresentativeLoading
-	const clubAffiliation = club ? getClubAffiliationLabel(club) : ''
-	const shortIntro = club?.shortDescription || ''
+		? recruitments.filter((r) => r.id !== currentRecruitmentId)
+		: recruitments;
+	const hasMore = previousRecruitments.length > VISIBLE_COUNT;
+	const isRecruitmentsLoading = isLoading || isRepresentativeLoading;
+	const clubAffiliation = club ? getClubAffiliationLabel(club) : "";
+	const shortIntro = club?.shortDescription || "";
 	const officialVerificationStatus =
-		(hasRequestedVerification ? 'PENDING' : publicClub?.officialVerificationStatus) ??
-		(club?.isOfficialVerified ? 'VERIFIED' : undefined)
+		(hasRequestedVerification
+			? "PENDING"
+			: publicClub?.officialVerificationStatus) ??
+		(club?.isOfficialVerified ? "VERIFIED" : undefined);
 
 	return (
-		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
 			{/* 헤더 */}
 			<View style={styles.header}>
-				<Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={8}>
+				<Pressable
+					style={styles.backBtn}
+					onPress={() => navigation.goBack()}
+					hitSlop={8}
+				>
 					<Icon name="chevron-left" size={ms(24)} color="#757474" />
 				</Pressable>
 				<Text style={styles.headerTitle}>동아리 관리</Text>
@@ -150,25 +172,29 @@ const ClubManagementScreen = () => {
 			<ScrollView
 				style={styles.scroll}
 				contentContainerStyle={styles.scrollContent}
-				showsVerticalScrollIndicator={false}>
+				showsVerticalScrollIndicator={false}
+			>
 				{/* 동아리 카드 */}
 				<View style={styles.clubCard}>
 					{club?.imageUri ? (
 						<Image
 							source={{ uri: club.imageUri }}
 							style={styles.clubCardBg}
-							blurRadius={Platform.OS === 'ios' ? 2 : 1}
+							blurRadius={Platform.OS === "ios" ? 2 : 1}
 						/>
 					) : (
-						<View style={[styles.clubCardBg, { backgroundColor: '#E8E4F0' }]} />
+						<View style={[styles.clubCardBg, { backgroundColor: "#E8E4F0" }]} />
 					)}
 					<View style={styles.clubCardOverlay} />
 					<View style={styles.clubCardContent}>
 						<View style={styles.clubDetails}>
-							<Image source={clubManagementSnuLogo} style={styles.clubLogoImage} />
+							<Image
+								source={clubManagementSnuLogo}
+								style={styles.clubLogoImage}
+							/>
 							<View style={styles.clubTexts}>
 								<Text style={styles.clubName} numberOfLines={1}>
-									{club?.name ?? ''}
+									{club?.name ?? ""}
 								</Text>
 								<Text style={styles.clubCollege} numberOfLines={1}>
 									{clubAffiliation}
@@ -204,15 +230,21 @@ const ClubManagementScreen = () => {
 							style={styles.newAnnouncementRow}
 							activeOpacity={0.6}
 							onPress={() =>
-								navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, { clubId })
-							}>
+								navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, {
+									clubId,
+								})
+							}
+						>
 							<Text style={styles.newAnnouncementText}>새 공고 작성하기</Text>
 							<Icon name="edit" size={ms(16)} color={Colors.POINTCOLOR} />
 						</TouchableOpacity>
 
 						{/* 공고 목록 */}
 						{isRecruitmentsLoading ? (
-							<ActivityIndicator color={Colors.POINTCOLOR} style={{ marginVertical: vs(16) }} />
+							<ActivityIndicator
+								color={Colors.POINTCOLOR}
+								style={{ marginVertical: vs(16) }}
+							/>
 						) : recruitments.length === 0 ? (
 							<View style={[styles.row, styles.rowNormal]}>
 								<Text style={styles.rowTextGray}>등록된 공고가 없어요</Text>
@@ -239,7 +271,8 @@ const ClubManagementScreen = () => {
 													navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_EDIT, {
 														recruitmentId: currentRecruitment.id,
 													})
-												}>
+												}
+											>
 												<Icon name="edit" size={ms(16)} color="#C1C1C1" />
 											</Pressable>
 											<Pressable
@@ -249,7 +282,8 @@ const ClubManagementScreen = () => {
 														id: currentRecruitment.id,
 														title: currentRecruitment.display_title,
 													})
-												}>
+												}
+											>
 												<Icon name="delete" size={ms(16)} color="#C1C1C1" />
 											</Pressable>
 										</View>
@@ -257,7 +291,7 @@ const ClubManagementScreen = () => {
 								)}
 
 								{/* 나머지 공고 목록 */}
-								{previousRecruitments.slice(0, VISIBLE_COUNT).map(item => (
+								{previousRecruitments.slice(0, VISIBLE_COUNT).map((item) => (
 									<View key={item.id} style={[styles.row, styles.rowNormal]}>
 										<View style={styles.rowLeft}>
 											<Text style={styles.rowTextGray} numberOfLines={1}>
@@ -271,12 +305,19 @@ const ClubManagementScreen = () => {
 													navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_EDIT, {
 														recruitmentId: item.id,
 													})
-												}>
+												}
+											>
 												<Icon name="edit" size={ms(16)} color="#C1C1C1" />
 											</Pressable>
 											<Pressable
 												hitSlop={8}
-												onPress={() => setDeleteTarget({ id: item.id, title: item.display_title })}>
+												onPress={() =>
+													setDeleteTarget({
+														id: item.id,
+														title: item.display_title,
+													})
+												}
+											>
 												<Icon name="delete" size={ms(16)} color="#C1C1C1" />
 											</Pressable>
 										</View>
@@ -286,10 +327,11 @@ const ClubManagementScreen = () => {
 								{hasMore && (
 									<Pressable
 										style={[styles.row, styles.rowMore]}
-										onPress={() => setShowMore(prev => !prev)}>
+										onPress={() => setShowMore((prev) => !prev)}
+									>
 										<Text style={styles.rowMoreText}>이전 공고 더보기</Text>
 										<Icon
-											name={showMore ? 'expand-less' : 'expand-more'}
+											name={showMore ? "expand-less" : "expand-more"}
 											size={ms(18)}
 											color={Colors.POINTCOLOR}
 										/>
@@ -297,7 +339,7 @@ const ClubManagementScreen = () => {
 								)}
 
 								{showMore &&
-									previousRecruitments.slice(VISIBLE_COUNT).map(item => (
+									previousRecruitments.slice(VISIBLE_COUNT).map((item) => (
 										<View key={item.id} style={[styles.row, styles.rowMore]}>
 											<View style={styles.rowLeft}>
 												<Text style={styles.rowTextGray} numberOfLines={1}>
@@ -311,14 +353,19 @@ const ClubManagementScreen = () => {
 														navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_EDIT, {
 															recruitmentId: item.id,
 														})
-													}>
+													}
+												>
 													<Icon name="edit" size={ms(16)} color="#C1C1C1" />
 												</Pressable>
 												<Pressable
 													hitSlop={8}
 													onPress={() =>
-														setDeleteTarget({ id: item.id, title: item.display_title })
-													}>
+														setDeleteTarget({
+															id: item.id,
+															title: item.display_title,
+														})
+													}
+												>
 													<Icon name="delete" size={ms(16)} color="#C1C1C1" />
 												</Pressable>
 											</View>
@@ -336,15 +383,26 @@ const ClubManagementScreen = () => {
 					</View>
 					<View style={styles.listContainer}>
 						{!club?.managers || club.managers.length === 0 ? (
-							<View style={[styles.row, styles.rowNormal, { justifyContent: 'center' }]}>
+							<View
+								style={[
+									styles.row,
+									styles.rowNormal,
+									{ justifyContent: "center" },
+								]}
+							>
 								<Text style={styles.rowTextGray}>등록된 운영진이 없어요</Text>
 							</View>
 						) : (
-							club.managers.map(manager => (
-								<View key={manager.serviceUserId} style={[styles.row, styles.rowNormal]}>
+							club.managers.map((manager) => (
+								<View
+									key={manager.serviceUserId}
+									style={[styles.row, styles.rowNormal]}
+								>
 									<Text style={styles.managerName}>{manager.name}</Text>
 									{!!manager.studentId && (
-										<Text style={styles.managerStudentId}>{manager.studentId}</Text>
+										<Text style={styles.managerStudentId}>
+											{manager.studentId}
+										</Text>
 									)}
 								</View>
 							))
@@ -358,8 +416,12 @@ const ClubManagementScreen = () => {
 				visible={showEditConfirm}
 				transparent
 				animationType="fade"
-				onRequestClose={() => setShowEditConfirm(false)}>
-				<Pressable style={styles.modalOverlay} onPress={() => setShowEditConfirm(false)}>
+				onRequestClose={() => setShowEditConfirm(false)}
+			>
+				<Pressable
+					style={styles.modalOverlay}
+					onPress={() => setShowEditConfirm(false)}
+				>
 					<BlurView
 						style={StyleSheet.absoluteFillObject}
 						blurType="light"
@@ -367,27 +429,33 @@ const ClubManagementScreen = () => {
 						overlayColor="transparent"
 						reducedTransparencyFallbackColor="transparent"
 					/>
-					<Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
+					<Pressable
+						style={styles.modalCard}
+						onPress={(e) => e.stopPropagation()}
+					>
 						<View style={styles.modalContents}>
 							<Text style={styles.modalTitle}>동아리 정보를 수정할까요?</Text>
 							<Text style={styles.modalDesc}>
-								동아리 정보는 동아리 관리 → 수정 탭에서{'\n'}언제든 수정 가능해요
+								동아리 정보는 동아리 관리 → 수정 탭에서{"\n"}언제든 수정
+								가능해요
 							</Text>
 						</View>
 						<View style={styles.modalActions}>
 							<TouchableOpacity
 								style={styles.modalCancelBtn}
 								onPress={() => setShowEditConfirm(false)}
-								activeOpacity={0.6}>
+								activeOpacity={0.6}
+							>
 								<Text style={styles.modalCancelText}>취소</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								style={styles.modalConfirmBtn}
 								onPress={() => {
-									setShowEditConfirm(false)
-									navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, { clubId })
+									setShowEditConfirm(false);
+									navigation.navigate(SCREEN_TYPE.CLUB_INFO_EDIT, { clubId });
 								}}
-								activeOpacity={0.6}>
+								activeOpacity={0.6}
+							>
 								<Text style={styles.modalConfirmText}>수정</Text>
 							</TouchableOpacity>
 						</View>
@@ -400,8 +468,12 @@ const ClubManagementScreen = () => {
 				visible={deleteTarget !== null}
 				transparent
 				animationType="fade"
-				onRequestClose={() => !isDeleting && setDeleteTarget(null)}>
-				<Pressable style={styles.modalOverlay} onPress={() => !isDeleting && setDeleteTarget(null)}>
+				onRequestClose={() => !isDeleting && setDeleteTarget(null)}
+			>
+				<Pressable
+					style={styles.modalOverlay}
+					onPress={() => !isDeleting && setDeleteTarget(null)}
+				>
 					<BlurView
 						style={StyleSheet.absoluteFillObject}
 						blurType="light"
@@ -409,11 +481,18 @@ const ClubManagementScreen = () => {
 						overlayColor="transparent"
 						reducedTransparencyFallbackColor="transparent"
 					/>
-					<Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
+					<Pressable
+						style={styles.modalCard}
+						onPress={(e) => e.stopPropagation()}
+					>
 						{/* Contents */}
 						<View style={styles.modalContents}>
-							<Text style={styles.modalTitle}>{deleteTarget?.title ?? ''} 삭제</Text>
-							<Text style={styles.modalDesc}>공고를 삭제하면 되돌릴 수 없어요.</Text>
+							<Text style={styles.modalTitle}>
+								{deleteTarget?.title ?? ""} 삭제
+							</Text>
+							<Text style={styles.modalDesc}>
+								공고를 삭제하면 되돌릴 수 없어요.
+							</Text>
 						</View>
 						{/* Actions */}
 						<View style={styles.modalActions}>
@@ -421,15 +500,21 @@ const ClubManagementScreen = () => {
 								style={styles.modalCancelBtn}
 								onPress={() => setDeleteTarget(null)}
 								disabled={isDeleting}
-								activeOpacity={0.6}>
+								activeOpacity={0.6}
+							>
 								<Text style={styles.modalCancelText}>취소</Text>
 							</TouchableOpacity>
 							<TouchableOpacity
 								style={[styles.modalConfirmBtn, isDeleting && { opacity: 0.6 }]}
-								onPress={() => deleteTarget && deleteRecruitment(deleteTarget.id)}
+								onPress={() =>
+									deleteTarget && deleteRecruitment(deleteTarget.id)
+								}
 								disabled={isDeleting}
-								activeOpacity={0.6}>
-								<Text style={styles.modalConfirmText}>{isDeleting ? '삭제 중...' : '삭제'}</Text>
+								activeOpacity={0.6}
+							>
+								<Text style={styles.modalConfirmText}>
+									{isDeleting ? "삭제 중..." : "삭제"}
+								</Text>
 							</TouchableOpacity>
 						</View>
 					</Pressable>
@@ -441,8 +526,12 @@ const ClubManagementScreen = () => {
 				visible={deletedTitle !== null}
 				transparent
 				animationType="fade"
-				onRequestClose={() => setDeletedTitle(null)}>
-				<Pressable style={styles.modalOverlay} onPress={() => setDeletedTitle(null)}>
+				onRequestClose={() => setDeletedTitle(null)}
+			>
+				<Pressable
+					style={styles.modalOverlay}
+					onPress={() => setDeletedTitle(null)}
+				>
 					<BlurView
 						style={StyleSheet.absoluteFillObject}
 						blurType="light"
@@ -450,62 +539,66 @@ const ClubManagementScreen = () => {
 						overlayColor="transparent"
 						reducedTransparencyFallbackColor="transparent"
 					/>
-					<Pressable style={styles.modalCard} onPress={e => e.stopPropagation()}>
+					<Pressable
+						style={styles.modalCard}
+						onPress={(e) => e.stopPropagation()}
+					>
 						<View style={styles.modalContents}>
 							<Text style={styles.modalTitle}>
 								{deletedTitle}
-								<Text style={styles.modalTitleBlack}>{'가 삭제되었어요.'}</Text>
+								<Text style={styles.modalTitleBlack}>{"가 삭제되었어요."}</Text>
 							</Text>
 						</View>
 						<TouchableOpacity
 							style={styles.modalSingleBtn}
 							activeOpacity={0.6}
-							onPress={() => setDeletedTitle(null)}>
+							onPress={() => setDeletedTitle(null)}
+						>
 							<Text style={styles.modalConfirmText}>확인</Text>
 						</TouchableOpacity>
 					</Pressable>
 				</Pressable>
 			</Modal>
 		</SafeAreaView>
-	)
-}
+	);
+};
 
-export default ClubManagementScreen
+export default ClubManagementScreen;
 
 const styles = StyleSheet.create({
 	safeArea: {
 		flex: 1,
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 	},
 
 	// ── 헤더
 	header: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		paddingHorizontal: s(20),
 		gap: s(105),
 		height: vs(39),
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 	},
 	backBtn: {
 		width: ms(24),
 		height: ms(24),
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	headerTitle: {
-		fontFamily: 'Pretendard',
-		fontWeight: '600',
+		fontFamily: "Pretendard",
+		fontWeight: "600",
 		fontSize: ms(16),
 		lineHeight: ms(19),
 		letterSpacing: -0.02 * 16,
-		color: '#757474',
+		color: "#757474",
 	},
 
 	// ── 스크롤 영역
 	scroll: {
 		flex: 1,
-		backgroundColor: '#F5F4F0',
+		backgroundColor: "#F5F4F0",
 	},
 	scrollContent: {
 		paddingHorizontal: s(20),
@@ -517,68 +610,68 @@ const styles = StyleSheet.create({
 	// ── 동아리 카드
 	clubCard: {
 		borderRadius: ms(12),
-		overflow: 'hidden',
+		overflow: "hidden",
 		height: vs(186),
 	},
 	clubCardBg: {
-		position: 'absolute',
-		width: '100%',
-		height: '100%',
-		resizeMode: 'cover',
+		position: "absolute",
+		width: "100%",
+		height: "100%",
+		resizeMode: "cover",
 	},
 	clubCardOverlay: {
-		position: 'absolute',
-		width: '100%',
-		height: '100%',
-		backgroundColor: 'rgba(255,255,255,0.6)',
+		position: "absolute",
+		width: "100%",
+		height: "100%",
+		backgroundColor: "rgba(255,255,255,0.6)",
 	},
 	clubCardContent: {
 		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'flex-start',
-		justifyContent: 'space-between',
+		flexDirection: "row",
+		alignItems: "flex-start",
+		justifyContent: "space-between",
 		paddingHorizontal: s(20),
 		paddingVertical: vs(30),
 	},
 	clubDetails: {
 		width: s(152),
 		gap: vs(12),
-		alignItems: 'flex-start',
+		alignItems: "flex-start",
 	},
 	clubLogoImage: {
 		width: ms(40),
 		height: ms(40),
 		borderRadius: ms(20),
 		opacity: 1,
-		resizeMode: 'contain',
+		resizeMode: "contain",
 	},
 	clubTexts: {
-		alignSelf: 'stretch',
+		alignSelf: "stretch",
 		gap: vs(8),
 	},
 	clubName: {
-		fontFamily: 'Pretendard',
-		fontWeight: '700',
+		fontFamily: "Pretendard",
+		fontWeight: "700",
 		fontSize: ms(20),
 		lineHeight: ms(24),
 		letterSpacing: -0.02 * 20,
-		color: '#000000',
+		color: "#000000",
 	},
 	clubCollege: {
-		fontFamily: 'Pretendard',
-		fontWeight: '500',
+		fontFamily: "Pretendard",
+		fontWeight: "500",
 		fontSize: ms(14),
 		lineHeight: ms(17),
 		letterSpacing: -0.02 * 14,
-		color: '#757474',
+		color: "#757474",
 	},
 	clubDesc: {
-		fontFamily: 'Pretendard',
-		fontWeight: '500',
+		fontFamily: "Pretendard",
+		fontWeight: "500",
 		fontSize: ms(14),
 		lineHeight: ms(17),
 		letterSpacing: -0.02 * 14,
-		color: '#757474',
+		color: "#757474",
 	},
 
 	// ── 섹션
@@ -586,8 +679,8 @@ const styles = StyleSheet.create({
 		gap: 0,
 	},
 	sectionLabel: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		paddingTop: vs(5),
 		paddingBottom: vs(5),
 		paddingLeft: s(5),
@@ -595,11 +688,11 @@ const styles = StyleSheet.create({
 		height: vs(34),
 	},
 	sectionLabelText: {
-		fontFamily: 'Pretendard',
-		fontWeight: '500',
+		fontFamily: "Pretendard",
+		fontWeight: "500",
 		fontSize: ms(14),
 		lineHeight: ms(24),
-		color: '#757474',
+		color: "#757474",
 		flex: 1,
 	},
 
@@ -610,20 +703,20 @@ const styles = StyleSheet.create({
 
 	// ── 새 공고 작성하기
 	newAnnouncementRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		paddingVertical: vs(10),
 		paddingHorizontal: s(15),
 		borderRadius: ms(12),
 		minHeight: vs(34),
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 		borderWidth: 1,
 		borderColor: Colors.POINTCOLOR,
 	},
 	newAnnouncementText: {
-		fontFamily: 'Pretendard',
-		fontWeight: '500',
+		fontFamily: "Pretendard",
+		fontWeight: "500",
 		fontSize: ms(12),
 		lineHeight: ms(14),
 		letterSpacing: -0.02 * 12,
@@ -632,42 +725,42 @@ const styles = StyleSheet.create({
 
 	// ── 공고 행 공통
 	row: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
 		paddingVertical: vs(10),
 		paddingHorizontal: s(15),
 		borderRadius: ms(12),
 		minHeight: vs(34),
 	},
 	rowNormal: {
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 	},
 	rowActive: {
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 		minHeight: vs(48),
 		paddingLeft: s(10),
 	},
 	rowMore: {
-		backgroundColor: '#F3F0F5',
+		backgroundColor: "#F3F0F5",
 	},
 	rowLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		gap: s(10),
 		flex: 1,
 	},
 	rowIcons: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		gap: s(12),
 		flexShrink: 0,
 	},
 
 	// ── 이전 공고 더보기
 	rowMoreText: {
-		fontFamily: 'Pretendard',
-		fontWeight: '500',
+		fontFamily: "Pretendard",
+		fontWeight: "500",
 		fontSize: ms(12),
 		lineHeight: ms(14),
 		letterSpacing: -0.02 * 12,
@@ -676,9 +769,9 @@ const styles = StyleSheet.create({
 
 	// ── 현재 공고 배지
 	badge: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "center",
+		alignItems: "center",
 		paddingHorizontal: s(10),
 		paddingVertical: vs(8),
 		backgroundColor: Colors.POINTCOLOR,
@@ -688,79 +781,79 @@ const styles = StyleSheet.create({
 		flexShrink: 0,
 	},
 	badgeText: {
-		fontFamily: 'Pretendard',
-		fontWeight: '600',
+		fontFamily: "Pretendard",
+		fontWeight: "600",
 		fontSize: ms(10),
 		lineHeight: ms(12),
 		letterSpacing: 0,
-		color: '#FFFFFF',
+		color: "#FFFFFF",
 	},
 
 	// ── 공고 제목 텍스트
 	rowTextGray: {
-		fontFamily: 'Pretendard',
-		fontWeight: '500',
+		fontFamily: "Pretendard",
+		fontWeight: "500",
 		fontSize: ms(12),
 		lineHeight: ms(14),
 		letterSpacing: -0.02 * 12,
-		color: '#757474',
+		color: "#757474",
 		flex: 1,
 	},
 	managerName: {
-		fontFamily: 'Pretendard',
-		fontWeight: '600',
+		fontFamily: "Pretendard",
+		fontWeight: "600",
 		fontSize: ms(13),
-		color: '#333',
+		color: "#333",
 		flex: 1,
 	},
 	managerStudentId: {
-		fontFamily: 'Pretendard',
-		fontWeight: '400',
+		fontFamily: "Pretendard",
+		fontWeight: "400",
 		fontSize: ms(12),
-		color: '#757474',
+		color: "#757474",
 	},
 
 	// ── 삭제 확인 모달
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0, 0, 0, 0.2)',
-		justifyContent: 'center',
-		alignItems: 'center',
+		backgroundColor: "rgba(0, 0, 0, 0.2)",
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	modalCard: {
 		width: ms(320),
-		backgroundColor: '#FFFFFF',
+		backgroundColor: "#FFFFFF",
 		borderRadius: ms(12),
 		padding: ms(24),
 		gap: ms(24),
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	modalContents: {
-		alignSelf: 'stretch',
-		alignItems: 'center',
+		alignSelf: "stretch",
+		alignItems: "center",
 		gap: ms(8),
 	},
 	modalTitle: {
-		fontFamily: 'Apple SD Gothic Neo',
-		fontWeight: '700',
+		fontFamily: "Apple SD Gothic Neo",
+		fontWeight: "700",
 		fontSize: ms(16),
 		lineHeight: ms(24),
 		color: Colors.POINTCOLOR,
-		textAlign: 'center',
-		alignSelf: 'stretch',
+		textAlign: "center",
+		alignSelf: "stretch",
 	},
 	modalDesc: {
-		fontFamily: 'Apple SD Gothic Neo',
-		fontWeight: '500',
+		fontFamily: "Apple SD Gothic Neo",
+		fontWeight: "500",
 		fontSize: ms(14),
 		lineHeight: ms(24),
-		color: '#000000',
-		textAlign: 'center',
-		alignSelf: 'stretch',
+		color: "#000000",
+		textAlign: "center",
+		alignSelf: "stretch",
 	},
 	modalActions: {
-		flexDirection: 'row',
-		alignSelf: 'stretch',
+		flexDirection: "row",
+		alignSelf: "stretch",
 		gap: ms(7),
 	},
 	modalCancelBtn: {
@@ -769,12 +862,12 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: Colors.POINTCOLOR,
 		borderRadius: ms(8),
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	modalCancelText: {
-		fontFamily: 'Apple SD Gothic Neo',
-		fontWeight: '700',
+		fontFamily: "Apple SD Gothic Neo",
+		fontWeight: "700",
 		fontSize: ms(16),
 		lineHeight: ms(20),
 		color: Colors.POINTCOLOR,
@@ -784,25 +877,25 @@ const styles = StyleSheet.create({
 		height: ms(44),
 		backgroundColor: Colors.POINTCOLOR,
 		borderRadius: ms(8),
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	modalTitleBlack: {
-		color: '#000000',
+		color: "#000000",
 	},
 	modalConfirmText: {
-		fontFamily: 'Apple SD Gothic Neo',
-		fontWeight: '600',
+		fontFamily: "Apple SD Gothic Neo",
+		fontWeight: "600",
 		fontSize: ms(16),
 		lineHeight: ms(20),
-		color: '#FFFFFF',
+		color: "#FFFFFF",
 	},
 	modalSingleBtn: {
-		alignSelf: 'stretch',
+		alignSelf: "stretch",
 		height: ms(44),
 		backgroundColor: Colors.POINTCOLOR,
 		borderRadius: ms(8),
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
-})
+});

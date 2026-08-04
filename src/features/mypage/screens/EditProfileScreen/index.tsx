@@ -1,12 +1,5 @@
-import { useQuery } from '@tanstack/react-query'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { useProfile } from '@/shared/contexts/profileContext'
-import { serviceContext } from '@/shared/contexts/serviceContext'
-import { ms, s, vs } from '@/shared/utils/scale'
-import { navigation } from '@/shared/utils/navigation'
-import Header from '@/shared/components/BackHeader'
-import React, { useContext, useState } from 'react'
+import { useQuery } from "@tanstack/react-query";
+import { useContext, useState } from "react";
 import {
 	ActivityIndicator,
 	Keyboard,
@@ -15,84 +8,101 @@ import {
 	Text,
 	TextInput,
 	View,
-} from 'react-native'
-import DropDownPicker from 'react-native-dropdown-picker'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import Toast from 'react-native-toast-message'
-import Icon from 'react-native-vector-icons/MaterialIcons'
-import CommunityIcon from 'react-native-vector-icons/MaterialCommunityIcons'
+} from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import CommunityIcon from "react-native-vector-icons/MaterialCommunityIcons";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import Header from "@/shared/components/BackHeader";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { useProfile } from "@/shared/contexts/profileContext";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import { navigation } from "@/shared/utils/navigation";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 const EditProfileScreen = () => {
-	const { user, setUser } = useProfile()
-	const { data: collegeMajors } = useCollegeMajors()
-	const { userService } = useContext(serviceContext)
+	const { user, setUser } = useProfile();
+	const { data: collegeMajors } = useCollegeMajors();
+	const { userService } = useContext(serviceContext);
 
-	const [name, setName] = useState(user?.nickname || '')
-	const [college, setCollege] = useState(user?.college || '')
-	const [major, setMajor] = useState(user?.major || '')
-	const [admissionClass, setAdmissionClass] = useState(user?.admissionClass ?? 26)
+	const [name, setName] = useState(user?.nickname || "");
+	const [college, setCollege] = useState(user?.college || "");
+	const [major, setMajor] = useState(user?.major || "");
+	const [admissionClass, setAdmissionClass] = useState(
+		user?.admissionClass ?? 26,
+	);
 
-	const [openCollegeDropDown, setOpenCollegeDropDown] = useState(false)
-	const [openMajorDropDown, setOpenMajorDropDown] = useState(false)
-	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [openCollegeDropDown, setOpenCollegeDropDown] = useState(false);
+	const [openMajorDropDown, setOpenMajorDropDown] = useState(false);
+	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const isFormValid = !!name && !!college && !!major
+	const isFormValid = !!name && !!college && !!major;
 	const hasChanges =
-		name !== (user?.nickname || '') ||
-		college !== (user?.college || '') ||
-		major !== (user?.major || '') ||
-		admissionClass !== (user?.admissionClass ?? 26)
-	const canSubmit = isFormValid && hasChanges
+		name !== (user?.nickname || "") ||
+		college !== (user?.college || "") ||
+		major !== (user?.major || "") ||
+		admissionClass !== (user?.admissionClass ?? 26);
+	const canSubmit = isFormValid && hasChanges;
 
 	const colleges = collegeMajors?.reduce((acc, cur) => {
 		if (cur.college && !acc.includes(cur.college)) {
-			acc.push(cur.college)
+			acc.push(cur.college);
 		}
-		return acc
-	}, [] as string[])
+		return acc;
+	}, [] as string[]);
 
 	const majors = collegeMajors?.reduce((acc, cur) => {
 		if (cur.major && !acc.includes(cur.major) && cur.college === college) {
-			acc.push(cur.major)
+			acc.push(cur.major);
 		}
-		return acc
-	}, [] as string[])
+		return acc;
+	}, [] as string[]);
 
 	const handleSubmit = async () => {
 		try {
-			setIsSubmitting(true)
+			setIsSubmitting(true);
 
 			const collegeMajorId = collegeMajors?.find(
-				cm => cm.college === college && cm.major === major,
-			)?.id
+				(cm) => cm.college === college && cm.major === major,
+			)?.id;
 
 			if (!collegeMajorId) {
-				Toast.show({ type: 'info', text1: '단과대 및 학과를 다시 선택해주세요' })
-				return
+				Toast.show({
+					type: "info",
+					text1: "단과대 및 학과를 다시 선택해주세요",
+				});
+				return;
 			}
 
-			Keyboard.dismiss()
-			await userService.updateUser({ nickname: name, collegeMajorId, major, admissionClass })
+			Keyboard.dismiss();
+			await userService.updateUser({
+				nickname: name,
+				collegeMajorId,
+				major,
+				admissionClass,
+			});
 
-			const updatedUser = await userService.getUser()
-			setUser(updatedUser)
-			navigation.goBack()
+			const updatedUser = await userService.getUser();
+			setUser(updatedUser);
+			navigation.goBack();
 
-			Toast.show({ type: 'info', text1: '프로필이 수정되었어요!' })
+			Toast.show({ type: "info", text1: "프로필이 수정되었어요!" });
 		} catch {
-			Toast.show({ type: 'info', text1: '이런! 문제가 생겼어요!' })
+			Toast.show({ type: "info", text1: "이런! 문제가 생겼어요!" });
 		} finally {
-			setIsSubmitting(false)
+			setIsSubmitting(false);
 		}
-	}
+	};
 
 	const closeDropdowns = () => {
-		setOpenCollegeDropDown(false)
-		setOpenMajorDropDown(false)
-	}
+		setOpenCollegeDropDown(false);
+		setOpenMajorDropDown(false);
+	};
 
 	return (
-		<SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
 			<Header title="프로필 수정" onBack={() => navigation.goBack()} />
 
 			<Pressable style={styles.formArea} onPress={closeDropdowns}>
@@ -113,16 +123,16 @@ const EditProfileScreen = () => {
 					<Text style={styles.label}>단과대 및 학과</Text>
 					<DropDownPicker
 						open={openCollegeDropDown}
-						setOpen={val => {
-							setOpenCollegeDropDown(val)
-							setOpenMajorDropDown(false)
+						setOpen={(val) => {
+							setOpenCollegeDropDown(val);
+							setOpenMajorDropDown(false);
 						}}
 						value={college}
 						setValue={setCollege}
-						onSelectItem={item => {
-							if (item.value !== college) setMajor('')
+						onSelectItem={(item) => {
+							if (item.value !== college) setMajor("");
 						}}
-						items={colleges?.map(c => ({ label: c, value: c })) ?? []}
+						items={colleges?.map((c) => ({ label: c, value: c })) ?? []}
 						placeholder="단과대를 선택해주세요"
 						style={styles.picker}
 						dropDownContainerStyle={styles.pickerDropdown}
@@ -137,13 +147,13 @@ const EditProfileScreen = () => {
 						disabled={!college}
 						disabledStyle={styles.pickerDisabled}
 						open={openMajorDropDown}
-						setOpen={val => {
-							setOpenCollegeDropDown(false)
-							setOpenMajorDropDown(val)
+						setOpen={(val) => {
+							setOpenCollegeDropDown(false);
+							setOpenMajorDropDown(val);
 						}}
 						value={major}
 						setValue={setMajor}
-						items={majors?.map(c => ({ label: c, value: c })) ?? []}
+						items={majors?.map((c) => ({ label: c, value: c })) ?? []}
 						placeholder="학과를 선택해주세요"
 						style={[styles.picker, { zIndex: -1 }]}
 						dropDownContainerStyle={styles.pickerDropdown}
@@ -159,16 +169,35 @@ const EditProfileScreen = () => {
 					<Text style={styles.label}>학번</Text>
 					<View style={styles.stepperRow}>
 						<Pressable
-							style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressed]}
-							onPress={() => setAdmissionClass(Math.max(admissionClass - 1, 0))}>
-							<CommunityIcon name="minus" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
+							style={({ pressed }) => [
+								styles.stepperBtn,
+								pressed && styles.pressed,
+							]}
+							onPress={() => setAdmissionClass(Math.max(admissionClass - 1, 0))}
+						>
+							<CommunityIcon
+								name="minus"
+								size={ms(24)}
+								color={Colors.BODYTEXT_DISABLED}
+							/>
 						</Pressable>
 						<Text
-							style={styles.stepperValue}>{`${String(admissionClass).padStart(2, '0')}학번`}</Text>
+							style={styles.stepperValue}
+						>{`${String(admissionClass).padStart(2, "0")}학번`}</Text>
 						<Pressable
-							style={({ pressed }) => [styles.stepperBtn, pressed && styles.pressed]}
-							onPress={() => setAdmissionClass(Math.min(admissionClass + 1, 30))}>
-							<CommunityIcon name="plus" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
+							style={({ pressed }) => [
+								styles.stepperBtn,
+								pressed && styles.pressed,
+							]}
+							onPress={() =>
+								setAdmissionClass(Math.min(admissionClass + 1, 30))
+							}
+						>
+							<CommunityIcon
+								name="plus"
+								size={ms(24)}
+								color={Colors.BODYTEXT_DISABLED}
+							/>
 						</Pressable>
 					</View>
 				</View>
@@ -182,7 +211,8 @@ const EditProfileScreen = () => {
 						styles.submitButton,
 						(!canSubmit || isSubmitting) && styles.submitButtonDisabled,
 						pressed && canSubmit && styles.pressed,
-					]}>
+					]}
+				>
 					{isSubmitting ? (
 						<ActivityIndicator color={Colors.WHITE} />
 					) : (
@@ -191,25 +221,37 @@ const EditProfileScreen = () => {
 				</Pressable>
 			</View>
 		</SafeAreaView>
-	)
-}
+	);
+};
 
-export default EditProfileScreen
+export default EditProfileScreen;
 
 const useCollegeMajors = () => {
-	const { userService } = useContext(serviceContext)
-	return useQuery(['collegeMajors'], () => userService.listCollegeMajors(), {
+	const { userService } = useContext(serviceContext);
+	return useQuery(["collegeMajors"], () => userService.listCollegeMajors(), {
 		keepPreviousData: true,
-		select: data => data.majors,
-	})
-}
+		select: (data) => data.majors,
+	});
+};
 
 function renderArrowDownIcon() {
-	return <Icon name="keyboard-arrow-down" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
+	return (
+		<Icon
+			name="keyboard-arrow-down"
+			size={ms(24)}
+			color={Colors.BODYTEXT_DISABLED}
+		/>
+	);
 }
 
 function renderArrowUpIcon() {
-	return <Icon name="keyboard-arrow-up" size={ms(24)} color={Colors.BODYTEXT_DISABLED} />
+	return (
+		<Icon
+			name="keyboard-arrow-up"
+			size={ms(24)}
+			color={Colors.BODYTEXT_DISABLED}
+		/>
+	);
 }
 
 const styles = StyleSheet.create({
@@ -266,9 +308,9 @@ const styles = StyleSheet.create({
 		height: vs(8),
 	},
 	stepperRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
 	},
 	stepperValue: {
 		...typography.bodyMSemibold,
@@ -288,7 +330,7 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BUTTON_SELECTED,
 		borderRadius: ms(12),
 		paddingVertical: vs(16),
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	submitButtonDisabled: {
 		opacity: 0.4,
@@ -297,4 +339,4 @@ const styles = StyleSheet.create({
 		...typography.bodyMSemibold,
 		color: Colors.WHITE,
 	},
-})
+});

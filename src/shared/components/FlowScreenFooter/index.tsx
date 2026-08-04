@@ -1,15 +1,15 @@
-import React, { ReactNode } from 'react'
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { Colors } from '@/shared/constants/colors'
+import type { ReactNode } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Colors } from "@/shared/constants/colors";
 
 type Props = {
-	backLabel: string
-	nextLabel?: string
-	onBack: () => void
-	onNext?: () => void
-	nextDisabled?: boolean
-	rightSlot?: ReactNode
-}
+	backLabel: string;
+	nextLabel?: string;
+	onBack: () => void;
+	onNext?: () => void;
+	nextDisabled?: boolean;
+	rightSlot?: ReactNode;
+};
 
 const FlowScreenFooter = ({
 	backLabel,
@@ -27,10 +27,19 @@ const FlowScreenFooter = ({
 			{rightSlot ??
 				(nextLabel && onNext ? (
 					<TouchableOpacity
-						style={[styles.nextButton, nextDisabled && styles.nextButtonDisabled]}
+						style={[
+							styles.nextButton,
+							nextDisabled && styles.nextButtonDisabled,
+						]}
 						onPress={onNext}
-						disabled={nextDisabled}>
-						<Text style={[styles.nextButtonText, nextDisabled && styles.nextButtonTextDisabled]}>
+						disabled={nextDisabled}
+					>
+						<Text
+							style={[
+								styles.nextButtonText,
+								nextDisabled && styles.nextButtonTextDisabled,
+							]}
+						>
 							{nextLabel}
 						</Text>
 					</TouchableOpacity>
@@ -38,21 +47,21 @@ const FlowScreenFooter = ({
 					<View style={styles.nextButtonSpacer} />
 				))}
 		</View>
-	)
-}
+	);
+};
 
-export default FlowScreenFooter
+export default FlowScreenFooter;
 
 const styles = StyleSheet.create({
 	footer: {
 		height: 93,
-		backgroundColor: '#EAEAEA',
+		backgroundColor: "#EAEAEA",
 		paddingHorizontal: 20,
 		paddingTop: 16,
 		paddingBottom: 39,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
 	},
 	backButton: {
 		paddingVertical: 10,
@@ -60,23 +69,23 @@ const styles = StyleSheet.create({
 	},
 	backButtonText: {
 		fontSize: 14,
-		fontWeight: '400',
-		color: '#757474',
+		fontWeight: "400",
+		color: "#757474",
 	},
 	nextButton: {
 		width: 128,
 		height: 44,
 		borderRadius: 8,
 		backgroundColor: Colors.BUTTON_SELECTED,
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	nextButtonDisabled: {
 		backgroundColor: Colors.TEXTBOX_UNSELECTED,
 	},
 	nextButtonText: {
 		fontSize: 16,
-		fontWeight: '600',
+		fontWeight: "600",
 		color: Colors.WHITE,
 	},
 	nextButtonTextDisabled: {
@@ -86,4 +95,4 @@ const styles = StyleSheet.create({
 		width: 128,
 		height: 44,
 	},
-})
+});

@@ -13,8 +13,11 @@ yarn android:debug                  # Android debug (local env)
 yarn android:release                # Android release (prod env)
 
 # Quality
-yarn lint                           # ESLint
-yarn tsc --noEmit                   # Type check (also runs on pre-push)
+yarn lint                           # Biome lint
+yarn typecheck                      # TypeScript check (also runs on pre-push)
+yarn test --runInBand               # Jest test suite
+yarn verify                         # Biome + typecheck + tests
+yarn verify:full                    # verify + Android and iOS bundle checks
 
 # Build
 yarn build:android:debug            # Android APK (debug)
@@ -61,17 +64,18 @@ Path alias: `@/` → `src/`
 
 ## Code Style
 
-- **Formatter**: Prettier — single quotes, no semicolons, trailing commas, tabs (width 2), printWidth 100, LF
-- **Linter**: ESLint with TypeScript, React, React Hooks, React Native plugins
-- Pre-commit hook runs `lint-staged` (prettier + eslint --fix on TS/TSX files automatically)
-- Pre-push hook runs `yarn tsc --noEmit` — fix type errors before pushing
+- **Formatter and linter**: Biome defaults with recommended lint, React, and test rules
+- Run `yarn fix` followed by `yarn verify` before committing
+- `yarn fix` applies safe Biome formatting and lint fixes; `yarn verify` is read-only
+- Pre-commit hook runs `lint-staged` (`biome check --write` on supported staged files)
+- Pre-push hook runs `yarn verify` — fix formatting, lint, type, or test failures before pushing
 
 ## TypeScript
 
 - Strict mode enabled
 - `@/` path alias available everywhere
 - Avoid `any`; use `unknown` and narrow types properly
-- `@typescript-eslint/no-unused-vars` warns on unused vars (prefix with `_` to suppress)
+- Biome warns on unused variables and parameters (prefix intentionally unused parameters with `_`)
 
 ## Environment
 
@@ -107,7 +111,8 @@ Path alias: `@/` → `src/`
 
 ## After Editing
 
-- Run `yarn tsc --noEmit` and `yarn lint`; fix all errors.
+- Run `yarn fix`, then `yarn verify`, and resolve any remaining errors before handing work back.
+- Run `yarn verify:full` when changes affect dependencies, build configuration, bundling, native integration, or release behavior.
 - Remove `console.log`, unused imports, and dead code.
 
 ## Do Not

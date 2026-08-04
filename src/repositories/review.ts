@@ -1,54 +1,56 @@
-import { Club } from '@/entities/club'
-import { ReviewKeyword, ReviewKeywordCategory } from '@/entities/review'
-import { apiConnector } from '@/shared/utils/api'
+import type { Club } from "@/entities/club";
+import type { ReviewKeyword, ReviewKeywordCategory } from "@/entities/review";
+import { apiConnector } from "@/shared/utils/api";
 
 export type CreateClubReviewsRequest = {
-	uuid: Club['uuid']
-	rating?: number // unused
-	reviewKeywordIds: ReviewKeyword['id'][]
-}
+	uuid: Club["uuid"];
+	rating?: number; // unused
+	reviewKeywordIds: ReviewKeyword["id"][];
+};
 
 export type ListReviewKeywordsResponse = {
-	categories: ReviewKeywordCategory[]
-	totalSize: number
-}
+	categories: ReviewKeywordCategory[];
+	totalSize: number;
+};
 
 export type GetMyClubReviewRequest = {
-	uuid: Club['uuid']
-}
+	uuid: Club["uuid"];
+};
 
 export type GetMyClubReviewResponse = {
-	rating: number
-	reviewKeywordIds: ReviewKeyword['id'][]
-	createdAt: string
-	updatedAt: string
-} | null
+	rating: number;
+	reviewKeywordIds: ReviewKeyword["id"][];
+	createdAt: string;
+	updatedAt: string;
+} | null;
 
 export type ReviewRepository = {
-	createClubReviews: (req: CreateClubReviewsRequest) => Promise<void>
-	listReviewKeywords: () => Promise<ListReviewKeywordsResponse>
-	getMyClubReview: (req: GetMyClubReviewRequest) => Promise<GetMyClubReviewResponse>
-}
+	createClubReviews: (req: CreateClubReviewsRequest) => Promise<void>;
+	listReviewKeywords: () => Promise<ListReviewKeywordsResponse>;
+	getMyClubReview: (
+		req: GetMyClubReviewRequest,
+	) => Promise<GetMyClubReviewResponse>;
+};
 
 export const getReviewRepository = (): ReviewRepository => ({
-	createClubReviews: async req => {
+	createClubReviews: async (req) => {
 		await apiConnector.post(`/v2/clubs/${req.uuid}/reviews`, {
 			rating: req.rating,
 			reviewKeywordIds: req.reviewKeywordIds,
-		})
+		});
 	},
 	listReviewKeywords: async () => {
 		const response = await apiConnector.get<ListReviewKeywordsResponse>(
-			'/v2/clubs/reviews/keywords',
-		)
+			"/v2/clubs/reviews/keywords",
+		);
 
-		return response
+		return response;
 	},
-	getMyClubReview: async req => {
+	getMyClubReview: async (req) => {
 		const response = await apiConnector.get<GetMyClubReviewResponse>(
 			`/v2/clubs/${req.uuid}/reviews/me`,
-		)
+		);
 
-		return response
+		return response;
 	},
-})
+});

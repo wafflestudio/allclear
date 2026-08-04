@@ -1,16 +1,15 @@
-import React from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	title: string
-	onBack: () => void
-	showBackButton?: boolean
-}
+	title: string;
+	onBack: () => void;
+	showBackButton?: boolean;
+};
 
 const Header = ({ title, onBack, showBackButton = true }: Props) => {
 	return (
@@ -27,40 +26,40 @@ const Header = ({ title, onBack, showBackButton = true }: Props) => {
 				</Text>
 			</View>
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
-		position: 'relative',
-		flexDirection: 'row',
-		alignItems: 'center',
-		width: '100%',
+		position: "relative",
+		flexDirection: "row",
+		alignItems: "center",
+		width: "100%",
 		height: vs(56),
 		paddingHorizontal: s(16),
 	},
 	backButton: {
-		position: 'absolute',
+		position: "absolute",
 		left: s(16),
 		top: 0,
 		bottom: 0,
-		justifyContent: 'center',
+		justifyContent: "center",
 		width: ms(32),
 		zIndex: 1,
 	},
 	titleWrapper: {
-		position: 'absolute',
+		position: "absolute",
 		left: 0,
 		right: 0,
 		top: 0,
 		bottom: 0,
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 	},
 	title: {
 		...typography.headerL,
 		color: Colors.BODYTEXT_SUB,
 	},
-})
+});
 
-export default Header
+export default Header;

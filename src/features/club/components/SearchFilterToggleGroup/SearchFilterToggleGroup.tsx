@@ -1,22 +1,22 @@
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native'
-import { SearchFilterToggleGroupItem } from './SearchFilterToggleGroupItem'
+import { type StyleProp, StyleSheet, View, type ViewStyle } from "react-native";
+import { SearchFilterToggleGroupItem } from "./SearchFilterToggleGroupItem";
 import type {
 	SearchFilterToggleGroupAllItem,
 	SearchFilterToggleGroupOption,
 	SearchFilterToggleGroupSelection,
 	SearchFilterToggleGroupSelectionMode,
-} from './types'
-import { useSearchFilterToggleGroup } from './useSearchFilterToggleGroup'
+} from "./types";
+import { useSearchFilterToggleGroup } from "./useSearchFilterToggleGroup";
 
 export type SearchFilterToggleGroupProps = {
-	options: SearchFilterToggleGroupOption[]
-	allItem?: SearchFilterToggleGroupAllItem
-	selectionMode?: SearchFilterToggleGroupSelectionMode
-	value: SearchFilterToggleGroupSelection
-	onChange: (value: SearchFilterToggleGroupSelection) => void
-	style?: StyleProp<ViewStyle>
-	itemStyle?: StyleProp<ViewStyle>
-}
+	options: SearchFilterToggleGroupOption[];
+	allItem?: SearchFilterToggleGroupAllItem;
+	selectionMode?: SearchFilterToggleGroupSelectionMode;
+	value: SearchFilterToggleGroupSelection;
+	onChange: (value: SearchFilterToggleGroupSelection) => void;
+	style?: StyleProp<ViewStyle>;
+	itemStyle?: StyleProp<ViewStyle>;
+};
 
 export const SearchFilterToggleGroup = ({
 	options,
@@ -27,11 +27,12 @@ export const SearchFilterToggleGroup = ({
 	style,
 	itemStyle,
 }: SearchFilterToggleGroupProps) => {
-	const { isAllSelected, isSelected, selectAll, toggle } = useSearchFilterToggleGroup({
-		selectionMode,
-		value,
-		onChange,
-	})
+	const { isAllSelected, isSelected, selectAll, toggle } =
+		useSearchFilterToggleGroup({
+			selectionMode,
+			value,
+			onChange,
+		});
 
 	return (
 		<View style={[styles.container, style]}>
@@ -44,7 +45,7 @@ export const SearchFilterToggleGroup = ({
 					style={itemStyle}
 				/>
 			) : null}
-			{options.map(option => (
+			{options.map((option) => (
 				<SearchFilterToggleGroupItem
 					key={option.value}
 					label={option.label}
@@ -54,13 +55,13 @@ export const SearchFilterToggleGroup = ({
 				/>
 			))}
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
+		flexDirection: "row",
+		flexWrap: "wrap",
 		gap: 8,
 	},
-})
+});

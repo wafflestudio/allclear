@@ -1,18 +1,24 @@
-import React, { ReactNode } from 'react'
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native'
+import type { ReactNode } from "react";
+import {
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	StyleSheet,
+	View,
+} from "react-native";
 
 type Props = {
-	children: ReactNode
-	footer?: ReactNode
-	backgroundColor?: string
-	contentTopPadding?: number
-	contentBottomPadding?: number
-}
+	children: ReactNode;
+	footer?: ReactNode;
+	backgroundColor?: string;
+	contentTopPadding?: number;
+	contentBottomPadding?: number;
+};
 
 const FlowScreenLayout = ({
 	children,
 	footer,
-	backgroundColor = '#FFFFFF',
+	backgroundColor = "#FFFFFF",
 	contentTopPadding = 70,
 	contentBottomPadding = 120,
 }: Props) => {
@@ -20,14 +26,19 @@ const FlowScreenLayout = ({
 		<View style={[styles.root, { backgroundColor }]}>
 			<KeyboardAvoidingView
 				style={styles.keyboardAvoidingView}
-				behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+				behavior={Platform.OS === "ios" ? "padding" : undefined}
+			>
 				<ScrollView
 					style={styles.scrollView}
 					contentContainerStyle={[
 						styles.scrollContent,
-						{ paddingTop: contentTopPadding, paddingBottom: contentBottomPadding },
+						{
+							paddingTop: contentTopPadding,
+							paddingBottom: contentBottomPadding,
+						},
 					]}
-					showsVerticalScrollIndicator={false}>
+					showsVerticalScrollIndicator={false}
+				>
 					{children}
 				</ScrollView>
 			</KeyboardAvoidingView>
@@ -36,10 +47,10 @@ const FlowScreenLayout = ({
 				<View style={styles.homeIndicator} />
 			</View>
 		</View>
-	)
-}
+	);
+};
 
-export default FlowScreenLayout
+export default FlowScreenLayout;
 
 const styles = StyleSheet.create({
 	root: {
@@ -55,16 +66,16 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 	},
 	homeIndicatorContainer: {
-		position: 'absolute',
+		position: "absolute",
 		left: 0,
 		right: 0,
 		bottom: 10,
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	homeIndicator: {
 		width: 144,
 		height: 5,
 		borderRadius: 100,
-		backgroundColor: '#000000',
+		backgroundColor: "#000000",
 	},
-})
+});

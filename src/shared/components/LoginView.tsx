@@ -1,23 +1,32 @@
-import React, { useCallback } from 'react'
-import { ActivityIndicator, Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
-import { Colors } from '@/shared/constants/colors'
-import { SCREEN_TYPE } from '@/shared/constants/screen'
-import { typography } from '@/shared/constants/typography'
-import useLoginActions from '@/shared/hooks/useLoginActions'
-import { ms, s, vs } from '@/shared/utils/scale'
-import { navigation } from '@/shared/utils/navigation'
+import { useCallback } from "react";
+import {
+	ActivityIndicator,
+	Image,
+	Platform,
+	Pressable,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
+import { Colors } from "@/shared/constants/colors";
+import { SCREEN_TYPE } from "@/shared/constants/screen";
+import { typography } from "@/shared/constants/typography";
+import useLoginActions from "@/shared/hooks/useLoginActions";
+import { navigation } from "@/shared/utils/navigation";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	closeBottomSheet: () => void
-	onSuccess?: () => void
-}
+	closeBottomSheet: () => void;
+	onSuccess?: () => void;
+};
 
 const LoginView = ({ closeBottomSheet, onSuccess }: Props) => {
 	const handleLoginSuccess = useCallback(() => {
-		closeBottomSheet()
-		onSuccess?.()
-	}, [closeBottomSheet, onSuccess])
-	const { isLoading, onAppleButtonPress, onKakaoButtonPress } = useLoginActions(handleLoginSuccess)
+		closeBottomSheet();
+		onSuccess?.();
+	}, [closeBottomSheet, onSuccess]);
+	const { isLoading, onAppleButtonPress, onKakaoButtonPress } =
+		useLoginActions(handleLoginSuccess);
 
 	return (
 		<View style={styles.mainWrapper}>
@@ -29,28 +38,44 @@ const LoginView = ({ closeBottomSheet, onSuccess }: Props) => {
 			</View>
 			<View>
 				<Pressable
-					style={[styles.button, styles.kakao, isLoading && styles.buttonDisabled]}
+					style={[
+						styles.button,
+						styles.kakao,
+						isLoading && styles.buttonDisabled,
+					]}
 					onPress={onKakaoButtonPress}
-					disabled={isLoading}>
+					disabled={isLoading}
+				>
 					{isLoading ? (
 						<ActivityIndicator color={Colors.BLACK} />
 					) : (
 						<>
-							<Image source={require('@/assets/icons/kakao.png')} style={styles.icon} />
+							<Image
+								source={require("@/assets/icons/kakao.png")}
+								style={styles.icon}
+							/>
 							<Text style={styles.kakaoText}>카카오톡으로 계속하기</Text>
 						</>
 					)}
 				</Pressable>
-				{Platform.OS === 'ios' && (
+				{Platform.OS === "ios" && (
 					<Pressable
-						style={[styles.button, styles.apple, isLoading && styles.buttonDisabled]}
+						style={[
+							styles.button,
+							styles.apple,
+							isLoading && styles.buttonDisabled,
+						]}
 						onPress={onAppleButtonPress}
-						disabled={isLoading}>
+						disabled={isLoading}
+					>
 						{isLoading ? (
 							<ActivityIndicator color={Colors.WHITE} />
 						) : (
 							<>
-								<Image source={require('@/assets/icons/apple.png')} style={styles.icon} />
+								<Image
+									source={require("@/assets/icons/apple.png")}
+									style={styles.icon}
+								/>
 								<Text style={styles.appleText}>Apple로 계속하기</Text>
 							</>
 						)}
@@ -60,37 +85,39 @@ const LoginView = ({ closeBottomSheet, onSuccess }: Props) => {
 			<View style={styles.termsRow}>
 				<Pressable
 					onPress={() => {
-						closeBottomSheet()
+						closeBottomSheet();
 						navigation.navigate(SCREEN_TYPE.WEBVIEW, {
-							uri: 'https://www.all-clear.cc/terms/terms-of-service',
-							title: '서비스 이용약관',
-						})
+							uri: "https://www.all-clear.cc/terms/terms-of-service",
+							title: "서비스 이용약관",
+						});
 					}}
-					style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+					style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+				>
 					<Text style={styles.termsLink}>서비스 이용약관</Text>
 				</Pressable>
 				<Text style={styles.termsDivider}>|</Text>
 				<Pressable
 					onPress={() => {
-						closeBottomSheet()
+						closeBottomSheet();
 						navigation.navigate(SCREEN_TYPE.WEBVIEW, {
-							uri: 'https://www.all-clear.cc/terms/privacy-policy',
-							title: '개인정보 처리방침',
-						})
+							uri: "https://www.all-clear.cc/terms/privacy-policy",
+							title: "개인정보 처리방침",
+						});
 					}}
-					style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}>
+					style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+				>
 					<Text style={styles.termsLink}>개인정보 처리방침</Text>
 				</Pressable>
 			</View>
 		</View>
-	)
-}
+	);
+};
 
-export default LoginView
+export default LoginView;
 
 const styles = StyleSheet.create({
 	flexRow: {
-		flexDirection: 'row',
+		flexDirection: "row",
 	},
 	mainWrapper: {
 		flex: 1,
@@ -99,8 +126,8 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 	},
 	titleWrapper: {
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 		marginBottom: vs(24),
 	},
 	titleBold: {
@@ -108,12 +135,12 @@ const styles = StyleSheet.create({
 	},
 	titleRegular: {
 		...typography.headerL,
-		fontFamily: 'Pretendard-Regular',
+		fontFamily: "Pretendard-Regular",
 	},
 	button: {
 		padding: ms(16),
 		borderRadius: ms(12),
-		position: 'relative',
+		position: "relative",
 		marginBottom: vs(12),
 	},
 	buttonDisabled: {
@@ -122,7 +149,7 @@ const styles = StyleSheet.create({
 	icon: {
 		width: s(24),
 		height: vs(24),
-		position: 'absolute',
+		position: "absolute",
 		top: vs(13),
 		left: s(16),
 	},
@@ -132,7 +159,7 @@ const styles = StyleSheet.create({
 	appleText: {
 		...typography.bodyMMedium,
 		color: Colors.TEXT_BUTTON_SELECTED,
-		textAlign: 'center',
+		textAlign: "center",
 	},
 	kakao: {
 		backgroundColor: Colors.KAKAO,
@@ -140,12 +167,12 @@ const styles = StyleSheet.create({
 	kakaoText: {
 		...typography.bodyMMedium,
 		color: Colors.BLACK,
-		textAlign: 'center',
+		textAlign: "center",
 	},
 	termsRow: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
+		flexDirection: "row",
+		justifyContent: "center",
+		alignItems: "center",
 		gap: s(8),
 		marginTop: vs(10),
 	},
@@ -157,4 +184,4 @@ const styles = StyleSheet.create({
 		...typography.bodySRegular,
 		color: Colors.BODYTEXT_DISABLED,
 	},
-})
+});

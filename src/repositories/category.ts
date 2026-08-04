@@ -1,19 +1,21 @@
-import { Category } from '@/entities/category'
-import { apiConnector } from '@/shared/utils/api'
+import type { Category } from "@/entities/category";
+import { apiConnector } from "@/shared/utils/api";
 
 export type ListCategoriesResponse = {
-	categories: Category[]
-	totalSize: number
-}
+	categories: Category[];
+	totalSize: number;
+};
 
 export type CategoryRepository = {
-	listCategories: () => Promise<ListCategoriesResponse>
-}
+	listCategories: () => Promise<ListCategoriesResponse>;
+};
 
 export const getCategoryRepository = (): CategoryRepository => ({
 	listCategories: async () => {
-		const response = await apiConnector.get<ListCategoriesResponse>('/v2/clubs/categories')
+		const response = await apiConnector.get<ListCategoriesResponse>(
+			"/v2/clubs/categories",
+		);
 
-		return response
+		return response;
 	},
-})
+});

@@ -1,4 +1,4 @@
 export type RecentSearch = {
-	query: string
-	searchedAt: string
-}
+	query: string;
+	searchedAt: string;
+};

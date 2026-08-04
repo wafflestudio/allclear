@@ -1,37 +1,55 @@
-import React, { useEffect, useState } from 'react'
-import { Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import ZoomableImage from '@/shared/components/ZoomableImage'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { clampImageIndex, getAdjacentImageIndex } from '@/shared/utils/imageViewer'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { useEffect, useState } from "react";
+import {
+	Modal,
+	Pressable,
+	StatusBar,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import ZoomableImage from "@/shared/components/ZoomableImage";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import {
+	clampImageIndex,
+	getAdjacentImageIndex,
+} from "@/shared/utils/imageViewer";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	imageUrls: string[]
-	initialIndex: number
-	visible: boolean
-	onClose: () => void
-}
+	imageUrls: string[];
+	initialIndex: number;
+	visible: boolean;
+	onClose: () => void;
+};
 
-const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) => {
+const ImageViewerModal = ({
+	imageUrls,
+	initialIndex,
+	visible,
+	onClose,
+}: Props) => {
 	const [currentIndex, setCurrentIndex] = useState(() =>
 		clampImageIndex(initialIndex, imageUrls.length),
-	)
+	);
 
 	useEffect(() => {
-		if (visible) setCurrentIndex(clampImageIndex(initialIndex, imageUrls.length))
-	}, [imageUrls.length, initialIndex, visible])
+		if (visible)
+			setCurrentIndex(clampImageIndex(initialIndex, imageUrls.length));
+	}, [imageUrls.length, initialIndex, visible]);
 
-	if (imageUrls.length === 0) return null
+	if (imageUrls.length === 0) return null;
 
-	const hasPrevious = currentIndex > 0
-	const hasNext = currentIndex < imageUrls.length - 1
+	const hasPrevious = currentIndex > 0;
+	const hasNext = currentIndex < imageUrls.length - 1;
 	const move = (direction: -1 | 1) => {
-		setCurrentIndex(index => getAdjacentImageIndex(index, direction, imageUrls.length))
-	}
+		setCurrentIndex((index) =>
+			getAdjacentImageIndex(index, direction, imageUrls.length),
+		);
+	};
 
 	return (
 		<Modal
@@ -39,7 +57,8 @@ const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) 
 			animationType="fade"
 			statusBarTranslucent
 			navigationBarTranslucent
-			onRequestClose={onClose}>
+			onRequestClose={onClose}
+		>
 			<StatusBar barStyle="light-content" backgroundColor={Colors.BLACK} />
 			<GestureHandlerRootView style={styles.modalRoot}>
 				<SafeAreaView style={styles.safeArea}>
@@ -51,8 +70,12 @@ const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) 
 						<Pressable
 							accessibilityRole="button"
 							accessibilityLabel="사진 닫기"
-							style={({ pressed }) => [styles.iconButton, pressed && styles.buttonPressed]}
-							onPress={onClose}>
+							style={({ pressed }) => [
+								styles.iconButton,
+								pressed && styles.buttonPressed,
+							]}
+							onPress={onClose}
+						>
 							<Icon name="close" size={ms(28)} color={Colors.WHITE} />
 						</Pressable>
 					</View>
@@ -76,7 +99,8 @@ const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) 
 									!hasPrevious && styles.buttonDisabled,
 									pressed && styles.buttonPressed,
 								]}
-								onPress={() => move(-1)}>
+								onPress={() => move(-1)}
+							>
 								<Icon name="chevron-left" size={ms(32)} color={Colors.WHITE} />
 							</Pressable>
 							<Pressable
@@ -88,7 +112,8 @@ const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) 
 									!hasNext && styles.buttonDisabled,
 									pressed && styles.buttonPressed,
 								]}
-								onPress={() => move(1)}>
+								onPress={() => move(1)}
+							>
 								<Icon name="chevron-right" size={ms(32)} color={Colors.WHITE} />
 							</Pressable>
 						</View>
@@ -96,10 +121,10 @@ const ImageViewerModal = ({ imageUrls, initialIndex, visible, onClose }: Props) 
 				</SafeAreaView>
 			</GestureHandlerRootView>
 		</Modal>
-	)
-}
+	);
+};
 
-export default ImageViewerModal
+export default ImageViewerModal;
 
 const styles = StyleSheet.create({
 	modalRoot: {
@@ -111,9 +136,9 @@ const styles = StyleSheet.create({
 	},
 	header: {
 		minHeight: vs(56),
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
 		paddingHorizontal: s(12),
 	},
 	headerSpacer: {
@@ -127,18 +152,18 @@ const styles = StyleSheet.create({
 	iconButton: {
 		width: ms(44),
 		height: ms(44),
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 	},
 	viewer: {
 		flex: 1,
-		overflow: 'hidden',
+		overflow: "hidden",
 	},
 	controls: {
 		minHeight: vs(64),
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
 		gap: s(32),
 		paddingHorizontal: s(16),
 	},
@@ -146,8 +171,8 @@ const styles = StyleSheet.create({
 		width: ms(48),
 		height: ms(48),
 		borderRadius: ms(24),
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 		backgroundColor: Colors.BODYTEXT_MAIN,
 	},
 	buttonDisabled: {
@@ -156,4 +181,4 @@ const styles = StyleSheet.create({
 	buttonPressed: {
 		opacity: 0.6,
 	},
-})
+});

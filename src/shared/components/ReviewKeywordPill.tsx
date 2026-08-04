@@ -1,15 +1,14 @@
-import React from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from "react-native";
 
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	keyword: { iconUri: string; title: string }
-	themeColor: string
-	backgroundColor: string
-}
+	keyword: { iconUri: string; title: string };
+	themeColor: string;
+	backgroundColor: string;
+};
 
 const ReviewKeywordPill = ({ keyword, themeColor, backgroundColor }: Props) => {
 	return (
@@ -19,13 +18,13 @@ const ReviewKeywordPill = ({ keyword, themeColor, backgroundColor }: Props) => {
 				{keyword.title}
 			</Text>
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	pill: {
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: "row",
+		alignItems: "center",
 		borderRadius: ms(24),
 		borderWidth: 0.5,
 		flexShrink: 1,
@@ -43,6 +42,6 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_SUB,
 		flexShrink: 1,
 	},
-})
+});
 
-export default ReviewKeywordPill
+export default ReviewKeywordPill;

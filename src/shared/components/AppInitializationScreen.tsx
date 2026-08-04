@@ -1,14 +1,20 @@
-import React, { useMemo } from 'react'
-import { Image, StatusBar, StyleSheet, Text, View } from 'react-native'
-import { Colors } from '@/shared/constants/colors'
-import useEntrySplashViewport from '@/shared/hooks/useEntrySplashViewport'
-import { ENTRY_SPLASH_SYMBOL_SIZE, getCenteredScaledAssetOrigin } from '@/shared/utils/entrySplash'
+import { useMemo } from "react";
+import { Image, StatusBar, StyleSheet, Text, View } from "react-native";
+import { Colors } from "@/shared/constants/colors";
+import useEntrySplashViewport from "@/shared/hooks/useEntrySplashViewport";
+import {
+	ENTRY_SPLASH_SYMBOL_SIZE,
+	getCenteredScaledAssetOrigin,
+} from "@/shared/utils/entrySplash";
 
-const symbolSource = require('@/assets/images/brand/entry-symbol-white.png') as number
-const wordmarkSource = require('@/assets/images/brand/entry-wordmark-small.png') as number
+const symbolSource =
+	require("@/assets/images/brand/entry-symbol-white.png") as number;
+const wordmarkSource =
+	require("@/assets/images/brand/entry-wordmark-small.png") as number;
 
 const AppInitializationScreen = () => {
-	const { contentTop, contentBottom, scaleX, scaleY } = useEntrySplashViewport()
+	const { contentTop, contentBottom, scaleX, scaleY } =
+		useEntrySplashViewport();
 
 	const layoutStyles = useMemo(
 		() => ({
@@ -35,7 +41,7 @@ const AppInitializationScreen = () => {
 			tagline: {
 				left: 117.556 * scaleX,
 				top: 739 * scaleY,
-				fontFamily: 'Pretendard-Bold',
+				fontFamily: "Pretendard-Bold",
 				fontSize: 18 * scaleX,
 				lineHeight: 30 * scaleX,
 				letterSpacing: -0.36 * scaleX,
@@ -48,28 +54,34 @@ const AppInitializationScreen = () => {
 			},
 		}),
 		[contentBottom, contentTop, scaleX, scaleY],
-	)
+	);
 
 	return (
 		<View
 			accessible
 			accessibilityRole="progressbar"
 			accessibilityLabel="앱을 준비하고 있습니다"
-			style={styles.screen}>
+			style={styles.screen}
+		>
 			<StatusBar barStyle="light-content" backgroundColor={Colors.POINTCOLOR} />
 			<View style={[styles.content, layoutStyles.content]}>
-				<Image source={symbolSource} style={[styles.asset, layoutStyles.symbol]} />
-				<Text style={[styles.tagline, layoutStyles.tagline]}>이번 학기엔 동아리까지,</Text>
+				<Image
+					source={symbolSource}
+					style={[styles.asset, layoutStyles.symbol]}
+				/>
+				<Text style={[styles.tagline, layoutStyles.tagline]}>
+					이번 학기엔 동아리까지,
+				</Text>
 				<Image
 					source={wordmarkSource}
 					style={[styles.asset, styles.wordmark, layoutStyles.wordmark]}
 				/>
 			</View>
 		</View>
-	)
-}
+	);
+};
 
-export default AppInitializationScreen
+export default AppInitializationScreen;
 
 const styles = StyleSheet.create({
 	screen: {
@@ -78,19 +90,19 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.POINTCOLOR,
 	},
 	content: {
-		position: 'absolute',
+		position: "absolute",
 		left: 0,
 		right: 0,
 	},
 	asset: {
-		position: 'absolute',
-		resizeMode: 'contain',
+		position: "absolute",
+		resizeMode: "contain",
 	},
 	tagline: {
-		position: 'absolute',
+		position: "absolute",
 		color: Colors.WHITE,
 	},
 	wordmark: {
 		tintColor: Colors.WHITE,
 	},
-})
+});

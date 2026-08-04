@@ -1,52 +1,60 @@
-import { RouteProp } from '@react-navigation/native'
-import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { Club } from '@/entities/club'
-import { Colors } from '@/shared/constants/colors'
-import { SCREEN_TYPE, StackParamList } from '@/shared/constants/screen'
-import WithViewEventLog from '@/shared/hocs/WithViewEventLog'
-import useClickEventLog from '@/shared/hooks/useClickEventLog'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import CategorySection from '@/features/home/components/CategorySection'
-import LatestClubsSection from '@/features/home/components/LatestClubsSection'
-import { View, Text, Image, StyleSheet } from 'react-native'
-import { s, vs } from '@/shared/utils/scale'
-import { typography } from '@/shared/constants/typography'
+import type { RouteProp } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Image, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import type { Club } from "@/entities/club";
+import CategorySection from "@/features/home/components/CategorySection";
+import LatestClubsSection from "@/features/home/components/LatestClubsSection";
+import { Colors } from "@/shared/constants/colors";
+import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
+import { typography } from "@/shared/constants/typography";
+import WithViewEventLog from "@/shared/hocs/WithViewEventLog";
+import useClickEventLog from "@/shared/hooks/useClickEventLog";
+import { s, vs } from "@/shared/utils/scale";
 
-type DetailsScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.HOME>
-type DetailsScreenNavigationProp = NativeStackNavigationProp<StackParamList, SCREEN_TYPE.HOME>
+type DetailsScreenRouteProp = RouteProp<StackParamList, SCREEN_TYPE.HOME>;
+type DetailsScreenNavigationProp = NativeStackNavigationProp<
+	StackParamList,
+	SCREEN_TYPE.HOME
+>;
 
 type Props = {
-	route: DetailsScreenRouteProp
-	navigation: DetailsScreenNavigationProp
-}
+	route: DetailsScreenRouteProp;
+	navigation: DetailsScreenNavigationProp;
+};
 
 const HomeScreen = ({ navigation }: Props) => {
-	const { logClickEvent } = useClickEventLog()
+	const { logClickEvent } = useClickEventLog();
 
 	const handleMoveToDetailPage = (club: Club) => {
 		logClickEvent({
-			screen_name: 'home_screen',
-			screen_component_name: 'rolling_banner_card',
+			screen_name: "home_screen",
+			screen_component_name: "rolling_banner_card",
 			category: club.category,
-		})
+		});
 
 		navigation.navigate(SCREEN_TYPE.CLUB_DETAIL, {
 			uuid: club.uuid,
 			category: club.category,
-			entry_point: 'home',
-		})
-	}
+			entry_point: "home",
+		});
+	};
 
 	return (
-		<WithViewEventLog params={{ screen_name: 'home_screen' }}>
-			<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+		<WithViewEventLog params={{ screen_name: "home_screen" }}>
+			<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 				<View style={styles.headerContainer}>
 					<Text style={styles.subtitle}>서울대 모든 동아리</Text>
-					<Image style={styles.logo} source={require('@/assets/images/brand/header-logo.png')} />
+					<Image
+						style={styles.logo}
+						source={require("@/assets/images/brand/header-logo.png")}
+					/>
 				</View>
 
 				<View style={styles.categoryContainer}>
-					<Text style={styles.sectionTitle}>어떤 동아리든 올클과 함께 찾아봐요</Text>
+					<Text style={styles.sectionTitle}>
+						어떤 동아리든 올클과 함께 찾아봐요
+					</Text>
 					<CategorySection />
 				</View>
 
@@ -58,21 +66,21 @@ const HomeScreen = ({ navigation }: Props) => {
 				</View>
 			</SafeAreaView>
 		</WithViewEventLog>
-	)
-}
+	);
+};
 
-export default HomeScreen
+export default HomeScreen;
 
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: Colors.BACKGROUND_MAIN,
-		alignItems: 'center',
+		alignItems: "center",
 		paddingTop: vs(32),
 	},
 	headerContainer: {
 		width: s(353),
-		alignItems: 'flex-start',
+		alignItems: "flex-start",
 		marginLeft: s(4),
 		marginBottom: vs(40),
 	},
@@ -84,11 +92,11 @@ const styles = StyleSheet.create({
 		width: s(106),
 		height: s(37),
 		marginTop: vs(6),
-		resizeMode: 'contain',
+		resizeMode: "contain",
 	},
 	categoryContainer: {
 		width: s(353),
-		alignItems: 'flex-start',
+		alignItems: "flex-start",
 		marginBottom: vs(30),
 	},
 	sectionTitle: {
@@ -98,9 +106,9 @@ const styles = StyleSheet.create({
 		marginBottom: vs(16),
 	},
 	latestClubsContainer: {
-		width: '100%',
+		width: "100%",
 	},
 	latestClubsTitle: {
 		marginLeft: s(20),
 	},
-})
+});

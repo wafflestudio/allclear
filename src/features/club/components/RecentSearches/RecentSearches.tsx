@@ -1,25 +1,28 @@
-import React from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	searches: string[]
-	onPressItem: (query: string) => void
-	onClearAll: () => void
-}
+	searches: string[];
+	onPressItem: (query: string) => void;
+	onClearAll: () => void;
+};
 
 const RecentSearches = ({ searches, onPressItem, onClearAll }: Props) => {
-	const isEmpty = searches.length === 0
+	const isEmpty = searches.length === 0;
 
 	return (
 		<View style={styles.container}>
 			<View style={styles.headerRow}>
 				<Text style={styles.headerText}>최근 검색어</Text>
 				{!isEmpty && (
-					<Pressable onPress={onClearAll} hitSlop={8} style={styles.clearButton}>
+					<Pressable
+						onPress={onClearAll}
+						hitSlop={8}
+						style={styles.clearButton}
+					>
 						<Text style={styles.clearText}>검색내역 지우기</Text>
 					</Pressable>
 				)}
@@ -31,29 +34,33 @@ const RecentSearches = ({ searches, onPressItem, onClearAll }: Props) => {
 				</Text>
 			) : (
 				<View style={styles.chipWrap}>
-					{searches.map(query => (
-						<Pressable key={query} style={styles.chip} onPress={() => onPressItem(query)}>
+					{searches.map((query) => (
+						<Pressable
+							key={query}
+							style={styles.chip}
+							onPress={() => onPressItem(query)}
+						>
 							<Text style={styles.chipText}>{query}</Text>
 						</Pressable>
 					))}
 				</View>
 			)}
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
-		width: '100%',
+		width: "100%",
 		minHeight: vs(100),
 		gap: vs(9),
 	},
 	headerRow: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		width: s(350),
 		paddingHorizontal: s(5),
 		paddingVertical: vs(5),
-		alignItems: 'center',
+		alignItems: "center",
 		gap: s(10),
 	},
 	headerText: {
@@ -72,17 +79,17 @@ const styles = StyleSheet.create({
 	emptyText: {
 		...typography.bodySRegular,
 		color: Colors.BODYTEXT_SUB,
-		textAlign: 'left',
+		textAlign: "left",
 		paddingLeft: s(6),
 	},
 	chipWrap: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
+		flexDirection: "row",
+		flexWrap: "wrap",
 	},
 	chip: {
 		height: vs(24),
-		alignItems: 'center',
-		justifyContent: 'center',
+		alignItems: "center",
+		justifyContent: "center",
 		marginLeft: s(8),
 		marginBottom: vs(8),
 		paddingHorizontal: s(10),
@@ -90,13 +97,13 @@ const styles = StyleSheet.create({
 		borderRadius: ms(20),
 		borderWidth: 0.3,
 		borderColor: Colors.POINTCOLOR,
-		backgroundColor: 'rgba(135, 79, 255, 0.1)',
+		backgroundColor: "rgba(135, 79, 255, 0.1)",
 	},
 	chipText: {
 		...typography.bodySRegular,
 		lineHeight: vs(12),
 		color: Colors.BODYTEXT_SUB,
 	},
-})
+});
 
-export default RecentSearches
+export default RecentSearches;

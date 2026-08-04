@@ -1,16 +1,16 @@
 module.exports = {
-	presets: ['module:@react-native/babel-preset'],
+	presets: ["module:@react-native/babel-preset"],
 	plugins: [
-		['@babel/plugin-proposal-decorators', { legacy: true }],
+		["@babel/plugin-proposal-decorators", { legacy: true }],
 		[
-			'module-resolver',
+			"module-resolver",
 			{
-				extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+				extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
 				alias: {
-					'@': './src',
+					"@": "./src",
 				},
 			},
 		],
-		'react-native-reanimated/plugin',
+		"react-native-reanimated/plugin",
 	],
-}
+};

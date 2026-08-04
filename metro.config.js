@@ -5,13 +5,13 @@
  * @format
  */
 
-const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config')
+const { getDefaultConfig, mergeConfig } = require("@react-native/metro-config");
 
-const defaultConfig = getDefaultConfig(__dirname)
+const defaultConfig = getDefaultConfig(__dirname);
 
 const {
 	resolver: { sourceExts, assetExts },
-} = getDefaultConfig(__dirname)
+} = getDefaultConfig(__dirname);
 
 const config = {
 	transformer: {
@@ -23,9 +23,9 @@ const config = {
 		}),
 	},
 	resolver: {
-		assetExts: assetExts.filter(ext => ext !== 'svg'),
-		sourceExts: [...sourceExts, 'svg'],
+		assetExts: assetExts.filter((ext) => ext !== "svg"),
+		sourceExts: [...sourceExts, "svg"],
 	},
-}
+};
 
-module.exports = mergeConfig(defaultConfig, config)
+module.exports = mergeConfig(defaultConfig, config);

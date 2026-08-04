@@ -1,84 +1,88 @@
-import { Club } from '@/entities/club'
+import type { Club } from "@/entities/club";
 
 export enum SCREEN_TYPE {
-	HOME = 'Home',
+	HOME = "Home",
 
-	SEARCH = 'Search',
+	SEARCH = "Search",
 
-	CLUB_LIST = 'ClubList',
-	SAVED_CLUB_LIST = 'SavedClubList',
+	CLUB_LIST = "ClubList",
+	SAVED_CLUB_LIST = "SavedClubList",
 
-	CLUB_DETAIL = 'ClubDetail',
-	CLUB_REVIEW = 'ClubReview',
-	PREVIOUS_RECRUITMENTS = 'PreviousRecruitments',
+	CLUB_DETAIL = "ClubDetail",
+	CLUB_REVIEW = "ClubReview",
+	PREVIOUS_RECRUITMENTS = "PreviousRecruitments",
 
-	MYPAGE = 'MyPage',
-	EDIT_PROFILE = 'EditProfile',
-	MANAGE_CLUB_REGISTRATION = 'ManageClubRegistration',
+	MYPAGE = "MyPage",
+	EDIT_PROFILE = "EditProfile",
+	MANAGE_CLUB_REGISTRATION = "ManageClubRegistration",
 
-	ANNOUNCEMENT_REGISTRATION = 'AnnouncementRegistration',
-	ANNOUNCEMENT_EDIT = 'AnnouncementEdit',
-	CLUB_MANAGEMENT = 'ClubManagement',
-	CLUB_INFO_EDIT = 'ClubInfoEdit',
+	ANNOUNCEMENT_REGISTRATION = "AnnouncementRegistration",
+	ANNOUNCEMENT_EDIT = "AnnouncementEdit",
+	CLUB_MANAGEMENT = "ClubManagement",
+	CLUB_INFO_EDIT = "ClubInfoEdit",
 
-	WEBVIEW = 'WebView',
+	WEBVIEW = "WebView",
 }
 
 export type StackParamList = {
-	[SCREEN_TYPE.HOME]: undefined
+	[SCREEN_TYPE.HOME]: undefined;
 
-	[SCREEN_TYPE.SEARCH]: undefined
+	[SCREEN_TYPE.SEARCH]: undefined;
 
 	[SCREEN_TYPE.CLUB_LIST]: {
-		name?: Club['name']
-		category?: Club['category']
-	}
-	[SCREEN_TYPE.SAVED_CLUB_LIST]: undefined
+		name?: Club["name"];
+		category?: Club["category"];
+	};
+	[SCREEN_TYPE.SAVED_CLUB_LIST]: undefined;
 
 	[SCREEN_TYPE.CLUB_DETAIL]: {
-		uuid: Club['uuid']
-		category?: Club['category']
+		uuid: Club["uuid"];
+		category?: Club["category"];
 		entry_point?:
-			| 'home'
-			| 'search_result'
-			| 'club_list'
-			| 'club_detail'
-			| 'club_review'
-			| 'popular_clubs'
-	}
+			| "home"
+			| "search_result"
+			| "club_list"
+			| "club_detail"
+			| "club_review"
+			| "popular_clubs";
+	};
 	[SCREEN_TYPE.CLUB_REVIEW]: {
-		uuid: Club['uuid']
-		category: Club['category']
-	}
+		uuid: Club["uuid"];
+		category: Club["category"];
+	};
 	[SCREEN_TYPE.PREVIOUS_RECRUITMENTS]: {
-		clubId: Club['uuid']
-		clubName: Club['name']
-		representativeRecruitmentId: number | null
-	}
+		clubId: Club["uuid"];
+		clubName: Club["name"];
+		representativeRecruitmentId: number | null;
+	};
 
-	[SCREEN_TYPE.EDIT_PROFILE]: undefined
-	[SCREEN_TYPE.MYPAGE]: undefined
+	[SCREEN_TYPE.EDIT_PROFILE]: undefined;
+	[SCREEN_TYPE.MYPAGE]: undefined;
 	[SCREEN_TYPE.MANAGE_CLUB_REGISTRATION]:
 		| {
-				clubId: Club['uuid']
-				editMode: 'managerRequest' | 'clubRegistration'
-				isResubmission?: boolean
+				clubId: Club["uuid"];
+				editMode: "managerRequest" | "clubRegistration";
+				isResubmission?: boolean;
 		  }
-		| undefined
+		| undefined;
 
-	[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION]: { clubId: string }
-	[SCREEN_TYPE.ANNOUNCEMENT_EDIT]: { recruitmentId: number }
-	[SCREEN_TYPE.CLUB_MANAGEMENT]: { clubId: string }
+	[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION]: { clubId: string };
+	[SCREEN_TYPE.ANNOUNCEMENT_EDIT]: { recruitmentId: number };
+	[SCREEN_TYPE.CLUB_MANAGEMENT]: { clubId: string };
 	[SCREEN_TYPE.CLUB_INFO_EDIT]: {
-		clubId: string
-		fromClubRegistrationEdit?: boolean
-		isResubmission?: boolean
+		clubId: string;
+		fromClubRegistrationEdit?: boolean;
+		isResubmission?: boolean;
 		managerData?: {
-			name?: string
-			phone?: string
-			studentId?: string
-		}
-	}
+			name?: string;
+			phone?: string;
+			studentId?: string;
+		};
+	};
 
-	[SCREEN_TYPE.WEBVIEW]: { uri: string; title?: string; authorization?: string }
-}
+	[SCREEN_TYPE.WEBVIEW]: {
+		uri: string;
+		title?: string;
+		authorization?: string;
+	};
+};

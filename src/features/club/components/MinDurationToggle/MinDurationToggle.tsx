@@ -1,31 +1,40 @@
-import React from 'react'
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { vs } from '@/shared/utils/scale'
-import { MinDurationToggleItem } from './MinDurationToggleItem'
+import {
+	type StyleProp,
+	StyleSheet,
+	Text,
+	View,
+	type ViewStyle,
+} from "react-native";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { vs } from "@/shared/utils/scale";
+import { MinDurationToggleItem } from "./MinDurationToggleItem";
 import {
 	MIN_DURATION_OPTIONS,
+	type MinDurationValue,
 	THUMB_SIZE,
 	useMinDurationToggle,
-	type MinDurationValue,
-} from './useMinDurationToggle'
+} from "./useMinDurationToggle";
 
 export type MinDurationToggleProps = {
-	style?: StyleProp<ViewStyle>
-	value: MinDurationValue
-	onChange: (value: MinDurationValue) => void
-}
+	style?: StyleProp<ViewStyle>;
+	value: MinDurationValue;
+	onChange: (value: MinDurationValue) => void;
+};
 
-const TRACK_HEIGHT = vs(4)
+const TRACK_HEIGHT = vs(4);
 
 const MinDurationToggleHeader = () => (
 	<View style={styles.header}>
 		<Text style={styles.title}>최소활동기간</Text>
 	</View>
-)
+);
 
-export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleProps) => {
+export const MinDurationToggle = ({
+	style,
+	value,
+	onChange,
+}: MinDurationToggleProps) => {
 	const {
 		labelWidths,
 		stepCenters,
@@ -35,9 +44,9 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 		handleLabelLayout,
 		trackStart,
 		trackWidth,
-	} = useMinDurationToggle({ value, onChange })
+	} = useMinDurationToggle({ value, onChange });
 
-	const selectedValueSet = new Set(selectedValues)
+	const selectedValueSet = new Set(selectedValues);
 
 	return (
 		<View style={[styles.container, style]}>
@@ -56,9 +65,9 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 					/>
 
 					{MIN_DURATION_OPTIONS.slice(0, -1).map((option, index) => {
-						const nextOption = MIN_DURATION_OPTIONS[index + 1]
-						const startCenterX = stepCenters[index]
-						const endCenterX = stepCenters[index + 1]
+						const nextOption = MIN_DURATION_OPTIONS[index + 1];
+						const startCenterX = stepCenters[index];
+						const endCenterX = stepCenters[index + 1];
 
 						if (
 							nextOption === undefined ||
@@ -67,7 +76,7 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 							startCenterX === undefined ||
 							endCenterX === undefined
 						) {
-							return null
+							return null;
 						}
 
 						return (
@@ -81,14 +90,14 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 									},
 								]}
 							/>
-						)
+						);
 					})}
 
 					{stepCenters.map((centerX, index) => {
-						const option = MIN_DURATION_OPTIONS[index]
+						const option = MIN_DURATION_OPTIONS[index];
 
 						if (option === undefined) {
-							return null
+							return null;
 						}
 
 						return (
@@ -98,7 +107,7 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 								onPress={() => handleToggleStep(option.value)}
 								selected={selectedValueSet.has(option.value)}
 							/>
-						)
+						);
 					})}
 				</View>
 
@@ -106,7 +115,7 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 					{MIN_DURATION_OPTIONS.map((option, index) => (
 						<View
 							key={option.value}
-							onLayout={event => handleLabelLayout(index, event)}
+							onLayout={(event) => handleLabelLayout(index, event)}
 							style={[
 								styles.labelSlot,
 								index === 0
@@ -114,9 +123,12 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 									: index === MIN_DURATION_OPTIONS.length - 1
 										? styles.lastLabelSlot
 										: {
-												left: (stepCenters[index] ?? 0) - (labelWidths[option.value] ?? 0) / 2,
+												left:
+													(stepCenters[index] ?? 0) -
+													(labelWidths[option.value] ?? 0) / 2,
 											},
-							]}>
+							]}
+						>
 							<Text style={styles.labelText}>{option.label}</Text>
 						</View>
 					))}
@@ -125,48 +137,48 @@ export const MinDurationToggle = ({ style, value, onChange }: MinDurationToggleP
 				<Text style={styles.description}>원하는 기간을 모두 선택해보세요.</Text>
 			</View>
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
 		gap: vs(12),
 	},
 	header: {
-		alignItems: 'flex-start',
+		alignItems: "flex-start",
 	},
 	toggleArea: {
 		gap: vs(8),
-		width: '100%',
+		width: "100%",
 	},
 	trackArea: {
 		height: THUMB_SIZE,
-		justifyContent: 'center',
-		position: 'relative',
-		width: '100%',
+		justifyContent: "center",
+		position: "relative",
+		width: "100%",
 	},
 	track: {
 		backgroundColor: Colors.GRAY,
 		borderRadius: TRACK_HEIGHT / 2,
 		height: TRACK_HEIGHT,
-		position: 'absolute',
+		position: "absolute",
 		top: (THUMB_SIZE - TRACK_HEIGHT) / 2,
 	},
 	connectedTrack: {
 		backgroundColor: Colors.POINTCOLOR,
 		borderRadius: TRACK_HEIGHT / 2,
 		height: TRACK_HEIGHT,
-		position: 'absolute',
+		position: "absolute",
 		top: (THUMB_SIZE - TRACK_HEIGHT) / 2,
 	},
 	labelsRow: {
-		position: 'relative',
-		width: '100%',
+		position: "relative",
+		width: "100%",
 		height: vs(18),
 	},
 	labelSlot: {
-		alignItems: 'center',
-		position: 'absolute',
+		alignItems: "center",
+		position: "absolute",
 		top: 0,
 	},
 	firstLabelSlot: {
@@ -178,7 +190,7 @@ const styles = StyleSheet.create({
 	labelText: {
 		...typography.bodySRegular,
 		color: Colors.BODYTEXT_SUB,
-		textAlign: 'center',
+		textAlign: "center",
 	},
 	title: {
 		...typography.bodySMedium,
@@ -188,6 +200,6 @@ const styles = StyleSheet.create({
 	description: {
 		...typography.bodySRegular,
 		color: Colors.BODYTEXT_SUB,
-		textAlign: 'center',
+		textAlign: "center",
 	},
-})
+});

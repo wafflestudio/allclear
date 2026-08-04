@@ -1,32 +1,39 @@
-import { Image, StyleSheet, Text, View } from 'react-native'
-import { Pressable } from 'react-native-gesture-handler'
-
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { Category } from '@/entities/category'
-import { CategoryMap } from '@/shared/constants/category'
-import { Club } from '@/entities/club'
-import { ms, s, vs } from '@/shared/utils/scale'
-import useSaveClub from '@/shared/hooks/useSaveClub'
-import ReviewKeywordPill from '@/shared/components/ReviewKeywordPill'
+import { Image, StyleSheet, Text, View } from "react-native";
+import { Pressable } from "react-native-gesture-handler";
+import type { Category } from "@/entities/category";
+import type { Club } from "@/entities/club";
+import ReviewKeywordPill from "@/shared/components/ReviewKeywordPill";
+import { CategoryMap } from "@/shared/constants/category";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import useSaveClub from "@/shared/hooks/useSaveClub";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	club: Club
-	category?: Category['name']
-	onPress?: () => void
-}
+	club: Club;
+	category?: Category["name"];
+	onPress?: () => void;
+};
 
 const ClubCard = ({ club, category, onPress }: Props) => {
-	const categoryDetail = category ? CategoryMap[category] : undefined
-	const borderColor = categoryDetail ? categoryDetail.themeColor : Colors.BUTTON_SELECTED
-	const backgroundColor = categoryDetail ? categoryDetail.backgroundColor : Colors.POINTCOLOR_10
+	const categoryDetail = category ? CategoryMap[category] : undefined;
+	const borderColor = categoryDetail
+		? categoryDetail.themeColor
+		: Colors.BUTTON_SELECTED;
+	const backgroundColor = categoryDetail
+		? categoryDetail.backgroundColor
+		: Colors.POINTCOLOR_10;
 
-	const { isSaved, handleToggle } = useSaveClub(club)
+	const { isSaved, handleToggle } = useSaveClub(club);
 
 	const cardInner = (
 		<>
 			<View style={[styles.imageWrapper, { borderColor }]}>
-				<Image style={styles.image} resizeMode="contain" source={{ uri: club.imageUri }} />
+				<Image
+					style={styles.image}
+					resizeMode="contain"
+					source={{ uri: club.imageUri }}
+				/>
 			</View>
 			<View style={styles.contentWrapper}>
 				<View style={styles.textGroup}>
@@ -39,9 +46,9 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 					{club.reviewKeywords && club.reviewKeywords.length > 0 ? (
 						club.reviewKeywords
 							.slice(0, 2)
-							.map((keyword, index) => (
+							.map((keyword) => (
 								<ReviewKeywordPill
-									key={`${club.name}-${index}`}
+									key={`${club.name}-${keyword}`}
 									keyword={keyword}
 									themeColor={borderColor}
 									backgroundColor={backgroundColor}
@@ -49,7 +56,7 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 							))
 					) : (
 						<ReviewKeywordPill
-							keyword={{ iconUri: '🥲', title: '아직 활동 후기가 없어요' }}
+							keyword={{ iconUri: "🥲", title: "아직 활동 후기가 없어요" }}
 							themeColor="#CBCBCB"
 							backgroundColor="rgba(193, 193, 193, 0.1)"
 						/>
@@ -57,14 +64,18 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 				</View>
 			</View>
 		</>
-	)
+	);
 
 	return (
 		<View style={styles.container}>
 			{onPress ? (
 				<Pressable
-					style={({ pressed }) => [styles.cardContent, { opacity: pressed ? 0.5 : 1 }]}
-					onPress={onPress}>
+					style={({ pressed }) => [
+						styles.cardContent,
+						{ opacity: pressed ? 0.5 : 1 },
+					]}
+					onPress={onPress}
+				>
 					{cardInner}
 				</Pressable>
 			) : (
@@ -73,32 +84,38 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 			<Pressable
 				onPress={handleToggle}
 				hitSlop={ms(8)}
-				style={({ pressed }) => [styles.heartButton, { opacity: pressed ? 0.5 : 1 }]}>
+				style={({ pressed }) => [
+					styles.heartButton,
+					{ opacity: pressed ? 0.5 : 1 },
+				]}
+			>
 				<Image
 					source={
-						isSaved ? require('@/assets/icons/heart-fill.png') : require('@/assets/icons/heart.png')
+						isSaved
+							? require("@/assets/icons/heart-fill.png")
+							: require("@/assets/icons/heart.png")
 					}
 					style={styles.heartIcon}
 					resizeMode="contain"
 				/>
 			</Pressable>
 		</View>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
-		flexDirection: 'row',
-		width: '100%',
+		flexDirection: "row",
+		width: "100%",
 		height: s(90),
 	},
 	cardContent: {
 		flex: 1,
-		flexDirection: 'row',
+		flexDirection: "row",
 	},
 	imageWrapper: {
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 		backgroundColor: Colors.WHITE,
 		width: s(90),
 		height: s(90),
@@ -113,7 +130,7 @@ const styles = StyleSheet.create({
 	},
 	contentWrapper: {
 		flex: 1,
-		flexDirection: 'column',
+		flexDirection: "column",
 	},
 	textGroup: {
 		flex: 1,
@@ -128,18 +145,18 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_SUB,
 	},
 	reviewView: {
-		flexDirection: 'row',
+		flexDirection: "row",
 		height: vs(21),
 		gap: ms(4),
 	},
 	heartButton: {
-		alignSelf: 'flex-start',
+		alignSelf: "flex-start",
 		marginLeft: s(4),
 	},
 	heartIcon: {
 		width: ms(20),
 		height: ms(20),
 	},
-})
+});
 
-export default ClubCard
+export default ClubCard;

@@ -1,45 +1,45 @@
-import { User } from '@/entities/user'
-import React, { createContext, useContext, useEffect } from 'react'
-import { serviceContext } from '@/shared/contexts/serviceContext'
+import React, { createContext, useContext, useEffect } from "react";
+import type { User } from "@/entities/user";
+import { serviceContext } from "@/shared/contexts/serviceContext";
 
 const profileContext = createContext<{
-	user: User | null
-	isLoading: boolean
-	setUser: (user: User | null) => void
+	user: User | null;
+	isLoading: boolean;
+	setUser: (user: User | null) => void;
 }>({
 	user: null,
 	isLoading: true,
 	setUser: () => {},
-})
+});
 
-export const useProfile = () => useContext(profileContext)
+export const useProfile = () => useContext(profileContext);
 
 type Props = {
-	children: React.ReactNode
-}
+	children: React.ReactNode;
+};
 
 export const ProfileProvider = ({ children }: Props) => {
-	const { userService } = useContext(serviceContext)
-	const [user, setUser] = React.useState<User | null>(null)
-	const [isLoading, setIsLoading] = React.useState(true)
+	const { userService } = useContext(serviceContext);
+	const [user, setUser] = React.useState<User | null>(null);
+	const [isLoading, setIsLoading] = React.useState(true);
 
 	useEffect(() => {
 		const getUser = async () => {
 			try {
-				const u = await userService.getUser()
-				setUser(u)
+				const u = await userService.getUser();
+				setUser(u);
 			} catch {
-				setUser(null)
+				setUser(null);
 			} finally {
-				setIsLoading(false)
+				setIsLoading(false);
 			}
-		}
-		getUser()
-	}, [userService])
+		};
+		getUser();
+	}, [userService]);
 
 	return (
 		<profileContext.Provider value={{ user, isLoading, setUser }}>
 			{children}
 		</profileContext.Provider>
-	)
-}
+	);
+};

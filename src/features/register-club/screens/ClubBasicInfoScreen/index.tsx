@@ -1,23 +1,29 @@
-import React from 'react'
-import { View, Text, ScrollView, StyleSheet, Pressable, Image } from 'react-native'
-import { launchImageLibrary } from 'react-native-image-picker'
-import Toast from 'react-native-toast-message'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { s, vs } from '@/shared/utils/scale'
-import TextField from '@/shared/components/TextField'
-import { FormNavigationButtons } from '@/features/register-club/components/FormNavigationButtons'
-import { RegisterClubFormData } from '@/features/register-club/types'
-import Icon from 'react-native-vector-icons/MaterialIcons'
+import {
+	Image,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
+import { launchImageLibrary } from "react-native-image-picker";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import Icon from "react-native-vector-icons/MaterialIcons";
+import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import type { RegisterClubFormData } from "@/features/register-club/types";
+import TextField from "@/shared/components/TextField";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	formData: RegisterClubFormData
-	onFormDataChange: (data: Partial<RegisterClubFormData>) => void
-	onNext: () => void
-	onPrevious: () => void
-	progress?: number
-}
+	formData: RegisterClubFormData;
+	onFormDataChange: (data: Partial<RegisterClubFormData>) => void;
+	onNext: () => void;
+	onPrevious: () => void;
+	progress?: number;
+};
 
 export const ClubBasicInfoScreen = ({
 	formData,
@@ -26,51 +32,51 @@ export const ClubBasicInfoScreen = ({
 	onPrevious,
 	progress,
 }: Props) => {
-	const isComplete = formData.clubName.trim()
+	const isComplete = formData.clubName.trim();
 
 	const handleAddImage = async () => {
 		const result = await launchImageLibrary({
-			mediaType: 'photo',
+			mediaType: "photo",
 			selectionLimit: 1,
 			includeBase64: false,
-		})
+		});
 
 		if (result.didCancel) {
-			return
+			return;
 		}
 
 		if (result.errorCode) {
 			Toast.show({
-				type: 'error',
-				text1: '이미지를 불러오지 못했어요',
+				type: "error",
+				text1: "이미지를 불러오지 못했어요",
 				text2: result.errorMessage,
-				position: 'top',
+				position: "top",
 				topOffset: 60,
 				visibilityTime: 2000,
-			})
-			return
+			});
+			return;
 		}
 
-		const asset = result.assets?.[0]
+		const asset = result.assets?.[0];
 		if (asset?.uri) {
 			onFormDataChange({
 				clubImage: asset.uri,
 				clubImageFile: {
 					uri: asset.uri,
-					type: asset.type ?? 'image/jpeg',
+					type: asset.type ?? "image/jpeg",
 					name: asset.fileName ?? `club_${Date.now()}.jpg`,
 				},
-			})
+			});
 		}
-	}
+	};
 
 	return (
-		<SafeAreaView edges={['top', 'left', 'right']} style={styles.container}>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 			<ScrollView contentContainerStyle={styles.content}>
 				<View style={styles.header}>
 					<Text style={styles.title}>
 						<Text>신규 등록할</Text>
-						{'\n'}
+						{"\n"}
 						<Text>동아리 기본 정보를 입력해주세요</Text>
 					</Text>
 				</View>
@@ -78,16 +84,27 @@ export const ClubBasicInfoScreen = ({
 				<View style={styles.form}>
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.label}>동아리 대표 이미지</Text>
-						<Text style={styles.helperDescription}>4X4 정방형 이미지를 권장드려요</Text>
+						<Text style={styles.helperDescription}>
+							4X4 정방형 이미지를 권장드려요
+						</Text>
 						<Pressable style={styles.imageUploadBox} onPress={handleAddImage}>
 							{formData.clubImage ? (
-								<Image source={{ uri: formData.clubImage }} style={styles.uploadedImage} />
+								<Image
+									source={{ uri: formData.clubImage }}
+									style={styles.uploadedImage}
+								/>
 							) : (
-								<Icon name="add" size={s(40)} color={Colors.BODYTEXT_DISABLED} />
+								<Icon
+									name="add"
+									size={s(40)}
+									color={Colors.BODYTEXT_DISABLED}
+								/>
 							)}
 						</Pressable>
 						{!formData.clubImage && (
-							<Text style={styles.validationText}>대표 이미지를 등록해주세요</Text>
+							<Text style={styles.validationText}>
+								대표 이미지를 등록해주세요
+							</Text>
 						)}
 					</View>
 
@@ -96,7 +113,7 @@ export const ClubBasicInfoScreen = ({
 						<TextField
 							placeholder="와플스튜디오"
 							value={formData.clubName}
-							onChangeText={text => onFormDataChange({ clubName: text })}
+							onChangeText={(text) => onFormDataChange({ clubName: text })}
 							maxLength={100}
 						/>
 						<Text style={styles.validationText}>동아리명을 입력해주세요</Text>
@@ -111,8 +128,8 @@ export const ClubBasicInfoScreen = ({
 				progress={progress}
 			/>
 		</SafeAreaView>
-	)
-}
+	);
+};
 
 const styles = StyleSheet.create({
 	container: {
@@ -154,14 +171,14 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
 		borderRadius: s(12),
-		justifyContent: 'center',
-		alignItems: 'center',
+		justifyContent: "center",
+		alignItems: "center",
 		backgroundColor: Colors.WHITE,
 		marginTop: vs(4),
 	},
 	uploadedImage: {
-		width: '100%',
-		height: '100%',
+		width: "100%",
+		height: "100%",
 		borderRadius: s(11),
 	},
-})
+});

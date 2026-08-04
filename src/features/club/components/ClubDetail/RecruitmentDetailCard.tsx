@@ -1,65 +1,81 @@
-import React, { useState } from 'react'
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'
-import type { RecruitmentContent } from '@/repositories/recruitment'
-import HtmlView from '@/shared/components/HtmlView'
-import ImageViewerModal from '@/shared/components/ImageViewerModal'
-import { Colors } from '@/shared/constants/colors'
-import { typography } from '@/shared/constants/typography'
-import { ms, s, vs } from '@/shared/utils/scale'
+import { useState } from "react";
+import {
+	Image,
+	Linking,
+	Pressable,
+	ScrollView,
+	StyleSheet,
+	Text,
+	View,
+} from "react-native";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import {
 	formatRecruitmentDeadline,
 	formatRegularMeeting,
 	getRecruitmentApplicationUrl,
 	shouldStackActivityLocation,
 	shouldStackRegularMeetings,
-} from '@/features/club/utils/recruitmentPresentation'
+} from "@/features/club/utils/recruitmentPresentation";
+import type { RecruitmentContent } from "@/repositories/recruitment";
+import HtmlView from "@/shared/components/HtmlView";
+import ImageViewerModal from "@/shared/components/ImageViewerModal";
+import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	content: RecruitmentContent
-	contentWidth: number
-}
+	content: RecruitmentContent;
+	contentWidth: number;
+};
 
 const BooleanPills = ({ active }: { active: boolean }) => (
 	<View style={styles.booleanPills}>
 		<View style={[styles.booleanPill, active && styles.booleanPillActive]}>
-			<Text style={[styles.booleanText, active && styles.booleanTextActive]}>있음</Text>
+			<Text style={[styles.booleanText, active && styles.booleanTextActive]}>
+				있음
+			</Text>
 		</View>
 		<View style={[styles.booleanPill, !active && styles.booleanPillActive]}>
-			<Text style={[styles.booleanText, !active && styles.booleanTextActive]}>없음</Text>
+			<Text style={[styles.booleanText, !active && styles.booleanTextActive]}>
+				없음
+			</Text>
 		</View>
 	</View>
-)
+);
 
 const DetailTag = ({ text }: { text: string }) => (
 	<View style={styles.detailTag}>
 		<Text style={styles.detailTagText}>{text}</Text>
 	</View>
-)
+);
 
 const BooleanDetailRow = ({
 	label,
 	active,
 	detail,
 }: {
-	label: string
-	active: boolean
-	detail?: string
+	label: string;
+	active: boolean;
+	detail?: string;
 }) => (
 	<View style={styles.field}>
 		<Text style={styles.fieldLabel}>{label}</Text>
 		<BooleanPills active={active} />
 		{!!detail && <Text style={styles.bodyText}>{detail}</Text>}
 	</View>
-)
+);
 
 const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
-	const [fullTextExpanded, setFullTextExpanded] = useState(false)
-	const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null)
-	const meetingTags = content.regular_meetings.map(formatRegularMeeting)
-	const stackMeetings = shouldStackRegularMeetings(meetingTags.length)
-	const stackLocation = shouldStackActivityLocation(content.activity_location_text)
-	const locationTypes = ['동방', '동방 외', '미정']
+	const [fullTextExpanded, setFullTextExpanded] = useState(false);
+	const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(
+		null,
+	);
+	const meetingTags = content.regular_meetings.map(formatRegularMeeting);
+	const stackMeetings = shouldStackRegularMeetings(meetingTags.length);
+	const stackLocation = shouldStackActivityLocation(
+		content.activity_location_text,
+	);
+	const locationTypes = ["동방", "동방 외", "미정"];
 
 	return (
 		<View style={styles.container}>
@@ -67,7 +83,9 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 				<Text style={styles.title}>{content.title}</Text>
 				<View style={styles.deadlineSection}>
 					<Text style={styles.deadlineLabel}>모집 마감</Text>
-					<Text style={styles.deadline}>{formatRecruitmentDeadline(content.deadline)}</Text>
+					<Text style={styles.deadline}>
+						{formatRecruitmentDeadline(content.deadline)}
+					</Text>
 				</View>
 			</View>
 
@@ -75,13 +93,15 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 				<ScrollView
 					horizontal
 					showsHorizontalScrollIndicator={false}
-					contentContainerStyle={styles.imageList}>
+					contentContainerStyle={styles.imageList}
+				>
 					{content.image_urls.map((url, index) => (
 						<Pressable
-							key={`${url}-${index}`}
+							key={url}
 							accessibilityRole="button"
 							accessibilityLabel={`공고 사진 ${index + 1} 확대`}
-							onPress={() => setSelectedImageIndex(index)}>
+							onPress={() => setSelectedImageIndex(index)}
+						>
 							<Image source={{ uri: url }} style={styles.recruitmentImage} />
 						</Pressable>
 					))}
@@ -89,19 +109,22 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 			)}
 
 			<View style={styles.fields}>
-				<BooleanDetailRow label="필수 참여 여부" active={content.is_mandatory} />
+				<BooleanDetailRow
+					label="필수 참여 여부"
+					active={content.is_mandatory}
+				/>
 
 				<View style={styles.field}>
 					<Text style={styles.fieldLabel}>정기 모임</Text>
 					<View style={styles.valueLine}>
 						<BooleanPills active={content.has_regular_meeting} />
 						{!stackMeetings &&
-							meetingTags.map((tag, index) => <DetailTag key={`${tag}-${index}`} text={tag} />)}
+							meetingTags.map((tag) => <DetailTag key={tag} text={tag} />)}
 					</View>
 					{stackMeetings && (
 						<View style={styles.wrappedTags}>
-							{meetingTags.map((tag, index) => (
-								<DetailTag key={`${tag}-${index}`} text={tag} />
+							{meetingTags.map((tag) => (
+								<DetailTag key={tag} text={tag} />
 							))}
 						</View>
 					)}
@@ -111,17 +134,26 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 					<Text style={styles.fieldLabel}>활동 장소</Text>
 					<View style={styles.valueLine}>
 						<View style={styles.locationTypes}>
-							{locationTypes.map(type => {
-								const selected = type === content.activity_location_type
+							{locationTypes.map((type) => {
+								const selected = type === content.activity_location_type;
 								return (
 									<View
 										key={type}
-										style={[styles.locationType, selected && styles.locationTypeActive]}>
-										<Text style={[styles.booleanText, selected && styles.booleanTextActive]}>
+										style={[
+											styles.locationType,
+											selected && styles.locationTypeActive,
+										]}
+									>
+										<Text
+											style={[
+												styles.booleanText,
+												selected && styles.booleanTextActive,
+											]}
+										>
 											{type}
 										</Text>
 									</View>
-								)
+								);
 							})}
 						</View>
 						{!stackLocation && !!content.activity_location_text && (
@@ -138,17 +170,23 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 				<BooleanDetailRow
 					label="지원 자격"
 					active={content.has_eligibility}
-					detail={content.has_eligibility ? content.eligibility_text : undefined}
+					detail={
+						content.has_eligibility ? content.eligibility_text : undefined
+					}
 				/>
 				<BooleanDetailRow
 					label="모집 정원"
 					active={content.has_capacity_limit}
-					detail={content.has_capacity_limit ? content.capacity_limit_text : undefined}
+					detail={
+						content.has_capacity_limit ? content.capacity_limit_text : undefined
+					}
 				/>
 				<BooleanDetailRow
 					label="회비"
 					active={content.has_membership_fee}
-					detail={content.has_membership_fee ? content.membership_fee_text : undefined}
+					detail={
+						content.has_membership_fee ? content.membership_fee_text : undefined
+					}
 				/>
 
 				<View style={styles.textField}>
@@ -156,7 +194,12 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 					<Pressable
 						accessibilityRole="link"
 						style={styles.linkRow}
-						onPress={() => Linking.openURL(getRecruitmentApplicationUrl(content.application_url))}>
+						onPress={() =>
+							Linking.openURL(
+								getRecruitmentApplicationUrl(content.application_url),
+							)
+						}
+					>
 						<Text style={styles.linkText} numberOfLines={1}>
 							{content.application_url}
 						</Text>
@@ -175,16 +218,20 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 					<Pressable
 						accessibilityRole="button"
 						style={styles.fullTextHeader}
-						onPress={() => setFullTextExpanded(previous => !previous)}>
+						onPress={() => setFullTextExpanded((previous) => !previous)}
+					>
 						<Text style={styles.fullTextTitle}>공고 전체 내용</Text>
 						<Icon
-							name={fullTextExpanded ? 'chevron-up' : 'chevron-down'}
+							name={fullTextExpanded ? "chevron-up" : "chevron-down"}
 							size={ms(22)}
 							color={Colors.BODYTEXT_SUB}
 						/>
 					</Pressable>
 					{fullTextExpanded && (
-						<HtmlView html={content.full_recruitment_text} contentWidth={contentWidth} />
+						<HtmlView
+							html={content.full_recruitment_text}
+							contentWidth={contentWidth}
+						/>
 					)}
 				</View>
 			)}
@@ -196,10 +243,10 @@ const RecruitmentDetailCard = ({ content, contentWidth }: Props) => {
 				onClose={() => setSelectedImageIndex(null)}
 			/>
 		</View>
-	)
-}
+	);
+};
 
-export default RecruitmentDetailCard
+export default RecruitmentDetailCard;
 
 const styles = StyleSheet.create({
 	container: { gap: vs(20) },
@@ -213,30 +260,35 @@ const styles = StyleSheet.create({
 	fields: { gap: vs(18) },
 	field: { gap: vs(8) },
 	fieldLabel: { ...typography.bodyMRegular, color: Colors.BODYTEXT_SUB_2 },
-	valueLine: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: s(8) },
-	booleanPills: { flexDirection: 'row', gap: s(6) },
+	valueLine: {
+		flexDirection: "row",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: s(8),
+	},
+	booleanPills: { flexDirection: "row", gap: s(6) },
 	booleanPill: {
 		minWidth: s(54),
 		paddingHorizontal: s(12),
 		paddingVertical: vs(7),
 		borderRadius: ms(18),
 		backgroundColor: Colors.BACKGROUND_SUB,
-		alignItems: 'center',
+		alignItems: "center",
 	},
 	booleanPillActive: { backgroundColor: Colors.POINTCOLOR },
 	booleanText: { ...typography.bodySMedium, color: Colors.BODYTEXT_SUB_2 },
 	booleanTextActive: { color: Colors.WHITE },
 	detailTag: {
-		alignSelf: 'flex-start',
-		maxWidth: '100%',
+		alignSelf: "flex-start",
+		maxWidth: "100%",
 		paddingHorizontal: s(12),
 		paddingVertical: vs(7),
 		borderRadius: ms(18),
 		backgroundColor: Colors.POINTCOLOR_10,
 	},
 	detailTagText: { ...typography.bodySMedium, color: Colors.POINTCOLOR },
-	wrappedTags: { flexDirection: 'row', flexWrap: 'wrap', gap: s(8) },
-	locationTypes: { flexDirection: 'row', gap: s(5) },
+	wrappedTags: { flexDirection: "row", flexWrap: "wrap", gap: s(8) },
+	locationTypes: { flexDirection: "row", gap: s(5) },
 	locationType: {
 		paddingHorizontal: s(10),
 		paddingVertical: vs(7),
@@ -244,14 +296,18 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BACKGROUND_SUB,
 	},
 	locationTypeActive: { backgroundColor: Colors.POINTCOLOR },
-	locationDetailBelow: { alignSelf: 'flex-start' },
+	locationDetailBelow: { alignSelf: "flex-start" },
 	textField: { gap: vs(7) },
-	bodyText: { ...typography.bodyMMedium, color: Colors.BODYTEXT_SUB, lineHeight: vs(21) },
-	linkRow: { flexDirection: 'row', alignItems: 'center', gap: s(5) },
+	bodyText: {
+		...typography.bodyMMedium,
+		color: Colors.BODYTEXT_SUB,
+		lineHeight: vs(21),
+	},
+	linkRow: { flexDirection: "row", alignItems: "center", gap: s(5) },
 	linkText: {
 		...typography.bodyMMedium,
 		color: Colors.POINTCOLOR,
-		textDecorationLine: 'underline',
+		textDecorationLine: "underline",
 		flexShrink: 1,
 	},
 	fullTextSection: {
@@ -261,9 +317,9 @@ const styles = StyleSheet.create({
 	},
 	fullTextHeader: {
 		minHeight: ms(44),
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
 	},
 	fullTextTitle: { ...typography.bodyMSemibold, color: Colors.BODYTEXT_SUB },
-})
+});
