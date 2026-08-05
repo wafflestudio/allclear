@@ -1,0 +1,10 @@
+overrides:
+  '@types/react': 18.3.28
+
+nodeLinker: hoisted
+verifyDepsBeforeRun: false
+
+allowBuilds:
+  dooboolab-welcome: false
+  protobufjs: true
+  react-native-elements: false

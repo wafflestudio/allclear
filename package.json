@@ -2,10 +2,11 @@
 	"name": "clubhouse-app",
 	"version": "1.0.0",
 	"private": true,
+	"packageManager": "pnpm@11.9.0",
 	"scripts": {
 		"clean": "rm -rf android/build && rm -rf android/app/build",
-		"re-install": "rm -rf node_modules && yarn install",
-		"reset": "cd ios && pod deintegrate && cd ../android && ENVFILE=.env.local ./gradlew clean && cd .. && rm -rf node_modules && yarn install && cd ios && pod install && cd ..",
+		"re-install": "rm -rf node_modules && pnpm install",
+		"reset": "cd ios && pod deintegrate && cd ../android && ENVFILE=.env.local ./gradlew clean && cd .. && rm -rf node_modules && pnpm install && cd ios && pod install && cd ..",
 		"android:clean": "cd android && ENVFILE=.env.local ./gradlew clean && cd ..",
 		"android:debug": "ENVFILE=.env.local react-native run-android --mode=debug --appId=com.padocorp.clubhouse.applicationId.debug",
 		"android:release": "ENVFILE=.env.prod react-native run-android --mode=release --appId=com.padocorp.clubhouse.applicationId",
@@ -19,8 +20,8 @@
 		"lint": "biome lint .",
 		"test": "jest",
 		"typecheck": "tsc --noEmit",
-		"verify": "yarn biome:check && yarn typecheck && yarn test --runInBand",
-		"verify:full": "yarn verify && yarn bundle:android && yarn bundle:ios",
+		"verify": "pnpm biome:check && pnpm typecheck && pnpm test --runInBand",
+		"verify:full": "pnpm verify && pnpm bundle:android && pnpm bundle:ios",
 		"bundle:android": "react-native bundle --platform android --dev true --entry-file index.js --bundle-output .bundle-check/android.bundle --assets-dest .bundle-check/android",
 		"bundle:ios": "react-native bundle --platform ios --dev true --entry-file index.js --bundle-output .bundle-check/ios.bundle --assets-dest .bundle-check/ios",
 		"fix": "biome check --write .",
@@ -50,7 +51,6 @@
 		"axios": "^1.6.2",
 		"dayjs": "^1.11.10",
 		"patch-package": "^8.0.0",
-		"postinstall-postinstall": "^2.1.0",
 		"react": "18.2.0",
 		"react-native": "0.77.3",
 		"react-native-config": "^1.5.0",
@@ -89,14 +89,11 @@
 		"react-native-url-polyfill": "^2.0.0",
 		"typescript": "^5.9.3"
 	},
-	"resolutions": {
-		"@types/react": "18.3.28"
-	},
 	"jest": {
 		"preset": "react-native"
 	},
 	"engines": {
-		"node": ">=18"
+		"node": ">=22.13"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx,json,jsonc}": [

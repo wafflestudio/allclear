@@ -25,10 +25,10 @@ jobs:
         uses: ./.github/actions/setup-node-env
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Typecheck
-        run: yarn typecheck
+        run: pnpm typecheck
 
   bundle:
     runs-on: ubuntu-latest
@@ -46,4 +46,4 @@ jobs:
         uses: ./.github/actions/setup-node-env
 
       - name: Bundle (${{ matrix.platform }})
-        run: yarn bundle:${{ matrix.platform }}
+        run: pnpm bundle:${{ matrix.platform }}
