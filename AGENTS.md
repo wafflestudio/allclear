@@ -6,27 +6,27 @@ React Native app (iOS + Android) for the Allclear club discovery service.
 
 ```bash
 # Dev
-yarn start                          # Metro bundler
-yarn ios:local                      # iOS (local env)
-yarn ios:prod                       # iOS (prod env)
-yarn android:debug                  # Android debug (local env)
-yarn android:release                # Android release (prod env)
+pnpm start                          # Metro bundler
+pnpm ios:local                      # iOS (local env)
+pnpm ios:prod                       # iOS (prod env)
+pnpm android:debug                  # Android debug (local env)
+pnpm android:release                # Android release (prod env)
 
 # Quality
-yarn lint                           # Biome lint
-yarn typecheck                      # TypeScript check (also runs on pre-push)
-yarn test --runInBand               # Jest test suite
-yarn verify                         # Biome + typecheck + tests
-yarn verify:full                    # verify + Android and iOS bundle checks
+pnpm lint                           # Biome lint
+pnpm typecheck                      # TypeScript check (also runs on pre-push)
+pnpm test --runInBand               # Jest test suite
+pnpm verify                         # Biome + typecheck + tests
+pnpm verify:full                    # verify + Android and iOS bundle checks
 
 # Build
-yarn build:android:debug            # Android APK (debug)
-yarn build:android:release          # Android bundle (release)
-yarn build:ios:prod:release         # iOS release build
+pnpm build:android:debug            # Android APK (debug)
+pnpm build:android:release          # Android bundle (release)
+pnpm build:ios:prod:release         # iOS release build
 
 # Maintenance
-yarn re-install                     # Clean reinstall node_modules
-yarn android:clean                  # Clean Android build artifacts
+pnpm re-install                     # Clean reinstall node_modules
+pnpm android:clean                  # Clean Android build artifacts
 ```
 
 ## Project Structure
@@ -65,10 +65,10 @@ Path alias: `@/` → `src/`
 ## Code Style
 
 - **Formatter and linter**: Biome defaults with recommended lint, React, and test rules
-- Run `yarn fix` followed by `yarn verify` before committing
-- `yarn fix` applies safe Biome formatting and lint fixes; `yarn verify` is read-only
+- Run `pnpm fix` followed by `pnpm verify` before committing
+- `pnpm fix` applies safe Biome formatting and lint fixes; `pnpm verify` is read-only
 - Pre-commit hook runs `lint-staged` (`biome check --write` on supported staged files)
-- Pre-push hook runs `yarn verify` — fix formatting, lint, type, or test failures before pushing
+- Pre-push hook runs `pnpm verify` — fix formatting, lint, type, or test failures before pushing
 
 ## TypeScript
 
@@ -111,8 +111,8 @@ Path alias: `@/` → `src/`
 
 ## After Editing
 
-- Run `yarn fix`, then `yarn verify`, and resolve any remaining errors before handing work back.
-- Run `yarn verify:full` when changes affect dependencies, build configuration, bundling, native integration, or release behavior.
+- Run `pnpm fix`, then `pnpm verify`, and resolve any remaining errors before handing work back.
+- Run `pnpm verify:full` when changes affect dependencies, build configuration, bundling, native integration, or release behavior.
 - Remove `console.log`, unused imports, and dead code.
 
 ## Do Not

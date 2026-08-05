@@ -38,18 +38,18 @@ src/
 
 ## 🚀 시작하기
 
-**Node.js 18+ 환경에서 React Native 앱 실행**
+**Node.js 20+ 및 pnpm 환경에서 React Native 앱 실행**
 
 ### 설치 및 실행
 
 ```bash
 # 의존성 설치
-yarn install && cd ios && pod install && cd ..
+pnpm install && cd ios && pod install && cd ..
 
 # 개발 서버 실행
-yarn start
-yarn ios:local    # iOS
-yarn android:dev  # Android
+pnpm start
+pnpm ios:local      # iOS
+pnpm android:debug  # Android
 ```
 
 ### 환경 변수 설정
@@ -360,8 +360,8 @@ const { newFeatureService } = useContext(serviceContext)
 ### 코드 스타일
 
 ```bash
-yarn lint           # ESLint 검사
-npx tsc --noEmit   # TypeScript 타입 체크
+pnpm lint       # Biome 검사
+pnpm typecheck  # TypeScript 타입 체크
 ```
 
 ### 주요 라이브러리
@@ -393,17 +393,17 @@ test('should get user', async () => {
 npx react-native start --reset-cache  # Metro 캐시 클리어
 cd ios && pod deintegrate && pod install  # iOS 의존성 재설치
 cd android && ./gradlew clean          # Android 클리어
-yarn reset                             # 전체 리셋
+pnpm reset                             # 전체 리셋
 ```
 
 ### 빌드 명령어
 
 ```bash
 # 디버그
-yarn ios:local / yarn android:dev
+pnpm ios:local / pnpm android:debug
 
 # 릴리스
-yarn build:ios:prod:release / yarn build:android:release
+pnpm build:ios:prod:release / pnpm build:android:release
 
 ```
 
