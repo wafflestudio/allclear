@@ -93,7 +93,7 @@
 		"preset": "react-native"
 	},
 	"engines": {
-		"node": ">=20"
+		"node": ">=22.13"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx,json,jsonc}": [

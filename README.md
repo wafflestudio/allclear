@@ -38,7 +38,7 @@ src/
 
 ## 🚀 시작하기
 
-**Node.js 20+ 및 pnpm 환경에서 React Native 앱 실행**
+**Node.js 22.13+ 및 pnpm 환경에서 React Native 앱 실행**
 
 ### 설치 및 실행
 
