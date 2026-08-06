@@ -30,7 +30,7 @@
 		"build:android:release": "cd android && ENVFILE=.env.prod ./gradlew bundleRelease",
 		"build:ios:prod:release": "ENVFILE=.env.prod react-native run-ios --configuration Release",
 		"postinstall": "patch-package",
-		"prepare": "husky"
+		"prepare": "cd ../.. && husky apps/mobile/.husky"
 	},
 	"dependencies": {
 		"@babel/plugin-proposal-decorators": "^7.21.0",
@@ -97,7 +97,7 @@
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx,json,jsonc}": [
-			"biome check --write"
+			"biome check --write --no-errors-on-unmatched"
 		]
 	}
 }
