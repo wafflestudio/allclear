@@ -1,0 +1,22 @@
+{
+	"name": "allclear",
+	"private": true,
+	"packageManager": "pnpm@11.9.0",
+	"engines": {
+		"node": ">=22.13"
+	},
+	"scripts": {
+		"start": "pnpm --dir apps/mobile run start",
+		"ios": "pnpm --dir apps/mobile run ios",
+		"ios:local": "pnpm --dir apps/mobile run ios:local",
+		"ios:prod": "pnpm --dir apps/mobile run ios:prod",
+		"android:debug": "pnpm --dir apps/mobile run android:debug",
+		"android:release": "pnpm --dir apps/mobile run android:release",
+		"lint": "pnpm --dir apps/mobile run lint",
+		"typecheck": "pnpm --dir apps/mobile run typecheck",
+		"test": "pnpm --dir apps/mobile run test",
+		"verify": "pnpm --dir apps/mobile run verify",
+		"verify:full": "pnpm --dir apps/mobile run verify:full",
+		"fix": "pnpm --dir apps/mobile run fix"
+	}
+}
