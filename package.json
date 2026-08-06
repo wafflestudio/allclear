@@ -7,16 +7,21 @@
 	},
 	"scripts": {
 		"start": "pnpm --dir apps/mobile run start",
+		"dev:web": "pnpm --dir apps/web run dev",
 		"ios": "pnpm --dir apps/mobile run ios",
 		"ios:local": "pnpm --dir apps/mobile run ios:local",
 		"ios:prod": "pnpm --dir apps/mobile run ios:prod",
 		"android:debug": "pnpm --dir apps/mobile run android:debug",
 		"android:release": "pnpm --dir apps/mobile run android:release",
-		"lint": "pnpm --dir apps/mobile run lint",
-		"typecheck": "pnpm --dir apps/mobile run typecheck",
-		"test": "pnpm --dir apps/mobile run test",
-		"verify": "pnpm --dir apps/mobile run verify",
+		"build": "turbo run build",
+		"lint": "turbo run lint",
+		"typecheck": "turbo run typecheck",
+		"test": "turbo run test",
+		"verify": "turbo run lint typecheck test",
 		"verify:full": "pnpm --dir apps/mobile run verify:full",
 		"fix": "pnpm --dir apps/mobile run fix"
+	},
+	"devDependencies": {
+		"turbo": "^2.10.8"
 	}
 }

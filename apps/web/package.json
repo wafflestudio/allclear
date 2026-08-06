@@ -10,8 +10,9 @@
     "export": "next export -o dist",
     "lint": "next lint",
     "format": "prettier --write \"src/**/*.{js,ts,tsx}\" && prettier --write \"pages/**/*.{js,ts,tsx}\"",
-    "test": "vitest --watch",
-    "test:run": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "clean": "rm -rf .next",
     "login-supa": "npx supabase login",
     "gen-type": "npx supabase gen types typescript --project-id fdlwfchqcdwbmvegltct > database.type.ts"

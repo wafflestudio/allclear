@@ -179,6 +179,9 @@ web_modules/
 # Optional stylelint cache
 .stylelintcache
 
+# Turborepo cache
+.turbo/
+
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
