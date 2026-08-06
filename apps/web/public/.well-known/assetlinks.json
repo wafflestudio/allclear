@@ -1,0 +1,18 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.padocorp.clubhouse.applicationId.debug",
+      "sha256_cert_fingerprints": ["18:DE:12:2E:AE:A1:E4:69:C9:32:16:7C:09:FF:F9:E1:85:A0:51:F9:0E:26:39:1A:E6:C6:2D:CF:9B:54:4F:C2"]
+    }
+  },
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.padocorp.clubhouse.applicationId",
+      "sha256_cert_fingerprints": ["DB:7E:93:61:22:AC:D2:FA:B8:6F:46:08:97:54:97:A1:B7:83:95:EB:7E:E5:E4:80:EE:62:93:59:C4:4A:DF:D1"]
+    }
+  }
+]

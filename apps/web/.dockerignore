@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.gitignore
+.idea
+.vscode
+*.md
+.env*
+.vercel
+dist
+out
+build
+coverage

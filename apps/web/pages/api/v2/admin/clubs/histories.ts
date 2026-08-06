@@ -1,0 +1,43 @@
+import { NextApiRequest, NextApiResponse } from 'next'
+import { ZodIssue, z } from 'zod'
+import { Provider } from 'server/provider'
+import { ForbiddenError } from 'server/domain/error'
+import { AdminClubService } from 'server/service/admin-club.service'
+import { UserService } from 'server/service/user.service'
+import {
+  AdminClubHistoriesQuerySchema,
+  type AdminClubHistoriesResponse,
+} from 'src/lib/schemas/admin'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<AdminClubHistoriesResponse | string | ZodIssue[]>,
+) {
+  try {
+    const userService = Provider.getService(UserService)
+    const adminClubService = Provider.getService(AdminClubService)
+    await userService.assertAdminRole(req.headers.user as string)
+
+    if (req.method === 'GET') {
+      const query = AdminClubHistoriesQuerySchema.parse(req.query)
+      const result = await adminClubService.getAdminClubHistories(query)
+
+      return res.status(200).json({
+        success: true,
+        message: '동아리 수정 이력 조회가 완료되었습니다.',
+        data: result,
+      })
+    }
+  } catch (err) {
+    if (err instanceof ForbiddenError) {
+      return res.status(403).send('Forbidden')
+    }
+    if (err instanceof z.ZodError) {
+      return res.status(400).json(err.errors)
+    }
+    console.error('getAdminClubHistories error: ', err)
+    return res.status(500).send('Internal Server Error')
+  }
+
+  return res.status(405).end()
+}

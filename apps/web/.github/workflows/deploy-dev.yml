@@ -1,0 +1,16 @@
+name: Deploy-dev
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [closed]
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      ocir_repository: allclear-dev/allclear-web
+      dockerfile: Dockerfile
+    secrets:
+      OCI_AUTH_TOKEN: ${{ secrets.OCI_AUTH_TOKEN }}

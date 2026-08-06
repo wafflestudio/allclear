@@ -1,0 +1,31 @@
+<svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Frame 633799">
+<circle id="Ellipse 114" cx="28" cy="28" r="28" fill="#F9F8F6"/>
+<rect id="Rectangle 2403" x="16.333" y="17" width="24" height="23" rx="2.5" stroke="#C5BBB8" stroke-width="2"/>
+<line id="Line 14" x1="16.333" y1="23" x2="40.333" y2="23" stroke="#C5BBB8" stroke-width="2"/>
+<g id="Rectangle 2404" opacity="0.3">
+<mask id="path-4-inside-1_315_1654" fill="white">
+<rect x="19.333" y="26" width="3" height="3" rx="1"/>
+</mask>
+<rect x="19.333" y="26" width="3" height="3" rx="1" stroke="#C5BBB8" stroke-width="3" mask="url(#path-4-inside-1_315_1654)"/>
+</g>
+<g id="Rectangle 2405" opacity="0.3">
+<mask id="path-5-inside-2_315_1654" fill="white">
+<rect x="24.333" y="26" width="3" height="3" rx="1"/>
+</mask>
+<rect x="24.333" y="26" width="3" height="3" rx="1" stroke="#C5BBB8" stroke-width="3" mask="url(#path-5-inside-2_315_1654)"/>
+</g>
+<g id="Rectangle 2406" opacity="0.3">
+<mask id="path-6-inside-3_315_1654" fill="white">
+<rect x="29.333" y="26" width="3" height="3" rx="1"/>
+</mask>
+<rect x="29.333" y="26" width="3" height="3" rx="1" stroke="#C5BBB8" stroke-width="3" mask="url(#path-6-inside-3_315_1654)"/>
+</g>
+<g id="Rectangle 2407">
+<mask id="path-7-inside-4_315_1654" fill="white">
+<rect x="34.333" y="26" width="3" height="3" rx="1"/>
+</mask>
+<rect x="34.333" y="26" width="3" height="3" rx="1" stroke="#C5BBB8" stroke-width="3" mask="url(#path-7-inside-4_315_1654)"/>
+</g>
+</g>
+</svg>
