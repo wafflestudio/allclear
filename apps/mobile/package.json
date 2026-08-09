@@ -29,7 +29,7 @@
 		"build:android:debug": "cd android && ENVFILE=.env.local ./gradlew assembleDebug",
 		"build:android:release": "cd android && ENVFILE=.env.prod ./gradlew bundleRelease",
 		"build:ios:prod:release": "ENVFILE=.env.prod react-native run-ios --configuration Release",
-		"postinstall": "patch-package",
+		"postinstall": "cd ../.. && patch-package --patch-dir apps/mobile/patches",
 		"prepare": "cd ../.. && husky apps/mobile/.husky"
 	},
 	"dependencies": {
