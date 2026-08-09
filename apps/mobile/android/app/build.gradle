@@ -11,7 +11,7 @@ project.ext.envConfigFiles = [
     release: ".env.prod",
 ]
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
-apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
+apply from: file("../../../../node_modules/react-native-vector-icons/fonts.gradle")
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -21,14 +21,11 @@ react {
     autolinkLibrariesWithApp()
 
     /* Folders */
-    //   The root of your project, i.e. where "package.json" lives. Default is '..'
-    // root = file("../")
-    //   The folder where the react-native NPM package is. Default is ../node_modules/react-native
-    // reactNativeDir = file("../node_modules/react-native")
-    //   The folder where the react-native Codegen package is. Default is ../node_modules/react-native-codegen
-    // codegenDir = file("../node_modules/react-native-codegen")
-    //   The cli.js file which is the React Native CLI entrypoint. Default is ../node_modules/react-native/cli.js
-    // cliFile = file("../node_modules/react-native/cli.js")
+    root = file("../..")
+    reactNativeDir = file("../../../../node_modules/react-native")
+    codegenDir = file("../../../../node_modules/@react-native/codegen")
+    cliFile = file("../../../../node_modules/react-native/cli.js")
+    hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc").absolutePath
 
     /* Variants */
     //   The list of variants to that are debuggable. For those we're going to
