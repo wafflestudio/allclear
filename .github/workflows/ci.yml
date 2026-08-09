@@ -24,11 +24,21 @@ jobs:
       - name: Setup Node environment
         uses: ./.github/actions/setup-node-env
 
-      - name: Lint
-        run: pnpm lint
+      - name: Lint, typecheck, and test
+        run: pnpm verify
 
-      - name: Typecheck
-        run: pnpm typecheck
+  build-web:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.1
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+
+      - name: Build web
+        run: pnpm --filter allclear-web build
 
   bundle:
     runs-on: ubuntu-latest
@@ -46,4 +56,4 @@ jobs:
         uses: ./.github/actions/setup-node-env
 
       - name: Bundle (${{ matrix.platform }})
-        run: pnpm bundle:${{ matrix.platform }}
+        run: pnpm --dir apps/mobile run bundle:${{ matrix.platform }}

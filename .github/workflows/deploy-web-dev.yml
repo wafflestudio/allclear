@@ -1,0 +1,25 @@
+name: Deploy web to development
+
+on:
+  pull_request:
+    branches: [develop]
+    types: [closed]
+    paths:
+      - apps/web/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - biome.json
+      - .dockerignore
+      - .github/workflows/_deploy-web.yml
+      - .github/workflows/deploy-web-dev.yml
+
+jobs:
+  deploy:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/_deploy-web.yml
+    with:
+      ocir_repository: allclear-dev/allclear-web
+    secrets:
+      OCI_AUTH_TOKEN: ${{ secrets.OCI_AUTH_TOKEN }}

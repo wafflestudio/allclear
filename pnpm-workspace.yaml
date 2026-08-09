@@ -1,10 +1,17 @@
-overrides:
-  '@types/react': 18.3.28
+packages:
+  - 'apps/*'
 
 nodeLinker: hoisted
 verifyDepsBeforeRun: false
 
 allowBuilds:
+  '@scarf/scarf': false
+  '@tree-sitter-grammars/tree-sitter-yaml': true
+  core-js-pure: false
   dooboolab-welcome: false
+  esbuild: true
   protobufjs: true
   react-native-elements: false
+  sharp: true
+  tree-sitter: true
+  tree-sitter-json: true

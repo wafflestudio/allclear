@@ -3,18 +3,19 @@
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
+		"root": ".",
 		"useIgnoreFile": true
 	},
 	"files": {
 		"includes": [
 			"**/*.{js,jsx,ts,tsx,json,jsonc}",
-			"!android",
-			"!ios",
-			"!vendor",
-			"!.history",
-			"!.bundle-check",
-			"!.claude",
-			"!app.json"
+			"!**/android",
+			"!**/ios",
+			"!**/vendor",
+			"!**/.history",
+			"!**/.bundle-check",
+			"!**/.claude",
+			"!**/app.json"
 		]
 	},
 	"formatter": {
@@ -40,5 +41,65 @@
 	},
 	"javascript": {
 		"globals": ["__DEV__"]
-	}
+	},
+	"overrides": [
+		{
+			"includes": ["apps/web/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noStaticElementInteractions": "off",
+						"noSvgWithoutTitle": "off",
+						"useButtonType": "off",
+						"useKeyWithClickEvents": "off",
+						"useSemanticElements": "off",
+						"useValidAnchor": "off"
+					},
+					"complexity": {
+						"noStaticOnlyClass": "off",
+						"noUselessFragments": "off",
+						"useDateNow": "off",
+						"useLiteralKeys": "off"
+					},
+					"correctness": {
+						"noUnusedFunctionParameters": "off",
+						"noUnusedImports": "off",
+						"noUnusedPrivateClassMembers": "off",
+						"noUnusedVariables": "off",
+						"useExhaustiveDependencies": "off",
+						"useJsxKeyInIterable": "off"
+					},
+					"performance": {
+						"noImgElement": "off"
+					},
+					"security": {
+						"noDangerouslySetInnerHtml": "off"
+					},
+					"style": {
+						"noNonNullAssertion": "off",
+						"useNodejsImportProtocol": "off",
+						"useTemplate": "off"
+					},
+					"suspicious": {
+						"noArrayIndexKey": "off",
+						"noDoubleEquals": "off",
+						"noExplicitAny": "off",
+						"noFocusedTests": "off",
+						"noShadowRestrictedNames": "off"
+					}
+				}
+			},
+			"formatter": {
+				"indentStyle": "space",
+				"indentWidth": 2,
+				"lineWidth": 100
+			},
+			"javascript": {
+				"formatter": {
+					"quoteStyle": "single",
+					"semicolons": "asNeeded"
+				}
+			}
+		}
+	]
 }

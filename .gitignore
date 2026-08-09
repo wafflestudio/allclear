@@ -179,6 +179,9 @@ web_modules/
 # Optional stylelint cache
 .stylelintcache
 
+# Turborepo cache
+.turbo/
+
 # Microbundle cache
 .rpt2_cache/
 .rts2_cache_cjs/
@@ -504,8 +507,8 @@ $RECYCLE.BIN/
 # .pnp.*
 
 #CocoaPods
-ios/Pods
-ios/tmp.xcconfig
+apps/mobile/ios/Pods
+apps/mobile/ios/tmp.xcconfig
 
 
 # End of https://www.toptal.com/developers/gitignore/api/reactnative,windows,macos,intellij+all,visualstudiocode,yarn,node
