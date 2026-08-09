@@ -1,64 +1,4 @@
 import { registry } from 'src/lib/openapi/swagger'
-import { z } from 'src/lib/schemas/zod'
-import {
-  HealthCheckSchema,
-  OkResponseSchema,
-  TokenResponseSchema,
-  UserSchema,
-  ClubDetailSchema,
-  ManagedClubDetailSchema,
-  ValidationIssueSchema,
-} from 'src/lib/schemas/common'
-import {
-  AppleLoginCallbackPayloadSchema,
-  KakaoCallbackQuerySchema,
-  KakaoNativeCallbackPayloadSchema,
-} from 'src/lib/schemas/auth'
-import {
-  AnnouncementsResponseSchema,
-  DismissAnnouncementsSchema,
-} from 'src/lib/schemas/announcements'
-import { AgreeTermsSchema, TermsResponseSchema } from 'src/lib/schemas/terms'
-import {
-  ClubCategoriesResponseSchema,
-  ClubListByCategoryQuerySchema,
-  ClubRankingSchema,
-  ClubRankingsQuerySchema,
-  ClubRankingsResponseSchema,
-  ClubsResponseSchema,
-  ClubsSearchResponseSchema,
-  ClubSearchQuerySchema,
-  ClubUuidParamsSchema,
-  MyReviewSchema,
-  ReviewKeywordCategoriesResponseSchema,
-  UpdateClubReviewSchema,
-} from 'src/lib/schemas/clubs'
-import {
-  ClubRecruitmentParamsSchema,
-  ClubRecruitmentSchema,
-  CreateRecruitmentResponseSchema,
-  CreateClubRecruitmentSchema,
-  PublicClubRecruitmentDetailResponseSchema,
-  PublicClubRecruitmentsResponseSchema,
-  RecruitmentIdParamsSchema,
-  UpdateClubRecruitmentSchema,
-  UpdateRecruitmentResponseSchema,
-} from 'src/lib/schemas/club-recruitments'
-import {
-  ClubImageUploadSchema,
-  ClubActivityImageUploadResponseSchema,
-  ClubRegisterRequestSchema,
-  ClubRegisterResponseSchema,
-  ClubManagerRequestPatchSchema,
-  ClubManagerRequestResponseSchema,
-  ClubManagerRequestSchema,
-  ClubManagerRegisterRequestSchema,
-  ClubRegistrationManagerSchema,
-  ManagedClubPatchSchema,
-  ManagedClubsResponseSchema,
-  ManagerClubParamsSchema,
-  CreateVerificationRequestResponseSchema,
-} from 'src/lib/schemas/managers'
 import {
   AdminClubDetailResponseSchema,
   AdminClubHistoriesQuerySchema,
@@ -68,19 +8,90 @@ import {
   AdminClubManagerRequestStatusUpdateSchema,
   AdminClubManagerRequestsQuerySchema,
   AdminClubManagerRequestsResponseSchema,
+  AdminClubStatusUpdateResponseSchema,
+  AdminClubStatusUpdateSchema,
+  AdminClubsQuerySchema,
+  AdminClubsResponseSchema,
   AdminClubVerificationRequestStatusParamsSchema,
   AdminClubVerificationRequestStatusUpdateResponseSchema,
   AdminClubVerificationRequestStatusUpdateSchema,
   AdminClubVerificationRequestsQuerySchema,
   AdminClubVerificationRequestsResponseSchema,
-  AdminClubsQuerySchema,
-  AdminClubsResponseSchema,
-  AdminClubStatusUpdateResponseSchema,
-  AdminClubStatusUpdateSchema,
   AdminUserRoleUpdateParamsSchema,
   AdminUserRoleUpdateResponseSchema,
   AdminUserRoleUpdateSchema,
 } from 'src/lib/schemas/admin'
+import {
+  AnnouncementsResponseSchema,
+  DismissAnnouncementsSchema,
+} from 'src/lib/schemas/announcements'
+import {
+  AppVersionCheckResponseSchema,
+  AppVersionCheckSchema,
+  AppVersionPolicyResponseSchema,
+  AppVersionPolicyUpdateSchema,
+} from 'src/lib/schemas/app-versions'
+import {
+  AppleLoginCallbackPayloadSchema,
+  KakaoCallbackQuerySchema,
+  KakaoNativeCallbackPayloadSchema,
+} from 'src/lib/schemas/auth'
+import {
+  ClubRecruitmentParamsSchema,
+  ClubRecruitmentSchema,
+  CreateClubRecruitmentSchema,
+  CreateRecruitmentResponseSchema,
+  PublicClubRecruitmentDetailResponseSchema,
+  PublicClubRecruitmentsResponseSchema,
+  RecruitmentIdParamsSchema,
+  UpdateClubRecruitmentSchema,
+  UpdateRecruitmentResponseSchema,
+} from 'src/lib/schemas/club-recruitments'
+import {
+  ClubCategoriesResponseSchema,
+  ClubListByCategoryQuerySchema,
+  ClubRankingSchema,
+  ClubRankingsQuerySchema,
+  ClubRankingsResponseSchema,
+  ClubSearchQuerySchema,
+  ClubsResponseSchema,
+  ClubsSearchResponseSchema,
+  ClubUuidParamsSchema,
+  MyReviewSchema,
+  ReviewKeywordCategoriesResponseSchema,
+  UpdateClubReviewSchema,
+} from 'src/lib/schemas/clubs'
+import {
+  ClubDetailSchema,
+  HealthCheckSchema,
+  ManagedClubDetailSchema,
+  OkResponseSchema,
+  TokenResponseSchema,
+  UserSchema,
+  ValidationIssueSchema,
+} from 'src/lib/schemas/common'
+import {
+  ClubActivityImageUploadResponseSchema,
+  ClubImageUploadSchema,
+  ClubManagerRegisterRequestSchema,
+  ClubManagerRequestPatchSchema,
+  ClubManagerRequestResponseSchema,
+  ClubManagerRequestSchema,
+  ClubRegisterRequestSchema,
+  ClubRegisterResponseSchema,
+  ClubRegistrationManagerSchema,
+  CreateVerificationRequestResponseSchema,
+  ManagedClubPatchSchema,
+  ManagedClubsResponseSchema,
+  ManagerClubParamsSchema,
+} from 'src/lib/schemas/managers'
+import { AgreeTermsSchema, TermsResponseSchema } from 'src/lib/schemas/terms'
+import {
+  TestGuestRecentSearchDebugQuerySchema,
+  TestGuestRecentSearchDebugResponseSchema,
+  TestLoginResponseSchema,
+  TestLoginSchema,
+} from 'src/lib/schemas/test'
 import {
   CollegeMajorsQuerySchema,
   CollegeMajorsResponseSchema,
@@ -95,18 +106,7 @@ import {
   UserProfileResponseSchema,
   UserVoiceSchema,
 } from 'src/lib/schemas/users'
-import {
-  TestGuestRecentSearchDebugQuerySchema,
-  TestGuestRecentSearchDebugResponseSchema,
-  TestLoginResponseSchema,
-  TestLoginSchema,
-} from 'src/lib/schemas/test'
-import {
-  AppVersionCheckResponseSchema,
-  AppVersionCheckSchema,
-  AppVersionPolicyResponseSchema,
-  AppVersionPolicyUpdateSchema,
-} from 'src/lib/schemas/app-versions'
+import { z } from 'src/lib/schemas/zod'
 
 const ErrorMessageSchema = z.string()
 const NoContentResponse = { description: '성공적으로 처리되었습니다.' }

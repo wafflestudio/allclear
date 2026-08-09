@@ -1,10 +1,10 @@
-import React from 'react'
-import { NextPage } from 'next'
+import type { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import { Header } from '../src/common/components/Header'
-import CareerCategoryCard from '../src/career/components/CareerCategoryCard'
-import { CareerCategory } from '../src/career/domain/types/CareerCategory'
+import React from 'react'
 import { useFetchCareerCategories } from '../src/career/api/hooks/useFetchCareerCategories'
+import CareerCategoryCard from '../src/career/components/CareerCategoryCard'
+import type { CareerCategory } from '../src/career/domain/types/CareerCategory'
+import { Header } from '../src/common/components/Header'
 
 const SelectLanguagePage: NextPage = () => {
   const router = useRouter()

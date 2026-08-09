@@ -1,4 +1,4 @@
-import { CareerCategory } from '../../domain/types/CareerCategory'
+import type { CareerCategory } from '../../domain/types/CareerCategory'
 
 export const CAREER_CATEGORIES: CareerCategory[] = [
   {

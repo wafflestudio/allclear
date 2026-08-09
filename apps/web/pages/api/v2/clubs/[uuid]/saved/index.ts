@@ -1,8 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Provider } from 'server/provider'
-import { UserService } from 'server/service/user.service'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError, UserNotFoundError } from 'server/domain/error'
+import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
+import { UserService } from 'server/service/user.service'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { z } from 'zod'
 

@@ -1,8 +1,8 @@
-import { Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
-import { TermsAgreementEntity, TermsEntity } from '../infra/database/entities'
-import { Terms, toTermsDomain } from '../domain/model/Terms'
+import type { Repository } from 'typeorm'
 import { BadRequestError } from '../domain/error'
+import { type Terms, toTermsDomain } from '../domain/model/Terms'
+import { TermsAgreementEntity, TermsEntity } from '../infra/database/entities'
+import { InjectRepository, Service } from '../provider'
 
 @Service
 export class TermsService {

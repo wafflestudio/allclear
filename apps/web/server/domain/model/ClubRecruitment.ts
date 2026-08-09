@@ -2,7 +2,7 @@ import type {
   ClubRecruitmentActivityLocationType,
   RegularMeetingDay,
 } from 'src/common/constants/club-recruitment'
-import { ClubRecruitmentEntity } from '../../infra/database/entities/club-recruitment.entity'
+import type { ClubRecruitmentEntity } from '../../infra/database/entities/club-recruitment.entity'
 
 export type RegularMeeting = {
   id: string

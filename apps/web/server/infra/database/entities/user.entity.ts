@@ -1,7 +1,7 @@
 import { Column, Entity, Index, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { ServiceUserEntity } from './service-user.entity'
 import { TimeStampMixin } from './TimeStampMixin'
 import { UserRole } from './user-role.enum'
-import { ServiceUserEntity } from './service-user.entity'
 
 export const SERVICE = 'allclear' as const
 
@@ -14,9 +14,13 @@ export class UserEntity extends TimeStampMixin {
   @Column({ type: 'varchar', length: 32, name: 'service' })
   service: typeof SERVICE
 
-  @OneToOne(() => ServiceUserEntity, (serviceUser) => serviceUser.user, {
-    eager: true,
-  })
+  @OneToOne(
+    () => ServiceUserEntity,
+    (serviceUser) => serviceUser.user,
+    {
+      eager: true,
+    },
+  )
   serviceUser: ServiceUserEntity
 
   @Column({ type: 'varchar', length: 32, default: '', name: 'nickname' })

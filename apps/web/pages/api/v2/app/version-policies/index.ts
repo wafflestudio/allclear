@@ -1,14 +1,14 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import { timingSafeEqual } from 'crypto'
-import { ZodIssue, z } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { BadRequestError } from 'server/domain/error'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
 import { AppVersionService } from 'server/service/app-version.service'
 import {
-  AppVersionPolicyResponse,
+  type AppVersionPolicyResponse,
   AppVersionPolicyUpdateSchema,
 } from 'src/lib/schemas/app-versions'
+import { type ZodIssue, z } from 'zod'
 
 const isValidInternalApiKey = (apiKey: string | string[] | undefined): boolean => {
   const expectedApiKey = ENV.APP_VERSION_POLICY.API_KEY

@@ -11,7 +11,10 @@ export class ServiceUserEntity extends TimeStampMixin {
   @Column({ type: 'uuid', name: 'user_id' })
   userId: string
 
-  @OneToOne(() => UserEntity, (user) => user.serviceUser)
+  @OneToOne(
+    () => UserEntity,
+    (user) => user.serviceUser,
+  )
   @JoinColumn({ name: 'user_id' })
   user: UserEntity
 

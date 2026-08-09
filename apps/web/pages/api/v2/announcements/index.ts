@@ -1,10 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import * as jose from 'jose'
-import { ENV } from 'server/ENV'
-import { AnnouncementService } from 'server/service/announcement.service'
-import { Provider } from 'server/provider'
-import { Announcement } from 'server/domain/model/Announcement'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { UnauthorizedError, UserNotFoundError } from 'server/domain/error'
+import type { Announcement } from 'server/domain/model/Announcement'
+import { ENV } from 'server/ENV'
+import { Provider } from 'server/provider'
+import { AnnouncementService } from 'server/service/announcement.service'
 
 type ResponseData = {
   data: Announcement[]

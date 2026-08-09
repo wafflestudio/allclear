@@ -1,6 +1,6 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm'
-import { TimeStampMixin } from './TimeStampMixin'
 import { AccountType } from './account-type.enum'
+import { TimeStampMixin } from './TimeStampMixin'
 
 @Entity('account')
 @Index('ix_account_type_username', ['type', 'username'])

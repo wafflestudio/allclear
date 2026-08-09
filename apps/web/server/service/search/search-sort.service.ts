@@ -1,6 +1,6 @@
+import type { Club } from 'server/domain/model/Club'
 import { Service } from 'server/provider'
-import { Club } from 'server/domain/model/Club'
-import { SearchSortType } from './search.types'
+import type { SearchSortType } from './search.types'
 
 @Service
 export class SearchSortService {

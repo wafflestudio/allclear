@@ -1,4 +1,4 @@
-import { Club } from 'src/entities/club'
+import type { Club } from 'src/entities/club'
 import {
   CLUB_AFFILIATION_TYPES,
   CLUB_CATEGORIES,

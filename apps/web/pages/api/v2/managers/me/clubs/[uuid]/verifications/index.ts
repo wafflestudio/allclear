@@ -1,16 +1,16 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z, ZodIssue } from 'zod'
-import { Provider } from 'server/provider'
-import { ClubVerificationService } from 'server/service/club-verification.service'
-import { UserService } from 'server/service/user.service'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
   UserNotFoundError,
 } from 'server/domain/error'
+import { Provider } from 'server/provider'
+import { ClubVerificationService } from 'server/service/club-verification.service'
+import { UserService } from 'server/service/user.service'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import { type CreateVerificationRequestResponse } from 'src/lib/schemas/managers'
+import type { CreateVerificationRequestResponse } from 'src/lib/schemas/managers'
+import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
   req: NextApiRequest,

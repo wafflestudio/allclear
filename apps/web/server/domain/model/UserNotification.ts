@@ -1,8 +1,8 @@
-import {
+import type {
   UserNotificationEntity,
-  type UserNotificationMetadata,
-  type UserNotificationSourceType,
-  type UserNotificationType,
+  UserNotificationMetadata,
+  UserNotificationSourceType,
+  UserNotificationType,
 } from '../../infra/database/entities'
 
 export type UserNotification = {

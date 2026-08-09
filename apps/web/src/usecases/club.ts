@@ -1,5 +1,5 @@
-import { Club } from 'src/entities/club'
-import {
+import type { Club } from 'src/entities/club'
+import type {
   ClubRepository,
   GetManageClubRequest,
   UpdateManageClubImageRequest,

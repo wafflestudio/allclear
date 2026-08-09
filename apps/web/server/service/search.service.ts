@@ -1,16 +1,16 @@
+import type { ClubEntity } from '../infra/database/entities'
 import { Inject, Service } from '../provider'
-import { ClubEntity } from '../infra/database/entities'
+import {
+  type ClubSearchResponse,
+  DEFAULT_SEARCH_SORT,
+  type SearchClub,
+  type SearchOptions,
+} from './search/search.types'
+import { SearchLogService } from './search/search-log.service'
 import { SearchQueryService } from './search/search-query.service'
-import { SearchTypoCorrectionService } from './search/search-typo-correction.service'
 import { SearchResultHydratorService } from './search/search-result-hydrator.service'
 import { SearchSortService } from './search/search-sort.service'
-import { SearchLogService } from './search/search-log.service'
-import {
-  ClubSearchResponse,
-  DEFAULT_SEARCH_SORT,
-  SearchClub,
-  SearchOptions,
-} from './search/search.types'
+import { SearchTypoCorrectionService } from './search/search-typo-correction.service'
 
 @Service
 export class SearchService {

@@ -1,6 +1,6 @@
-import { SelectQueryBuilder } from 'typeorm'
-import { ClubEntity, ClubRecruitmentEntity } from 'server/infra/database/entities'
-import { MinActivityPeriodFilter, SearchFilters } from './search.types'
+import { type ClubEntity, ClubRecruitmentEntity } from 'server/infra/database/entities'
+import type { SelectQueryBuilder } from 'typeorm'
+import type { MinActivityPeriodFilter, SearchFilters } from './search.types'
 
 const LATEST_RECRUITMENT_ALIAS = 'latest_recruitment'
 

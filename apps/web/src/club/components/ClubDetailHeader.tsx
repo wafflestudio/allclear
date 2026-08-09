@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router'
-import { RefObject, useEffect, useState } from 'react'
+import { type RefObject, useEffect, useState } from 'react'
 import { MdiIcon } from './icons'
 
 export const DETAIL_HEADER_HEIGHT = 56

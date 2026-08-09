@@ -1,14 +1,14 @@
-import { StorageKey } from './storage-key'
+import type { StorageKey } from './storage-key'
 
 class LocalStorage {
   static set(key: StorageKey, item: string) {
-    if (this.isBrowser()) {
+    if (LocalStorage.isBrowser()) {
       localStorage.setItem(key, item)
     }
   }
 
   static setWithExpiry(key: StorageKey, value: string, expiryTimeInMilliSeconds: number) {
-    if (this.isBrowser()) {
+    if (LocalStorage.isBrowser()) {
       const item = {
         value,
         expiry: new Date().getTime() + expiryTimeInMilliSeconds,
@@ -18,7 +18,7 @@ class LocalStorage {
   }
 
   static get(key: StorageKey) {
-    if (this.isBrowser()) {
+    if (LocalStorage.isBrowser()) {
       return localStorage.getItem(key)
     }
     return null
@@ -26,7 +26,7 @@ class LocalStorage {
 
   static getWithExpiry(key: StorageKey) {
     try {
-      if (this.isBrowser()) {
+      if (LocalStorage.isBrowser()) {
         const itemString = localStorage.getItem(key)
         if (!itemString) {
           return null
@@ -46,7 +46,7 @@ class LocalStorage {
   }
 
   static remove(key: StorageKey) {
-    if (this.isBrowser()) {
+    if (LocalStorage.isBrowser()) {
       localStorage.removeItem(key)
     }
   }

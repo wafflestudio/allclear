@@ -1,5 +1,5 @@
-import { ClubEntity } from 'server/infra/database/entities'
-import { Club } from 'server/domain/model/Club'
+import type { Club } from 'server/domain/model/Club'
+import type { ClubEntity } from 'server/infra/database/entities'
 
 export type ClubSearchResponse = {
   clubs: SearchClub[]

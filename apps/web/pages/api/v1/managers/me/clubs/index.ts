@@ -1,11 +1,10 @@
-import { V1Club } from 'server/service/v1/club.service'
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Provider } from 'server/provider'
-import { ClubServiceV1 } from 'server/service/v1/club.service'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
+import { Provider } from 'server/provider'
+import { ClubServiceV1, type V1Club } from 'server/service/v1/club.service'
+import { SlackServiceV1 } from 'server/service/v1/slack.service'
 import { UserServiceV1 } from 'server/service/v1/user.service'
 import { z } from 'zod'
-import { SlackServiceV1 } from 'server/service/v1/slack.service'
 
 const ClubManagerRegisterRequestValidator = z.object({
   clubId: z.string().uuid().optional(),

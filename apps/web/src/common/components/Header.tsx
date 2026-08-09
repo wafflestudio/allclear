@@ -1,6 +1,6 @@
 import React from 'react'
-import { PagePath } from '../constants/PagePath'
 import { ChannelTalkScript } from '../connectors/channeltalk'
+import { PagePath } from '../constants/PagePath'
 
 type Props = {
   title?: string

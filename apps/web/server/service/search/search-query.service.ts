@@ -1,10 +1,16 @@
-import { FindOptionsWhere, ILike, IsNull, Repository, SelectQueryBuilder } from 'typeorm'
-import { InjectRepository, Service } from 'server/provider'
 import { ClubEntity } from 'server/infra/database/entities'
 import { CollegeMajorEntity } from 'server/infra/database/entities/college-major.entity'
+import { InjectRepository, Service } from 'server/provider'
 import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
+import {
+  type FindOptionsWhere,
+  ILike,
+  IsNull,
+  type Repository,
+  type SelectQueryBuilder,
+} from 'typeorm'
+import type { SearchFilters } from './search.types'
 import { applySearchFilters } from './search-filter'
-import { SearchFilters } from './search.types'
 
 @Service
 export class SearchQueryService {

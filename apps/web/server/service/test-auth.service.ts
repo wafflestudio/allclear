@@ -1,4 +1,3 @@
-import { Repository } from 'typeorm'
 import jwt from 'jsonwebtoken'
 import { ENV } from 'server/ENV'
 import {
@@ -11,6 +10,7 @@ import {
 } from 'server/infra/database/entities'
 import { UserRole } from 'server/infra/database/entities/user-role.enum'
 import { InjectRepository, Service } from 'server/provider'
+import type { Repository } from 'typeorm'
 
 const TEST_ACCOUNT_USERNAME_PREFIX = 'test:'
 

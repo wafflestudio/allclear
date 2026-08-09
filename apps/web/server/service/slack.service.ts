@@ -1,6 +1,6 @@
 import { WebClient } from '@slack/web-api'
-import { Service } from '../provider'
 import { ENV } from '../ENV'
+import { Service } from '../provider'
 
 type SlackBot = keyof typeof ENV.SLACK.TOKEN
 

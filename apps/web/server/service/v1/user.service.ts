@@ -1,5 +1,6 @@
-import { Repository } from 'typeorm'
-import { InjectRepository, Service } from 'server/provider'
+import type { UpdateProfileDto } from 'pages/api/v1/users/me'
+import { UserNotFoundError } from 'server/domain/error'
+import type { User } from 'server/domain/model/User'
 import {
   AccountEntity,
   AccountUserEntity,
@@ -10,10 +11,9 @@ import {
   UserEntity,
   UserVoiceEntity,
 } from 'server/infra/database/entities'
-import { User } from 'server/domain/model/User'
-import { UserNotFoundError } from 'server/domain/error'
-import { UpdateProfileDto } from 'pages/api/v1/users/me'
 import { CollegeMajorEntity } from 'server/infra/database/entities/college-major.entity'
+import { InjectRepository, Service } from 'server/provider'
+import type { Repository } from 'typeorm'
 
 export type V1CollegeMajor = {
   id: number

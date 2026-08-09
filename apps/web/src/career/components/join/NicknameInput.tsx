@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react'
 import clsx from 'clsx'
+import React, { useEffect } from 'react'
 
 type Props = {
   content: string
@@ -28,8 +28,7 @@ const NicknameInput: React.FC<Props> = ({ content, setContent, isAllowed, onPres
         id="nickname_input"
         aria-describedby="nickname_input_help"
         className={clsx({
-          'text-md border-1 peer block w-full appearance-none whitespace-nowrap rounded-2xl bg-transparent px-4 tracking-widest text-gray-900 placeholder:text-sm placeholder:tracking-normal focus:outline-none focus:ring-0 dark:text-white':
-            true,
+          'text-md border-1 peer block w-full appearance-none whitespace-nowrap rounded-2xl bg-transparent px-4 tracking-widest text-gray-900 placeholder:text-sm placeholder:tracking-normal focus:outline-none focus:ring-0 dark:text-white': true,
           'border-green-600 focus:border-green-600 dark:border-green-500 dark:border-green-500 dark:focus:border-green-500':
             isAllowed,
           'border-red-600 focus:border-red-600 dark:border-red-500 dark:border-red-500 dark:focus:border-red-500':
@@ -63,8 +62,8 @@ const NicknameInput: React.FC<Props> = ({ content, setContent, isAllowed, onPres
           {isAllowed
             ? '사용가능한 닉네임입니다.'
             : content
-            ? '사용할 수 없는 닉네임입니다.'
-            : '2자~8자의 닉네임을 입력해주세요. (공백 불가)'}
+              ? '사용할 수 없는 닉네임입니다.'
+              : '2자~8자의 닉네임을 입력해주세요. (공백 불가)'}
         </span>
       </p>
     </div>

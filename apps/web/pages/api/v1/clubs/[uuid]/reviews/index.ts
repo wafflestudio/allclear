@@ -1,9 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ReviewServiceV1 } from 'server/service/v1/review.service'
 import { UserServiceV1 } from 'server/service/v1/user.service'
 import { z } from 'zod'
-import { UserNotFoundError } from 'server/domain/error'
 
 const UpdateClubReviewValidator = z.object({
   rating: z.number().min(0).max(5).optional(),

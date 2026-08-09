@@ -1,2 +1,2 @@
-export * from './toggleItemInArray'
 export * from './formatYearMonth'
+export * from './toggleItemInArray'

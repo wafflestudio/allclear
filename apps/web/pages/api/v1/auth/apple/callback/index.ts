@@ -1,8 +1,8 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
 import jwt from 'jsonwebtoken'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
 import { AuthServiceV1 } from 'server/service/v1/auth.service'
-import { ENV } from 'server/ENV'
 
 type AppleLoginCallbackPayload = {
   id_token: string

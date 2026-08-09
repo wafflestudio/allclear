@@ -9,9 +9,13 @@ export class RegularMeetingEntity {
   @Column({ type: 'bigint', name: 'club_recruitment_id' })
   clubRecruitmentId: string
 
-  @ManyToOne(() => ClubRecruitmentEntity, (clubRecruitment) => clubRecruitment.regularMeetings, {
-    createForeignKeyConstraints: false,
-  })
+  @ManyToOne(
+    () => ClubRecruitmentEntity,
+    (clubRecruitment) => clubRecruitment.regularMeetings,
+    {
+      createForeignKeyConstraints: false,
+    },
+  )
   @JoinColumn({ name: 'club_recruitment_id' })
   clubRecruitment: ClubRecruitmentEntity
 

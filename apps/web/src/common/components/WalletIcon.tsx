@@ -1,5 +1,5 @@
-import React from 'react'
-import { IconProps } from './IconProps'
+import type React from 'react'
+import type { IconProps } from './IconProps'
 
 const WalletIcon: React.FC<IconProps> = ({ className }) => (
   <svg

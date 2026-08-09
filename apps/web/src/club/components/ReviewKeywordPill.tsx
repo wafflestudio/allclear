@@ -1,4 +1,4 @@
-import { CategoryTheme } from '../constants'
+import type { CategoryTheme } from '../constants'
 
 type Props = {
   iconUri: string // 이모지 문자열

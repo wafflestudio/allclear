@@ -1,5 +1,8 @@
-import { IsNull, Not, Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
+import { IsNull, Not, type Repository } from 'typeorm'
+import type { UpdateProfileDto } from '../../src/lib/schemas/users'
+import { ForbiddenError, UserNotFoundError } from '../domain/error'
+import type { CollegeMajor } from '../domain/model/CollegeMajor'
+import type { User } from '../domain/model/User'
 import {
   AccountEntity,
   AccountUserEntity,
@@ -11,12 +14,9 @@ import {
   UserRecentSearchEntity,
   UserVoiceEntity,
 } from '../infra/database/entities'
-import { User } from '../domain/model/User'
-import { ForbiddenError, UserNotFoundError } from '../domain/error'
-import { UserRole } from '../infra/database/entities/user-role.enum'
-import { UpdateProfileDto } from '../../src/lib/schemas/users'
-import { CollegeMajor } from '../domain/model/CollegeMajor'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
+import { UserRole } from '../infra/database/entities/user-role.enum'
+import { InjectRepository, Service } from '../provider'
 
 const RECENT_SEARCH_LIMIT = 8
 

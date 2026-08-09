@@ -1,15 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next'
 import { timingSafeEqual } from 'crypto'
-import { ZodIssue, z } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
 import { UserService } from 'server/service/user.service'
-import { UserNotFoundError } from 'server/domain/error'
 import {
   AdminUserRoleUpdateParamsSchema,
-  AdminUserRoleUpdateSchema,
   type AdminUserRoleUpdateResponse,
+  AdminUserRoleUpdateSchema,
 } from 'src/lib/schemas/admin'
+import { type ZodIssue, z } from 'zod'
 
 const isValidAdminRoleApiKey = (apiKey: string | string[] | undefined): boolean => {
   const expectedApiKey = ENV.APP_VERSION_POLICY.API_KEY

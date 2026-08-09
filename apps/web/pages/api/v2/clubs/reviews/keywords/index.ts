@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
 import { ReviewService } from '../../../../../../server/service/review.service'
 

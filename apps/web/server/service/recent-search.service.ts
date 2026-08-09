@@ -1,7 +1,7 @@
 import { getRequiredRedisClient } from 'server/infra/redis/client'
 import { Provider } from 'server/provider'
 import { assertNever } from 'server/util/assert-never'
-import { OptionalAuth } from 'server/util/optional-auth'
+import type { OptionalAuth } from 'server/util/optional-auth'
 import { UserService } from './user.service'
 
 const RECENT_SEARCH_LIMIT = 8

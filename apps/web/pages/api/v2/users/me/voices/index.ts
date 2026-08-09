@@ -1,10 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { UserService } from 'server/service/user.service'
-import { UserNotFoundError } from 'server/domain/error'
-import { SlackService } from '../../../../../../server/service/slack.service'
 import { UserVoiceSchema } from 'src/lib/schemas/users'
+import { z } from 'zod'
+import { SlackService } from '../../../../../../server/service/slack.service'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import {
   fetchClubDetail,
-  fetchCollegeMajors,
   fetchClubs,
+  fetchCollegeMajors,
   fetchHistories,
   fetchManagerRequests,
   fetchVerificationRequests,
@@ -182,10 +182,10 @@ export const useAdminDashboard = () => {
     activeTab === 'clubs'
       ? clubsQuery.isFetching
       : activeTab === 'managerRequests'
-      ? managerRequestsQuery.isFetching
-      : activeTab === 'verificationRequests'
-      ? verificationRequestsQuery.isFetching
-      : historiesQuery.isFetching
+        ? managerRequestsQuery.isFetching
+        : activeTab === 'verificationRequests'
+          ? verificationRequestsQuery.isFetching
+          : historiesQuery.isFetching
 
   useEffect(() => {
     if (activeTotalCount === undefined) return

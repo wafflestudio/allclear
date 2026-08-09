@@ -1,9 +1,9 @@
-import { IsNull, Repository } from 'typeorm'
+import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
+import { IsNull, type Repository } from 'typeorm'
+import { ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ForbiddenError, NotFoundError } from '../domain/error'
 import { InjectRepository, Service } from '../provider'
-import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
 
 @Service
 export class ClubAccessService {

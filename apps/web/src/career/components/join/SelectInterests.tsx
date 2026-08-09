@@ -1,8 +1,8 @@
-import React from 'react'
 import clsx from 'clsx'
 import { chunk } from 'lodash-es'
+import type React from 'react'
 import { toggleItemInArray } from '../../../common/utils'
-import { Interest } from '../../domain/types/Interest'
+import type { Interest } from '../../domain/types/Interest'
 
 const interests: Interest[] = [
   { id: 1, name: '인턴' },
@@ -33,8 +33,7 @@ const SelectInterests: React.FC<Props> = ({ interestIds, setInterestIds }) => {
                 newInterestIds.length <= 3 && setInterestIds(newInterestIds)
               }}
               className={clsx({
-                'text-md w-fit grow whitespace-nowrap rounded-2xl border border-primary-700 bg-white px-5 py-2.5 text-center font-medium dark:bg-black':
-                  true,
+                'text-md w-fit grow whitespace-nowrap rounded-2xl border border-primary-700 bg-white px-5 py-2.5 text-center font-medium dark:bg-black': true,
                 'hover:bg-primary-200 focus:outline-none dark:hover:bg-primary-800':
                   !interestIds.includes(interest.id) && interestIds.length <= 2,
                 'text-gray-500': !interestIds.includes(interest.id),

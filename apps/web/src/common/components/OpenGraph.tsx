@@ -1,4 +1,4 @@
-import { ComponentType, Fragment } from 'react'
+import { type ComponentType, Fragment } from 'react'
 
 interface Props {
   container?: ComponentType<any>

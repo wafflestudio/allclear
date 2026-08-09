@@ -10,7 +10,10 @@ export class ClubReviewKeywordEntity extends TimeStampMixin {
   @Column({ type: 'bigint', name: 'category_id' })
   categoryId: number
 
-  @ManyToOne(() => ClubReviewKeywordCategoryEntity, (category) => category.reviewKeywords)
+  @ManyToOne(
+    () => ClubReviewKeywordCategoryEntity,
+    (category) => category.reviewKeywords,
+  )
   @JoinColumn({ name: 'category_id' })
   category: ClubReviewKeywordCategoryEntity
 

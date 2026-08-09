@@ -1,7 +1,8 @@
-import { Repository } from 'typeorm'
 import axios from 'axios'
 import * as qs from 'qs'
-import { InjectRepository, Service } from 'server/provider'
+import { UserNotFoundError } from 'server/domain/error'
+import type { User } from 'server/domain/model/User'
+import { ENV } from 'server/ENV'
 import {
   AccountEntity,
   AccountType,
@@ -10,10 +11,9 @@ import {
   ServiceUserEntity,
   UserEntity,
 } from 'server/infra/database/entities'
-import { User } from 'server/domain/model/User'
 import { UserRole } from 'server/infra/database/entities/user-role.enum'
-import { ENV } from 'server/ENV'
-import { UserNotFoundError } from 'server/domain/error'
+import { InjectRepository, Service } from 'server/provider'
+import type { Repository } from 'typeorm'
 
 type AccountId = string
 
@@ -167,8 +167,8 @@ export class AuthServiceV1 {
         kakaoAccount.gender === 'female'
           ? '여자'
           : kakaoAccount.gender === 'male'
-          ? '남자'
-          : kakaoAccount.gender,
+            ? '남자'
+            : kakaoAccount.gender,
       socialAccountInfo: user,
     })
   }

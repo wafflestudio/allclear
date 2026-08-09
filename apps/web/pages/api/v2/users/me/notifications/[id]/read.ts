@@ -1,10 +1,10 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z, ZodIssue } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError, UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { UserNotificationService } from 'server/service/user-notification.service'
 import { UserService } from 'server/service/user.service'
+import { UserNotificationService } from 'server/service/user-notification.service'
 import { UserNotificationReadParamsSchema } from 'src/lib/schemas/users'
+import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
   req: NextApiRequest,

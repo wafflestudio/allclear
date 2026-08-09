@@ -1,6 +1,6 @@
 import type { Metadata, NextPage } from 'next'
-import { useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 import { PagePath } from '../src/common/constants/PagePath'
 
 export const metadata: Metadata = {

@@ -1,9 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { ZodIssue, z } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { BadRequestError, UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { AnnouncementService } from 'server/service/announcement.service'
-import { BadRequestError, UserNotFoundError } from 'server/domain/error'
 import { DismissAnnouncementsSchema } from 'src/lib/schemas/announcements'
+import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
   req: NextApiRequest,

@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { ForbiddenError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { UserService } from 'server/service/user.service'
-import { ForbiddenError } from 'server/domain/error'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {

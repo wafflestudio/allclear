@@ -1,19 +1,23 @@
-import { ILike, In, IsNull, Raw, Repository } from 'typeorm'
-import { InjectRepository, Service } from 'server/provider'
-import { ClubEntity, UserActivityLogEntity, UserActivityLogType } from 'server/infra/database/entities'
-import { ClubCategory } from 'server/domain/model/ClubCategory'
-import { CATEGORIES } from 'src/fixtures/category'
-import { ReviewKeyword } from 'server/domain/model/Club'
-import { ENV } from 'server/ENV'
-import { ClubReviewKeywordEntity } from 'server/infra/database/entities/club-review-keyword.entity'
-import { UserClubReviewEntity } from 'server/infra/database/entities/user-club-review.entity'
-import { groupBy, round, toPairs } from 'lodash-es'
-import { ClubManagerEntity } from 'server/infra/database/entities/club-manager.entity'
-import { UserSavedClubEntity } from 'server/infra/database/entities/user-saved-club.entity'
-import { ClubManagerRegisterRequestEntityV1 } from 'server/infra/database/entities/v1/club-manager-register-request.entity'
 import dayjs from 'dayjs'
 import leven from 'leven'
+import { groupBy, round, toPairs } from 'lodash-es'
 import { NotFoundError } from 'server/domain/error'
+import type { ReviewKeyword } from 'server/domain/model/Club'
+import type { ClubCategory } from 'server/domain/model/ClubCategory'
+import { ENV } from 'server/ENV'
+import {
+  ClubEntity,
+  UserActivityLogEntity,
+  UserActivityLogType,
+} from 'server/infra/database/entities'
+import { ClubManagerEntity } from 'server/infra/database/entities/club-manager.entity'
+import { ClubReviewKeywordEntity } from 'server/infra/database/entities/club-review-keyword.entity'
+import { UserClubReviewEntity } from 'server/infra/database/entities/user-club-review.entity'
+import { UserSavedClubEntity } from 'server/infra/database/entities/user-saved-club.entity'
+import { ClubManagerRegisterRequestEntityV1 } from 'server/infra/database/entities/v1/club-manager-register-request.entity'
+import { InjectRepository, Service } from 'server/provider'
+import { CATEGORIES } from 'src/fixtures/category'
+import { ILike, In, IsNull, Raw, type Repository } from 'typeorm'
 
 export type V1Club = {
   id: string

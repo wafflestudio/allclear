@@ -1,8 +1,8 @@
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
-import { ENV } from '../../ENV'
-import * as Stream from 'stream'
-import { PassThrough } from 'stream'
 import { Upload } from '@aws-sdk/lib-storage'
+import type * as Stream from 'stream'
+import { PassThrough } from 'stream'
+import { ENV } from '../../ENV'
 
 const S3 = new S3Client({
   region: 'auto',

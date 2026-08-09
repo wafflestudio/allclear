@@ -12,7 +12,7 @@ export function PopularClubs() {
         clubName: '---',
         category: '',
       }))
-    : rankings ?? []
+    : (rankings ?? [])
 
   return (
     <div className="flex w-full flex-col gap-5">

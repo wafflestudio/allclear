@@ -1,10 +1,10 @@
-import { NextApiHandler } from 'next'
-import { z } from 'zod'
+import type { NextApiHandler } from 'next'
+import { NotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
-import { NotFoundError } from 'server/domain/error'
-import { UserService } from '../../../../../../../server/service/user.service'
 import { ManagerClubParamsSchema } from 'src/lib/schemas/managers'
+import { z } from 'zod'
+import { UserService } from '../../../../../../../server/service/user.service'
 
 const api: NextApiHandler = async (req, res) => {
   try {

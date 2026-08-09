@@ -1,7 +1,5 @@
 module.exports = {
-	'**/*.(ts|tsx)': () => 'pnpm tsc --noEmit',
-	'**/*.(ts|tsx|js)': (filenames) => [
-		`pnpm eslint --fix ${filenames.join(' ')}`,
-		`pnpm prettier --write ${filenames.join(' ')}`,
-	],
-};
+  '**/*.(ts|tsx)': () => 'pnpm tsc --noEmit',
+  '**/*.(ts|tsx|js|jsx|json|jsonc)': (filenames) =>
+    `pnpm biome check --write --no-errors-on-unmatched ${filenames.join(' ')}`,
+}

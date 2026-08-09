@@ -1,12 +1,12 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z, ZodIssue } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { NotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
-import { NotFoundError } from 'server/domain/error'
 import {
-  ClubRecruitmentParamsSchema,
   type ClubRecruitmentDto,
+  ClubRecruitmentParamsSchema,
 } from 'src/lib/schemas/club-recruitments'
+import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,9 +17,8 @@ export default async function handler(
 
     if (req.method === 'GET') {
       const { uuid: clubUuid } = ClubRecruitmentParamsSchema.parse(req.query)
-      const recruitment = await clubRecruitmentService.findPublicRepresentativeRecruitmentByClub(
-        clubUuid,
-      )
+      const recruitment =
+        await clubRecruitmentService.findPublicRepresentativeRecruitmentByClub(clubUuid)
       return res.status(200).json(recruitment)
     }
   } catch (err) {

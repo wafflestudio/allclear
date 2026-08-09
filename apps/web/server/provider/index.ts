@@ -1,6 +1,5 @@
+import type { ObjectLiteral, Repository } from 'typeorm'
 import { connectionHolder, getDataSource } from '../infra/database/datasource'
-
-import { ObjectLiteral, Repository } from 'typeorm'
 
 interface Class {
   new (...args: any[]): any
@@ -12,7 +11,7 @@ const serviceAsyncProxy = (obj: any) =>
     get(target, key) {
       const value = target[key]
       if (typeof value == 'function') {
-        return async function (...args: any) {
+        return async (...args: any) => {
           await connectionHolder.promise // getDataSource 의 처음 db initial 을 기다림
           return value.call(target, ...args)
         }

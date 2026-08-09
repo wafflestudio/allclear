@@ -1,8 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Provider } from 'server/provider'
-import { UserServiceV1 } from 'server/service/v1/user.service'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
+import { Provider } from 'server/provider'
 import { ClubServiceV1 } from 'server/service/v1/club.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
 import { z } from 'zod'
 
 const QueryValidator = z.object({

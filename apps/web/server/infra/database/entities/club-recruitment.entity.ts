@@ -1,3 +1,4 @@
+import { formatYearMonth } from 'src/common/utils/formatYearMonth'
 import {
   BeforeInsert,
   BeforeUpdate,
@@ -10,7 +11,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm'
-import { formatYearMonth } from 'src/common/utils/formatYearMonth'
 import { RegularMeetingEntity } from './regular-meeting.entity'
 
 @Entity('club_recruitment')
@@ -39,9 +39,13 @@ export class ClubRecruitmentEntity {
   @Column({ type: 'boolean', default: false, name: 'has_regular_meeting' })
   hasRegularMeeting: boolean
 
-  @OneToMany(() => RegularMeetingEntity, (regularMeeting) => regularMeeting.clubRecruitment, {
-    eager: true,
-  })
+  @OneToMany(
+    () => RegularMeetingEntity,
+    (regularMeeting) => regularMeeting.clubRecruitment,
+    {
+      eager: true,
+    },
+  )
   regularMeetings: RegularMeetingEntity[]
 
   @Column({ type: 'varchar', default: '', name: 'application_url' })

@@ -1,10 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { Provider } from 'server/provider'
-import { UserServiceV1 } from 'server/service/v1/user.service'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
-import { ZodIssue } from 'zod'
-import { V1Club } from 'server/service/v1/club.service'
-import { ClubServiceV1 } from 'server/service/v1/club.service'
+import { Provider } from 'server/provider'
+import { ClubServiceV1, type V1Club } from 'server/service/v1/club.service'
+import { UserServiceV1 } from 'server/service/v1/user.service'
+import type { ZodIssue } from 'zod'
 
 type ResponseData = {
   clubs: V1Club[]

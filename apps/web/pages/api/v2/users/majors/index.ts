@@ -1,7 +1,7 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import type { CollegeMajor } from 'server/domain/model/CollegeMajor'
 import { Provider } from 'server/provider'
 import { UserService } from 'server/service/user.service'
-import { CollegeMajor } from 'server/domain/model/CollegeMajor'
 
 type ResponseData = {
   majors: CollegeMajor[]

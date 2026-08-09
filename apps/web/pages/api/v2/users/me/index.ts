@@ -1,11 +1,11 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { User } from 'server/domain/model/User'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import type { User } from 'server/domain/model/User'
 import { Provider } from 'server/provider'
 import { UserService } from 'server/service/user.service'
-import { UserNotFoundError } from '../../../../../server/domain/error'
-import { z, ZodIssue } from 'zod'
-import { bearerToken } from '../../../../../server/util/token'
 import { UpdateProfileSchema } from 'src/lib/schemas/users'
+import { type ZodIssue, z } from 'zod'
+import { UserNotFoundError } from '../../../../../server/domain/error'
+import { bearerToken } from '../../../../../server/util/token'
 
 type ResponseData = {
   profile: User

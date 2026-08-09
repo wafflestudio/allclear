@@ -1,8 +1,4 @@
-import { NextApiHandler } from 'next'
-import { z } from 'zod'
-import { Provider } from 'server/provider'
-import { ClubService } from 'server/service/club.service'
-import { UserService } from 'server/service/user.service'
+import type { NextApiHandler } from 'next'
 import {
   BadRequestError,
   ConflictError,
@@ -10,8 +6,12 @@ import {
   NotFoundError,
   UserNotFoundError,
 } from 'server/domain/error'
+import { Provider } from 'server/provider'
+import { ClubService } from 'server/service/club.service'
+import { UserService } from 'server/service/user.service'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { ManagedClubPatchSchema } from 'src/lib/schemas/managers'
+import { z } from 'zod'
 
 const api: NextApiHandler = async (req, res) => {
   try {

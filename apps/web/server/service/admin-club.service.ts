@@ -1,5 +1,20 @@
-import { FindOptionsWhere, In, IsNull, Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
+import { ConflictError, NotFoundError } from 'server/domain/error'
+import {
+  type ClubStatus,
+  PENDING_CLUB_STATUS,
+  PUBLIC_CLUB_STATUS,
+  REJECTED_CLUB_STATUS,
+} from 'src/common/constants/club-status'
+import type {
+  AdminClubHistoriesQuery,
+  AdminClubManagerRequestStatusUpdate,
+  AdminClubManagerRequestsQuery,
+  AdminClubStatusUpdate,
+  AdminClubsQuery,
+  AdminClubVerificationRequestStatusUpdate,
+  AdminClubVerificationRequestsQuery,
+} from 'src/lib/schemas/admin'
+import { type FindOptionsWhere, In, IsNull, type Repository } from 'typeorm'
 import {
   ClubEntity,
   ClubHistoryEntity,
@@ -14,22 +29,7 @@ import {
   type UserNotificationMetadata,
   type UserNotificationType,
 } from '../infra/database/entities/user-notification.entity'
-import {
-  ClubStatus,
-  PENDING_CLUB_STATUS,
-  PUBLIC_CLUB_STATUS,
-  REJECTED_CLUB_STATUS,
-} from 'src/common/constants/club-status'
-import { ConflictError, NotFoundError } from 'server/domain/error'
-import type {
-  AdminClubsQuery,
-  AdminClubHistoriesQuery,
-  AdminClubManagerRequestStatusUpdate,
-  AdminClubManagerRequestsQuery,
-  AdminClubStatusUpdate,
-  AdminClubVerificationRequestStatusUpdate,
-  AdminClubVerificationRequestsQuery,
-} from 'src/lib/schemas/admin'
+import { InjectRepository, Service } from '../provider'
 
 export type AdminClubItem = {
   uuid: string
@@ -178,7 +178,7 @@ export class AdminClubService {
           category: club.category,
           affiliation:
             club.affiliationType === '소속동아리'
-              ? club.collegeMajor?.major ?? club.collegeMajor?.college ?? ''
+              ? (club.collegeMajor?.major ?? club.collegeMajor?.college ?? '')
               : club.affiliationType,
           short_description: club.shortDescription,
           created_at: club.createdAt,
@@ -215,7 +215,7 @@ export class AdminClubService {
         category: club.category,
         affiliation:
           club.affiliationType === '소속동아리'
-            ? club.collegeMajor?.major ?? club.collegeMajor?.college ?? ''
+            ? (club.collegeMajor?.major ?? club.collegeMajor?.college ?? '')
             : club.affiliationType,
         college_major_id: club.collegeMajorId,
         short_description: club.shortDescription,
@@ -272,7 +272,7 @@ export class AdminClubService {
         {
           status: decision.status,
           approvedAt: isApproved ? processedAt : null,
-          rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
+          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
           isOfficialVerified: isApproved ? decision.is_official_verified : false,
           verifiedAt: isApproved && decision.is_official_verified ? processedAt : null,
         },
@@ -571,7 +571,7 @@ export class AdminClubService {
         { id: request.id },
         {
           status: decision.status,
-          rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
+          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
         },
       )
 
@@ -701,7 +701,7 @@ export class AdminClubService {
         { id: request.id },
         {
           status: decision.status,
-          rejectReason: isRejected ? decision.reject_reason?.trim() ?? '' : '',
+          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
         },
       )
 

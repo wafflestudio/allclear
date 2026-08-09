@@ -1,8 +1,8 @@
 import { DataSource } from 'typeorm'
 import 'reflect-metadata'
 
-import { MAIN_DATA_SOURCE_OPTIONS } from './datasource.config'
 import Holder from 'src/lib/Holder'
+import { MAIN_DATA_SOURCE_OPTIONS } from './datasource.config'
 
 export const connectionHolder = new Holder()
 

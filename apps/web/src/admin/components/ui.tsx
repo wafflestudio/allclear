@@ -1,6 +1,6 @@
 import React from 'react'
+import { STATUS_FILTERS, statusClassNames, statusLabels } from 'src/admin/constants'
 import { useClubDetail } from 'src/admin/hooks'
-import { statusClassNames, statusLabels, STATUS_FILTERS } from 'src/admin/constants'
 import type { AdminClubDetail, ClubStatus, DecisionStatus, StatusFilter } from 'src/admin/types'
 
 export const StatusBadge = ({ status }: { status?: ClubStatus }) => {

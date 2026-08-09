@@ -1,8 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { UserServiceV1 } from 'server/service/v1/user.service'
-import { UserNotFoundError } from 'server/domain/error'
+import { z } from 'zod'
 
 const UpdateDeviceValidator = z.object({
   pushId: z.string().uuid(),

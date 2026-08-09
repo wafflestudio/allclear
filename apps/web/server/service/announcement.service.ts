@@ -1,9 +1,9 @@
-import { Repository } from 'typeorm'
-import { Inject, InjectRepository, Service } from '../provider'
-import { AnnouncementDismissEntity, AnnouncementEntity } from '../infra/database/entities'
-import { UserService } from './user.service'
-import { Announcement, toAnnouncementDomain } from '../domain/model/Announcement'
+import type { Repository } from 'typeorm'
 import { BadRequestError } from '../domain/error'
+import { type Announcement, toAnnouncementDomain } from '../domain/model/Announcement'
+import { AnnouncementDismissEntity, AnnouncementEntity } from '../infra/database/entities'
+import { Inject, InjectRepository, Service } from '../provider'
+import { UserService } from './user.service'
 
 @Service
 export class AnnouncementService {

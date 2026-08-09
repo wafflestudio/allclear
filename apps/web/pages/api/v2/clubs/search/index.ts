@@ -1,13 +1,13 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { BadRequestError, UnauthorizedError } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { SearchService } from 'server/service/search.service'
-import {
+import { saveRecentSearchBestEffort } from 'server/service/recent-search.service'
+import type {
   MinActivityPeriodFilter,
   SearchClub,
   SearchFilters,
 } from 'server/service/search/search.types'
-import { BadRequestError, UnauthorizedError } from 'server/domain/error'
-import { saveRecentSearchBestEffort } from 'server/service/recent-search.service'
+import { SearchService } from 'server/service/search.service'
 import { resolveOptionalAuth } from 'server/util/optional-auth'
 
 type ResponseData = {

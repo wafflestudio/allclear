@@ -1,15 +1,15 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z, ZodIssue } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { BadRequestError, UnauthorizedError, UserNotFoundError } from 'server/domain/error'
 import {
   deleteGuestRecentSearches,
   deleteMemberRecentSearches,
   findGuestRecentSearches,
   findMemberRecentSearches,
-  RecentSearch,
+  type RecentSearch,
 } from 'server/service/recent-search.service'
 import { assertNever } from 'server/util/assert-never'
 import { resolveOptionalAuth } from 'server/util/optional-auth'
+import { type ZodIssue, z } from 'zod'
 
 type RecentSearchesResponse = {
   recentSearches: RecentSearch[]

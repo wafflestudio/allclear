@@ -1,8 +1,8 @@
-import { Repository } from 'typeorm'
-import { AppVersionPolicyEntity, type AppClientType } from 'server/infra/database/entities'
-import { getRedisClient } from 'server/infra/redis/client'
 import { BadRequestError, NotFoundError } from 'server/domain/error'
+import { type AppClientType, AppVersionPolicyEntity } from 'server/infra/database/entities'
+import { getRedisClient } from 'server/infra/redis/client'
 import { InjectRepository, Service } from 'server/provider'
+import type { Repository } from 'typeorm'
 
 const APP_VERSION_POLICY_CACHE_TTL_SECONDS = 24 * 60 * 60
 const STORE_URLS: Record<AppClientType, string> = {
@@ -25,8 +25,7 @@ type AppVersionCheckResult = AppVersionPolicy & {
   storeUrl: string
 }
 
-const appVersionPolicyCacheKey = (clientType: AppClientType) =>
-  `app-version-policy:${clientType}`
+const appVersionPolicyCacheKey = (clientType: AppClientType) => `app-version-policy:${clientType}`
 
 function parseVersion(version: string): number[] {
   return version.split('.').map((part) => Number(part))
@@ -110,10 +109,9 @@ export class AppVersionService {
       if (!redis) {
         return null
       }
-      const rawPolicy = (await redis.sendCommand([
-        'GET',
-        appVersionPolicyCacheKey(clientType),
-      ])) as string | null
+      const rawPolicy = (await redis.sendCommand(['GET', appVersionPolicyCacheKey(clientType)])) as
+        | string
+        | null
       return rawPolicy ? (JSON.parse(rawPolicy) as AppVersionPolicy) : null
     } catch (err) {
       console.error('getCachedAppVersionPolicy error: ', err)

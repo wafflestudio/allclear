@@ -1,15 +1,16 @@
-import { DataSourceOptions } from 'typeorm'
+import type { DataSourceOptions } from 'typeorm'
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies'
+import { ENV } from '../../ENV'
 import {
   AccountEntity,
   AccountUserEntity,
-  AppVersionPolicyEntity,
   AnnouncementDismissEntity,
   AnnouncementEntity,
+  AppVersionPolicyEntity,
   ClubEntity,
   ClubRecruitmentEntity,
-  RegularMeetingEntity,
   DeviceEntity,
+  RegularMeetingEntity,
   ServiceUserEntity,
   TermsAgreementEntity,
   TermsEntity,
@@ -17,19 +18,18 @@ import {
   UserEntity,
   UserNotificationEntity,
 } from './entities'
-import { ENV } from '../../ENV'
-import { ClubReviewKeywordEntity } from './entities/club-review-keyword.entity'
-import { UserClubReviewEntity } from './entities/user-club-review.entity'
-import { ClubManagerEntity } from './entities/club-manager.entity'
-import { ClubReviewKeywordCategoryEntity } from './entities/user-club-review-category.entity'
-import { UserVoiceEntity } from './entities/user-voice.entity'
-import { UserSavedClubEntity } from './entities/user-saved-club.entity'
-import { CollegeMajorEntity } from './entities/college-major.entity'
-import { ClubManagerRegisterRequestEntity } from './entities/club-manager-register-request.entity'
-import { ClubManagerRegisterRequestEntityV1 } from './entities/v1/club-manager-register-request.entity'
 import { ClubHistoryEntity } from './entities/club-history.entity'
+import { ClubManagerEntity } from './entities/club-manager.entity'
+import { ClubManagerRegisterRequestEntity } from './entities/club-manager-register-request.entity'
+import { ClubReviewKeywordEntity } from './entities/club-review-keyword.entity'
 import { ClubVerificationRequestEntity } from './entities/club-verification-request.entity'
+import { CollegeMajorEntity } from './entities/college-major.entity'
+import { UserClubReviewEntity } from './entities/user-club-review.entity'
+import { ClubReviewKeywordCategoryEntity } from './entities/user-club-review-category.entity'
 import { UserRecentSearchEntity } from './entities/user-recent-search.entity'
+import { UserSavedClubEntity } from './entities/user-saved-club.entity'
+import { UserVoiceEntity } from './entities/user-voice.entity'
+import { ClubManagerRegisterRequestEntityV1 } from './entities/v1/club-manager-register-request.entity'
 
 export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
   type: 'postgres',

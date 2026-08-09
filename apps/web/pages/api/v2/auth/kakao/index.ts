@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { ENV } from 'server/ENV'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

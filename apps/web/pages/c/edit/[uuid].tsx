@@ -1,22 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import dynamic from 'next/dynamic'
 import { useMemo, useState } from 'react'
-import { Controller, SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
+import { Controller, type SubmitHandler, useFieldArray, useForm } from 'react-hook-form'
 import { useMutation, useQuery } from 'react-query'
-import { Club, ClubCollegeMajor } from '../../../src/entities/club'
+import type { Club, ClubCollegeMajor } from '../../../src/entities/club'
 import {
   CLUB_AFFILIATION_TYPES,
   CLUB_CATEGORIES,
   CLUB_COLLEGES,
   CLUB_RECRUIT_TYPES,
   getClubRepository,
-  UpdateManageClubImageRequest,
-  UpdateManageClubRequest,
+  type UpdateManageClubImageRequest,
+  type UpdateManageClubRequest,
   UpdateManageClubRequestValidator,
 } from '../../../src/repositories/club'
 import { getClubService } from '../../../src/usecases/club'
-import dynamic from 'next/dynamic'
 import 'react-quill/dist/quill.snow.css'
-import { GetServerSidePropsContext, Metadata, ResolvingMetadata } from 'next'
+import type { GetServerSidePropsContext, Metadata, ResolvingMetadata } from 'next'
 
 const ReactQuill = dynamic(() => import('react-quill'), { ssr: false })
 
@@ -139,9 +139,9 @@ const EditClub = ({ club, authorization, updateClubMutation }: Props) => {
   const { data: collegeMajors = [] } = useCollegeMajors()
 
   const { fields, append, remove } = useFieldArray<string[]>({
-    // @ts-ignore
+    // @ts-expect-error
     control,
-    // @ts-ignore
+    // @ts-expect-error
     name: 'tags',
   })
 
@@ -604,6 +604,6 @@ const useUpdateClub = () => {
 const formatCollegeMajorLabel = (collegeMajor: ClubCollegeMajor) =>
   collegeMajor.major
     ? [collegeMajor.college, collegeMajor.major].filter(Boolean).join(' / ')
-    : collegeMajor.college ?? ''
+    : (collegeMajor.college ?? '')
 
 export default ClubEditPage

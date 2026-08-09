@@ -1,12 +1,12 @@
-import { In, Repository } from 'typeorm'
-import { InjectRepository, Service } from 'server/provider'
+import type { MyReview } from 'pages/api/v1/clubs/[uuid]/reviews/me'
+import type { ClubRanking } from 'pages/api/v1/clubs/rankings'
+import type { ReviewKeywordCategory } from 'pages/api/v1/clubs/reviews/keywords'
 import { ClubEntity } from 'server/infra/database/entities'
-import { UserClubReviewEntity } from 'server/infra/database/entities/user-club-review.entity'
 import { ClubReviewKeywordEntity } from 'server/infra/database/entities/club-review-keyword.entity'
+import { UserClubReviewEntity } from 'server/infra/database/entities/user-club-review.entity'
 import { ClubReviewKeywordCategoryEntity } from 'server/infra/database/entities/user-club-review-category.entity'
-import { ReviewKeywordCategory } from 'pages/api/v1/clubs/reviews/keywords'
-import { ClubRanking } from 'pages/api/v1/clubs/rankings'
-import { MyReview } from 'pages/api/v1/clubs/[uuid]/reviews/me'
+import { InjectRepository, Service } from 'server/provider'
+import { In, type Repository } from 'typeorm'
 
 @Service
 export class ReviewServiceV1 {
@@ -131,10 +131,13 @@ LIMIT ${topk}
   }
 
   private mostFrequent(input: string[], topN = 3): string[] {
-    const frequencyMap = input.reduce((acc, cur) => {
-      acc[cur] = (acc[cur] ?? 0) + 1
-      return acc
-    }, {} as { [key: string]: number })
+    const frequencyMap = input.reduce(
+      (acc, cur) => {
+        acc[cur] = (acc[cur] ?? 0) + 1
+        return acc
+      },
+      {} as { [key: string]: number },
+    )
     return Array.from(new Set(input))
       .map((key): [string, number] => [key, frequencyMap[key]])
       .sort((a, b) => b[1] - a[1])

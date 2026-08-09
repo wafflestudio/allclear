@@ -1,6 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import type { ClubCategory } from 'server/domain/model/ClubCategory'
 import { Provider } from 'server/provider'
-import { ClubCategory } from 'server/domain/model/ClubCategory'
 import { ClubService } from 'server/service/club.service'
 
 type ResponseData = {

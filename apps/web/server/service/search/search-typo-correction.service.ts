@@ -1,9 +1,9 @@
-import { IsNull, Repository } from 'typeorm'
 import { disassemble } from 'es-hangul'
 import leven from 'leven'
-import { InjectRepository, Service } from 'server/provider'
 import { ClubEntity } from 'server/infra/database/entities'
+import { InjectRepository, Service } from 'server/provider'
 import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
+import { IsNull, type Repository } from 'typeorm'
 
 type ClubCorrectionSource = Pick<ClubEntity, 'name' | 'shortDescription'>
 type CorrectionCandidate = {

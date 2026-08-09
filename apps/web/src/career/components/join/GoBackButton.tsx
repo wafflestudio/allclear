@@ -1,5 +1,5 @@
-import React from 'react'
 import { useRouter } from 'next/router'
+import type React from 'react'
 import LeftArrowIcon from '../../../common/components/LeftArrowIcon'
 
 type Props = {

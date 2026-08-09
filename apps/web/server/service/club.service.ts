@@ -1,5 +1,33 @@
-import { In, IsNull, Repository } from 'typeorm'
-import { Inject, InjectRepository, Service } from '../provider'
+import dayjs from 'dayjs'
+import { groupBy, round, toPairs } from 'lodash-es'
+import {
+  type Club,
+  type ClubDetail,
+  type ManagedClubDetail,
+  type ManagedClubListItem,
+  type ReviewKeyword,
+  toClubDetailDomain,
+  toClubDomain,
+} from 'server/domain/model/Club'
+import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
+import {
+  PENDING_CLUB_STATUS,
+  PUBLIC_CLUB_STATUS,
+  REJECTED_CLUB_STATUS,
+} from 'src/common/constants/club-status'
+import type {
+  ClubData,
+  ClubManagerRequest,
+  ClubManagerRequestPatch,
+  ClubManagerRequestResponse,
+  ClubRegisterRequest,
+  ClubRegistrationManager,
+  ManagedClubPatch,
+} from 'src/lib/schemas/managers'
+import { In, IsNull, type Repository } from 'typeorm'
+import { CATEGORIES } from '../../src/fixtures/category'
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
+import type { ClubCategory } from '../domain/model/ClubCategory'
 import {
   ClubEntity,
   ClubHistoryEntity,
@@ -8,43 +36,15 @@ import {
   UserActivityLogType,
   UserNotificationEntity,
 } from '../infra/database/entities'
-import { ClubCategory } from '../domain/model/ClubCategory'
-import { CATEGORIES } from '../../src/fixtures/category'
-import {
-  Club,
-  ClubDetail,
-  ManagedClubDetail,
-  ManagedClubListItem,
-  ReviewKeyword,
-  toClubDetailDomain,
-  toClubDomain,
-} from 'server/domain/model/Club'
-import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
-import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
-import { groupBy, round, toPairs } from 'lodash-es'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { UserSavedClubEntity } from '../infra/database/entities/user-saved-club.entity'
 import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
-import dayjs from 'dayjs'
-import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
-import { sortByPopularAndEachRandom } from '../util/club-sort'
-import {
-  PENDING_CLUB_STATUS,
-  PUBLIC_CLUB_STATUS,
-  REJECTED_CLUB_STATUS,
-} from 'src/common/constants/club-status'
-import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
-import type {
-  ClubData,
-  ClubManagerRequest,
-  ClubManagerRequestPatch,
-  ClubManagerRequestResponse,
-  ClubRegistrationManager,
-  ClubRegisterRequest,
-  ManagedClubPatch,
-} from 'src/lib/schemas/managers'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
+import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
+import { UserSavedClubEntity } from '../infra/database/entities/user-saved-club.entity'
+import { Inject, InjectRepository, Service } from '../provider'
+import { sortByPopularAndEachRandom } from '../util/club-sort'
 import { ClubAccessService } from './club-access.service'
 import { getClubResubmissionStatusPatch } from './club-registration-status'
 

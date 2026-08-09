@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 import { TABS } from 'src/admin/constants'
 import type { AdminTab, StatusFilter } from 'src/admin/types'
 import { StatusBadge, StatusFilterBar } from './ui'

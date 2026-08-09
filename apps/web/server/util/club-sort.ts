@@ -1,4 +1,4 @@
-import { Club } from 'server/domain/model/Club'
+import type { Club } from 'server/domain/model/Club'
 
 export const sortByPopularAndEachRandom = (clubs: Club[]): Club[] =>
   clubs.sort((a, b) => {

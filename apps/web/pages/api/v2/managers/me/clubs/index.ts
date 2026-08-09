@@ -1,11 +1,11 @@
-import { Club, ManagedClubListItem } from 'server/domain/model/Club'
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
+import type { Club, ManagedClubListItem } from 'server/domain/model/Club'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
-import { UserNotFoundError } from 'server/domain/error'
 import { UserService } from 'server/service/user.service'
-import { SlackService } from '../../../../../../server/service/slack.service'
 import { ClubManagerRegisterRequestSchema } from 'src/lib/schemas/managers'
+import { SlackService } from '../../../../../../server/service/slack.service'
 
 type ResponseData = {
   success: true

@@ -1,13 +1,13 @@
-import type {
-  AdminClubsResponse,
-  AdminClubDetailResponse,
-  AdminClubManagerRequestsResponse,
-  AdminClubVerificationRequestsResponse,
-  AdminClubHistoriesResponse,
-} from 'src/lib/schemas/admin'
 import { ADMIN_AUTH_TOKEN_KEY, buildQuery } from 'src/admin/constants'
 import type { ClubStatus, StatusFilter } from 'src/admin/types'
 import type { ClubCollegeMajor } from 'src/entities/club'
+import type {
+  AdminClubDetailResponse,
+  AdminClubHistoriesResponse,
+  AdminClubManagerRequestsResponse,
+  AdminClubsResponse,
+  AdminClubVerificationRequestsResponse,
+} from 'src/lib/schemas/admin'
 
 type FetchOptions = NonNullable<Parameters<typeof fetch>[1]>
 type PaginationParams = {

@@ -1,7 +1,5 @@
 import Busboy from 'busboy'
-import { NextApiRequest, NextApiResponse, PageConfig } from 'next'
-import { v4 as uuidv4 } from 'uuid'
-import { z } from 'zod'
+import type { NextApiRequest, NextApiResponse, PageConfig } from 'next'
 import {
   BadRequestError,
   ForbiddenError,
@@ -14,6 +12,8 @@ import { Provider } from 'server/provider'
 import { ClubAccessService } from 'server/service/club-access.service'
 import { UserService } from 'server/service/user.service'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
+import { v4 as uuidv4 } from 'uuid'
+import { z } from 'zod'
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024
 const IMAGE_EXTENSION_BY_MIME_TYPE: Record<string, string> = {

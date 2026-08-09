@@ -1,6 +1,6 @@
 import Head from 'next/head'
 import { useState } from 'react'
-import { ClubSearchFilters, DEFAULT_SEARCH_FILTERS, useSearchClubs } from '../../src/club/api'
+import { type ClubSearchFilters, DEFAULT_SEARCH_FILTERS, useSearchClubs } from '../../src/club/api'
 import { AppTabBar } from '../../src/club/components/AppTabBar'
 import { ClubCard, ClubCardSkeleton } from '../../src/club/components/ClubCard'
 import { PopularClubs } from '../../src/club/components/search/PopularClubs'

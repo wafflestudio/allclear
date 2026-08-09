@@ -1,20 +1,20 @@
 import '../styles/globals.css'
 import 'swagger-ui-react/swagger-ui.css'
 
-import React, { useEffect, useRef } from 'react'
 import type { AppProps } from 'next/app'
-import { QueryClient, QueryClientProvider } from 'react-query'
-import { ReactQueryDevtools } from 'react-query/devtools'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
+import React, { useEffect, useRef } from 'react'
+import { QueryClient, QueryClientProvider } from 'react-query'
+import { ReactQueryDevtools } from 'react-query/devtools'
 import { ToastContainer } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css'
-import Script from 'next/script'
-import * as GA from '../src/common/connectors/ga'
-import { AuthProvider } from '../src/club/auth/AuthContext'
-import { WEB_ENV } from '../src/WEB_ENV'
-import { Metadata } from 'next'
 import { Analytics } from '@vercel/analytics/react'
+import type { Metadata } from 'next'
+import Script from 'next/script'
+import { AuthProvider } from '../src/club/auth/AuthContext'
+import * as GA from '../src/common/connectors/ga'
+import { WEB_ENV } from '../src/WEB_ENV'
 
 export const metadata: Metadata = {
   title: '서울대 모든 동아리 - 한 번에 올클하기',

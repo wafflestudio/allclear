@@ -1,6 +1,6 @@
+import type { ClubStatus } from 'src/common/constants/club-status'
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { CollegeMajorEntity } from './college-major.entity'
-import type { ClubStatus } from 'src/common/constants/club-status'
 import { ClubTimeStampMixin } from './TimeStampMixin'
 
 @Entity('club')

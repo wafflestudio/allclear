@@ -1,4 +1,4 @@
-import { TermsEntity } from '../../infra/database/entities'
+import type { TermsEntity } from '../../infra/database/entities'
 
 export type Terms = {
   uuid: string

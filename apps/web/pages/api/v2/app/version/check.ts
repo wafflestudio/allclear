@@ -1,9 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { ZodIssue, z } from 'zod'
-import { Provider } from 'server/provider'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError } from 'server/domain/error'
+import { Provider } from 'server/provider'
 import { AppVersionService } from 'server/service/app-version.service'
-import { AppVersionCheckResponse, AppVersionCheckSchema } from 'src/lib/schemas/app-versions'
+import { type AppVersionCheckResponse, AppVersionCheckSchema } from 'src/lib/schemas/app-versions'
+import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
   req: NextApiRequest,

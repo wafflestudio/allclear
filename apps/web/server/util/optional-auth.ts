@@ -1,7 +1,7 @@
-import { NextApiRequest } from 'next'
 import * as jose from 'jose'
-import { ENV } from 'server/ENV'
+import type { NextApiRequest } from 'next'
 import { BadRequestError, UnauthorizedError } from 'server/domain/error'
+import { ENV } from 'server/ENV'
 import { validate as validateUuid } from 'uuid'
 
 type MemberAuth = {

@@ -1,9 +1,9 @@
-import { In, Repository } from 'typeorm'
-import { Inject, InjectRepository, Service } from 'server/provider'
-import { ClubEntity, ClubManagerEntity } from 'server/infra/database/entities'
 import { toClubDomain } from 'server/domain/model/Club'
+import { type ClubEntity, ClubManagerEntity } from 'server/infra/database/entities'
+import { Inject, InjectRepository, Service } from 'server/provider'
+import { In, type Repository } from 'typeorm'
 import { ClubService } from '../club.service'
-import { SearchClub } from './search.types'
+import type { SearchClub } from './search.types'
 
 @Service
 export class SearchResultHydratorService {

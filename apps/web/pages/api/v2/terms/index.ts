@@ -1,9 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { UserService } from 'server/service/user.service'
-import { Provider } from 'server/provider'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
-import { Terms } from 'server/domain/model/Terms'
+import type { Terms } from 'server/domain/model/Terms'
+import { Provider } from 'server/provider'
 import { TermsService } from 'server/service/terms.service'
+import { UserService } from 'server/service/user.service'
 
 type ResponseData = {
   data: Terms[]

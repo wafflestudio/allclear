@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query'
-import { CareerCategory } from '../../domain/types/CareerCategory'
+import type { CareerCategory } from '../../domain/types/CareerCategory'
 import { CAREER_CATEGORIES } from './CAREER_CATEGORIES'
 
 export const useFetchCareerCategories = () => {

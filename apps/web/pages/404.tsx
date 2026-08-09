@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 import { PagePath } from '../src/common/constants/PagePath'
 
 const PageNotFound = () => {

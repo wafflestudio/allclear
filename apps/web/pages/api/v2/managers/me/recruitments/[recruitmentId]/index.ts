@@ -1,14 +1,14 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { z, ZodIssue } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { ForbiddenError, NotFoundError, UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
 import { UserService } from 'server/service/user.service'
-import { ForbiddenError, NotFoundError, UserNotFoundError } from 'server/domain/error'
 import {
   RecruitmentIdParamsSchema,
   UpdateClubRecruitmentSchema,
   type UpdateRecruitmentResponse,
 } from 'src/lib/schemas/club-recruitments'
+import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
   req: NextApiRequest,

@@ -1,5 +1,5 @@
-import React from 'react'
-import { IconProps } from '../../common/components/IconProps'
+import type React from 'react'
+import type { IconProps } from '../../common/components/IconProps'
 import RocketLaunchIcon from '../../common/components/RocketLaunchIcon'
 import SquareTripleStackIcon from '../../common/components/SquareTripleStackIcon'
 import WalletIcon from '../../common/components/WalletIcon'

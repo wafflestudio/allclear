@@ -6,7 +6,7 @@ vi.mock('../provider', () => ({
   Service: () => undefined,
 }))
 
-import { ClubEntity } from '../infra/database/entities'
+import type { ClubEntity } from '../infra/database/entities'
 import { ClubService } from './club.service'
 
 const createClub = (uuid: string, name: string): ClubEntity =>
@@ -50,7 +50,7 @@ const createClub = (uuid: string, name: string): ClubEntity =>
     createdAt: '2026-07-26T00:00:00.000Z',
     updatedAt: '2026-07-26T00:00:00.000Z',
     deletedAt: null,
-  } as ClubEntity)
+  }) as ClubEntity
 
 describe('ClubService.findAllManagedByUser', () => {
   it('returns hasManager when any user manages the club', async () => {

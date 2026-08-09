@@ -1,8 +1,8 @@
-import { IsNull, Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
-import { UserNotificationEntity } from '../infra/database/entities'
-import { toUserNotificationDomain, UserNotification } from '../domain/model/UserNotification'
+import { IsNull, type Repository } from 'typeorm'
 import { NotFoundError } from '../domain/error'
+import { toUserNotificationDomain, type UserNotification } from '../domain/model/UserNotification'
+import { UserNotificationEntity } from '../infra/database/entities'
+import { InjectRepository, Service } from '../provider'
 
 @Service
 export class UserNotificationService {

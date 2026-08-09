@@ -1,11 +1,11 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
 import jwt from 'jsonwebtoken'
-import { z } from 'zod'
-import type { ZodIssue } from 'zod'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
 import { AuthService } from 'server/service/auth.service'
 import { KakaoCallbackQuerySchema } from 'src/lib/schemas/auth'
+import type { ZodIssue } from 'zod'
+import { z } from 'zod'
 
 type ResponseData = {
   token: string

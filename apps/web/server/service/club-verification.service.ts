@@ -1,9 +1,9 @@
-import { IsNull, Repository } from 'typeorm'
-import { InjectRepository, Service } from '../provider'
+import { IsNull, type Repository } from 'typeorm'
+import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
-import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
+import { InjectRepository, Service } from '../provider'
 
 @Service
 export class ClubVerificationService {

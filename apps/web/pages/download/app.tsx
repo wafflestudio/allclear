@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import type { Metadata } from 'next'
 import { useRouter } from 'next/router'
 import * as qs from 'qs'
-import { Metadata } from 'next'
+import React, { useEffect, useState } from 'react'
 
 const checkMobile = (): 'ios' | 'android' | 'other' | '' => {
   const device = navigator.userAgent.toLowerCase() // userAgent 값 얻기

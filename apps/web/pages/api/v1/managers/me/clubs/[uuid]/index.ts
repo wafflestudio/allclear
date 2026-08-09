@@ -1,9 +1,9 @@
-import { NextApiHandler } from 'next'
-import { z } from 'zod'
+import type { NextApiHandler } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ClubServiceV1 } from 'server/service/v1/club.service'
 import { UserServiceV1 } from 'server/service/v1/user.service'
-import { UserNotFoundError } from 'server/domain/error'
+import { z } from 'zod'
 
 const RequestBody = z.object({
   name: z.string().nonempty().max(30),

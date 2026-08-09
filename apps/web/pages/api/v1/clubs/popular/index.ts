@@ -1,7 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ClubServiceV1 } from 'server/service/v1/club.service'
-import { V1Club } from 'server/service/v1/club.service'
+import { ClubServiceV1, type V1Club } from 'server/service/v1/club.service'
 
 type ResponseData = {
   clubs: V1Club[]

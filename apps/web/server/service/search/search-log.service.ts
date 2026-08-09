@@ -1,6 +1,6 @@
-import { Repository } from 'typeorm'
-import { InjectRepository, Service } from 'server/provider'
 import { UserActivityLogEntity, UserActivityLogType } from 'server/infra/database/entities'
+import { InjectRepository, Service } from 'server/provider'
+import type { Repository } from 'typeorm'
 
 @Service
 export class SearchLogService {

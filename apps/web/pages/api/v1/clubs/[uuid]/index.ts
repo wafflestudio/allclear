@@ -1,8 +1,7 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
-import { ClubServiceV1 } from 'server/service/v1/club.service'
-import { V1Club } from 'server/service/v1/club.service'
-import { z, ZodIssue } from 'zod'
+import { ClubServiceV1, type V1Club } from 'server/service/v1/club.service'
+import { type ZodIssue, z } from 'zod'
 
 const QueryValidator = z.object({
   uuid: z.string().uuid(),

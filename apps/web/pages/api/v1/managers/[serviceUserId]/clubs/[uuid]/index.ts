@@ -1,8 +1,8 @@
-import { NextApiHandler } from 'next'
-import { z } from 'zod'
+import type { NextApiHandler } from 'next'
+import { NotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ClubServiceV1 } from 'server/service/v1/club.service'
-import { NotFoundError } from 'server/domain/error'
+import { z } from 'zod'
 import { UserServiceV1 } from '../../../../../../../server/service/v1/user.service'
 
 const QueryValidator = z.object({

@@ -1,9 +1,9 @@
-import { NextApiRequest, NextApiResponse } from 'next'
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
 import { ReviewServiceV1 } from 'server/service/v1/review.service'
 import { UserServiceV1 } from 'server/service/v1/user.service'
-import { z, ZodIssue } from 'zod'
-import { UserNotFoundError } from 'server/domain/error'
+import { type ZodIssue, z } from 'zod'
 
 type ResponseData = MyReview | null
 

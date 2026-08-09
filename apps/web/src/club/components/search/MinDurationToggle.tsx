@@ -75,11 +75,11 @@ export function MinDurationToggle({ selected, onChange }: Props) {
                 i === 0
                   ? { left: 0 }
                   : i === OPTIONS.length - 1
-                  ? { right: 0 }
-                  : {
-                      left: `calc(2rem + (100% - 4rem) * ${positions[i] / 100})`,
-                      transform: 'translateX(-50%)',
-                    }
+                    ? { right: 0 }
+                    : {
+                        left: `calc(2rem + (100% - 4rem) * ${positions[i] / 100})`,
+                        transform: 'translateX(-50%)',
+                      }
               }
             >
               {option.label}

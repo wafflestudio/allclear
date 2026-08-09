@@ -1,4 +1,4 @@
-import { AnnouncementEntity } from '../../infra/database/entities'
+import type { AnnouncementEntity } from '../../infra/database/entities'
 
 export type Announcement = {
   uuid: string

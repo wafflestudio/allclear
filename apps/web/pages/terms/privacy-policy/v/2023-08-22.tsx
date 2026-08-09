@@ -1,4 +1,4 @@
-import { Metadata, NextPage } from 'next'
+import type { Metadata, NextPage } from 'next'
 import PrivacyContactSectionKr from '../../privacy-contact-section-kr'
 
 const privacyPolicyKr: { title: string; content: string }[] = `총칙

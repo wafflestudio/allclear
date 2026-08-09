@@ -1,6 +1,6 @@
-import { NextMiddleware, NextResponse } from 'next/server'
-import { ENV } from './server/ENV'
 import * as jose from 'jose'
+import { type NextMiddleware, NextResponse } from 'next/server'
+import { ENV } from './server/ENV'
 import { bearerToken } from './server/util/token'
 
 export const middleware: NextMiddleware = async (req) => {
