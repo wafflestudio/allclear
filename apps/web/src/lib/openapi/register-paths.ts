@@ -2217,7 +2217,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 동아리 목록 조회',
   description:
-    '운영진 대시보드에서 동아리 목록을 조회합니다. `status` query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
+    '운영진 대시보드에서 동아리 목록을 조회합니다. `status` query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubsQuerySchema,
@@ -2244,7 +2244,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 동아리 수정 이력 조회',
   description:
-    '이미 승인된 동아리의 정보가 수정되었을 때 기록된 before_data와 after_data를 조회합니다. club_uuid로 특정 동아리의 이력만 필터링할 수 있으며, query로 동아리명 또는 수정한 관리자 이름을 검색할 수 있고, offset/limit으로 페이지네이션할 수 있습니다.',
+    '이미 승인된 동아리의 정보가 수정되었을 때 기록된 before_data와 after_data를 조회합니다. club_uuid로 특정 동아리의 이력만, `affiliation_type`으로 소속 유형만 필터링할 수 있으며, query로 동아리명 또는 수정한 관리자 이름을 검색할 수 있고, offset/limit으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubHistoriesQuerySchema,
@@ -2272,7 +2272,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 매핑 신청 목록 조회',
   description:
-    '기존 동아리에 대해 관리자 권한을 요청한 유저들의 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
+    '기존 동아리에 대해 관리자 권한을 요청한 유저들의 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubManagerRequestsQuerySchema,
@@ -2300,7 +2300,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 공식 인증 요청 목록 조회',
   description:
-    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를 필터링할 수 있으며, query를 생략하면 전체 상태를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
+    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubVerificationRequestsQuerySchema,

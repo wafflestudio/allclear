@@ -138,6 +138,7 @@ export class AdminClubService {
 
   async getAdminClubs({
     status,
+    affiliation_type: affiliationType,
     offset,
     limit,
   }: AdminClubsQuery): Promise<AdminPaginatedList<'clubs', AdminClubItem>> {
@@ -146,6 +147,9 @@ export class AdminClubService {
     }
     if (status) {
       where.status = status
+    }
+    if (affiliationType) {
+      where.affiliationType = affiliationType
     }
 
     const [clubs, totalCount] = await this.clubRepository.findAndCount({
@@ -315,6 +319,7 @@ export class AdminClubService {
   async getAdminClubHistories({
     club_uuid: clubUuid,
     query,
+    affiliation_type: affiliationType,
     offset,
     limit,
   }: AdminClubHistoriesQuery): Promise<{ total_count: number; histories: AdminClubHistoryItem[] }> {
@@ -332,6 +337,10 @@ export class AdminClubService {
 
     if (clubUuid) {
       baseQuery.andWhere('history.club_id = :clubUuid', { clubUuid })
+    }
+
+    if (affiliationType) {
+      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
     }
 
     if (trimmedQuery) {
@@ -393,6 +402,7 @@ export class AdminClubService {
 
   async getAdminClubManagerRequests({
     status,
+    affiliation_type: affiliationType,
     offset,
     limit,
   }: AdminClubManagerRequestsQuery): Promise<
@@ -404,6 +414,9 @@ export class AdminClubService {
 
     if (status) {
       baseQuery.andWhere('manager_request.status = :status', { status })
+    }
+    if (affiliationType) {
+      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
     }
 
     const totalCount = await baseQuery.getCount()
@@ -462,6 +475,7 @@ export class AdminClubService {
 
   async getAdminClubVerificationRequests({
     status,
+    affiliation_type: affiliationType,
     offset,
     limit,
   }: AdminClubVerificationRequestsQuery): Promise<
@@ -473,6 +487,9 @@ export class AdminClubService {
 
     if (status) {
       baseQuery.andWhere('verification_request.status = :status', { status })
+    }
+    if (affiliationType) {
+      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
     }
 
     const totalCount = await baseQuery.getCount()

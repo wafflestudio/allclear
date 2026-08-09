@@ -13,7 +13,7 @@ import {
   verifyAdminRole,
 } from 'src/admin/api'
 import { ADMIN_AUTH_TOKEN_KEY, ADMIN_PAGE_SIZE, formatCollegeMajorLabel } from 'src/admin/constants'
-import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
+import type { AdminTab, AffiliationFilter, ClubStatus, StatusFilter } from 'src/admin/types'
 
 const INITIAL_PAGE_BY_TAB: Record<AdminTab, number> = {
   clubs: 1,
@@ -35,6 +35,7 @@ export const useAdminDashboard = () => {
   const [authToken, setAuthToken] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<AdminTab>('clubs')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('PENDING')
+  const [affiliationFilter, setAffiliationFilter] = useState<AffiliationFilter>('ALL')
   const [pageByTab, setPageByTab] = useState<Record<AdminTab, number>>(INITIAL_PAGE_BY_TAB)
   const [submittedHistoryQuery, setSubmittedHistoryQuery] = useState('')
   const [toasts, setToasts] = useState<
@@ -70,9 +71,9 @@ export const useAdminDashboard = () => {
   const historiesPage = pageByTab.histories
 
   const clubsQuery = useQuery(
-    ['admin-clubs', statusFilter, clubsPage, ADMIN_PAGE_SIZE],
+    ['admin-clubs', statusFilter, affiliationFilter, clubsPage, ADMIN_PAGE_SIZE],
     () =>
-      fetchClubs(statusFilter, {
+      fetchClubs(statusFilter, affiliationFilter, {
         offset: getPageOffset(clubsPage),
         limit: ADMIN_PAGE_SIZE,
       }),
@@ -81,18 +82,30 @@ export const useAdminDashboard = () => {
     },
   )
   const managerRequestsQuery = useQuery(
-    ['admin-manager-requests', statusFilter, managerRequestsPage, ADMIN_PAGE_SIZE],
+    [
+      'admin-manager-requests',
+      statusFilter,
+      affiliationFilter,
+      managerRequestsPage,
+      ADMIN_PAGE_SIZE,
+    ],
     () =>
-      fetchManagerRequests(statusFilter, {
+      fetchManagerRequests(statusFilter, affiliationFilter, {
         offset: getPageOffset(managerRequestsPage),
         limit: ADMIN_PAGE_SIZE,
       }),
     { enabled: activeTab === 'managerRequests' && !!authToken },
   )
   const verificationRequestsQuery = useQuery(
-    ['admin-verification-requests', statusFilter, verificationRequestsPage, ADMIN_PAGE_SIZE],
+    [
+      'admin-verification-requests',
+      statusFilter,
+      affiliationFilter,
+      verificationRequestsPage,
+      ADMIN_PAGE_SIZE,
+    ],
     () =>
-      fetchVerificationRequests(statusFilter, {
+      fetchVerificationRequests(statusFilter, affiliationFilter, {
         offset: getPageOffset(verificationRequestsPage),
         limit: ADMIN_PAGE_SIZE,
       }),
@@ -100,27 +113,33 @@ export const useAdminDashboard = () => {
   )
 
   const clubsPendingQuery = useQuery(
-    ['admin-clubs-pending-count'],
-    () => fetchClubs('PENDING', PENDING_COUNT_PAGINATION),
+    ['admin-clubs-pending-count', affiliationFilter],
+    () => fetchClubs('PENDING', affiliationFilter, PENDING_COUNT_PAGINATION),
     {
       enabled: !!authToken,
       refetchInterval: 30_000,
     },
   )
   const managerRequestsPendingQuery = useQuery(
-    ['admin-manager-requests-pending-count'],
-    () => fetchManagerRequests('PENDING', PENDING_COUNT_PAGINATION),
+    ['admin-manager-requests-pending-count', affiliationFilter],
+    () => fetchManagerRequests('PENDING', affiliationFilter, PENDING_COUNT_PAGINATION),
     { enabled: !!authToken, refetchInterval: 30_000 },
   )
   const verificationsPendingQuery = useQuery(
-    ['admin-verifications-pending-count'],
-    () => fetchVerificationRequests('PENDING', PENDING_COUNT_PAGINATION),
+    ['admin-verifications-pending-count', affiliationFilter],
+    () => fetchVerificationRequests('PENDING', affiliationFilter, PENDING_COUNT_PAGINATION),
     { enabled: !!authToken, refetchInterval: 30_000 },
   )
   const historiesQuery = useQuery(
-    ['admin-club-histories', submittedHistoryQuery, historiesPage, ADMIN_PAGE_SIZE],
+    [
+      'admin-club-histories',
+      submittedHistoryQuery,
+      affiliationFilter,
+      historiesPage,
+      ADMIN_PAGE_SIZE,
+    ],
     () =>
-      fetchHistories(submittedHistoryQuery, {
+      fetchHistories(submittedHistoryQuery, affiliationFilter, {
         offset: getPageOffset(historiesPage),
         limit: ADMIN_PAGE_SIZE,
       }),
@@ -232,6 +251,11 @@ export const useAdminDashboard = () => {
     }))
   }
 
+  const handleAffiliationFilterChange = (filter: AffiliationFilter) => {
+    setAffiliationFilter(filter)
+    setPageByTab(INITIAL_PAGE_BY_TAB)
+  }
+
   const handleHistorySearch = (query: string) => {
     setSubmittedHistoryQuery(query)
     setTabPage('histories', 1)
@@ -263,6 +287,8 @@ export const useAdminDashboard = () => {
     setActiveTab: handleTabChange,
     statusFilter,
     setStatusFilter: handleStatusFilterChange,
+    affiliationFilter,
+    setAffiliationFilter: handleAffiliationFilterChange,
     totalCount,
     pagination: {
       page: pageByTab[activeTab],

@@ -1,5 +1,5 @@
 import { ADMIN_AUTH_TOKEN_KEY, buildQuery } from 'src/admin/constants'
-import type { ClubStatus, StatusFilter } from 'src/admin/types'
+import type { AffiliationFilter, ClubStatus, StatusFilter } from 'src/admin/types'
 import type { ClubCollegeMajor } from 'src/entities/club'
 import type {
   AdminClubDetailResponse,
@@ -46,10 +46,18 @@ export const verifyAdminRole = async (token: string): Promise<void> => {
   if (!res.ok) throw new Error('admin role required')
 }
 
-export const fetchClubs = (status: StatusFilter, pagination: PaginationParams = {}) =>
+const getAffiliationType = (affiliationFilter: AffiliationFilter) =>
+  affiliationFilter === 'CENTRAL' ? '중앙동아리' : undefined
+
+export const fetchClubs = (
+  status: StatusFilter,
+  affiliationFilter: AffiliationFilter,
+  pagination: PaginationParams = {},
+) =>
   request<AdminClubsResponse>(
     `/api/v2/admin/clubs${buildQuery({
       status: status === 'ALL' ? undefined : status,
+      affiliation_type: getAffiliationType(affiliationFilter),
       ...pagination,
     })}`,
   )
@@ -57,28 +65,43 @@ export const fetchClubs = (status: StatusFilter, pagination: PaginationParams = 
 export const fetchClubDetail = (uuid: string) =>
   request<AdminClubDetailResponse>(`/api/v2/admin/clubs/${uuid}`)
 
-export const fetchManagerRequests = (status: StatusFilter, pagination: PaginationParams = {}) =>
+export const fetchManagerRequests = (
+  status: StatusFilter,
+  affiliationFilter: AffiliationFilter,
+  pagination: PaginationParams = {},
+) =>
   request<AdminClubManagerRequestsResponse>(
     `/api/v2/admin/clubs/manager-requests${buildQuery({
       status: status === 'ALL' ? undefined : status,
+      affiliation_type: getAffiliationType(affiliationFilter),
       ...pagination,
     })}`,
   )
 
 export const fetchVerificationRequests = (
   status: StatusFilter,
+  affiliationFilter: AffiliationFilter,
   pagination: PaginationParams = {},
 ) =>
   request<AdminClubVerificationRequestsResponse>(
     `/api/v2/admin/clubs/verifications${buildQuery({
       status: status === 'ALL' ? undefined : status,
+      affiliation_type: getAffiliationType(affiliationFilter),
       ...pagination,
     })}`,
   )
 
-export const fetchHistories = (query: string, pagination: PaginationParams = {}) =>
+export const fetchHistories = (
+  query: string,
+  affiliationFilter: AffiliationFilter,
+  pagination: PaginationParams = {},
+) =>
   request<AdminClubHistoriesResponse>(
-    `/api/v2/admin/clubs/histories${buildQuery({ query, ...pagination })}`,
+    `/api/v2/admin/clubs/histories${buildQuery({
+      query,
+      affiliation_type: getAffiliationType(affiliationFilter),
+      ...pagination,
+    })}`,
   )
 
 export const fetchCollegeMajors = async () => {
