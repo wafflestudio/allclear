@@ -1,23 +1,28 @@
-FROM node:18-alpine AS base
+FROM node:22.13-alpine AS base
+
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
+
+RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
 
 # --- Dependencies ---
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-RUN npm install -g pnpm@9
-
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/mobile/package.json ./apps/mobile/package.json
+COPY apps/web/package.json ./apps/web/package.json
 RUN pnpm install --frozen-lockfile
 
 # --- Build ---
 FROM base AS builder
 WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app ./
 COPY . .
 
-RUN npm install -g pnpm@9 && pnpm build
+RUN pnpm --filter allclear-web build
 
 # --- Production ---
 FROM base AS runner
@@ -31,12 +36,12 @@ ENV HOSTNAME=0.0.0.0
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "apps/web/server.js"]

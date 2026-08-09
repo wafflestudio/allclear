@@ -1,3 +1,5 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   productionBrowserSourceMaps: true,
@@ -32,6 +34,9 @@ const nextConfig = {
     ]
   },
   output: 'standalone',
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '../..'),
+  },
   webpack: (webpackConfig) => {
     return {
       ...webpackConfig,
