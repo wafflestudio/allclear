@@ -32,6 +32,7 @@ jobs:
 
       - name: Restore Android release config
         shell: bash
+        working-directory: apps/mobile
         env:
           ANDROID_ENV_PROD: ${{ secrets.ANDROID_ENV_PROD }}
           ANDROID_GOOGLE_SERVICES_JSON_PROD: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON_PROD }}
@@ -81,6 +82,7 @@ jobs:
           echo "RELEASE_NAME=main internal ${version_code}" >> "$GITHUB_ENV"
 
       - name: Build release bundle
+        working-directory: apps/mobile
         run: |
           chmod +x android/gradlew
           cd android
@@ -91,7 +93,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.padocorp.clubhouse.applicationId
-          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          releaseFiles: apps/mobile/android/app/build/outputs/bundle/release/app-release.aab
           track: internal
           status: completed
           releaseName: ${{ env.RELEASE_NAME }}
@@ -111,6 +113,7 @@ jobs:
 
       - name: Cleanup local config
         if: always()
+        working-directory: apps/mobile
         run: |
           rm -f .env.prod
           rm -f android/app/google-services.json

@@ -27,6 +27,7 @@ jobs:
 
       - name: Restore Android local config
         shell: bash
+        working-directory: apps/mobile
         env:
           ANDROID_ENV_LOCAL: ${{ secrets.ANDROID_ENV_LOCAL }}
           ANDROID_GOOGLE_SERVICES_JSON: ${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}
@@ -51,6 +52,7 @@ jobs:
           chmod 600 android/app/debug.keystore
 
       - name: Build standalone dev APK
+        working-directory: apps/mobile
         run: |
           chmod +x android/gradlew
           cd android
@@ -60,7 +62,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-dev-release-apk-${{ github.run_number }}
-          path: android/app/build/outputs/apk/devRelease/*.apk
+          path: apps/mobile/android/app/build/outputs/apk/devRelease/*.apk
           if-no-files-found: error
           retention-days: 7
 
@@ -81,6 +83,7 @@ jobs:
 
       - name: Cleanup local config
         if: always()
+        working-directory: apps/mobile
         run: |
           rm -f .env.local
           rm -f android/app/google-services.json

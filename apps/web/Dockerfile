@@ -3,7 +3,9 @@ FROM node:22.13-alpine AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 
-RUN corepack enable && corepack prepare pnpm@11.9.0 --activate
+RUN npm install --global corepack@0.34.7 \
+    && corepack enable \
+    && corepack prepare pnpm@11.9.0 --activate
 
 # --- Dependencies ---
 FROM base AS deps
