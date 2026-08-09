@@ -1,7 +1,9 @@
 ## PATCHES
 
-This patch directory contains patches for the following library:
+This patch directory contains a patch for the following library:
 
-- [@gorhom/bottom-sheet](https://github.com/gorhom/react-native-bottom-sheet/issues/1674#issuecomment-1882488777)
+- `react-native-dropdown-picker`: use Gesture Handler scrollables so dropdown lists handle
+  touch and scrolling correctly on Android.
 
-since the library is not yet updated to support the latest version of react-native, we need to apply these patches to make it work.
+Remove this patch after verifying that the school and major dropdowns scroll correctly on a
+physical Android device without it.

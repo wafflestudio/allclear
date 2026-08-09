@@ -34,7 +34,7 @@
 	},
 	"dependencies": {
 		"@babel/plugin-proposal-decorators": "^7.21.0",
-		"@gorhom/bottom-sheet": "^4.6.0",
+		"@gorhom/bottom-sheet": "^5.2.14",
 		"@homielab/react-native-auto-scroll": "^1.1.2",
 		"@invertase/react-native-apple-authentication": "^2.3.0",
 		"@react-native-async-storage/async-storage": "^1.17.11",
