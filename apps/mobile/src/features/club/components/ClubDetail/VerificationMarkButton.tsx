@@ -1,11 +1,9 @@
-import {
-	Image,
-	type ImageSourcePropType,
-	Pressable,
-	StyleSheet,
-} from "react-native";
+import { Pressable, StyleSheet } from "react-native";
 
 import type { OfficialVerificationStatus } from "@/entities/club";
+import VerificationMark, {
+	DEFAULT_VERIFICATION_MARK_SIZE,
+} from "@/features/club/components/VerificationMark";
 import { ms } from "@/shared/utils/scale";
 
 type Props = {
@@ -13,17 +11,8 @@ type Props = {
 	onPress: () => void;
 };
 
-const MARK_SOURCE_BY_STATUS: Partial<
-	Record<OfficialVerificationStatus, ImageSourcePropType>
-> = {
-	VERIFIED: require("@/assets/icons/clubInfo/verification-mark.png"),
-	PENDING: require("@/assets/icons/clubInfo/verification-pending-mark.png"),
-};
-
 const VerificationMarkButton = ({ status, onPress }: Props) => {
-	const markSource = status ? MARK_SOURCE_BY_STATUS[status] : undefined;
-
-	if (!markSource || status === "UNVERIFIED") return null;
+	if (status !== "VERIFIED" && status !== "PENDING") return null;
 
 	return (
 		<Pressable
@@ -33,7 +22,7 @@ const VerificationMarkButton = ({ status, onPress }: Props) => {
 			hitSlop={8}
 			style={({ pressed }) => [styles.button, pressed && styles.pressed]}
 		>
-			<Image source={markSource} style={styles.mark} resizeMode="contain" />
+			<VerificationMark status={status} />
 		</Pressable>
 	);
 };
@@ -42,17 +31,13 @@ export default VerificationMarkButton;
 
 const styles = StyleSheet.create({
 	button: {
-		width: ms(20),
-		height: ms(20),
+		width: ms(DEFAULT_VERIFICATION_MARK_SIZE),
+		height: ms(DEFAULT_VERIFICATION_MARK_SIZE),
 		justifyContent: "center",
 		alignItems: "center",
 		flexShrink: 0,
 	},
 	pressed: {
 		opacity: 0.5,
-	},
-	mark: {
-		width: ms(20),
-		height: ms(20),
 	},
 });

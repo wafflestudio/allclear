@@ -26,6 +26,7 @@ const clubManagementSnuLogo =
 	require("@/assets/images/club-management-snu-logo.png") as number;
 
 import OfficialVerificationRequestButton from "@/features/club/components/OfficialVerificationRequestButton";
+import VerificationMark from "@/features/club/components/VerificationMark";
 import { getOfficialVerificationRequestErrorContent } from "@/features/club/utils/officialVerificationRequest";
 import AlertModal from "@/shared/components/AlertModal";
 import EditPencilButton from "@/shared/components/EditPencilButton";
@@ -50,6 +51,7 @@ type VerificationSuccess = {
 };
 
 const VERIFICATION_PROCESSING_DURATION = "최대 일주일";
+const MANAGEMENT_VERIFICATION_MARK_SIZE = 16;
 
 const ClubManagementScreen = () => {
 	const route = useRoute<RouteProps>();
@@ -228,9 +230,15 @@ const ClubManagementScreen = () => {
 								style={styles.clubLogoImage}
 							/>
 							<View style={styles.clubTexts}>
-								<Text style={styles.clubName} numberOfLines={1}>
-									{club?.name ?? ""}
-								</Text>
+								<View style={styles.clubNameRow}>
+									<Text style={styles.clubName} numberOfLines={1}>
+										{club?.name ?? ""}
+									</Text>
+									<VerificationMark
+										status={officialVerificationStatus}
+										size={MANAGEMENT_VERIFICATION_MARK_SIZE}
+									/>
+								</View>
 								<Text style={styles.clubCollege} numberOfLines={1}>
 									{clubAffiliation}
 								</Text>
@@ -767,7 +775,8 @@ const styles = StyleSheet.create({
 		paddingVertical: vs(30),
 	},
 	clubDetails: {
-		width: s(152),
+		flex: 1,
+		marginRight: s(16),
 		gap: vs(12),
 		alignItems: "flex-start",
 	},
@@ -782,6 +791,11 @@ const styles = StyleSheet.create({
 		alignSelf: "stretch",
 		gap: vs(8),
 	},
+	clubNameRow: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: s(4),
+	},
 	clubName: {
 		fontFamily: "Pretendard",
 		fontWeight: "700",
@@ -789,6 +803,7 @@ const styles = StyleSheet.create({
 		lineHeight: ms(24),
 		letterSpacing: -0.02 * 20,
 		color: "#000000",
+		flexShrink: 1,
 	},
 	clubCollege: {
 		fontFamily: "Pretendard",
