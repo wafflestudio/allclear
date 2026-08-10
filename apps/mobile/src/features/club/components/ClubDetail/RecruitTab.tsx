@@ -126,7 +126,11 @@ const RecruitTab = ({
 				onPress={() => onPreviousPress(representativeId)}
 			>
 				<Text style={styles.previousButtonText}>이전 공고 확인하기</Text>
-				<Icon name="chevron-right" size={ms(20)} color={Colors.POINTCOLOR} />
+				<Icon
+					name="chevron-right"
+					size={ms(16)}
+					color={Colors.BODYTEXT_DISABLED}
+				/>
 			</Pressable>
 		</View>
 	);
@@ -158,14 +162,23 @@ const styles = StyleSheet.create({
 	recruitFooter: { paddingHorizontal: s(10) },
 	sectionMeta: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB },
 	previousButton: {
-		minHeight: ms(48),
+		height: vs(66),
 		borderRadius: ms(12),
-		backgroundColor: Colors.POINTCOLOR_10,
+		backgroundColor: Colors.WHITE,
 		flexDirection: "row",
 		alignItems: "center",
-		justifyContent: "center",
-		gap: s(4),
+		justifyContent: "space-between",
+		paddingHorizontal: s(16),
+		paddingVertical: vs(6),
+		shadowColor: Colors.BLACK,
+		shadowOffset: { width: 0, height: 1 },
+		shadowOpacity: 0.05,
+		shadowRadius: 5,
+		elevation: 1,
 	},
-	previousButtonText: { ...typography.bodyMSemibold, color: Colors.POINTCOLOR },
+	previousButtonText: {
+		...typography.bodyMBold13px,
+		color: Colors.BODYTEXT_DISABLED,
+	},
 	pressed: { opacity: 0.6 },
 });
