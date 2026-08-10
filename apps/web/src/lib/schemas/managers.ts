@@ -242,6 +242,9 @@ export const CreateVerificationRequestResponseSchema = z
       club_uuid: z.string().uuid(),
       status: z.literal('PENDING'),
       created_at: z.string(),
+      attempt_no: z.number().int(),
+      retry_count: z.number().int().nonnegative(),
+      remaining_retry_count: z.number().int().nonnegative(),
     }),
   })
   .openapi('CreateVerificationRequestResponse')

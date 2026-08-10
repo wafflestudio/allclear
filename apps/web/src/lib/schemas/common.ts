@@ -164,4 +164,14 @@ export const ClubManagerSchema = z
 
 export const ManagedClubDetailSchema = ClubSchema.extend({
   managers: z.array(ClubManagerSchema),
+  officialVerification: z.object({
+    status: z.enum(['VERIFIED', 'PENDING', 'REJECTED', 'UNVERIFIED']),
+    requestId: z.number().int().nullable(),
+    attemptNo: z.number().int().nullable(),
+    retryCount: z.number().int().nonnegative(),
+    retryLimit: z.number().int().positive(),
+    remainingRetryCount: z.number().int().nonnegative(),
+    rejectReason: z.string().nullable(),
+    requestedAt: z.string().nullable(),
+  }),
 }).openapi('ManagedClubDetail')

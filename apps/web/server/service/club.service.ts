@@ -15,6 +15,7 @@ import {
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
 } from 'src/common/constants/club-status'
+import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'src/common/constants/official-verification-status'
 import type {
   ClubData,
   ClubManagerRequest,
@@ -143,10 +144,23 @@ export class ClubService {
 
   async getManagedClubByUuid(clubUuid: string, serviceUserId: string): Promise<ManagedClubDetail> {
     await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
-    const [club, managers] = await Promise.all([
+    const [club, managers, latestVerificationRequest] = await Promise.all([
       this.clubAccessService.getExistingClub(clubUuid),
       this.clubManagerRepository.findBy({ clubId: clubUuid }),
+      this.clubVerificationRequestRepository.findOne({
+        where: { clubId: clubUuid },
+        order: { createdAt: 'DESC', id: 'DESC' },
+      }),
     ])
+    const verificationStatus = club.isOfficialVerified
+      ? 'VERIFIED'
+      : latestVerificationRequest?.status === PENDING_CLUB_STATUS
+        ? 'PENDING'
+        : latestVerificationRequest?.status === REJECTED_CLUB_STATUS
+          ? 'REJECTED'
+          : 'UNVERIFIED'
+    const retryCount = Math.max((latestVerificationRequest?.attemptNo ?? 1) - 1, 0)
+
     return {
       ...toClubDomain(club),
       managers: managers.map((m) => ({
@@ -155,6 +169,19 @@ export class ClubService {
         phone: m.phone,
         studentId: m.studentId,
       })),
+      officialVerification: {
+        status: verificationStatus,
+        requestId: latestVerificationRequest ? Number(latestVerificationRequest.id) : null,
+        attemptNo: latestVerificationRequest?.attemptNo ?? null,
+        retryCount,
+        retryLimit: MAX_OFFICIAL_VERIFICATION_RETRY_COUNT,
+        remainingRetryCount: Math.max(MAX_OFFICIAL_VERIFICATION_RETRY_COUNT - retryCount, 0),
+        rejectReason:
+          verificationStatus === 'REJECTED'
+            ? (latestVerificationRequest?.rejectReason ?? null)
+            : null,
+        requestedAt: latestVerificationRequest?.createdAt ?? null,
+      },
     }
   }
 

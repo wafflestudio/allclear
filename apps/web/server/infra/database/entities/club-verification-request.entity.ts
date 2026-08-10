@@ -8,6 +8,9 @@ export class ClubVerificationRequestEntity {
   @Column({ type: 'uuid', name: 'club_id' })
   clubId: string
 
+  @Column({ type: 'smallint', name: 'attempt_no' })
+  attemptNo: number
+
   @Column({ type: 'varchar', default: 'PENDING', name: 'status' })
   status: string
 
