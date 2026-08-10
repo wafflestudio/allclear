@@ -33,35 +33,65 @@ const formatFoundedAt = (value: string): string => {
 
 const StatePills = ({
 	active,
+	trueLabel = "있음",
+	falseLabel = "없음",
+	falseFirst = false,
 	detail,
+	detailOnNewLine = false,
 }: {
 	active: boolean;
+	trueLabel?: string;
+	falseLabel?: string;
+	falseFirst?: boolean;
 	detail?: string;
-}) => (
-	<View style={styles.stateContent}>
-		<View style={styles.statePills}>
-			<View style={[styles.statePill, active && styles.statePillActive]}>
-				<Text
-					style={[styles.statePillText, active && styles.statePillTextActive]}
-				>
-					있음
-				</Text>
+	detailOnNewLine?: boolean;
+}) => {
+	const options = falseFirst
+		? [
+				{ label: falseLabel, value: false },
+				{ label: trueLabel, value: true },
+			]
+		: [
+				{ label: trueLabel, value: true },
+				{ label: falseLabel, value: false },
+			];
+
+	return (
+		<View
+			style={[
+				styles.stateContent,
+				detailOnNewLine && styles.stateContentColumn,
+			]}
+		>
+			<View style={styles.statePills}>
+				{options.map((option) => {
+					const selected = option.value === active;
+
+					return (
+						<View
+							key={option.label}
+							style={[styles.statePill, selected && styles.statePillActive]}
+						>
+							<Text
+								style={[
+									styles.statePillText,
+									selected && styles.statePillTextActive,
+								]}
+							>
+								{option.label}
+							</Text>
+						</View>
+					);
+				})}
 			</View>
-			<View style={[styles.statePill, !active && styles.statePillActive]}>
-				<Text
-					style={[styles.statePillText, !active && styles.statePillTextActive]}
-				>
-					없음
-				</Text>
-			</View>
+			{!!detail && (
+				<View style={styles.detailTag}>
+					<Text style={styles.detailTagText}>{detail}</Text>
+				</View>
+			)}
 		</View>
-		{!!detail && (
-			<View style={styles.detailTag}>
-				<Text style={styles.detailTagText}>{detail}</Text>
-			</View>
-		)}
-	</View>
-);
+	);
+};
 
 const InfoTab = ({ club, contentWidth }: Props) => {
 	const [descriptionExpanded, setDescriptionExpanded] = useState(false);
@@ -121,16 +151,24 @@ const InfoTab = ({ club, contentWidth }: Props) => {
 
 					<View style={styles.infoList}>
 						<View style={styles.infoRow}>
-							<Text style={styles.label}>동방</Text>
+							<Text style={styles.label}>동방 유무</Text>
 							<StatePills
 								active={club.hasDongbang}
-								detail={club.dongbangLocation ?? undefined}
+								trueLabel="동방보유"
+								falseLabel="동방없음"
+								detail={
+									club.dongbangLocation
+										? `활동장소 ${club.dongbangLocation}`
+										: undefined
+								}
+								detailOnNewLine
 							/>
 						</View>
 						<View style={styles.infoRow}>
-							<Text style={styles.label}>최소 활동기간</Text>
+							<Text style={styles.label}>최소활동 기간</Text>
 							<StatePills
 								active={minActivityPeriod > 0}
+								falseFirst
 								detail={
 									minActivityPeriod > 0 ? `${minActivityPeriod}학기` : undefined
 								}
@@ -261,27 +299,39 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		flexWrap: "wrap",
 		alignItems: "center",
-		gap: s(8),
+		gap: s(6),
 	},
+	stateContentColumn: { flexDirection: "column", alignItems: "flex-start" },
 	statePills: { flexDirection: "row", gap: s(6) },
 	statePill: {
-		minWidth: s(54),
-		paddingHorizontal: s(13),
-		paddingVertical: vs(7),
-		borderRadius: ms(18),
-		backgroundColor: Colors.BACKGROUND_SUB,
+		height: vs(30),
+		paddingHorizontal: s(15),
+		borderWidth: 0.65,
+		borderColor: Colors.BADGE_UNSELECTED,
+		borderRadius: ms(20),
 		alignItems: "center",
+		justifyContent: "center",
 	},
-	statePillActive: { backgroundColor: Colors.POINTCOLOR },
-	statePillText: { ...typography.bodySMedium, color: Colors.BODYTEXT_SUB_2 },
-	statePillTextActive: { color: Colors.WHITE },
+	statePillActive: {
+		backgroundColor: Colors.POINTCOLOR,
+		borderColor: Colors.POINTCOLOR,
+	},
+	statePillText: {
+		...typography.bodySMedium,
+		color: Colors.BADGE_UNSELECTED,
+		lineHeight: vs(17),
+		letterSpacing: ms(-0.24),
+	},
+	statePillTextActive: { ...typography.bodySSemibold, color: Colors.WHITE },
 	detailTag: {
-		paddingHorizontal: s(12),
-		paddingVertical: vs(7),
-		borderRadius: ms(18),
+		paddingHorizontal: s(15),
+		paddingVertical: vs(8),
+		borderWidth: 1,
+		borderColor: Colors.POINTCOLOR,
+		borderRadius: ms(10),
 		backgroundColor: Colors.POINTCOLOR_10,
 	},
-	detailTagText: { ...typography.bodySMedium, color: Colors.POINTCOLOR },
+	detailTagText: { ...typography.bodySSemibold, color: Colors.BODYTEXT_SUB },
 	descriptionSection: { gap: vs(8) },
 	descriptionCollapsed: { maxHeight: COLLAPSED_MAX_HEIGHT, overflow: "hidden" },
 	fade: { position: "absolute", left: 0, right: 0, bottom: 0, height: vs(28) },
