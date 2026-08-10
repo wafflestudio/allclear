@@ -25,7 +25,6 @@ dayjs.locale("ko");
 type Props = {
 	club: Club;
 	tabLabel: ClubDetailTabLabel;
-	contentWidth: number;
 	isLoggedIn: boolean;
 	onLoginPress: () => void;
 	onPreviousPress: (representativeRecruitmentId: number | null) => void;
@@ -34,7 +33,6 @@ type Props = {
 const RecruitTab = ({
 	club,
 	tabLabel,
-	contentWidth,
 	isLoggedIn,
 	onLoginPress,
 	onPreviousPress,
@@ -65,57 +63,58 @@ const RecruitTab = ({
 
 	return (
 		<View style={styles.tabSection}>
-			<BackgroundCard style={styles.articleCard}>
-				{isLoading ? (
-					<View style={styles.centerState}>
-						<ActivityIndicator color={Colors.POINTCOLOR} />
-					</View>
-				) : isError ? (
-					<View style={styles.centerState}>
-						<Text style={styles.emptyText}>모집공고를 불러오지 못했어요.</Text>
-						<Pressable
-							style={styles.retryButton}
-							onPress={() => {
-								representativeQuery.refetch();
-								if (representativeId !== null) detailQuery.refetch();
-							}}
-						>
-							<Text style={styles.retryText}>다시 시도</Text>
-						</Pressable>
-					</View>
-				) : content ? (
-					<>
-						{!isLoggedIn && (
-							<LoginBlurOverlay
-								clubName={club.name}
-								tabLabel={tabLabel}
-								onLoginPress={onLoginPress}
-							/>
-						)}
-						<RecruitmentDetailCard
-							content={content}
-							contentWidth={contentWidth}
-						/>
-					</>
-				) : (
-					<View style={styles.centerState}>
-						<Text style={styles.emptyText}>아직 등록된 모집공고가 없어요.</Text>
-					</View>
-				)}
-			</BackgroundCard>
+			<View style={styles.articleSection}>
+				<BackgroundCard style={styles.articleCard}>
+					{isLoading ? (
+						<View style={styles.centerState}>
+							<ActivityIndicator color={Colors.POINTCOLOR} />
+						</View>
+					) : isError ? (
+						<View style={styles.centerState}>
+							<Text style={styles.emptyText}>
+								모집공고를 불러오지 못했어요.
+							</Text>
+							<Pressable
+								style={styles.retryButton}
+								onPress={() => {
+									representativeQuery.refetch();
+									if (representativeId !== null) detailQuery.refetch();
+								}}
+							>
+								<Text style={styles.retryText}>다시 시도</Text>
+							</Pressable>
+						</View>
+					) : content ? (
+						<>
+							{!isLoggedIn && (
+								<LoginBlurOverlay
+									clubName={club.name}
+									tabLabel={tabLabel}
+									onLoginPress={onLoginPress}
+								/>
+							)}
+							<RecruitmentDetailCard content={content} />
+						</>
+					) : (
+						<View style={styles.centerState}>
+							<Text style={styles.emptyText}>
+								아직 등록된 모집공고가 없어요.
+							</Text>
+						</View>
+					)}
+				</BackgroundCard>
 
-			{content && (
-				<View style={styles.recruitFooter}>
-					{updatedAt && (
+				{content && updatedAt && (
+					<View style={styles.recruitFooter}>
 						<Text style={styles.sectionMeta}>
 							{updatedAt.format(
 								(updatedAt.year() === dayjs().year() ? "" : "YY년 ") +
 									"M월 D일 dddd A h시에 업데이트 되었어요",
 							)}
 						</Text>
-					)}
-				</View>
-			)}
+					</View>
+				)}
+			</View>
 
 			<Pressable
 				accessibilityRole="button"
@@ -139,8 +138,16 @@ const RecruitTab = ({
 export default RecruitTab;
 
 const styles = StyleSheet.create({
-	tabSection: { marginTop: vs(16), gap: vs(12) },
-	articleCard: { minHeight: vs(200) },
+	tabSection: { marginTop: vs(30), gap: vs(20) },
+	articleSection: { gap: vs(10) },
+	articleCard: {
+		minHeight: vs(200),
+		padding: s(20),
+		borderRadius: ms(15),
+		shadowOffset: { width: 0, height: 1 },
+		shadowOpacity: 0.05,
+		shadowRadius: 5,
+	},
 	centerState: {
 		minHeight: vs(160),
 		justifyContent: "center",
@@ -159,8 +166,12 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.POINTCOLOR_10,
 	},
 	retryText: { ...typography.bodySMedium, color: Colors.POINTCOLOR },
-	recruitFooter: { paddingHorizontal: s(10) },
-	sectionMeta: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB },
+	recruitFooter: { paddingHorizontal: s(5) },
+	sectionMeta: {
+		...typography.bodySRegular,
+		color: Colors.BODYTEXT_SUB,
+		lineHeight: vs(20),
+	},
 	previousButton: {
 		height: vs(66),
 		borderRadius: ms(12),

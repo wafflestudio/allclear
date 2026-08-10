@@ -387,7 +387,6 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 								<RecruitTab
 									club={club}
 									tabLabel={CLUB_DETAIL_TABS[activeTab]}
-									contentWidth={HTML_CONTENT_WIDTH}
 									isLoggedIn={!!user}
 									onLoginPress={handleLoginRequired}
 									onPreviousPress={handlePreviousRecruitments}

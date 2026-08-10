@@ -25,18 +25,13 @@ const getKoreanDateParts = (value: string | Date) => {
 
 const padTwoDigits = (value: number): string => String(value).padStart(2, "0");
 
-export const formatRecruitmentDeadline = (
-	deadline: string,
-	now: Date = new Date(),
-): string => {
+export const formatRecruitmentDeadline = (deadline: string): string => {
 	const deadlineParts = getKoreanDateParts(deadline);
-	const currentYear = getKoreanDateParts(now).year;
-	const year =
-		deadlineParts.year === currentYear ? "" : `${deadlineParts.year}년 `;
+	const year = String(deadlineParts.year).slice(-2);
 
-	return `${year}${deadlineParts.month}월 ${deadlineParts.day}일 ${padTwoDigits(
-		deadlineParts.hour,
-	)}:${padTwoDigits(deadlineParts.minute)}`;
+	return `${year}.${padTwoDigits(deadlineParts.month)}.${padTwoDigits(
+		deadlineParts.day,
+	)} 모집마감`;
 };
 
 export const getRecruitmentDeadlineRequestValue = ({
@@ -76,7 +71,8 @@ export const shouldStackRegularMeetings = (meetingCount: number): boolean =>
 export const shouldStackActivityLocation = (location: string): boolean =>
 	Array.from(location.trim()).length >= 10;
 
-const formatTime = (time: string | null): string => time?.slice(0, 5) ?? "";
+const formatTime = (time: string | null): string =>
+	time?.slice(0, 5).replace(/^0/, "") ?? "";
 
 export const formatRegularMeeting = (
 	meeting: RecruitmentRegularMeeting,
@@ -86,10 +82,24 @@ export const formatRegularMeeting = (
 		: `${meeting.day_of_week}요일`;
 	const startTime = formatTime(meeting.start_time);
 	const endTime = formatTime(meeting.end_time);
-	const time = [startTime, endTime].filter(Boolean).join("–");
+	const time = [startTime, endTime].filter(Boolean).join("~");
 
 	return time ? `${day} ${time}` : day;
 };
+
+export const getRecruitmentTextPreview = (html: string): string =>
+	html
+		.replace(/<br\s*\/?>/gi, " ")
+		.replace(/<\/(?:div|h[1-6]|li|p)>/gi, " ")
+		.replace(/<[^>]*>/g, "")
+		.replace(/&nbsp;|&#160;/gi, " ")
+		.replace(/&amp;/gi, "&")
+		.replace(/&lt;/gi, "<")
+		.replace(/&gt;/gi, ">")
+		.replace(/&quot;/gi, '"')
+		.replace(/&#39;|&apos;/gi, "'")
+		.replace(/\s+/g, " ")
+		.trim();
 
 export const getNextExpandedRecruitmentId = (
 	currentId: number | null,
