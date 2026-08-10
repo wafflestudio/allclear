@@ -29,7 +29,7 @@ export const StatusFilterBar = ({
   onChange: (status: StatusFilter) => void
   pendingCount?: number
 }) => (
-  <div className="mb-5 overflow-x-auto">
+  <div className="overflow-x-auto">
     <div className="flex min-w-max gap-2 pb-1 pl-px pr-1 pt-1">
       {STATUS_FILTERS.map((filter) => (
         <button

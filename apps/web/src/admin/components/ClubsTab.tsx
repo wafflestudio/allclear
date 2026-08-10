@@ -55,7 +55,7 @@ const ClubList = ({
 }) => {
   if (isLoading) return <LoadingRows />
   if (error) return <ErrorState error={error} />
-  if (!clubs.length) return <EmptyState title="조건에 맞는 동아리 신청이 없습니다." />
+  if (!clubs.length) return <EmptyState title="조건에 맞는 신규 동아리 등록 요청이 없습니다." />
 
   return (
     <div className="overflow-hidden rounded-md border border-slate-200 bg-white">

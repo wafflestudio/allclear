@@ -24,7 +24,8 @@ export const ManagerRequestsTab = ({
 }) => {
   if (isLoading) return <LoadingRows />
   if (error) return <ErrorState error={error} />
-  if (!requests.length) return <EmptyState title="조건에 맞는 관리자 매핑 신청이 없습니다." />
+  if (!requests.length)
+    return <EmptyState title="조건에 맞는 기존 동아리 운영진 등록 요청이 없습니다." />
 
   return (
     <div className="grid gap-3">
