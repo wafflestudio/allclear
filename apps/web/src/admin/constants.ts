@@ -1,4 +1,4 @@
-import type { AdminTab, ClubStatus, StatusFilter } from 'src/admin/types'
+import type { AdminTab, AffiliationFilter, ClubStatus, StatusFilter } from 'src/admin/types'
 import type { ClubCollegeMajor } from 'src/entities/club'
 
 export const ADMIN_AUTH_TOKEN_KEY = 'allclear:admin-auth-token'
@@ -9,6 +9,11 @@ export const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
   { label: '대기', value: 'PENDING' },
   { label: '승인', value: 'APPROVED' },
   { label: '반려', value: 'REJECTED' },
+]
+
+export const AFFILIATION_FILTERS: { label: string; value: AffiliationFilter }[] = [
+  { label: '전체', value: 'ALL' },
+  { label: '중앙동아리', value: 'CENTRAL' },
 ]
 
 export const TABS: { label: string; value: AdminTab }[] = [

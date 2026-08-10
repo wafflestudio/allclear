@@ -1,6 +1,6 @@
 import type React from 'react'
-import { TABS } from 'src/admin/constants'
-import type { AdminTab, StatusFilter } from 'src/admin/types'
+import { AFFILIATION_FILTERS, TABS } from 'src/admin/constants'
+import type { AdminTab, AffiliationFilter, StatusFilter } from 'src/admin/types'
 import { StatusBadge, StatusFilterBar } from './ui'
 
 type PendingCounts = {
@@ -15,6 +15,8 @@ export const AdminLayout = ({
   totalCount,
   pendingCounts,
   statusFilter,
+  affiliationFilter,
+  onAffiliationFilterChange,
   onLogout,
   children,
 }: {
@@ -23,6 +25,8 @@ export const AdminLayout = ({
   totalCount: number
   pendingCounts: PendingCounts
   statusFilter: StatusFilter
+  affiliationFilter: AffiliationFilter
+  onAffiliationFilterChange: (filter: AffiliationFilter) => void
   onLogout: () => void
   children: React.ReactNode
 }) => (
@@ -118,6 +122,28 @@ export const AdminLayout = ({
             </button>
           </div>
         </header>
+
+        <div
+          className="mb-5 flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label="동아리 소속 필터"
+        >
+          <span className="mr-1 text-sm font-semibold text-slate-600">소속</span>
+          {AFFILIATION_FILTERS.map((filter) => (
+            <button
+              key={filter.value}
+              type="button"
+              onClick={() => onAffiliationFilterChange(filter.value)}
+              className={`rounded-md border px-3 py-2 text-sm font-semibold transition ${
+                affiliationFilter === filter.value
+                  ? 'border-slate-950 bg-slate-950 text-white'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
 
         {children}
       </section>

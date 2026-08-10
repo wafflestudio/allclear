@@ -17,6 +17,8 @@ const AdminDashboardPage = () => {
     setActiveTab,
     statusFilter,
     setStatusFilter,
+    affiliationFilter,
+    setAffiliationFilter,
     totalCount,
     pagination,
     pendingCounts,
@@ -57,6 +59,8 @@ const AdminDashboardPage = () => {
         totalCount={totalCount}
         pendingCounts={pendingCounts}
         statusFilter={statusFilter}
+        affiliationFilter={affiliationFilter}
+        onAffiliationFilterChange={setAffiliationFilter}
         onLogout={handleLogout}
       >
         <TabFilterBar

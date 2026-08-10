@@ -25,9 +25,12 @@ const AdminPaginationQueryFields = {
     .default(20),
 }
 
+const ADMIN_CLUB_AFFILIATION_TYPES = ['중앙동아리', '소속동아리', '연합동아리', '기타'] as const
+
 export const AdminClubsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
+    affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubsQuery')
@@ -136,6 +139,7 @@ export const AdminClubHistoriesQuerySchema = z
   .object({
     club_uuid: z.string().uuid().optional(),
     query: z.string().trim().optional(),
+    affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubHistoriesQuery')
@@ -176,6 +180,7 @@ export type AdminClubHistoriesResponse = z.infer<typeof AdminClubHistoriesRespon
 export const AdminClubManagerRequestsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
+    affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubManagerRequestsQuery')
@@ -218,6 +223,7 @@ export type AdminClubManagerRequestsResponse = z.infer<
 export const AdminClubVerificationRequestsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
+    affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubVerificationRequestsQuery')
