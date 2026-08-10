@@ -14,7 +14,7 @@ import type {
   AdminClubVerificationRequestStatusUpdate,
   AdminClubVerificationRequestsQuery,
 } from 'src/lib/schemas/admin'
-import { type FindOptionsWhere, In, IsNull, type Repository } from 'typeorm'
+import { type FindOptionsWhere, In, IsNull, Not, type Repository } from 'typeorm'
 import {
   ClubEntity,
   ClubHistoryEntity,
@@ -139,6 +139,7 @@ export class AdminClubService {
   async getAdminClubs({
     status,
     affiliation_type: affiliationType,
+    exclude_affiliation_type: excludeAffiliationType,
     offset,
     limit,
   }: AdminClubsQuery): Promise<AdminPaginatedList<'clubs', AdminClubItem>> {
@@ -150,6 +151,9 @@ export class AdminClubService {
     }
     if (affiliationType) {
       where.affiliationType = affiliationType
+    }
+    if (excludeAffiliationType) {
+      where.affiliationType = Not(excludeAffiliationType)
     }
 
     const [clubs, totalCount] = await this.clubRepository.findAndCount({
@@ -320,6 +324,7 @@ export class AdminClubService {
     club_uuid: clubUuid,
     query,
     affiliation_type: affiliationType,
+    exclude_affiliation_type: excludeAffiliationType,
     offset,
     limit,
   }: AdminClubHistoriesQuery): Promise<{ total_count: number; histories: AdminClubHistoryItem[] }> {
@@ -341,6 +346,11 @@ export class AdminClubService {
 
     if (affiliationType) {
       baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
+    }
+    if (excludeAffiliationType) {
+      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
+        excludeAffiliationType,
+      })
     }
 
     if (trimmedQuery) {
@@ -403,6 +413,7 @@ export class AdminClubService {
   async getAdminClubManagerRequests({
     status,
     affiliation_type: affiliationType,
+    exclude_affiliation_type: excludeAffiliationType,
     offset,
     limit,
   }: AdminClubManagerRequestsQuery): Promise<
@@ -417,6 +428,11 @@ export class AdminClubService {
     }
     if (affiliationType) {
       baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
+    }
+    if (excludeAffiliationType) {
+      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
+        excludeAffiliationType,
+      })
     }
 
     const totalCount = await baseQuery.getCount()
@@ -476,6 +492,7 @@ export class AdminClubService {
   async getAdminClubVerificationRequests({
     status,
     affiliation_type: affiliationType,
+    exclude_affiliation_type: excludeAffiliationType,
     offset,
     limit,
   }: AdminClubVerificationRequestsQuery): Promise<
@@ -490,6 +507,11 @@ export class AdminClubService {
     }
     if (affiliationType) {
       baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
+    }
+    if (excludeAffiliationType) {
+      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
+        excludeAffiliationType,
+      })
     }
 
     const totalCount = await baseQuery.getCount()

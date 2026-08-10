@@ -14,6 +14,7 @@ export const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
 export const AFFILIATION_FILTERS: { label: string; value: AffiliationFilter }[] = [
   { label: '전체', value: 'ALL' },
   { label: '중앙동아리', value: 'CENTRAL' },
+  { label: '중앙동아리 제외', value: 'NON_CENTRAL' },
 ]
 
 export const TABS: { label: string; value: AdminTab }[] = [

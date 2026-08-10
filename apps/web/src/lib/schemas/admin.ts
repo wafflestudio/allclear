@@ -31,6 +31,7 @@ export const AdminClubsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
     affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
+    exclude_affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubsQuery')
@@ -140,6 +141,7 @@ export const AdminClubHistoriesQuerySchema = z
     club_uuid: z.string().uuid().optional(),
     query: z.string().trim().optional(),
     affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
+    exclude_affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubHistoriesQuery')
@@ -181,6 +183,7 @@ export const AdminClubManagerRequestsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
     affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
+    exclude_affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubManagerRequestsQuery')
@@ -224,6 +227,7 @@ export const AdminClubVerificationRequestsQuerySchema = z
   .object({
     status: z.enum(CLUB_STATUSES).optional(),
     affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
+    exclude_affiliation_type: z.enum(ADMIN_CLUB_AFFILIATION_TYPES).optional(),
     ...AdminPaginationQueryFields,
   })
   .openapi('AdminClubVerificationRequestsQuery')

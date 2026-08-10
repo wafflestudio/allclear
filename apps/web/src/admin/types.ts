@@ -10,7 +10,7 @@ import type {
 export type { ClubDecisionStatus as DecisionStatus, ClubStatus }
 
 export type StatusFilter = ClubStatus | 'ALL'
-export type AffiliationFilter = 'ALL' | 'CENTRAL'
+export type AffiliationFilter = 'ALL' | 'CENTRAL' | 'NON_CENTRAL'
 export type AdminTab = 'clubs' | 'managerRequests' | 'verificationRequests' | 'histories'
 
 export type AdminClub = AdminClubsResponse['data']['clubs'][number]
