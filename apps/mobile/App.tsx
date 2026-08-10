@@ -1,10 +1,14 @@
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	focusManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { AppState, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
 	initialWindowMetrics,
@@ -128,6 +132,14 @@ function App(): React.JSX.Element {
 			setIsBootstrapped(true);
 		};
 		bootstrap();
+	}, []);
+
+	useEffect(() => {
+		const subscription = AppState.addEventListener("change", (nextAppState) => {
+			focusManager.setFocused(nextAppState === "active");
+		});
+
+		return () => subscription.remove();
 	}, []);
 
 	// 부트스트랩 동안에는 네이티브 스플래시가 화면을 덮고 있어 사용자에겐 빈 화면이 보이지 않는다.

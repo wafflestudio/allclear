@@ -1,5 +1,14 @@
 import { BlurView } from "@react-native-community/blur";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import type { ReactNode } from "react";
+import {
+	Modal,
+	Pressable,
+	type StyleProp,
+	StyleSheet,
+	Text,
+	type TextStyle,
+	View,
+} from "react-native";
 import Button, { type ButtonVariant } from "@/shared/components/Button";
 import { Colors } from "@/shared/constants/colors";
 
@@ -7,7 +16,10 @@ export type AlertModalProps = {
 	visible: boolean;
 	onClose: () => void;
 	title: string;
+	titleStyle?: StyleProp<TextStyle>;
+	titleContent?: ReactNode;
 	description?: string;
+	descriptionContent?: ReactNode;
 	buttonLabel: string;
 	onButtonPress: () => void;
 	buttonDisabled?: boolean;
@@ -23,7 +35,10 @@ const AlertModal = ({
 	visible,
 	onClose,
 	title,
+	titleStyle,
+	titleContent,
 	description,
+	descriptionContent,
 	buttonLabel,
 	onButtonPress,
 	buttonDisabled = false,
@@ -56,9 +71,13 @@ const AlertModal = ({
 					style={styles.container}
 					onPress={(e) => e.stopPropagation()}
 				>
-					<Text style={styles.title}>{title}</Text>
-					{description ? (
-						<Text style={styles.description}>{description}</Text>
+					<Text style={[styles.title, titleStyle]}>
+						{titleContent ?? title}
+					</Text>
+					{description || descriptionContent ? (
+						<Text style={styles.description}>
+							{descriptionContent ?? description}
+						</Text>
 					) : null}
 					<View style={styles.buttonArea}>
 						{hasCancel && (

@@ -1,4 +1,9 @@
-import type { Club, ClubRanking, ManagedClubListItem } from "@/entities/club";
+import type {
+	Club,
+	ClubRanking,
+	ManagedClubListItem,
+	ManagedOfficialVerification,
+} from "@/entities/club";
 import type { ManagedClubManagerPatch } from "@/repositories/managedClubUpdate";
 import { buildManagedClubUpdateBody } from "@/repositories/managedClubUpdate";
 import { apiConnector } from "@/shared/utils/api";
@@ -65,6 +70,7 @@ export type ClubManager = {
 
 export type ManagedClubDetail = Club & {
 	managers: ClubManager[];
+	officialVerification: ManagedOfficialVerification;
 };
 
 export type GetManagedClubDetailRequest = {
@@ -145,6 +151,9 @@ export type RequestOfficialVerificationResponse = {
 		club_uuid: Club["uuid"];
 		status: "PENDING";
 		created_at: string;
+		attempt_no: number;
+		retry_count: number;
+		remaining_retry_count: number;
 	};
 };
 
