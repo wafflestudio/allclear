@@ -16,6 +16,7 @@ import {
   REJECTED_CLUB_STATUS,
 } from 'src/common/constants/club-status'
 import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'src/common/constants/official-verification-status'
+import { getOfficialVerificationTermKey } from 'src/common/constants/official-verification-term'
 import type {
   ClubData,
   ClubManagerRequest,
@@ -121,17 +122,13 @@ export class ClubService {
       })
       .catch(console.error)
     const club = await this.clubAccessService.getPublicClub(uuid)
-    const [clubReview, latestVerificationRequest] = await Promise.all([
+    const [clubReview, verificationRequest] = await Promise.all([
       this.getClubReviews([club.uuid]),
-      this.clubVerificationRequestRepository.findOne({
-        where: { clubId: club.uuid },
-        order: {
-          createdAt: 'DESC',
-          id: 'DESC',
-        },
+      this.clubVerificationRequestRepository.findOneBy({
+        clubId: club.uuid,
       }),
     ])
-    return toClubDetailDomain(club, clubReview.get(club.uuid), latestVerificationRequest)
+    return toClubDetailDomain(club, clubReview.get(club.uuid), verificationRequest)
   }
 
   async findByAuthKey(authkey: string): Promise<Club> {
@@ -144,22 +141,26 @@ export class ClubService {
 
   async getManagedClubByUuid(clubUuid: string, serviceUserId: string): Promise<ManagedClubDetail> {
     await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
-    const [club, managers, latestVerificationRequest] = await Promise.all([
+    const [club, managers, verificationRequest] = await Promise.all([
       this.clubAccessService.getExistingClub(clubUuid),
       this.clubManagerRepository.findBy({ clubId: clubUuid }),
-      this.clubVerificationRequestRepository.findOne({
-        where: { clubId: clubUuid },
-        order: { createdAt: 'DESC', id: 'DESC' },
+      this.clubVerificationRequestRepository.findOneBy({
+        clubId: clubUuid,
       }),
     ])
     const verificationStatus = club.isOfficialVerified
       ? 'VERIFIED'
-      : latestVerificationRequest?.status === PENDING_CLUB_STATUS
+      : verificationRequest?.status === PENDING_CLUB_STATUS
         ? 'PENDING'
-        : latestVerificationRequest?.status === REJECTED_CLUB_STATUS
+        : verificationRequest?.status === REJECTED_CLUB_STATUS
           ? 'REJECTED'
           : 'UNVERIFIED'
-    const retryCount = Math.max((latestVerificationRequest?.attemptNo ?? 1) - 1, 0)
+    const effectiveAttemptNo = verificationRequest
+      ? verificationRequest.termKey === getOfficialVerificationTermKey()
+        ? verificationRequest.attemptNo
+        : 1
+      : null
+    const retryCount = Math.max((effectiveAttemptNo ?? 1) - 1, 0)
 
     return {
       ...toClubDomain(club),
@@ -171,16 +172,14 @@ export class ClubService {
       })),
       officialVerification: {
         status: verificationStatus,
-        requestId: latestVerificationRequest ? Number(latestVerificationRequest.id) : null,
-        attemptNo: latestVerificationRequest?.attemptNo ?? null,
+        requestId: verificationRequest ? Number(verificationRequest.id) : null,
+        attemptNo: effectiveAttemptNo,
         retryCount,
         retryLimit: MAX_OFFICIAL_VERIFICATION_RETRY_COUNT,
         remainingRetryCount: Math.max(MAX_OFFICIAL_VERIFICATION_RETRY_COUNT - retryCount, 0),
         rejectReason:
-          verificationStatus === 'REJECTED'
-            ? (latestVerificationRequest?.rejectReason ?? null)
-            : null,
-        requestedAt: latestVerificationRequest?.createdAt ?? null,
+          verificationStatus === 'REJECTED' ? (verificationRequest?.rejectReason ?? null) : null,
+        requestedAt: verificationRequest?.createdAt ?? null,
       },
     }
   }

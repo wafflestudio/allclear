@@ -1,4 +1,5 @@
 import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'src/common/constants/official-verification-status'
+import { getOfficialVerificationTermKey } from 'src/common/constants/official-verification-term'
 import type { Repository } from 'typeorm'
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity } from '../infra/database/entities'
@@ -15,9 +16,6 @@ export class ClubVerificationService {
 
   @InjectRepository(ClubManagerEntity)
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
-
-  @InjectRepository(ClubVerificationRequestEntity)
-  private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
 
   async requestVerification(
     clubUuid: string,
@@ -47,24 +45,43 @@ export class ClubVerificationService {
       const verificationRequestRepository = transactionManager.getRepository(
         ClubVerificationRequestEntity,
       )
-      const pendingRequest = await verificationRequestRepository.findOneBy({
+      const termKey = getOfficialVerificationTermKey()
+      const verificationRequest = await verificationRequestRepository.findOneBy({
         clubId: clubUuid,
-        status: 'PENDING',
       })
-      if (pendingRequest) {
+
+      if (!verificationRequest) {
+        const request = verificationRequestRepository.create({
+          clubId: clubUuid,
+          termKey,
+          attemptNo: 1,
+        })
+        return verificationRequestRepository.save(request)
+      }
+
+      if (verificationRequest.status === 'PENDING') {
         throw new ConflictError('pending verification request already exists')
       }
 
-      const attemptCount = await verificationRequestRepository.countBy({ clubId: clubUuid })
-      if (attemptCount >= MAX_OFFICIAL_VERIFICATION_ATTEMPT_COUNT) {
+      if (verificationRequest.termKey !== termKey) {
+        const isRetry = verificationRequest.status === 'REJECTED'
+        verificationRequest.termKey = termKey
+        verificationRequest.attemptNo = isRetry ? 2 : 1
+        verificationRequest.status = 'PENDING'
+        verificationRequest.rejectReason = null
+        verificationRequest.createdAt = new Date().toISOString()
+        return verificationRequestRepository.save(verificationRequest)
+      }
+
+      if (verificationRequest.attemptNo >= MAX_OFFICIAL_VERIFICATION_ATTEMPT_COUNT) {
         throw new ConflictError('official verification retry limit exceeded')
       }
 
-      const request = verificationRequestRepository.create({
-        clubId: clubUuid,
-        attemptNo: attemptCount + 1,
-      })
-      return verificationRequestRepository.save(request)
+      verificationRequest.attemptNo += 1
+      verificationRequest.status = 'PENDING'
+      verificationRequest.rejectReason = null
+      verificationRequest.createdAt = new Date().toISOString()
+      return verificationRequestRepository.save(verificationRequest)
     })
   }
 }
