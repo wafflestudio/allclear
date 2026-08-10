@@ -16,6 +16,20 @@ export type ClubManager = {
 
 export type ManagedClubDetail = Club & {
   managers: ClubManager[]
+  officialVerification: ManagedOfficialVerification
+}
+
+export type ManagedOfficialVerificationStatus = 'VERIFIED' | 'PENDING' | 'REJECTED' | 'UNVERIFIED'
+
+export type ManagedOfficialVerification = {
+  status: ManagedOfficialVerificationStatus
+  requestId: number | null
+  attemptNo: number | null
+  retryCount: number
+  retryLimit: number
+  remainingRetryCount: number
+  rejectReason: string | null
+  requestedAt: string | null
 }
 
 export type ManagedClubManagementStatus =
