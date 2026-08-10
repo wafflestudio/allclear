@@ -311,7 +311,7 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 									>
 										<Icon
 											name="share-variant"
-											size={ms(22)}
+											size={ms(18)}
 											color={Colors.POINTCOLOR}
 										/>
 									</Pressable>
@@ -524,11 +524,11 @@ const styles = StyleSheet.create({
 	headerActions: {
 		flexDirection: "row",
 		alignItems: "center",
-		gap: ms(12),
+		gap: ms(10),
 	},
 	savedIcon: {
-		width: ms(22),
-		height: ms(22),
+		width: ms(18),
+		height: ms(18),
 	},
 	clubName: {
 		...typography.headerXL,
