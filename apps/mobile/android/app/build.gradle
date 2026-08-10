@@ -11,6 +11,12 @@ project.ext.envConfigFiles = [
     release: ".env.prod",
 ]
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
+// The vector-icons Gradle script defaults to apps/mobile/node_modules.
+// In this monorepo dependencies live at the repository root.
+project.ext.vectoricons = [
+    iconFontsDir: file("../../../../node_modules/react-native-vector-icons/Fonts"),
+]
 apply from: file("../../../../node_modules/react-native-vector-icons/fonts.gradle")
 
 /**
