@@ -10,7 +10,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "if [ -f &quot;${PROJECT_DIR}/../.env.staging&quot; ]; then&#10;  echo &quot;.env.staging&quot; &gt; /tmp/envfile&#10;else&#10;  echo &quot;.env.prod&quot; &gt; /tmp/envfile&#10;fi&#10;&quot;${PROJECT_DIR}/../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb&quot; &quot;${PROJECT_DIR}/..&quot; &quot;${PROJECT_DIR}/tmp.xcconfig&quot;&#10;">
+               scriptText = "if [ -f &quot;${PROJECT_DIR}/../.env.staging&quot; ]; then&#10;  echo &quot;.env.staging&quot; &gt; /tmp/envfile&#10;else&#10;  echo &quot;.env.prod&quot; &gt; /tmp/envfile&#10;fi&#10;&quot;${PROJECT_DIR}/../../../node_modules/react-native-config/ios/ReactNativeConfig/BuildXCConfig.rb&quot; &quot;${PROJECT_DIR}/..&quot; &quot;${PROJECT_DIR}/tmp.xcconfig&quot;&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
