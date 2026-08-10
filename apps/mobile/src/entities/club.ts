@@ -6,7 +6,22 @@ export type ClubCollegeMajor = {
 	major: string;
 };
 
-export type OfficialVerificationStatus = "VERIFIED" | "PENDING" | "UNVERIFIED";
+export type OfficialVerificationStatus =
+	| "VERIFIED"
+	| "PENDING"
+	| "REJECTED"
+	| "UNVERIFIED";
+
+export type ManagedOfficialVerification = {
+	status: OfficialVerificationStatus;
+	requestId: number | null;
+	attemptNo: number | null;
+	retryCount: number;
+	retryLimit: number;
+	remainingRetryCount: number;
+	rejectReason: string | null;
+	requestedAt: string | null;
+};
 
 export type Club = {
 	id: string;

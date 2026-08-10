@@ -52,19 +52,11 @@ const ClubManagementScreen = () => {
 	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 	const [deletedTitle, setDeletedTitle] = useState<string | null>(null);
 	const [showEditConfirm, setShowEditConfirm] = useState(false);
-	const [hasRequestedVerification, setHasRequestedVerification] =
-		useState(false);
 
-	const { data: club } = useQuery({
+	const { data: club, isLoading: isVerificationStatusLoading } = useQuery({
 		queryKey: ["managedClub", clubId],
 		queryFn: () => clubService.getManagedClubDetail({ uuid: clubId }),
 	});
-	const { data: publicClub, isLoading: isVerificationStatusLoading } = useQuery(
-		{
-			queryKey: ["clubs", clubId],
-			queryFn: () => clubService.getClub({ uuid: clubId }),
-		},
-	);
 
 	const {
 		data: recruitmentsData,
@@ -114,7 +106,7 @@ const ClubManagementScreen = () => {
 	} = useMutation({
 		mutationFn: () => clubService.requestOfficialVerification({ clubId }),
 		onSuccess: () => {
-			setHasRequestedVerification(true);
+			queryClient.invalidateQueries({ queryKey: ["managedClub", clubId] });
 			queryClient.invalidateQueries({ queryKey: ["clubs", clubId] });
 			Toast.show({
 				type: "success",
@@ -124,6 +116,7 @@ const ClubManagementScreen = () => {
 		},
 		onError: (error) => {
 			const errorContent = getOfficialVerificationRequestErrorContent(error);
+			queryClient.invalidateQueries({ queryKey: ["managedClub", clubId] });
 			queryClient.invalidateQueries({ queryKey: ["clubs", clubId] });
 			Toast.show({
 				type: "error",
@@ -150,9 +143,7 @@ const ClubManagementScreen = () => {
 	const clubAffiliation = club ? getClubAffiliationLabel(club) : "";
 	const shortIntro = club?.shortDescription || "";
 	const officialVerificationStatus =
-		(hasRequestedVerification
-			? "PENDING"
-			: publicClub?.officialVerificationStatus) ??
+		club?.officialVerification?.status ??
 		(club?.isOfficialVerified ? "VERIFIED" : undefined);
 
 	return (
