@@ -14,12 +14,13 @@ export const STATUS_FILTERS: { label: string; value: StatusFilter }[] = [
 export const AFFILIATION_FILTERS: { label: string; value: AffiliationFilter }[] = [
   { label: '전체', value: 'ALL' },
   { label: '중앙동아리', value: 'CENTRAL' },
+  { label: '중앙동아리 제외', value: 'NON_CENTRAL' },
 ]
 
 export const TABS: { label: string; value: AdminTab }[] = [
-  { label: '동아리 신청', value: 'clubs' },
-  { label: '관리자 매핑', value: 'managerRequests' },
-  { label: '공식 인증', value: 'verificationRequests' },
+  { label: '신규 동아리 등록 요청', value: 'clubs' },
+  { label: '기존 동아리 운영진 등록 요청', value: 'managerRequests' },
+  { label: '공식 인증 요청', value: 'verificationRequests' },
   { label: '수정 이력', value: 'histories' },
 ]
 

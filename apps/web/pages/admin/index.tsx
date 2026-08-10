@@ -56,9 +56,7 @@ const AdminDashboardPage = () => {
       <AdminLayout
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        totalCount={totalCount}
         pendingCounts={pendingCounts}
-        statusFilter={statusFilter}
         affiliationFilter={affiliationFilter}
         onAffiliationFilterChange={setAffiliationFilter}
         onLogout={handleLogout}
@@ -68,6 +66,7 @@ const AdminDashboardPage = () => {
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
           pendingCount={pendingCounts[activeTab as keyof typeof pendingCounts] ?? 0}
+          totalCount={totalCount}
         />
         {activeTab === 'clubs' && (
           <ClubsTab

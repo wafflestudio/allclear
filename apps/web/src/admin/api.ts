@@ -46,8 +46,10 @@ export const verifyAdminRole = async (token: string): Promise<void> => {
   if (!res.ok) throw new Error('admin role required')
 }
 
-const getAffiliationType = (affiliationFilter: AffiliationFilter) =>
-  affiliationFilter === 'CENTRAL' ? '중앙동아리' : undefined
+const getAffiliationFilterParams = (affiliationFilter: AffiliationFilter) => ({
+  affiliation_type: affiliationFilter === 'CENTRAL' ? '중앙동아리' : undefined,
+  exclude_affiliation_type: affiliationFilter === 'NON_CENTRAL' ? '중앙동아리' : undefined,
+})
 
 export const fetchClubs = (
   status: StatusFilter,
@@ -57,7 +59,7 @@ export const fetchClubs = (
   request<AdminClubsResponse>(
     `/api/v2/admin/clubs${buildQuery({
       status: status === 'ALL' ? undefined : status,
-      affiliation_type: getAffiliationType(affiliationFilter),
+      ...getAffiliationFilterParams(affiliationFilter),
       ...pagination,
     })}`,
   )
@@ -73,7 +75,7 @@ export const fetchManagerRequests = (
   request<AdminClubManagerRequestsResponse>(
     `/api/v2/admin/clubs/manager-requests${buildQuery({
       status: status === 'ALL' ? undefined : status,
-      affiliation_type: getAffiliationType(affiliationFilter),
+      ...getAffiliationFilterParams(affiliationFilter),
       ...pagination,
     })}`,
   )
@@ -86,7 +88,7 @@ export const fetchVerificationRequests = (
   request<AdminClubVerificationRequestsResponse>(
     `/api/v2/admin/clubs/verifications${buildQuery({
       status: status === 'ALL' ? undefined : status,
-      affiliation_type: getAffiliationType(affiliationFilter),
+      ...getAffiliationFilterParams(affiliationFilter),
       ...pagination,
     })}`,
   )
@@ -99,7 +101,7 @@ export const fetchHistories = (
   request<AdminClubHistoriesResponse>(
     `/api/v2/admin/clubs/histories${buildQuery({
       query,
-      affiliation_type: getAffiliationType(affiliationFilter),
+      ...getAffiliationFilterParams(affiliationFilter),
       ...pagination,
     })}`,
   )

@@ -12,9 +12,7 @@ type PendingCounts = {
 export const AdminLayout = ({
   activeTab,
   onTabChange,
-  totalCount,
   pendingCounts,
-  statusFilter,
   affiliationFilter,
   onAffiliationFilterChange,
   onLogout,
@@ -22,9 +20,7 @@ export const AdminLayout = ({
 }: {
   activeTab: AdminTab
   onTabChange: (tab: AdminTab) => void
-  totalCount: number
   pendingCounts: PendingCounts
-  statusFilter: StatusFilter
   affiliationFilter: AffiliationFilter
   onAffiliationFilterChange: (filter: AffiliationFilter) => void
   onLogout: () => void
@@ -109,10 +105,6 @@ export const AdminLayout = ({
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            <StatusBadge status={statusFilter === 'ALL' ? undefined : statusFilter} />
-            <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
-              총 {totalCount.toLocaleString()}건
-            </span>
             <button
               type="button"
               onClick={onLogout}
@@ -156,14 +148,37 @@ export const TabFilterBar = ({
   statusFilter,
   onStatusChange,
   pendingCount,
+  totalCount,
 }: {
   activeTab: AdminTab
   statusFilter: StatusFilter
   onStatusChange: (status: StatusFilter) => void
   pendingCount: number
+  totalCount: number
 }) => {
-  if (activeTab === 'histories') return null
+  if (activeTab === 'histories') {
+    return (
+      <div className="mb-5 flex justify-end">
+        <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+          총 {totalCount.toLocaleString()}건
+        </span>
+      </div>
+    )
+  }
+
   return (
-    <StatusFilterBar value={statusFilter} onChange={onStatusChange} pendingCount={pendingCount} />
+    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <StatusFilterBar
+        value={statusFilter}
+        onChange={onStatusChange}
+        pendingCount={pendingCount}
+      />
+      <div className="flex items-center gap-3 self-end md:self-auto">
+        <StatusBadge status={statusFilter === 'ALL' ? undefined : statusFilter} />
+        <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
+          총 {totalCount.toLocaleString()}건
+        </span>
+      </div>
+    </div>
   )
 }
