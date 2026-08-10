@@ -157,9 +157,7 @@ const InfoTab = ({ club, contentWidth }: Props) => {
 								trueLabel="동방보유"
 								falseLabel="동방없음"
 								detail={
-									club.dongbangLocation
-										? `활동장소 ${club.dongbangLocation}`
-										: undefined
+									club.dongbangLocation ? club.dongbangLocation : undefined
 								}
 								detailOnNewLine
 							/>
