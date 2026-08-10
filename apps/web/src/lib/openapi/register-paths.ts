@@ -2058,7 +2058,7 @@ registry.registerPath({
   tags: ['Managers'],
   summary: '총동연 공식 인증 요청',
   description:
-    '동아리 관리자가 본인 동아리의 총동연 공식 인증을 요청합니다. 이미 공식 인증 상태이거나 승인 대기 요청이 있으면 409를 반환합니다.',
+    '동아리 관리자가 본인 동아리의 총동연 공식 인증을 요청합니다. 요청 횟수는 서울 시간 기준 3~8월 1학기, 9~다음 해 2월 2학기로 구분해 학기마다 초기화됩니다. 이미 공식 인증 상태이거나 승인 대기 요청이 있거나 해당 학기의 재요청 횟수를 소진하면 409를 반환합니다.',
   security: [{ bearerAuth: [] }],
   request: {
     params: ClubUuidParamsSchema,
@@ -2303,7 +2303,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 공식 인증 요청 목록 조회',
   description:
-    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
+    '현재 학기에 동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubVerificationRequestsQuerySchema,
