@@ -59,17 +59,18 @@ export class ClubVerificationService {
         return verificationRequestRepository.save(request)
       }
 
+      if (verificationRequest.status === 'PENDING') {
+        throw new ConflictError('pending verification request already exists')
+      }
+
       if (verificationRequest.termKey !== termKey) {
+        const isRetry = verificationRequest.status === 'REJECTED'
         verificationRequest.termKey = termKey
-        verificationRequest.attemptNo = 1
+        verificationRequest.attemptNo = isRetry ? 2 : 1
         verificationRequest.status = 'PENDING'
         verificationRequest.rejectReason = null
         verificationRequest.createdAt = new Date().toISOString()
         return verificationRequestRepository.save(verificationRequest)
-      }
-
-      if (verificationRequest.status === 'PENDING') {
-        throw new ConflictError('pending verification request already exists')
       }
 
       if (verificationRequest.attemptNo >= MAX_OFFICIAL_VERIFICATION_ATTEMPT_COUNT) {

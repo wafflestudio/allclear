@@ -128,9 +128,7 @@ export class ClubService {
         clubId: club.uuid,
       }),
     ])
-    const currentTermVerificationRequest =
-      verificationRequest?.termKey === getOfficialVerificationTermKey() ? verificationRequest : null
-    return toClubDetailDomain(club, clubReview.get(club.uuid), currentTermVerificationRequest)
+    return toClubDetailDomain(club, clubReview.get(club.uuid), verificationRequest)
   }
 
   async findByAuthKey(authkey: string): Promise<Club> {
@@ -150,16 +148,19 @@ export class ClubService {
         clubId: clubUuid,
       }),
     ])
-    const currentTermVerificationRequest =
-      verificationRequest?.termKey === getOfficialVerificationTermKey() ? verificationRequest : null
     const verificationStatus = club.isOfficialVerified
       ? 'VERIFIED'
-      : currentTermVerificationRequest?.status === PENDING_CLUB_STATUS
+      : verificationRequest?.status === PENDING_CLUB_STATUS
         ? 'PENDING'
-        : currentTermVerificationRequest?.status === REJECTED_CLUB_STATUS
+        : verificationRequest?.status === REJECTED_CLUB_STATUS
           ? 'REJECTED'
           : 'UNVERIFIED'
-    const retryCount = Math.max((currentTermVerificationRequest?.attemptNo ?? 1) - 1, 0)
+    const effectiveAttemptNo = verificationRequest
+      ? verificationRequest.termKey === getOfficialVerificationTermKey()
+        ? verificationRequest.attemptNo
+        : 1
+      : null
+    const retryCount = Math.max((effectiveAttemptNo ?? 1) - 1, 0)
 
     return {
       ...toClubDomain(club),
@@ -171,18 +172,14 @@ export class ClubService {
       })),
       officialVerification: {
         status: verificationStatus,
-        requestId: currentTermVerificationRequest
-          ? Number(currentTermVerificationRequest.id)
-          : null,
-        attemptNo: currentTermVerificationRequest?.attemptNo ?? null,
+        requestId: verificationRequest ? Number(verificationRequest.id) : null,
+        attemptNo: effectiveAttemptNo,
         retryCount,
         retryLimit: MAX_OFFICIAL_VERIFICATION_RETRY_COUNT,
         remainingRetryCount: Math.max(MAX_OFFICIAL_VERIFICATION_RETRY_COUNT - retryCount, 0),
         rejectReason:
-          verificationStatus === 'REJECTED'
-            ? (currentTermVerificationRequest?.rejectReason ?? null)
-            : null,
-        requestedAt: currentTermVerificationRequest?.createdAt ?? null,
+          verificationStatus === 'REJECTED' ? (verificationRequest?.rejectReason ?? null) : null,
+        requestedAt: verificationRequest?.createdAt ?? null,
       },
     }
   }
