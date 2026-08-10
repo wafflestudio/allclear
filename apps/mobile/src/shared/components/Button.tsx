@@ -48,24 +48,43 @@ export const Button = ({
 		variantStyle.text,
 		textStyle,
 	].filter((s): s is TextStyle => !!s);
+	const pressedStyle = getPressedStyle(variant);
 
 	return (
 		<Pressable
 			style={({ pressed }) => [
 				containerStyle,
-				pressed &&
-					(variant === "primary"
-						? { backgroundColor: Colors.BUTTON_PUSH }
-						: variant === "destructive"
-							? { opacity: 0.8 }
-							: { opacity: 0.7 }),
+				pressed && pressedStyle.container,
 			]}
 			onPress={onPress}
 			disabled={disabled}
 		>
-			<Text style={labelStyle}>{label}</Text>
+			{({ pressed }) => (
+				<Text style={[labelStyle, pressed && pressedStyle.text]}>{label}</Text>
+			)}
 		</Pressable>
 	);
+};
+
+const getPressedStyle = (
+	variant: ButtonVariant,
+): { container?: ViewStyle; text?: TextStyle } => {
+	if (variant === "primary") {
+		return { container: { backgroundColor: Colors.BUTTON_PUSH } };
+	}
+
+	if (variant === "outline") {
+		return {
+			container: { borderColor: Colors.BUTTON_PUSH },
+			text: { color: Colors.BUTTON_PUSH },
+		};
+	}
+
+	if (variant === "destructive") {
+		return { container: { opacity: 0.8 } };
+	}
+
+	return {};
 };
 
 const disabledVariantMap: Record<ButtonVariant, keyof typeof variantStyles> = {

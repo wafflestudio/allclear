@@ -27,6 +27,7 @@ const clubManagementSnuLogo =
 
 import OfficialVerificationRequestButton from "@/features/club/components/OfficialVerificationRequestButton";
 import { getOfficialVerificationRequestErrorContent } from "@/features/club/utils/officialVerificationRequest";
+import AlertModal from "@/shared/components/AlertModal";
 import EditPencilButton from "@/shared/components/EditPencilButton";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
@@ -40,6 +41,15 @@ type RouteProps = RouteProp<StackParamList, typeof SCREEN_TYPE.CLUB_MANAGEMENT>;
 const VISIBLE_COUNT = 2;
 
 type DeleteTarget = { id: number; title: string } | null;
+type VerificationConfirmation = "request" | "retry" | null;
+type VerificationSuccess = {
+	isRetry: boolean;
+	retryCount: number;
+	retryLimit: number;
+	remainingRetryCount: number;
+};
+
+const VERIFICATION_PROCESSING_DURATION = "최대 일주일";
 
 const ClubManagementScreen = () => {
 	const route = useRoute<RouteProps>();
@@ -52,10 +62,23 @@ const ClubManagementScreen = () => {
 	const [deleteTarget, setDeleteTarget] = useState<DeleteTarget>(null);
 	const [deletedTitle, setDeletedTitle] = useState<string | null>(null);
 	const [showEditConfirm, setShowEditConfirm] = useState(false);
+	const [verificationConfirmation, setVerificationConfirmation] =
+		useState<VerificationConfirmation>(null);
+	const [verificationSuccess, setVerificationSuccess] =
+		useState<VerificationSuccess | null>(null);
+	const [showRetryLimitNotice, setShowRetryLimitNotice] = useState(false);
+	const [isRetryLimitAcknowledged, setIsRetryLimitAcknowledged] =
+		useState(false);
 
-	const { data: club, isLoading: isVerificationStatusLoading } = useQuery({
+	const {
+		data: club,
+		isLoading: isVerificationStatusLoading,
+		refetch: refetchManagedClub,
+	} = useQuery({
 		queryKey: ["managedClub", clubId],
 		queryFn: () => clubService.getManagedClubDetail({ uuid: clubId }),
+		staleTime: 0,
+		refetchOnWindowFocus: "always",
 	});
 
 	const {
@@ -78,9 +101,14 @@ const ClubManagementScreen = () => {
 
 	useFocusEffect(
 		useCallback(() => {
+			refetchManagedClub();
 			refetchRecruitments();
 			refetchRepresentativeRecruitment();
-		}, [refetchRecruitments, refetchRepresentativeRecruitment]),
+		}, [
+			refetchManagedClub,
+			refetchRecruitments,
+			refetchRepresentativeRecruitment,
+		]),
 	);
 
 	const { mutate: deleteRecruitment, isPending: isDeleting } = useMutation({
@@ -104,14 +132,17 @@ const ClubManagementScreen = () => {
 		mutate: requestOfficialVerification,
 		isPending: isRequestingVerification,
 	} = useMutation({
-		mutationFn: () => clubService.requestOfficialVerification({ clubId }),
-		onSuccess: () => {
+		mutationFn: (_isRetry: boolean) =>
+			clubService.requestOfficialVerification({ clubId }),
+		onSuccess: (response, isRetry) => {
 			queryClient.invalidateQueries({ queryKey: ["managedClub", clubId] });
 			queryClient.invalidateQueries({ queryKey: ["clubs", clubId] });
-			Toast.show({
-				type: "success",
-				text1: "총동연 공식 인증을 신청했어요",
-				text2: "운영진 검토 후 결과를 반영할게요",
+			setVerificationSuccess({
+				isRetry,
+				retryCount: response.data.retry_count,
+				retryLimit:
+					response.data.retry_count + response.data.remaining_retry_count,
+				remainingRetryCount: response.data.remaining_retry_count,
 			});
 		},
 		onError: (error) => {
@@ -145,6 +176,19 @@ const ClubManagementScreen = () => {
 	const officialVerificationStatus =
 		club?.officialVerification?.status ??
 		(club?.isOfficialVerified ? "VERIFIED" : undefined);
+	const isRetryLimitReached =
+		club?.officialVerification?.status === "REJECTED" &&
+		club.officialVerification.remainingRetryCount === 0;
+	const isRetryConfirmation = verificationConfirmation === "retry";
+	const verificationConfirmationTitle = isRetryConfirmation
+		? "올클 공식인증이 반려되었어요."
+		: "공식 인증을 요청할까요?";
+	const verificationConfirmationDescription = isRetryConfirmation
+		? "세부사항을 확인하고 인증을 재요청해주세요"
+		: "인증된 동아리는 스티커를 부여해드려요.";
+	const verificationSuccessDescription = verificationSuccess?.isRetry
+		? `재요청은 최대 ${verificationSuccess.retryLimit}회까지 가능해요\n${verificationSuccess.retryCount}/${verificationSuccess.retryLimit}회 (남은 횟수 ${verificationSuccess.remainingRetryCount}회)`
+		: `인증이 완료되기까지는\n${VERIFICATION_PROCESSING_DURATION}이 소요될 수 있어요`;
 
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
@@ -206,7 +250,17 @@ const ClubManagementScreen = () => {
 					status={officialVerificationStatus}
 					isStatusLoading={isVerificationStatusLoading}
 					isRequesting={isRequestingVerification}
-					onPress={() => requestOfficialVerification()}
+					isRetryLimitReached={isRetryLimitReached}
+					isRetryLimitAcknowledged={isRetryLimitAcknowledged}
+					onPress={() =>
+						isRetryLimitReached
+							? setShowRetryLimitNotice(true)
+							: setVerificationConfirmation(
+									officialVerificationStatus === "REJECTED"
+										? "retry"
+										: "request",
+								)
+					}
 				/>
 
 				{/* 공고 관리 */}
@@ -402,6 +456,85 @@ const ClubManagementScreen = () => {
 				</View>
 			</ScrollView>
 
+			<AlertModal
+				visible={verificationConfirmation !== null}
+				onClose={() =>
+					!isRequestingVerification && setVerificationConfirmation(null)
+				}
+				title={verificationConfirmationTitle}
+				titleContent={
+					isRetryConfirmation ? (
+						<>
+							올클 공식인증이{" "}
+							<Text style={styles.verificationPointModalTitle}>
+								반려되었어요.
+							</Text>
+						</>
+					) : (
+						<>
+							<Text style={styles.verificationPointModalTitle}>
+								공식 인증을 요청
+							</Text>
+							할까요?
+						</>
+					)
+				}
+				description={verificationConfirmationDescription}
+				buttonLabel={isRetryConfirmation ? "재요청" : "확인"}
+				onButtonPress={() => {
+					const isRetry = verificationConfirmation === "retry";
+					setVerificationConfirmation(null);
+					requestOfficialVerification(isRetry);
+				}}
+				buttonDisabled={isRequestingVerification}
+				hasCancel
+				dismissOnBackdropPress={!isRequestingVerification}
+			/>
+
+			<AlertModal
+				visible={verificationSuccess !== null}
+				onClose={() => setVerificationSuccess(null)}
+				title={
+					verificationSuccess?.isRetry
+						? "인증 재요청이 정상적으로 완료되었어요!"
+						: "인증요청이 정상적으로 완료되었어요!"
+				}
+				titleStyle={styles.verificationSuccessModalTitle}
+				description={verificationSuccessDescription}
+				descriptionContent={
+					verificationSuccess?.isRetry ? (
+						<>
+							재요청은 최대 {verificationSuccess.retryLimit}회까지 가능해요
+							{"\n"}
+							<Text style={styles.verificationPointModalTitle}>
+								{verificationSuccess.retryCount}
+							</Text>
+							/{verificationSuccess.retryLimit}회 (남은 횟수{" "}
+							<Text style={styles.verificationPointModalTitle}>
+								{verificationSuccess.remainingRetryCount}
+							</Text>
+							회)
+						</>
+					) : undefined
+				}
+				buttonLabel="확인"
+				onButtonPress={() => setVerificationSuccess(null)}
+			/>
+
+			<AlertModal
+				visible={showRetryLimitNotice}
+				onClose={() => setShowRetryLimitNotice(false)}
+				title={"공식인증 재요청 가능 횟수가\n모두 소진되었어요."}
+				titleStyle={styles.verificationRetryLimitModalTitle}
+				description="아쉽지만 다음학기에 요청해주세요."
+				buttonLabel="확인"
+				onButtonPress={() => {
+					setShowRetryLimitNotice(false);
+					setIsRetryLimitAcknowledged(true);
+				}}
+				hasCancel
+			/>
+
 			{/* 동아리 정보 수정 확인 모달 */}
 			<Modal
 				visible={showEditConfirm}
@@ -557,6 +690,15 @@ const ClubManagementScreen = () => {
 export default ClubManagementScreen;
 
 const styles = StyleSheet.create({
+	verificationPointModalTitle: {
+		color: Colors.POINTCOLOR,
+	},
+	verificationSuccessModalTitle: {
+		color: Colors.BLACK,
+	},
+	verificationRetryLimitModalTitle: {
+		color: Colors.BODYTEXT_MAIN,
+	},
 	safeArea: {
 		flex: 1,
 		backgroundColor: "#FFFFFF",

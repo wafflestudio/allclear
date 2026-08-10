@@ -8,6 +8,14 @@ const createAxiosError = (status: number) => ({
 	response: { status },
 });
 
+const createRetryLimitExceededAxiosError = () => ({
+	isAxiosError: true,
+	response: {
+		status: 409,
+		data: "official verification retry limit exceeded",
+	},
+});
+
 describe("getOfficialVerificationButtonState", () => {
 	it("인증 상태를 확인하는 동안 신청할 수 없다", () => {
 		expect(
@@ -18,6 +26,7 @@ describe("getOfficialVerificationButtonState", () => {
 		).toEqual({
 			label: "인증 상태 확인 중...",
 			disabled: true,
+			variant: "status",
 		});
 	});
 
@@ -28,20 +37,22 @@ describe("getOfficialVerificationButtonState", () => {
 				isStatusLoading: false,
 			}),
 		).toEqual({
-			label: "총동연 공식 인증 신청하기",
+			label: "올클 공식인증 요청하기",
 			disabled: false,
+			variant: "outline",
 		});
 	});
 
 	it.each([
-		["PENDING", "총동연 공식 인증 심사 중"],
-		["VERIFIED", "총동연 공식 인증 완료"],
+		["PENDING", "올클 공식인증 심사중"],
+		["VERIFIED", "올클 공식인증완료"],
 	] as const)("%s 상태에서는 중복 신청할 수 없다", (status, label) => {
 		expect(
 			getOfficialVerificationButtonState({ status, isStatusLoading: false }),
 		).toEqual({
 			label,
 			disabled: true,
+			variant: "status",
 		});
 	});
 
@@ -53,8 +64,37 @@ describe("getOfficialVerificationButtonState", () => {
 				isRequesting: true,
 			}),
 		).toEqual({
-			label: "총동연 공식 인증 신청 중...",
+			label: "올클 공식인증 요청 중...",
 			disabled: true,
+			variant: "status",
+		});
+	});
+
+	it("반려된 동아리는 인증을 재요청할 수 있다", () => {
+		expect(
+			getOfficialVerificationButtonState({
+				status: "REJECTED",
+				isStatusLoading: false,
+			}),
+		).toEqual({
+			label: "올클 공식인증 반려 및 재요청",
+			disabled: false,
+			variant: "outline",
+		});
+	});
+
+	it("재요청 횟수 소진 안내를 확인하면 버튼을 비활성화한다", () => {
+		expect(
+			getOfficialVerificationButtonState({
+				status: "REJECTED",
+				isStatusLoading: false,
+				isRetryLimitReached: true,
+				isRetryLimitAcknowledged: true,
+			}),
+		).toEqual({
+			label: "올클 공식인증 반려",
+			disabled: true,
+			variant: "final",
 		});
 	});
 });
@@ -66,6 +106,17 @@ describe("getOfficialVerificationRequestErrorContent", () => {
 		).toEqual({
 			title: "이미 공식 인증을 신청했어요",
 			description: "현재 인증 상태를 다시 확인해주세요",
+		});
+	});
+
+	it("재요청 횟수 초과 응답은 재요청 불가로 안내한다", () => {
+		expect(
+			getOfficialVerificationRequestErrorContent(
+				createRetryLimitExceededAxiosError(),
+			),
+		).toEqual({
+			title: "재요청 횟수를 모두 사용했어요",
+			description: "총동연 공식 인증은 더 이상 재요청할 수 없어요",
 		});
 	});
 
