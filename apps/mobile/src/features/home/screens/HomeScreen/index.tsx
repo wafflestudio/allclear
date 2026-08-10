@@ -89,8 +89,8 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_MAIN,
 	},
 	logo: {
-		width: s(106),
-		height: s(37),
+		width: s(119),
+		height: s(40),
 		marginTop: vs(6),
 		resizeMode: "contain",
 	},
