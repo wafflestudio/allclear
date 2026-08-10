@@ -2303,7 +2303,7 @@ registry.registerPath({
   tags: ['Admin'],
   summary: '운영진 전용 공식 인증 요청 목록 조회',
   description:
-    '현재 학기에 동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
+    '동아리 관리자들이 신청한 공식 인증 요청 리스트를 조회합니다. status query로 PENDING, APPROVED, REJECTED 중 하나를, `affiliation_type` query로 소속 유형을 필터링할 수 있으며, query를 생략하면 전체를 조회합니다. `offset`/`limit`으로 페이지네이션할 수 있습니다.',
   security: [{ bearerAuth: [] }],
   request: {
     query: AdminClubVerificationRequestsQuerySchema,

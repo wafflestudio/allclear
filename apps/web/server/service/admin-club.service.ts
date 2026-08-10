@@ -5,7 +5,6 @@ import {
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
 } from 'src/common/constants/club-status'
-import { getOfficialVerificationTermKey } from 'src/common/constants/official-verification-term'
 import type {
   AdminClubHistoriesQuery,
   AdminClubManagerRequestStatusUpdate,
@@ -502,9 +501,6 @@ export class AdminClubService {
     const baseQuery = this.clubVerificationRequestRepository
       .createQueryBuilder('verification_request')
       .leftJoin(ClubEntity, 'club', 'club.uuid = verification_request.club_id')
-      .where('verification_request.term_key = :termKey', {
-        termKey: getOfficialVerificationTermKey(),
-      })
 
     if (status) {
       baseQuery.andWhere('verification_request.status = :status', { status })
