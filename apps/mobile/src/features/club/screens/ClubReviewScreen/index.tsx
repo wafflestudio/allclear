@@ -65,6 +65,13 @@ const ClubReviewScreen = ({ route }: Props) => {
 	}, [myClubReviewIds]);
 
 	const handleBackButton = () => navigation.goBack();
+	const handleKeywordPress = (keywordId: ReviewKeyword["id"]) => {
+		setSelectedKeywordIds((currentIds) =>
+			currentIds.includes(keywordId)
+				? currentIds.filter((id) => id !== keywordId)
+				: [...currentIds, keywordId],
+		);
+	};
 
 	const handleSaveReview = async () => {
 		logClickEvent({
@@ -104,68 +111,85 @@ const ClubReviewScreen = ({ route }: Props) => {
 						style={styles.scrollView}
 						contentContainerStyle={styles.scrollContent}
 					>
-						<BackgroundCard>
-							<Text
-								style={styles.title}
-							>{`${club.name} 에서의 경험을 공유해주세요 😀`}</Text>
-							{reviewKeywordCategories?.map((kc, index) => (
-								<View
-									key={kc.id}
-									style={[
-										styles.categorySection,
-										index > 0 && styles.categorySectionDivider,
-									]}
-								>
-									<Text style={styles.categoryTitle}>{kc.title}</Text>
-									<View style={styles.keywordContainer}>
-										{kc.keywords.map((keyword) => {
-											const isSelected = selectedKeywordIds.includes(
-												keyword.id,
-											);
-											return (
-												<TouchableOpacity
-													key={keyword.id}
-													style={[
-														styles.keyword,
-														isSelected && styles.keywordSelected,
-													]}
-													onPress={() => {
-														setSelectedKeywordIds(
-															isSelected
-																? selectedKeywordIds.filter(
-																		(id) => id !== keyword.id,
-																	)
-																: [...selectedKeywordIds, keyword.id],
-														);
-													}}
-												>
-													<Text style={styles.keywordIcon}>
-														{keyword.iconUri?.trim()}
-													</Text>
-													<Text
-														style={[
-															styles.keywordTitle,
-															isSelected && styles.keywordTitleSelected,
-														]}
-													>
-														{keyword.title}
-													</Text>
-												</TouchableOpacity>
-											);
-										})}
-									</View>
-								</View>
-							))}
+						<BackgroundCard style={styles.reviewCard}>
+							<View style={styles.reviewHeader}>
+								<Text style={styles.title}>
+									<Text style={styles.clubName}>{club.name}</Text>
+									{" 에서의 경험을 공유해주세요"}
+								</Text>
+								<Text style={styles.participantCount}>
+									현재까지 {club.totalReviews}명이 참여했어요
+								</Text>
+							</View>
 
-							<View style={styles.submitWrapper}>
-								<Button
-									label="저장하기"
-									onPress={handleSaveReview}
-									variant="primary"
-									disabled={isSubmitDisabled}
-								/>
+							<View style={styles.categoryList}>
+								{reviewKeywordCategories?.map((kc) => {
+									const columnBreak = Math.ceil(kc.keywords.length / 2);
+									const keywordColumns = [
+										kc.keywords.slice(0, columnBreak),
+										kc.keywords.slice(columnBreak),
+									].filter((column) => column.length > 0);
+
+									return (
+										<View key={kc.id}>
+											<Text style={styles.categoryTitle}>{kc.title}</Text>
+											<View style={styles.keywordContainer}>
+												{keywordColumns.map((column) => (
+													<View key={column[0].id} style={styles.keywordColumn}>
+														{column.map((keyword) => {
+															const isSelected = selectedKeywordIds.includes(
+																keyword.id,
+															);
+
+															return (
+																<TouchableOpacity
+																	key={keyword.id}
+																	accessibilityRole="checkbox"
+																	accessibilityState={{ checked: isSelected }}
+																	style={[
+																		styles.keyword,
+																		isSelected && styles.keywordSelected,
+																	]}
+																	onPress={() => handleKeywordPress(keyword.id)}
+																>
+																	<Text style={styles.keywordIcon}>
+																		{keyword.iconUri?.trim()}
+																	</Text>
+																	<Text
+																		style={[
+																			styles.keywordTitle,
+																			isSelected && styles.keywordTitleSelected,
+																		]}
+																	>
+																		{keyword.title}
+																	</Text>
+																</TouchableOpacity>
+															);
+														})}
+													</View>
+												))}
+											</View>
+										</View>
+									);
+								})}
 							</View>
 						</BackgroundCard>
+
+						<View style={styles.submitWrapper}>
+							<Button
+								label="저장하기"
+								onPress={handleSaveReview}
+								variant="primary"
+								disabled={isSubmitDisabled}
+								height={vs(35)}
+								width={s(164)}
+								style={[
+									styles.submitButton,
+									isSubmitDisabled && styles.submitButtonDisabled,
+								]}
+								textStyle={styles.submitButtonText}
+							/>
+						</View>
 					</ScrollView>
 				)}
 			</SafeAreaView>
@@ -243,46 +267,56 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BACKGROUND_MAIN,
 	},
 	scrollView: {
-		paddingHorizontal: s(16),
+		paddingHorizontal: s(15),
 	},
 	scrollContent: {
-		paddingVertical: vs(16),
+		paddingTop: vs(13),
+		paddingBottom: vs(24),
+	},
+	reviewCard: {
+		padding: s(20),
+		borderRadius: ms(15),
+		shadowOffset: { width: 0, height: 1 },
+		shadowOpacity: 0.05,
+		shadowRadius: 5,
+	},
+	reviewHeader: {
+		gap: vs(3),
+		marginBottom: vs(25),
 	},
 	title: {
-		...typography.headerXL,
-		color: Colors.BODYTEXT_MAIN,
-		marginBottom: vs(20),
-	},
-	categorySection: {
-		marginTop: vs(16),
-	},
-	categorySectionDivider: {
-		borderTopWidth: 1,
-		borderTopColor: Colors.TEXTBOX_SELECTED,
-		paddingTop: vs(16),
-	},
-	categoryTitle: {
 		...typography.headerL,
-		color: Colors.BODYTEXT_MAIN,
-		marginBottom: vs(12),
+		color: Colors.BODYTEXT_SUB,
+	},
+	clubName: {
+		color: Colors.POINTCOLOR,
+	},
+	participantCount: {
+		...typography.bodySSmallMedium,
+		color: Colors.BODYTEXT_SUB,
+	},
+	categoryList: { gap: vs(25) },
+	categoryTitle: {
+		...typography.bodyMMedium,
+		color: Colors.BODYTEXT_SUB,
+		marginBottom: vs(10),
 	},
 	keywordContainer: {
 		flexDirection: "row",
-		flexWrap: "wrap",
 		justifyContent: "space-between",
-		rowGap: vs(8),
-		marginTop: vs(8),
+		alignItems: "flex-start",
 	},
+	keywordColumn: { alignItems: "flex-start", gap: vs(8) },
 	keyword: {
-		width: "48%",
 		flexDirection: "row",
 		alignItems: "center",
 		justifyContent: "center",
-		paddingVertical: vs(10),
-		paddingHorizontal: s(12),
-		borderRadius: ms(32),
-		borderWidth: 1,
-		borderColor: Colors.BUTTON_UNSELECTED,
+		paddingTop: vs(7),
+		paddingBottom: vs(8),
+		paddingHorizontal: s(10),
+		borderRadius: ms(20),
+		borderWidth: 0.3,
+		borderColor: Colors.POINTCOLOR,
 		backgroundColor: Colors.WHITE,
 	},
 	keywordSelected: {
@@ -290,19 +324,24 @@ const styles = StyleSheet.create({
 		borderColor: Colors.POINTCOLOR,
 	},
 	keywordIcon: {
-		...typography.bodyMRegular,
-		marginRight: s(4),
+		...typography.bodySRegular,
+		lineHeight: vs(12),
+		marginRight: s(2),
 	},
 	keywordTitle: {
-		...typography.bodyMRegular,
-		color: Colors.BODYTEXT_MAIN,
+		...typography.bodySRegular,
+		color: Colors.BODYTEXT_SUB,
+		lineHeight: vs(12),
 	},
 	keywordTitleSelected: {
-		...typography.bodyMSemibold,
 		color: Colors.WHITE,
 	},
 	submitWrapper: {
 		flexDirection: "row",
-		marginTop: vs(24),
+		justifyContent: "center",
+		marginTop: vs(28),
 	},
+	submitButton: { paddingVertical: 0, borderRadius: ms(8) },
+	submitButtonDisabled: { backgroundColor: Colors.BODYTEXT_DISABLED },
+	submitButtonText: { ...typography.bodyMSemibold, color: Colors.WHITE },
 });

@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useContext, useState } from "react";
 import {
 	ActivityIndicator,
-	Dimensions,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -36,8 +35,6 @@ type Props = {
 	route: ScreenRoute;
 	navigation: ScreenNavigation;
 };
-
-const CONTENT_WIDTH = Dimensions.get("window").width - s(16) * 4;
 
 const PreviousRecruitmentItem = ({
 	recruitment,
@@ -97,10 +94,7 @@ const PreviousRecruitmentItem = ({
 							</Text>
 						</Pressable>
 					) : detailQuery.data ? (
-						<RecruitmentDetailCard
-							content={detailQuery.data.content}
-							contentWidth={CONTENT_WIDTH}
-						/>
+						<RecruitmentDetailCard content={detailQuery.data.content} />
 					) : null}
 				</View>
 			)}

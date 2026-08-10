@@ -27,7 +27,7 @@ const TAG_STYLES = {
 	},
 };
 
-const HtmlView = ({ html, contentWidth, ...props }: Props) => {
+const HtmlView = ({ html, contentWidth, baseStyle, ...props }: Props) => {
 	const [measuredWidth, setMeasuredWidth] = useState(0);
 	const onLayout = useCallback((e: LayoutChangeEvent) => {
 		setMeasuredWidth(e.nativeEvent.layout.width);
@@ -40,7 +40,7 @@ const HtmlView = ({ html, contentWidth, ...props }: Props) => {
 				<RenderHtml
 					{...props}
 					contentWidth={resolvedWidth}
-					baseStyle={BASE_STYLE}
+					baseStyle={{ ...BASE_STYLE, ...baseStyle }}
 					source={{ html: html.replace(/<br \/>\n/g, "\n") }}
 					tagsStyles={TAG_STYLES}
 				/>

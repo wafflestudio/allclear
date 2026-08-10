@@ -7,19 +7,24 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useContext, useEffect, useState } from "react";
 import {
 	Image,
+	ScrollView,
 	StyleSheet,
 	Text,
 	TextInput,
 	TouchableOpacity,
 	View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { Club } from "@/entities/club";
 import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
+import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import AlertModal from "@/shared/components/AlertModal";
 import FlowScreenFooter from "@/shared/components/FlowScreenFooter";
 import FlowScreenLayout from "@/shared/components/FlowScreenLayout";
+import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
+import { typography } from "@/shared/constants/typography";
 import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import {
@@ -29,6 +34,7 @@ import {
 	getStudentIdPrefill,
 } from "@/shared/utils/managerInfo";
 import { navigation } from "@/shared/utils/navigation";
+import { s, vs } from "@/shared/utils/scale";
 
 type AdminFormData = {
 	name: string;
@@ -427,111 +433,109 @@ const ManageClubRegistrationScreen = () => {
 	);
 
 	const renderForm = () => (
-		<FlowScreenLayout
-			footer={
-				<FlowScreenFooter
-					backLabel="이전"
-					nextLabel={
-						isManagerRequestEditMode
-							? isResubmission
-								? "재신청"
-								: "수정"
-							: "다음"
-					}
-					onBack={handleBack}
-					onNext={() => void handleFormNext()}
-					nextDisabled={
-						!isFormFieldsValid ||
-						isSubmittingRequest ||
-						isManagerInfoPrefillLoading ||
-						(isManagerRequestEditMode &&
-							!isResubmission &&
-							!hasManagerInfoChanges)
-					}
-				/>
-			}
-		>
-			<Text style={styles.title}>운영진 기본 정보를{"\n"}입력해주세요</Text>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
+			<ScrollView contentContainerStyle={styles.formContent}>
+				<View style={styles.formHeader}>
+					<Text style={styles.formTitle}>운영진 기본 정보를</Text>
+					<Text style={styles.formTitle}>입력해주세요</Text>
+				</View>
 
-			<View style={styles.formFieldGroup}>
-				<Text style={styles.formFieldLabel}>이름</Text>
-				<TextInput
-					style={[
-						styles.formInput,
-						adminFormErrors.name && styles.formInputError,
-					]}
-					placeholder="홍길동"
-					placeholderTextColor={Colors.BODYTEXT_DISABLED}
-					maxLength={50}
-					value={adminForm.name}
-					editable={!isManagerInfoPrefillLoading}
-					onChangeText={(text) => {
-						setAdminForm((prev) => ({ ...prev, name: text }));
-						if (adminFormErrors.name) {
-							setAdminFormErrors((prev) => ({ ...prev, name: undefined }));
-						}
-					}}
-				/>
-				<Text style={styles.formErrorText}>이름을 입력해주세요</Text>
-			</View>
+				<View style={styles.form}>
+					<View>
+						<Text style={styles.formFieldLabel}>이름</Text>
+						<TextField
+							placeholder="홍길동"
+							maxLength={50}
+							value={adminForm.name}
+							editable={!isManagerInfoPrefillLoading}
+							onChangeText={(text) => {
+								setAdminForm((prev) => ({ ...prev, name: text }));
+								if (adminFormErrors.name) {
+									setAdminFormErrors((prev) => ({
+										...prev,
+										name: undefined,
+									}));
+								}
+							}}
+						/>
+						<Text style={styles.formHelperText}>이름을 입력해주세요</Text>
+					</View>
 
-			<View style={styles.formFieldGroup}>
-				<Text style={styles.formFieldLabel}>전화번호</Text>
-				<TextInput
-					style={[
-						styles.formInput,
-						adminFormErrors.phone && styles.formInputError,
-					]}
-					placeholder="010-1234-5678"
-					placeholderTextColor={Colors.BODYTEXT_DISABLED}
-					keyboardType="number-pad"
-					maxLength={13}
-					value={adminForm.phone}
-					editable={!isManagerInfoPrefillLoading}
-					onChangeText={(text) => {
-						setAdminForm((prev) => ({
-							...prev,
-							phone: formatPhoneNumberInput(text, prev.phone),
-						}));
-						if (adminFormErrors.phone) {
-							setAdminFormErrors((prev) => ({ ...prev, phone: undefined }));
-						}
-					}}
-				/>
-				<Text style={styles.formErrorText}>
-					올바른 전화번호 형식으로 입력해주세요
-				</Text>
-			</View>
+					<View>
+						<Text style={styles.formFieldLabel}>전화번호</Text>
+						<TextField
+							placeholder="010-1234-5678"
+							keyboardType="number-pad"
+							maxLength={13}
+							value={adminForm.phone}
+							editable={!isManagerInfoPrefillLoading}
+							onChangeText={(text) => {
+								setAdminForm((prev) => ({
+									...prev,
+									phone: formatPhoneNumberInput(text, prev.phone),
+								}));
+								if (adminFormErrors.phone) {
+									setAdminFormErrors((prev) => ({
+										...prev,
+										phone: undefined,
+									}));
+								}
+							}}
+						/>
+						<Text style={styles.formHelperText}>
+							올바른 전화번호 형식으로 입력해주세요
+						</Text>
+					</View>
 
-			<View style={styles.formFieldGroup}>
-				<Text style={styles.formFieldLabel}>학번</Text>
-				<TextInput
-					style={[
-						styles.formInput,
-						adminFormErrors.studentId && styles.formInputError,
-					]}
-					placeholder="1970-12345"
-					placeholderTextColor={Colors.BODYTEXT_DISABLED}
-					keyboardType="number-pad"
-					maxLength={10}
-					value={adminForm.studentId}
-					editable={!isManagerInfoPrefillLoading}
-					onChangeText={(text) => {
-						setAdminForm((prev) => ({
-							...prev,
-							studentId: formatStudentIdInput(text, prev.studentId),
-						}));
-						if (adminFormErrors.studentId) {
-							setAdminFormErrors((prev) => ({ ...prev, studentId: undefined }));
-						}
-					}}
-				/>
-				<Text style={styles.formErrorText}>
-					2023-12345 형식으로 입력해주세요
-				</Text>
-			</View>
+					<View>
+						<Text style={styles.formFieldLabel}>학번</Text>
+						<TextField
+							placeholder="1970-12345"
+							keyboardType="number-pad"
+							maxLength={10}
+							value={adminForm.studentId}
+							editable={!isManagerInfoPrefillLoading}
+							onChangeText={(text) => {
+								setAdminForm((prev) => ({
+									...prev,
+									studentId: formatStudentIdInput(text, prev.studentId),
+								}));
+								if (adminFormErrors.studentId) {
+									setAdminFormErrors((prev) => ({
+										...prev,
+										studentId: undefined,
+									}));
+								}
+							}}
+						/>
+						<Text style={styles.formHelperText}>
+							2023-12345 형식으로 입력해주세요
+						</Text>
+					</View>
+				</View>
+			</ScrollView>
+
+			<FormNavigationButtons
+				onPrevious={handleBack}
+				onNext={() => void handleFormNext()}
+				nextLabel={
+					isManagerRequestEditMode
+						? isResubmission
+							? "재신청"
+							: "수정"
+						: "다음"
+				}
+				isNextDisabled={
+					!isFormFieldsValid ||
+					isSubmittingRequest ||
+					isManagerInfoPrefillLoading ||
+					(isManagerRequestEditMode &&
+						!isResubmission &&
+						!hasManagerInfoChanges)
+				}
+			/>
 			{renderResultModals()}
-		</FlowScreenLayout>
+		</SafeAreaView>
 	);
 
 	const renderClubSearch = () => (
@@ -649,6 +653,25 @@ const ManageClubRegistrationScreen = () => {
 export default ManageClubRegistrationScreen;
 
 const styles = StyleSheet.create({
+	container: {
+		flex: 1,
+		backgroundColor: Colors.WHITE,
+	},
+	formContent: {
+		paddingHorizontal: s(20),
+		paddingTop: vs(20),
+		paddingBottom: vs(20),
+	},
+	formHeader: {
+		marginBottom: vs(20),
+	},
+	formTitle: {
+		...typography.headerXXL,
+		color: Colors.BODYTEXT_MAIN,
+	},
+	form: {
+		gap: vs(20),
+	},
 	title: {
 		fontSize: 25,
 		fontWeight: "600",
@@ -656,35 +679,15 @@ const styles = StyleSheet.create({
 		lineHeight: 30,
 		marginBottom: 15,
 	},
-	formFieldGroup: {
-		marginBottom: 20,
-	},
 	formFieldLabel: {
-		fontSize: 18,
-		fontWeight: "600",
+		...typography.headerXLSemibold,
 		color: Colors.BODYTEXT_SUB,
-		marginBottom: 5,
-		paddingHorizontal: 5,
+		marginBottom: vs(10),
 	},
-	formInput: {
-		borderWidth: 1,
-		borderColor: Colors.BODYTEXT_DISABLED,
-		borderRadius: 8,
-		paddingHorizontal: 15,
-		paddingVertical: 18,
-		fontSize: 16,
-		fontWeight: "500",
-		color: Colors.BODYTEXT_MAIN,
-		height: 54,
-	},
-	formInputError: {
-		borderColor: Colors.POINTCOLOR,
-	},
-	formErrorText: {
-		fontSize: 14,
+	formHelperText: {
+		...typography.bodyMRegular,
 		color: Colors.POINTCOLOR,
-		paddingHorizontal: 5,
-		marginTop: 5,
+		marginTop: vs(5),
 	},
 	searchInputContainer: {
 		backgroundColor: Colors.BACKGROUND_SUB,

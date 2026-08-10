@@ -6,19 +6,18 @@ import {
 	getRecruitmentApplicationUrl,
 	getRecruitmentDeadlineFormFields,
 	getRecruitmentDeadlineRequestValue,
+	getRecruitmentTextPreview,
 	shouldStackActivityLocation,
 	shouldStackRegularMeetings,
 } from "./recruitmentPresentation";
 
 describe("recruitment presentation rules", () => {
-	it("shows minutes and omits the year only for deadlines in the current Korean year", () => {
-		const now = new Date("2026-01-01T00:00:00.000Z");
-
-		expect(formatRecruitmentDeadline("2026-07-24T09:30:00.000Z", now)).toBe(
-			"7월 24일 18:30",
+	it("formats recruitment deadlines as a short Korean date with the closed label", () => {
+		expect(formatRecruitmentDeadline("2026-07-24T09:30:00.000Z")).toBe(
+			"26.07.24 모집마감",
 		);
-		expect(formatRecruitmentDeadline("2027-01-05T00:05:00.000Z", now)).toBe(
-			"2027년 1월 5일 09:05",
+		expect(formatRecruitmentDeadline("2027-01-05T00:05:00.000Z")).toBe(
+			"27.01.05 모집마감",
 		);
 	});
 
@@ -68,10 +67,10 @@ describe("recruitment presentation rules", () => {
 		expect(
 			formatRegularMeeting({
 				day_of_week: "금",
-				start_time: "18:30:00",
-				end_time: "20:00:00",
+				start_time: "09:00:00",
+				end_time: "11:00:00",
 			}),
-		).toBe("금요일 18:30–20:00");
+		).toBe("금요일 9:00~11:00");
 		expect(
 			formatRegularMeeting({
 				day_of_week: "토",
@@ -79,6 +78,14 @@ describe("recruitment presentation rules", () => {
 				end_time: null,
 			}),
 		).toBe("토요일");
+	});
+
+	it("converts recruitment HTML into compact preview text", () => {
+		expect(
+			getRecruitmentTextPreview(
+				"<p>서울대학교 <strong>와플 스튜디오</strong></p><p>두 번째&nbsp;문장 &amp; 안내</p>",
+			),
+		).toBe("서울대학교 와플 스튜디오 두 번째 문장 & 안내");
 	});
 
 	it("opens one previous recruitment at a time and toggles it closed", () => {
