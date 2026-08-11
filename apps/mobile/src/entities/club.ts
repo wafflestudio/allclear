@@ -59,8 +59,6 @@ export type Club = {
 	isOfficialVerified?: boolean;
 	officialVerificationStatus?: OfficialVerificationStatus;
 	verifiedAt?: string | null;
-	// v240121
-	avgRating: number;
 	reviewKeywords: ReviewKeyword[];
 	// v240218
 	totalReviews: number;

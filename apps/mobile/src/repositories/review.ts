@@ -4,7 +4,6 @@ import { apiConnector } from "@/shared/utils/api";
 
 export type CreateClubReviewsRequest = {
 	uuid: Club["uuid"];
-	rating?: number; // unused
 	reviewKeywordIds: ReviewKeyword["id"][];
 };
 
@@ -18,7 +17,6 @@ export type GetMyClubReviewRequest = {
 };
 
 export type GetMyClubReviewResponse = {
-	rating: number;
 	reviewKeywordIds: ReviewKeyword["id"][];
 	createdAt: string;
 	updatedAt: string;
@@ -35,7 +33,6 @@ export type ReviewRepository = {
 export const getReviewRepository = (): ReviewRepository => ({
 	createClubReviews: async (req) => {
 		await apiConnector.post(`/v2/clubs/${req.uuid}/reviews`, {
-			rating: req.rating,
 			reviewKeywordIds: req.reviewKeywordIds,
 		});
 	},
