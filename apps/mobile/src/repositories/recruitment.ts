@@ -33,6 +33,7 @@ type ListClubRecruitmentsApiResponse = {
 
 type RepresentativeRecruitmentApiPayload = {
 	id: number | string;
+	updatedAt: string;
 };
 
 type GetRepresentativeRecruitmentApiResponse =
@@ -59,6 +60,7 @@ export type GetRepresentativeRecruitmentRequest = {
 
 export type GetRepresentativeRecruitmentResponse = {
 	id: number;
+	updatedAt: string;
 } | null;
 
 export type CreateRecruitmentRequest = {
@@ -187,7 +189,9 @@ export const getRecruitmentRepository = (): RecruitmentRepository => ({
 		if (!representativeRecruitment) return null;
 
 		const id = Number(representativeRecruitment.id);
-		return Number.isNaN(id) ? null : { id };
+		return Number.isNaN(id)
+			? null
+			: { id, updatedAt: representativeRecruitment.updatedAt };
 	},
 
 	createRecruitment: async (req) => {

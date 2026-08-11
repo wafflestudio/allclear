@@ -50,16 +50,16 @@ import { typography } from "@/shared/constants/typography";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import type { EditableImage, ImageFile } from "@/shared/types/image";
 import {
-	type ActivityCycleMode,
-	decrementActivityCycleValue,
-	incrementActivityCycleValue,
-} from "@/shared/utils/activityCycle";
-import {
 	areValidSnsUrls,
 	getClubSnsUrls,
 	getSnsRequestFields,
 	normalizeSnsUrls,
 } from "@/shared/utils/clubSns";
+import {
+	decrementMinActivityPeriodValue,
+	incrementMinActivityPeriodValue,
+	type MinActivityPeriodMode,
+} from "@/shared/utils/minActivityPeriod";
 import { navigation } from "@/shared/utils/navigation";
 import { ms, s, vs } from "@/shared/utils/scale";
 
@@ -72,7 +72,7 @@ type ClubInfoEditFormData = {
 	department: string;
 	shortIntro: string;
 	recruitType: string;
-	activityCycle: string;
+	minActivityPeriodInput: string;
 	hasDongbang: boolean;
 	dongbangLocation: string;
 	clubSNSUrls: string[];
@@ -108,7 +108,7 @@ const initialFormData: ClubInfoEditFormData = {
 	department: "",
 	shortIntro: "",
 	recruitType: "",
-	activityCycle: "",
+	minActivityPeriodInput: "",
 	hasDongbang: false,
 	dongbangLocation: "",
 	clubSNSUrls: [""],
@@ -139,12 +139,12 @@ const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => {
 		recruitType: CLUB_RECRUIT_TYPES.includes(club.recruitType)
 			? club.recruitType
 			: "",
-		activityCycle:
-			club.minActivityPeriod !== null && club.minActivityPeriod !== undefined
-				? club.minActivityPeriod > 0
-					? String(club.minActivityPeriod)
-					: ""
-				: club.activityCycle || "",
+		minActivityPeriodInput:
+			club.minActivityPeriod !== null &&
+			club.minActivityPeriod !== undefined &&
+			club.minActivityPeriod > 0
+				? String(club.minActivityPeriod)
+				: "",
 		hasDongbang: club.hasDongbang ?? false,
 		dongbangLocation: club.dongbangLocation ?? "",
 		clubSNSUrls: snsUrls.length > 0 ? snsUrls : [""],
@@ -156,19 +156,14 @@ const mapClubToFormData = (club: ManagedClubDetail): ClubInfoEditFormData => {
 	};
 };
 
-const getInitialActivityCycleMode = (
+const getInitialMinActivityPeriodMode = (
 	club: ManagedClubDetail,
-): ActivityCycleMode => {
-	const minActivityPeriod = club.minActivityPeriod;
-	if (minActivityPeriod !== null && minActivityPeriod !== undefined) {
-		return minActivityPeriod > 0 ? "number" : "none";
-	}
-	return club.activityCycle ? "number" : "none";
-};
+): MinActivityPeriodMode =>
+	(club.minActivityPeriod ?? 0) > 0 ? "number" : "none";
 
 const normalizeComparableClubInfo = (
 	data: ClubInfoEditFormData,
-	activityCycleMode: ActivityCycleMode,
+	minActivityPeriodMode: MinActivityPeriodMode,
 ): ComparableClubInfo => ({
 	name: data.clubName.trim(),
 	category: data.category,
@@ -176,7 +171,9 @@ const normalizeComparableClubInfo = (
 	shortDescription: data.shortIntro.trim(),
 	recruitType: data.recruitType,
 	minActivityPeriod:
-		activityCycleMode === "number" ? parseInt(data.activityCycle, 10) || 0 : 0,
+		minActivityPeriodMode === "number"
+			? parseInt(data.minActivityPeriodInput, 10) || 0
+			: 0,
 	hasDongbang: data.hasDongbang,
 	dongbangLocation: data.hasDongbang ? data.dongbangLocation.trim() : "",
 	snsUrls: normalizeSnsUrls(data.clubSNSUrls),
@@ -344,9 +341,9 @@ const ClubRecruitTypeSection = memo(
 ClubRecruitTypeSection.displayName = "ClubRecruitTypeSection";
 
 type ClubActivityPeriodSectionProps = {
-	mode: ActivityCycleMode;
+	mode: MinActivityPeriodMode;
 	semesters: number;
-	onModeChange: (mode: ActivityCycleMode) => void;
+	onModeChange: (mode: MinActivityPeriodMode) => void;
 	onDecrement: () => void;
 	onIncrement: () => void;
 };
@@ -729,8 +726,8 @@ const ClubInfoEditScreen = () => {
 
 	const [formData, setFormData] =
 		useState<ClubInfoEditFormData>(initialFormData);
-	const [activityCycleMode, setActivityCycleMode] =
-		useState<ActivityCycleMode>("none");
+	const [minActivityPeriodMode, setMinActivityPeriodMode] =
+		useState<MinActivityPeriodMode>("none");
 	const [showDepartmentDropdown, setShowDepartmentDropdown] = useState(false);
 	const [departmentSearch, setDepartmentSearch] = useState("");
 	const [imageFile, setImageFile] = useState<ImageFile | null>(null);
@@ -749,7 +746,7 @@ const ClubInfoEditScreen = () => {
 	useEffect(() => {
 		if (club) {
 			setFormData(mapClubToFormData(club));
-			setActivityCycleMode(getInitialActivityCycleMode(club));
+			setMinActivityPeriodMode(getInitialMinActivityPeriodMode(club));
 			setImageFile(null);
 		}
 	}, [club]);
@@ -764,7 +761,8 @@ const ClubInfoEditScreen = () => {
 		[],
 	);
 
-	const activitySemesters = parseInt(formData.activityCycle, 10) || 0;
+	const minActivityPeriodSemesters =
+		parseInt(formData.minActivityPeriodInput, 10) || 0;
 	const filteredDepartmentOptions = useMemo(() => {
 		const keyword = departmentSearch.trim();
 		if (!keyword) {
@@ -824,25 +822,25 @@ const ClubInfoEditScreen = () => {
 		});
 	}, [setFormField]);
 
-	const handleActivityCycleModeChange = useCallback(
-		(mode: ActivityCycleMode) => {
-			setActivityCycleMode(mode);
-			setFormField("activityCycle", mode === "number" ? "1" : "");
+	const handleMinActivityPeriodModeChange = useCallback(
+		(mode: MinActivityPeriodMode) => {
+			setMinActivityPeriodMode(mode);
+			setFormField("minActivityPeriodInput", mode === "number" ? "1" : "");
 		},
 		[setFormField],
 	);
 
-	const incrementActivityCycle = useCallback(() => {
-		const next = incrementActivityCycleValue(activitySemesters);
-		setActivityCycleMode(next.mode);
-		setFormField("activityCycle", next.value);
-	}, [activitySemesters, setFormField]);
+	const incrementMinActivityPeriod = useCallback(() => {
+		const next = incrementMinActivityPeriodValue(minActivityPeriodSemesters);
+		setMinActivityPeriodMode(next.mode);
+		setFormField("minActivityPeriodInput", next.value);
+	}, [minActivityPeriodSemesters, setFormField]);
 
-	const decrementActivityCycle = useCallback(() => {
-		const next = decrementActivityCycleValue(activitySemesters);
-		setActivityCycleMode(next.mode);
-		setFormField("activityCycle", next.value);
-	}, [activitySemesters, setFormField]);
+	const decrementMinActivityPeriod = useCallback(() => {
+		const next = decrementMinActivityPeriodValue(minActivityPeriodSemesters);
+		setMinActivityPeriodMode(next.mode);
+		setFormField("minActivityPeriodInput", next.value);
+	}, [minActivityPeriodSemesters, setFormField]);
 
 	const handleSetHasDongbang = useCallback((value: boolean) => {
 		setFormData((prev) => ({
@@ -897,13 +895,16 @@ const ClubInfoEditScreen = () => {
 			return null;
 		}
 		const initialData = mapClubToFormData(club);
-		const initialActivityCycleMode = getInitialActivityCycleMode(club);
-		return normalizeComparableClubInfo(initialData, initialActivityCycleMode);
+		const initialMinActivityPeriodMode = getInitialMinActivityPeriodMode(club);
+		return normalizeComparableClubInfo(
+			initialData,
+			initialMinActivityPeriodMode,
+		);
 	}, [club]);
 
 	const currentComparable = useMemo(
-		() => normalizeComparableClubInfo(formData, activityCycleMode),
-		[activityCycleMode, formData],
+		() => normalizeComparableClubInfo(formData, minActivityPeriodMode),
+		[minActivityPeriodMode, formData],
 	);
 
 	const isSNSComplete =
@@ -920,7 +921,8 @@ const ClubInfoEditScreen = () => {
 		!!formData.recruitType.trim() &&
 		isSNSComplete &&
 		!!formData.clubDescription.trim() &&
-		(activityCycleMode === "none" || !!formData.activityCycle.trim());
+		(minActivityPeriodMode === "none" ||
+			!!formData.minActivityPeriodInput.trim());
 
 	const updateRequest = useMemo(() => {
 		if (!initialComparable) {
@@ -1076,11 +1078,11 @@ const ClubInfoEditScreen = () => {
 						/>
 
 						<ClubActivityPeriodSection
-							mode={activityCycleMode}
-							semesters={activitySemesters}
-							onModeChange={handleActivityCycleModeChange}
-							onDecrement={decrementActivityCycle}
-							onIncrement={incrementActivityCycle}
+							mode={minActivityPeriodMode}
+							semesters={minActivityPeriodSemesters}
+							onModeChange={handleMinActivityPeriodModeChange}
+							onDecrement={decrementMinActivityPeriod}
+							onIncrement={incrementMinActivityPeriod}
 						/>
 
 						<ClubDongbangSection

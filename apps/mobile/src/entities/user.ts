@@ -4,14 +4,9 @@ export type User = {
 	name: string;
 	phone: string;
 	email: string;
-	gender: string;
-	birthDate: string | null;
-	birthYear: string;
 	collegeMajor: CollegeMajor | null;
 	// 학번
 	admissionClass: number | null;
-	// 학년
-	grade: number | null;
 };
 
 export type CollegeMajor = {

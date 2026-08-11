@@ -33,7 +33,7 @@ import EditPencilButton from "@/shared/components/EditPencilButton";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
 import { serviceContext } from "@/shared/contexts/serviceContext";
-import { getClubAffiliationLabel } from "@/shared/utils/club";
+import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
 import { navigation } from "@/shared/utils/navigation";
 import { ms, s, vs } from "@/shared/utils/scale";
 
@@ -173,8 +173,7 @@ const ClubManagementScreen = () => {
 		: recruitments;
 	const hasMore = previousRecruitments.length > VISIBLE_COUNT;
 	const isRecruitmentsLoading = isLoading || isRepresentativeLoading;
-	const clubAffiliation = club ? getClubAffiliationLabel(club) : "";
-	const shortIntro = club?.shortDescription || "";
+	const summary = club ? getClubSummaryWithAffiliation(club) : "";
 	const officialVerificationStatus =
 		club?.officialVerification?.status ??
 		(club?.isOfficialVerified ? "VERIFIED" : undefined);
@@ -239,11 +238,8 @@ const ClubManagementScreen = () => {
 										size={MANAGEMENT_VERIFICATION_MARK_SIZE}
 									/>
 								</View>
-								<Text style={styles.clubCollege} numberOfLines={1}>
-									{clubAffiliation}
-								</Text>
 								<Text style={styles.clubDesc} numberOfLines={1}>
-									{shortIntro}
+									{summary}
 								</Text>
 							</View>
 						</View>
@@ -804,14 +800,6 @@ const styles = StyleSheet.create({
 		letterSpacing: -0.02 * 20,
 		color: "#000000",
 		flexShrink: 1,
-	},
-	clubCollege: {
-		fontFamily: "Pretendard",
-		fontWeight: "500",
-		fontSize: ms(14),
-		lineHeight: ms(17),
-		letterSpacing: -0.02 * 14,
-		color: "#757474",
 	},
 	clubDesc: {
 		fontFamily: "Pretendard",

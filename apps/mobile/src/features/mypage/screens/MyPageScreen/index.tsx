@@ -36,7 +36,7 @@ import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import { useUserVoiceBottomSheet } from "@/shared/contexts/userVoiceBottomSheetContext";
 import { setToken } from "@/shared/utils/api";
-import { getClubAffiliationLabel } from "@/shared/utils/club";
+import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
 import { navigation } from "@/shared/utils/navigation";
 import { ms, s, vs } from "@/shared/utils/scale";
 
@@ -424,10 +424,7 @@ const MyPageScreen = () => {
 											</Text>
 											<View style={styles.manageClubSubTexts}>
 												<Text style={styles.manageClubSub} numberOfLines={1}>
-													{getClubAffiliationLabel(club)}
-												</Text>
-												<Text style={styles.manageClubSub} numberOfLines={1}>
-													{club.shortDescription}
+													{getClubSummaryWithAffiliation(club)}
 												</Text>
 											</View>
 										</View>

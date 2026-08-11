@@ -4,6 +4,7 @@ import Animated from "react-native-reanimated";
 import type { Club } from "@/entities/club";
 import ClubPreviewCard from "@/shared/components/ClubPreviewCard";
 import useAutoScroll from "@/shared/hooks/useAutoScroll";
+import { getClubSummary } from "@/shared/utils/club";
 import { s } from "@/shared/utils/scale";
 
 export const HORIZONTAL_CAROUSEL_BOTTOM_PADDING = s(2);
@@ -58,7 +59,7 @@ const HorizontalCarousel = ({ clubs, onPressClub }: Props) => {
 				renderItem={({ item }) => (
 					<ClubPreviewCard
 						title={item.name}
-						description={item.description ?? ""}
+						description={getClubSummary(item)}
 						imageSource={{ uri: item.imageUri }}
 						onPress={() => onPressClub(item)}
 					/>

@@ -39,7 +39,7 @@ const mapFormDataToRequest = (
 		affiliation: formData.department,
 		short_description: formData.shortIntro,
 		recruit_type: formData.recruitType,
-		min_activity_period: parseInt(formData.activityCycle, 10) || 0,
+		min_activity_period: parseInt(formData.minActivityPeriodInput, 10) || 0,
 		has_dongbang: formData.hasDongbang,
 		...getSnsRequestFields(formData.clubSNSUrls),
 		introduction: formData.clubDescription,
