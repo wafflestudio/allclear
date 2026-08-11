@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AlertModal from "@/shared/components/AlertModal";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE } from "@/shared/constants/screen";
+import { typography } from "@/shared/constants/typography";
 import { navigation } from "@/shared/utils/navigation";
 
 type Props = {
@@ -110,62 +111,68 @@ export default ManageClubView;
 
 const styles = StyleSheet.create({
 	container: {
+		flex: 1,
 		paddingHorizontal: 20,
 		paddingTop: 30,
 		paddingBottom: 50,
-		backgroundColor: Colors.BACKGROUND_MAIN,
+		borderTopLeftRadius: 12,
+		borderTopRightRadius: 12,
+		backgroundColor: Colors.WHITE,
 	},
 	title: {
+		...typography.headerXLSemibold,
 		fontSize: 18,
-		fontWeight: "600",
-		color: "#181818",
-		marginBottom: 20,
+		lineHeight: 24,
+		color: Colors.BODYTEXT_MAIN,
+		padding: 10,
+		marginBottom: 10,
 	},
 	optionButton: {
+		height: 54,
 		paddingHorizontal: 20,
 		paddingVertical: 15,
 		borderRadius: 8,
 		alignItems: "flex-start",
-		marginBottom: 12,
+		marginBottom: 10,
 	},
 	optionButtonUnselected: {
 		borderWidth: 1,
-		borderColor: "#C1C1C1",
-		backgroundColor: "#FFFFFF",
+		borderColor: Colors.BODYTEXT_DISABLED,
+		backgroundColor: Colors.WHITE,
 	},
 	optionButtonSelected: {
-		backgroundColor: "#EAEAEA",
+		backgroundColor: Colors.TEXTBOX_SELECTED,
 		borderWidth: 0,
 	},
 	optionButtonText: {
+		...typography.bodyMMedium,
 		fontSize: 16,
-		fontWeight: "500",
+		lineHeight: 24,
 		textAlign: "left",
 		width: "100%",
 	},
 	optionButtonTextUnselected: {
-		color: "#C1C1C1",
+		color: Colors.BODYTEXT_DISABLED,
 	},
 	optionButtonTextSelected: {
-		color: "#757474",
+		color: Colors.BODYTEXT_SUB,
 	},
 	button: {
+		height: 44,
 		paddingHorizontal: 50,
 		paddingVertical: 12,
-		minHeight: 48,
 		borderRadius: 8,
 		backgroundColor: Colors.BUTTON_SELECTED,
 		alignItems: "center",
 		justifyContent: "center",
-		marginTop: 16,
 		width: "100%",
 	},
 	buttonDisabled: {
 		backgroundColor: Colors.TEXTBOX_UNSELECTED,
 	},
 	buttonText: {
-		fontSize: 16,
-		fontWeight: "600",
+		...typography.headerL,
+		lineHeight: 20,
 		color: Colors.TEXT_BUTTON_SELECTED,
 	},
 	buttonTextDisabled: {
