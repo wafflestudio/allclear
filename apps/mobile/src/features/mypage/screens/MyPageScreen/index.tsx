@@ -792,6 +792,7 @@ const styles = StyleSheet.create({
 	},
 	scrollContent: {
 		padding: s(16),
+		paddingBottom: vs(32),
 		gap: vs(12),
 	},
 

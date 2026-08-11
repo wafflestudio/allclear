@@ -2,6 +2,7 @@ import {
 	BottomSheetBackdrop,
 	type BottomSheetBackdropProps,
 	BottomSheetModal,
+	BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import type React from "react";
 import {
@@ -92,6 +93,7 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 				ref={bottomSheetModalRef}
 				index={0}
 				snapPoints={[Platform.OS === "ios" ? vs(310) : vs(260)]}
+				enableDynamicSizing={false}
 				onDismiss={() => {
 					isBottomSheetOpenRef.current = false;
 					// 로그인 없이 닫힌 경우 stale 콜백이 다음 로그인에 잘못 실행되지 않도록 정리
@@ -99,10 +101,12 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 				}}
 				backdropComponent={renderBackdrop}
 			>
-				<LoginView
-					closeBottomSheet={closeBottomSheet}
-					onSuccess={callOnSuccess}
-				/>
+				<BottomSheetView style={{ flex: 1 }}>
+					<LoginView
+						closeBottomSheet={closeBottomSheet}
+						onSuccess={callOnSuccess}
+					/>
+				</BottomSheetView>
 			</BottomSheetModal>
 		</LoginBottomSheetContext.Provider>
 	);
