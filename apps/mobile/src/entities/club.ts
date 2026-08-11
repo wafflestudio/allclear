@@ -34,7 +34,6 @@ export type Club = {
 	type: string;
 	affiliationType?: string;
 	category: Category["name"];
-	college: string;
 	collegeMajorId?: number;
 	collegeMajor?: ClubCollegeMajor | null;
 	recruitType: string;

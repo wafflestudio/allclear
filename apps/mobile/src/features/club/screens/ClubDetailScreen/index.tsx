@@ -52,6 +52,7 @@ import WithViewEventLog from "@/shared/hocs/WithViewEventLog";
 import useClickEventLog from "@/shared/hooks/useClickEventLog";
 import useRequireLogin from "@/shared/hooks/useRequireLogin";
 import useSaveClub from "@/shared/hooks/useSaveClub";
+import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
 import {
 	getClubSnsUrls,
 	getSnsIcon,
@@ -165,20 +166,7 @@ const ClubDetailScreen = ({ route, navigation }: Props) => {
 
 	if (!currentCategory) return null;
 	const categoryDetail = CategoryMap[currentCategory];
-	const affiliation =
-		club?.collegeMajor?.major ||
-		club?.collegeMajor?.college ||
-		club?.college ||
-		club?.affiliationType ||
-		"";
-	const heroDescription = club
-		? [
-				affiliation ? `${affiliation} 소속` : "",
-				club.shortDescription || club.description,
-			]
-				.filter(Boolean)
-				.join(" ")
-		: "";
+	const heroDescription = club ? getClubSummaryWithAffiliation(club) : "";
 	const snsUrls = club ? getClubSnsUrls(club) : [];
 
 	const handleBackButton = () => navigation.goBack();

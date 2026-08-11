@@ -7,6 +7,7 @@ import { CategoryMap } from "@/shared/constants/category";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import useSaveClub from "@/shared/hooks/useSaveClub";
+import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
 import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
@@ -39,7 +40,7 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 				<View style={styles.textGroup}>
 					<Text style={styles.title}>{club.name}</Text>
 					<Text numberOfLines={2} style={styles.description}>
-						{club.description}
+						{getClubSummaryWithAffiliation(club)}
 					</Text>
 				</View>
 				<View style={styles.reviewView}>

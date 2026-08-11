@@ -68,6 +68,7 @@ export class SearchQueryService {
   private buildBaseQuery(): SelectQueryBuilder<ClubEntity> {
     return this.clubRepository
       .createQueryBuilder('club')
+      .leftJoinAndSelect('club.collegeMajor', 'collegeMajor')
       .where('club.status = :status', { status: PUBLIC_CLUB_STATUS })
       .andWhere('club.deleted_at IS NULL')
   }

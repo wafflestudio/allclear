@@ -27,6 +27,7 @@ import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
 import { typography } from "@/shared/constants/typography";
 import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
+import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
 import {
 	formatPhoneNumberInput,
 	formatStudentIdInput,
@@ -586,7 +587,7 @@ const ManageClubRegistrationScreen = () => {
 									{club.name}
 								</Text>
 								<Text style={styles.clubDescription} numberOfLines={2}>
-									{club.description}
+									{getClubSummaryWithAffiliation(club)}
 								</Text>
 							</View>
 							<TouchableOpacity
