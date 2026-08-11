@@ -57,8 +57,9 @@ const RecruitTab = ({
 		(representativeId !== null && detailQuery.isLoading);
 	const isError = representativeQuery.isError || detailQuery.isError;
 	const content = detailQuery.data?.content;
-	const updatedAt = club.articleUploadedAt
-		? dayjs(club.articleUploadedAt)
+	const representativeUpdatedAt = representativeQuery.data?.updatedAt;
+	const updatedAt = representativeUpdatedAt
+		? dayjs(representativeUpdatedAt)
 		: null;
 
 	return (

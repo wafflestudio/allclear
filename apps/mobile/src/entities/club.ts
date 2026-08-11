@@ -49,7 +49,6 @@ export type Club = {
 	imageUri: string;
 	snsUrls?: string[];
 	article: string;
-	articleUploadedAt: string | null;
 	activeMemberCount?: number;
 	foundedAt?: string | null;
 	activityImageUrls?: string[];
