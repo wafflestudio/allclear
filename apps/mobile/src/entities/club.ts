@@ -27,7 +27,6 @@ export type Club = {
 	id: string;
 	uuid: string; // id와 동일한 필드. 기존의 id는 number 타입이었으나, string 타입으로 변경되었다.
 	name: string;
-	fullName: string;
 	description: string;
 	shortDescription?: string;
 	introduction: string;
@@ -37,20 +36,16 @@ export type Club = {
 	collegeMajorId?: number;
 	collegeMajor?: ClubCollegeMajor | null;
 	recruitType: string;
-	isPopular: boolean;
 	hasManager: boolean;
 	hasDongbang: boolean;
 	dongbangLocation?: string | null;
 	minActivityPeriod?: number | null;
-	membershipFee: string;
-	tags: string[];
 	imageUri: string;
 	snsUrls?: string[];
 	article: string;
 	activeMemberCount?: number;
 	foundedAt?: string | null;
 	activityImageUrls?: string[];
-	blurHash?: string | null;
 	status?: string;
 	rejectReason?: string | null;
 	isOfficialVerified?: boolean;
@@ -76,7 +71,6 @@ export type ManagedClubListItem = Club & {
 type ReviewKeyword = {
 	id: string;
 	title: string;
-	color: string;
 	iconUri: string;
 	totalUpvotes: number;
 };
