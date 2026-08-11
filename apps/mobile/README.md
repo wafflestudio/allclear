@@ -97,7 +97,7 @@ export type User = {
 export const getUserRepository = (): UserRepository => ({
 	getUser: async () => {
 		const token = await AsyncStorage.getItem(LOGIN_TOKEN)
-		return apiConnector.get<GetUserResponse>('/v1/users/me')
+		return apiConnector.get<GetUserResponse>('/v2/users/me')
 	},
 })
 ```
@@ -152,8 +152,8 @@ export type ClubRepository = {
 
 // 구현체
 export const getClubRepository = (): ClubRepository => ({
-	searchClubs: async req => apiConnector.get(`/v1/clubs/search`, req),
-	getClub: async req => apiConnector.get(`/v1/clubs/${req.uuid}`),
+	searchClubs: async req => apiConnector.get(`/v2/clubs/search`, req),
+	getClub: async req => apiConnector.get(`/v2/clubs/${req.uuid}`),
 })
 ```
 
@@ -338,7 +338,7 @@ export type NewFeature = { id: string; name: string }
 
 ```typescript
 export const getNewFeatureRepository = (): NewFeatureRepository => ({
-	getFeature: async id => apiConnector.get(`/v1/features/${id}`),
+	getFeature: async id => apiConnector.get(`/v2/features/${id}`),
 })
 ```
 

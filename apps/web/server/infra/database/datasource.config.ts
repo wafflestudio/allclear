@@ -29,7 +29,6 @@ import { ClubReviewKeywordCategoryEntity } from './entities/user-club-review-cat
 import { UserRecentSearchEntity } from './entities/user-recent-search.entity'
 import { UserSavedClubEntity } from './entities/user-saved-club.entity'
 import { UserVoiceEntity } from './entities/user-voice.entity'
-import { ClubManagerRegisterRequestEntityV1 } from './entities/v1/club-manager-register-request.entity'
 
 export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
   type: 'postgres',
@@ -54,7 +53,6 @@ export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
     UserSavedClubEntity,
     ClubManagerEntity,
     ClubManagerRegisterRequestEntity,
-    ClubManagerRegisterRequestEntityV1,
     ClubVerificationRequestEntity,
     ClubHistoryEntity,
     TermsEntity,
