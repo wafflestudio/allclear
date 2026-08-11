@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import type { User } from 'server/domain/model/User'
+import type { LegacyUser } from 'server/domain/model/User'
 import { Provider } from 'server/provider'
 import { UserServiceV1 } from 'server/service/v1/user.service'
 import { type ZodIssue, z } from 'zod'
@@ -23,7 +23,7 @@ const UpdateProfile = z.object({
 export type UpdateProfileDto = z.infer<typeof UpdateProfile>
 
 type ResponseData = {
-  profile: User
+  profile: LegacyUser
 }
 
 export default async function handler(

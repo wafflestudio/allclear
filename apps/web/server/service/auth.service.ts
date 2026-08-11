@@ -40,7 +40,7 @@ export class AuthService {
       where: {
         accountId: account.id,
       },
-      relations: ['user'],
+      relations: ['user', 'user.serviceUser', 'user.serviceUser.collegeMajor'],
     })
     if (!accountUser) {
       throw new UserNotFoundError(`AccountUser not found`)
@@ -62,6 +62,13 @@ export class AuthService {
       birthYear: accountUser.user.birthYear,
       college: accountUser.user.serviceUser.college,
       major: accountUser.user.serviceUser.major,
+      collegeMajor: accountUser.user.serviceUser.collegeMajor
+        ? {
+            id: accountUser.user.serviceUser.collegeMajor.id,
+            college: accountUser.user.serviceUser.collegeMajor.college,
+            major: accountUser.user.serviceUser.collegeMajor.major,
+          }
+        : null,
       admissionClass: accountUser.user.serviceUser.admissionClass,
       grade: accountUser.user.serviceUser.grade,
     }

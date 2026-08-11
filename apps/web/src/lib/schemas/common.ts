@@ -102,6 +102,7 @@ export const UserSchema = z
     birthYear: z.string(),
     college: z.string(),
     major: z.string(),
+    collegeMajor: CollegeMajorSchema.nullable(),
     admissionClass: z.number().nullable(),
     grade: z.number().nullable(),
   })
