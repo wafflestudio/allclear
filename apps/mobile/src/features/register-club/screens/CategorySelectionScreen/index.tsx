@@ -144,7 +144,8 @@ const styles = StyleSheet.create({
 		textAlign: "left",
 	},
 	categoryText: {
-		...typography.bodyMMedium,
+		...typography.headerXLSemibold,
+		lineHeight: vs(30),
 		color: Colors.BODYTEXT_DISABLED,
 		textAlign: "center",
 	},
