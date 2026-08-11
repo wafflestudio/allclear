@@ -12,12 +12,6 @@ export class UserClubReviewEntity extends BaseTimeStampMixin {
   @Column({ type: 'uuid', name: 'service_user_id' })
   serviceUserId: string
 
-  @Column({ type: 'smallint', default: 0, name: 'rating' })
-  rating: number
-
   @Column({ type: 'uuid', array: true, default: [], name: 'review_keyword_ids' })
   reviewKeywordIds: string[]
-
-  @Column({ type: 'varchar', length: 100, name: 'content', default: '' })
-  content: string
 }

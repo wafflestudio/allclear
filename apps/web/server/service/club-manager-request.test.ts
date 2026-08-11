@@ -8,7 +8,7 @@ vi.mock('../provider', () => ({
 
 import { NotFoundError } from '../domain/error'
 import { UserNotificationEntity } from '../infra/database/entities'
-import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubService } from './club.service'
 
 const clubUuid = '4dfcd19f-9f20-4128-8b4c-b76deab4b65d'
@@ -22,7 +22,7 @@ describe('ClubService.getClubManagerRequest', () => {
     service = new ClubService()
     findOne = vi.fn()
     Object.assign(service, {
-      clubManagerRegisterRequestRepository: { findOne },
+      clubManagerRequestRepository: { findOne },
     })
   })
 
@@ -87,7 +87,7 @@ describe('ClubService.getClubManagerRequest', () => {
   })
 })
 
-const createUpdateService = (managerRequest: Partial<ClubManagerRegisterRequestEntity> | null) => {
+const createUpdateService = (managerRequest: Partial<ClubManagerRequestEntity> | null) => {
   const managerRequestRepository = {
     findOne: vi.fn().mockResolvedValue(managerRequest),
     update: vi.fn().mockResolvedValue({ affected: 1 }),
@@ -97,14 +97,14 @@ const createUpdateService = (managerRequest: Partial<ClubManagerRegisterRequestE
   }
   const entityManager = {
     getRepository: vi.fn((entity) => {
-      if (entity === ClubManagerRegisterRequestEntity) return managerRequestRepository
+      if (entity === ClubManagerRequestEntity) return managerRequestRepository
       if (entity === UserNotificationEntity) return userNotificationRepository
       throw new Error('unexpected repository')
     }),
   }
   const transaction = vi.fn(async (callback) => callback(entityManager))
   const service = Object.create(ClubService.prototype) as ClubService
-  Object.defineProperty(service, 'clubManagerRegisterRequestRepository', {
+  Object.defineProperty(service, 'clubManagerRequestRepository', {
     value: {
       manager: { transaction },
     },

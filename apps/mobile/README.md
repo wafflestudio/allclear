@@ -262,18 +262,6 @@ const onMessage = (e: WebViewMessageEvent) => {
 - 커스텀 헤더 with 뒤로가기 버튼
 - 웹에서 `CLOSE_WEBVIEW` 메시지로 화면 닫기 가능
 
-### 사용 예시
-
-**동아리 편집 페이지 열기**
-
-```typescript
-// 파일: src/screens/MyPageScreen/index.tsx:69-71
-navigation.navigate(SCREEN_TYPE.WEBVIEW, {
-	uri: ENV.WEB_URL + '/c/edit/' + club.uuid,
-	authorization, // 사용자 토큰
-})
-```
-
 ### 라우트 파라미터
 
 ```typescript
@@ -309,7 +297,6 @@ window.ReactNativeWebView.postMessage(
 
 ### 활용 사례
 
-- **동아리 관리**: 동아리 정보 편집 폼 (`/c/edit/:uuid`)
 - **복잡한 폼**: 여러 필드와 검증이 필요한 입력 폼
 - **외부 연동**: 웹에서만 제공되는 서비스 통합
 
@@ -447,7 +434,6 @@ src/
 │   │   └── HomeScreen/             # 홈 화면 (Header, CategoryBoard, RecommendClubs)
 │   ├── mypage/screens/
 │   │   ├── EditProfileScreen/
-│   │   ├── ManageClubListScreen/
 │   │   ├── MyPageScreen/
 │   │   └── SavedClubListScreen/
 │   └── webview/screens/

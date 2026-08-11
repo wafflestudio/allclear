@@ -114,14 +114,12 @@ export function buildSearchParams(query: string, filters: ClubSearchFilters): UR
 export type ReviewKeyword = {
   id: string
   title: string
-  color: string
   iconUri: string
 }
 
 export type ReviewKeywordCategory = {
   id: number
   title: string
-  color: string
   keywords: ReviewKeyword[]
 }
 

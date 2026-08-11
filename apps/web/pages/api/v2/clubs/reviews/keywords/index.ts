@@ -10,14 +10,12 @@ type ResponseData = {
 export type ReviewKeywordCategory = {
   id: number
   title: string
-  color: string
   keywords: ReviewKeyword[]
 }
 
 export type ReviewKeyword = {
   id: string
   title: string
-  color: string
   iconUri: string
 }
 export default async function handler(

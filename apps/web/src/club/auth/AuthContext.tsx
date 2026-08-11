@@ -12,16 +12,12 @@ export type User = {
   name: string
   phone: string
   email: string
-  gender: string
-  birthDate: string | null
-  birthYear: string
   collegeMajor: {
     id: number
     college: string | null
     major: string | null
   } | null
   admissionClass: number | null
-  grade: number | null
 }
 
 export type Term = {

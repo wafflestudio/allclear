@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity('club_manager_request')
-export class ClubManagerRegisterRequestEntity {
+export class ClubManagerRequestEntity {
   @PrimaryGeneratedColumn('increment', { type: 'bigint', name: 'id' })
   id: string
 

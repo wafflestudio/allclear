@@ -37,11 +37,6 @@ export type SearchClubsResponse = {
 	isTypoCorrected: boolean;
 };
 
-export type ListPopularClubsResponse = {
-	clubs: Club[];
-	totalSize: number;
-};
-
 export type ListLatestClubsResponse = {
 	clubs: Club[];
 	totalSize: number;
@@ -266,7 +261,6 @@ export type ClubRepository = {
 		req: SearchClubsRequest,
 		signal?: AbortSignal,
 	) => Promise<SearchClubsResponse>;
-	listPopularClubs: () => Promise<ListPopularClubsResponse>;
 	listLatestClubs: () => Promise<ListLatestClubsResponse>;
 	listClubs: (req: ListClubsRequest) => Promise<ListClubsResponse>;
 	getClub: (req: GetClubRequest) => Promise<Club>;
@@ -338,12 +332,6 @@ export const getClubRepository = (): ClubRepository => ({
 			searchParams,
 			signal,
 		);
-
-		return response;
-	},
-	listPopularClubs: async () => {
-		const response =
-			await apiConnector.get<ListPopularClubsResponse>("/v2/clubs/popular");
 
 		return response;
 	},

@@ -19,7 +19,7 @@ import {
 } from './entities'
 import { ClubHistoryEntity } from './entities/club-history.entity'
 import { ClubManagerEntity } from './entities/club-manager.entity'
-import { ClubManagerRegisterRequestEntity } from './entities/club-manager-register-request.entity'
+import { ClubManagerRequestEntity } from './entities/club-manager-request.entity'
 import { ClubReviewKeywordEntity } from './entities/club-review-keyword.entity'
 import { ClubVerificationRequestEntity } from './entities/club-verification-request.entity'
 import { CollegeMajorEntity } from './entities/college-major.entity'
@@ -50,7 +50,7 @@ export const MAIN_DATA_SOURCE_OPTIONS: DataSourceOptions = {
     UserClubReviewEntity,
     UserSavedClubEntity,
     ClubManagerEntity,
-    ClubManagerRegisterRequestEntity,
+    ClubManagerRequestEntity,
     ClubVerificationRequestEntity,
     ClubHistoryEntity,
     TermsEntity,

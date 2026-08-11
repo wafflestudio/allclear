@@ -69,9 +69,6 @@ export class UserService {
       name: accountUser.user.name,
       phone: accountUser.user.phone,
       email: accountUser.user.email,
-      gender: accountUser.user.gender,
-      birthDate: accountUser.user.birthDate,
-      birthYear: accountUser.user.birthYear,
       collegeMajor: accountUser.user.serviceUser.collegeMajor
         ? {
             id: accountUser.user.serviceUser.collegeMajor.id,
@@ -80,7 +77,6 @@ export class UserService {
           }
         : null,
       admissionClass: accountUser.user.serviceUser.admissionClass,
-      grade: accountUser.user.serviceUser.grade,
     }
   }
 
@@ -107,14 +103,10 @@ export class UserService {
       nickname: updateProfileDto.nickname,
       name: updateProfileDto.name,
       email: updateProfileDto.email,
-      gender: updateProfileDto.gender,
-      birthDate: updateProfileDto.birthDate,
-      birthYear: updateProfileDto.birthYear,
     })
     await this.serviceUserRepository.update(user.serviceUserId, {
       collegeMajorId: updateProfileDto.collegeMajorId,
       admissionClass: updateProfileDto.admissionClass,
-      grade: updateProfileDto.grade,
     })
   }
 

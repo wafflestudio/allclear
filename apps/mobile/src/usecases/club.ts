@@ -13,7 +13,6 @@ import type {
 	ListLatestClubsResponse,
 	ListManageClubsResponse,
 	ListMyClubsResponse,
-	ListPopularClubsResponse,
 	ListRandomRecommendationsResponse,
 	ListSavedClubsResponse,
 	ManagedClubDetail,
@@ -40,7 +39,6 @@ export type ClubService = {
 		req: SearchClubsRequest,
 		signal?: AbortSignal,
 	) => Promise<SearchClubsResponse>;
-	listPopularClubs: () => Promise<ListPopularClubsResponse>;
 	listLatestClubs: () => Promise<ListLatestClubsResponse>;
 	listClubs: (req: ListClubsRequest) => Promise<ListClubsResponse>;
 	getClub: (req: GetClubRequest) => Promise<Club>;
@@ -87,7 +85,6 @@ type Deps = {
 
 export const getClubService = ({ repositories }: Deps): ClubService => ({
 	searchClubs: (req, signal) => repositories[0].searchClubs(req, signal),
-	listPopularClubs: () => repositories[0].listPopularClubs(),
 	listLatestClubs: () => repositories[0].listLatestClubs(),
 	listClubs: (req) => repositories[0].listClubs(req),
 	getClub: (req) => repositories[0].getClub(req),

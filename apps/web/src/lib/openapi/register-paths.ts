@@ -230,41 +230,32 @@ const clubRegisterResponseExample = {
       id: '123e4567-e89b-12d3-a456-426614174000',
       uuid: '123e4567-e89b-12d3-a456-426614174000',
       name: '와플스튜디오',
-      fullName: '',
       description: '',
       shortDescription: '웹/앱 개발 동아리',
       introduction: '동아리 소개글',
       type: '교내',
       category: '진로',
-      college: '',
       affiliationType: '소속동아리',
       collegeMajorId: 1,
       collegeMajor: null,
       recruitType: '정기',
       isOfficialVerified: false,
       verifiedAt: null,
-      isPopular: false,
       hasDongbang: true,
       dongbangLocation: '63동 619호',
-      activityCycle: '',
       minActivityPeriod: 1,
       activeMemberCount: 0,
-      membershipFee: '',
       snsUrls: [
         'https://www.instagram.com/wafflestudio_official/',
         'https://www.youtube.com/@wafflestudio',
       ],
-      tags: [],
       imageUri: 'https://cdn.all-clear.cc/default.png',
-      blurHash: null,
       article: '',
       articleUploadedAt: null,
       status: 'PENDING',
       rejectReason: '',
-      avgRating: 0,
       totalReviews: 0,
       reviewKeywords: [],
-      latestComment: '',
     },
   },
 }
@@ -849,24 +840,6 @@ registry.registerPath({
   path: '/api/v2/clubs/latest',
   tags: ['Clubs'],
   summary: '최신 등록 동아리 목록',
-  responses: {
-    200: {
-      description: '조회 성공',
-      content: {
-        'application/json': {
-          schema: ClubsResponseSchema,
-        },
-      },
-    },
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
-  method: 'get',
-  path: '/api/v2/clubs/popular',
-  tags: ['Clubs'],
-  summary: '인기 동아리 목록',
   responses: {
     200: {
       description: '조회 성공',

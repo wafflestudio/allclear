@@ -9,7 +9,7 @@ vi.mock('../provider', () => ({
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity, ClubHistoryEntity, UserNotificationEntity } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubService } from './club.service'
 
 const clubUuid = '123e4567-e89b-12d3-a456-426614174000'
@@ -24,7 +24,7 @@ function createService({
   club: Partial<ClubEntity> | null
   ownedManager: Partial<ClubManagerEntity> | null
   anotherManager?: Partial<ClubManagerEntity> | null
-  managerRequest?: Partial<ClubManagerRegisterRequestEntity> | null
+  managerRequest?: Partial<ClubManagerRequestEntity> | null
 }) {
   const clubRepository = {
     findOneBy: vi.fn().mockResolvedValue(club),
@@ -32,7 +32,7 @@ function createService({
   const clubManagerRepository = {
     findOneBy: vi.fn().mockResolvedValueOnce(ownedManager).mockResolvedValueOnce(anotherManager),
   }
-  const clubManagerRegisterRequestRepository = {
+  const clubManagerRequestRepository = {
     findOneBy: vi.fn().mockResolvedValue(managerRequest),
   }
   const service = Object.create(ClubService.prototype) as ClubService
@@ -40,14 +40,14 @@ function createService({
   Object.defineProperties(service, {
     clubRepository: { value: clubRepository },
     clubManagerRepository: { value: clubManagerRepository },
-    clubManagerRegisterRequestRepository: { value: clubManagerRegisterRequestRepository },
+    clubManagerRequestRepository: { value: clubManagerRequestRepository },
   })
 
   return {
     service,
     clubRepository,
     clubManagerRepository,
-    clubManagerRegisterRequestRepository,
+    clubManagerRequestRepository,
   }
 }
 
@@ -55,7 +55,7 @@ describe('club registration manager information', () => {
   it.each(['PENDING', 'REJECTED'] as const)(
     'returns only the current registration manager for a %s club',
     async (status) => {
-      const { service, clubManagerRegisterRequestRepository } = createService({
+      const { service, clubManagerRequestRepository } = createService({
         club: { uuid: clubUuid, status },
         ownedManager: {
           id: 1,
@@ -72,7 +72,7 @@ describe('club registration manager information', () => {
         phone: '010-1234-5678',
         student_id: '2021-12345',
       })
-      expect(clubManagerRegisterRequestRepository.findOneBy).toHaveBeenCalledWith({
+      expect(clubManagerRequestRepository.findOneBy).toHaveBeenCalledWith({
         clubId: clubUuid,
         serviceUserId,
       })
@@ -160,7 +160,7 @@ describe('club registration manager information', () => {
       }),
       update: vi.fn().mockResolvedValue({ affected: 1 }),
     }
-    const clubManagerRegisterRequestRepository = {
+    const clubManagerRequestRepository = {
       findOneBy: vi.fn().mockResolvedValue(null),
     }
     const clubHistoryRepository = {
@@ -173,8 +173,8 @@ describe('club registration manager information', () => {
       getRepository: vi.fn((entity) => {
         if (entity === ClubEntity) return clubRepository
         if (entity === ClubManagerEntity) return clubManagerRepository
-        if (entity === ClubManagerRegisterRequestEntity) {
-          return clubManagerRegisterRequestRepository
+        if (entity === ClubManagerRequestEntity) {
+          return clubManagerRequestRepository
         }
         if (entity === ClubHistoryEntity) return clubHistoryRepository
         if (entity === UserNotificationEntity) return userNotificationRepository
@@ -234,7 +234,7 @@ describe('club registration manager information', () => {
       }),
       update: vi.fn(),
     }
-    const clubManagerRegisterRequestRepository = {
+    const clubManagerRequestRepository = {
       findOneBy: vi.fn().mockResolvedValue(null),
     }
     const clubHistoryRepository = {
@@ -247,8 +247,8 @@ describe('club registration manager information', () => {
       getRepository: vi.fn((entity) => {
         if (entity === ClubEntity) return clubRepository
         if (entity === ClubManagerEntity) return clubManagerRepository
-        if (entity === ClubManagerRegisterRequestEntity) {
-          return clubManagerRegisterRequestRepository
+        if (entity === ClubManagerRequestEntity) {
+          return clubManagerRequestRepository
         }
         if (entity === ClubHistoryEntity) return clubHistoryRepository
         if (entity === UserNotificationEntity) return userNotificationRepository

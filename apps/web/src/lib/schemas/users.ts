@@ -6,12 +6,8 @@ export const UpdateProfileSchema = z
     nickname: z.string().max(32).optional(),
     name: z.string().max(32).optional(),
     email: z.string().max(80).optional(),
-    gender: z.enum(['F', 'M']).optional(),
-    birthDate: z.string().max(10).nullable().optional(),
-    birthYear: z.string().min(4).max(4).optional(),
     collegeMajorId: z.number().nullable().optional(),
     admissionClass: z.number().nullable().optional(),
-    grade: z.number().nullable().optional(),
   })
   .openapi('UpdateProfile')
 
