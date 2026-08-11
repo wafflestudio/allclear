@@ -1,6 +1,6 @@
 import type { CollegeMajor } from './CollegeMajor'
 
-type UserBase = {
+export type User = {
   id: string
   serviceUserId: string
   nickname: string
@@ -14,13 +14,5 @@ type UserBase = {
   admissionClass: number | null
   // 학년
   grade: number | null
-}
-
-export type LegacyUser = UserBase & {
-  college: string
-  major: string
-}
-
-export type User = LegacyUser & {
   collegeMajor: CollegeMajor | null
 }

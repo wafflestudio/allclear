@@ -60,8 +60,6 @@ export class AuthService {
       gender: accountUser.user.gender,
       birthDate: accountUser.user.birthDate,
       birthYear: accountUser.user.birthYear,
-      college: accountUser.user.serviceUser.college,
-      major: accountUser.user.serviceUser.major,
       collegeMajor: accountUser.user.serviceUser.collegeMajor
         ? {
             id: accountUser.user.serviceUser.collegeMajor.id,

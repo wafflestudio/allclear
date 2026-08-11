@@ -72,8 +72,6 @@ export class UserService {
       gender: accountUser.user.gender,
       birthDate: accountUser.user.birthDate,
       birthYear: accountUser.user.birthYear,
-      college: accountUser.user.serviceUser.college,
-      major: accountUser.user.serviceUser.major,
       collegeMajor: accountUser.user.serviceUser.collegeMajor
         ? {
             id: accountUser.user.serviceUser.collegeMajor.id,
@@ -113,18 +111,7 @@ export class UserService {
       birthDate: updateProfileDto.birthDate,
       birthYear: updateProfileDto.birthYear,
     })
-    let college = updateProfileDto.college
-    let major = updateProfileDto.major
-    if (updateProfileDto.collegeMajorId !== undefined && updateProfileDto.collegeMajorId !== null) {
-      const collegeMajor = await this.collegeMajorRepository.findOneByOrFail({
-        id: updateProfileDto.collegeMajorId,
-      })
-      college = collegeMajor.college ?? ''
-      major = collegeMajor.major ?? ''
-    }
     await this.serviceUserRepository.update(user.serviceUserId, {
-      college,
-      major,
       collegeMajorId: updateProfileDto.collegeMajorId,
       admissionClass: updateProfileDto.admissionClass,
       grade: updateProfileDto.grade,

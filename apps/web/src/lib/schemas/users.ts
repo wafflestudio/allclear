@@ -9,8 +9,6 @@ export const UpdateProfileSchema = z
     gender: z.enum(['F', 'M']).optional(),
     birthDate: z.string().max(10).nullable().optional(),
     birthYear: z.string().min(4).max(4).optional(),
-    college: z.string().max(40).optional(),
-    major: z.string().max(40).optional(),
     collegeMajorId: z.number().nullable().optional(),
     admissionClass: z.number().nullable().optional(),
     grade: z.number().nullable().optional(),

@@ -100,8 +100,6 @@ export const UserSchema = z
     gender: z.string(),
     birthDate: z.string().nullable(),
     birthYear: z.string(),
-    college: z.string(),
-    major: z.string(),
     collegeMajor: CollegeMajorSchema.nullable(),
     admissionClass: z.number().nullable(),
     grade: z.number().nullable(),

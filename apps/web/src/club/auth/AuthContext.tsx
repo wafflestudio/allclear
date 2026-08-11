@@ -15,8 +15,11 @@ export type User = {
   gender: string
   birthDate: string | null
   birthYear: string
-  college: string
-  major: string
+  collegeMajor: {
+    id: number
+    college: string | null
+    major: string | null
+  } | null
   admissionClass: number | null
   grade: number | null
 }
