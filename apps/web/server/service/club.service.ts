@@ -990,25 +990,6 @@ export class ClubService {
     }
   }
 
-  async clubManagerRegisterRequest(
-    serviceUserId: string,
-    {
-      clubId,
-      name,
-      phone,
-      studentId,
-    }: { clubId: string; name: string; phone: string; studentId: string },
-  ) {
-    await this.clubAccessService.getExistingClub(clubId)
-    await this.clubManagerRegisterRequestRepository.insert({
-      serviceUserId,
-      clubId,
-      name,
-      phone,
-      studentId,
-    })
-  }
-
   async createClubManagerRequest(
     clubUuid: string,
     serviceUserId: string,

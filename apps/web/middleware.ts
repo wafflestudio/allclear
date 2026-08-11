@@ -47,7 +47,6 @@ export const config = {
     '/api/v2/users/me',
     '/api/v2/users/me/clubs',
     '/api/v2/users/me/clubs/saved',
-    '/api/v2/users/me/devices',
     '/api/v2/users/me/notifications/:path*',
     '/api/v2/users/me/voices',
     '/api/v2/auth/leave',

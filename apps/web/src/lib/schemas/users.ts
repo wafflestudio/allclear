@@ -19,14 +19,6 @@ export const UpdateProfileSchema = z
 
 export type UpdateProfileDto = z.infer<typeof UpdateProfileSchema>
 
-export const UpdateDeviceSchema = z
-  .object({
-    pushId: z.string().uuid(),
-    appVersion: z.string().optional(),
-    info: z.any().optional(),
-  })
-  .openapi('UpdateDevice')
-
 export const UserVoiceSchema = z
   .object({
     content: z.string().nonempty(),

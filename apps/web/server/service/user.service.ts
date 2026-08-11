@@ -6,7 +6,6 @@ import type { User } from '../domain/model/User'
 import {
   AccountEntity,
   AccountUserEntity,
-  DeviceEntity,
   ServiceUserEntity,
   UserActivityLogEntity,
   UserActivityLogType,
@@ -30,8 +29,6 @@ export class UserService {
   private readonly userRepository: Repository<UserEntity>
   @InjectRepository(ServiceUserEntity)
   private readonly serviceUserRepository: Repository<ServiceUserEntity>
-  @InjectRepository(DeviceEntity)
-  private readonly deviceRepository: Repository<DeviceEntity>
   @InjectRepository(UserVoiceEntity)
   private readonly userVoiceRepository: Repository<UserVoiceEntity>
   @InjectRepository(UserActivityLogEntity)
@@ -105,23 +102,6 @@ export class UserService {
     if (accountUser?.user?.role !== UserRole.ADMIN) {
       throw new ForbiddenError('admin role required')
     }
-  }
-
-  public updateDevice(
-    userId: string,
-    pushId: string,
-    device: { appVersion?: string; info?: object },
-  ) {
-    const deviceEntity = this.deviceRepository.create({
-      userId,
-      pushId,
-      appVersion: device.appVersion,
-      deviceInfo: device.info ? JSON.stringify(device.info) : undefined,
-    })
-    return this.deviceRepository.upsert(deviceEntity, {
-      conflictPaths: ['userId', 'pushId'],
-      skipUpdateIfNoValuesChanged: true,
-    })
   }
 
   async updateProfile(user: User, updateProfileDto: UpdateProfileDto) {

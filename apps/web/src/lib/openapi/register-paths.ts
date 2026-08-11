@@ -73,7 +73,6 @@ import {
 import {
   ClubActivityImageUploadResponseSchema,
   ClubImageUploadSchema,
-  ClubManagerRegisterRequestSchema,
   ClubManagerRequestPatchSchema,
   ClubManagerRequestResponseSchema,
   ClubManagerRequestSchema,
@@ -98,7 +97,6 @@ import {
   DownloadAppLogQuerySchema,
   GuestIdHeaderSchema,
   RecentSearchesResponseSchema,
-  UpdateDeviceSchema,
   UpdateProfileSchema,
   UserClubsResponseSchema,
   UserNotificationReadParamsSchema,
@@ -1413,29 +1411,6 @@ registry.registerPath({
 })
 
 registry.registerPath({
-  method: 'put',
-  path: '/api/v2/users/me/devices',
-  tags: ['Users'],
-  summary: '디바이스 정보 갱신',
-  security: [{ bearerAuth: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: UpdateDeviceSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    204: NoContentResponse,
-    400: validationErrorResponse,
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
   method: 'get',
   path: '/api/v2/users/me/recent-searches',
   tags: ['Users'],
@@ -1719,31 +1694,6 @@ registry.registerPath({
       },
     },
     401: unauthorizedResponse,
-    404: notFoundResponse,
-    500: internalServerErrorResponse,
-  },
-})
-
-registry.registerPath({
-  method: 'post',
-  path: '/api/v2/managers/me/clubs',
-  tags: ['Managers'],
-  summary: '동아리 관리자 등록 요청',
-  description:
-    '삭제 예정인 API입니다. 동아리 관리 권한 신청에는 POST /api/v2/clubs/{uuid}/manager-requests를 사용해 주세요.',
-  deprecated: true,
-  security: [{ bearerAuth: [] }],
-  request: {
-    body: {
-      content: {
-        'application/json': {
-          schema: ClubManagerRegisterRequestSchema,
-        },
-      },
-    },
-  },
-  responses: {
-    204: NoContentResponse,
     404: notFoundResponse,
     500: internalServerErrorResponse,
   },
