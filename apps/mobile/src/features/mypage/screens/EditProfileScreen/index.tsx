@@ -28,8 +28,8 @@ const EditProfileScreen = () => {
 	const { userService } = useContext(serviceContext);
 
 	const [name, setName] = useState(user?.nickname || "");
-	const [college, setCollege] = useState(user?.college || "");
-	const [major, setMajor] = useState(user?.major || "");
+	const [college, setCollege] = useState(user?.collegeMajor?.college || "");
+	const [major, setMajor] = useState(user?.collegeMajor?.major || "");
 	const [admissionClass, setAdmissionClass] = useState(
 		user?.admissionClass ?? 26,
 	);
@@ -41,8 +41,8 @@ const EditProfileScreen = () => {
 	const isFormValid = !!name && !!college && !!major;
 	const hasChanges =
 		name !== (user?.nickname || "") ||
-		college !== (user?.college || "") ||
-		major !== (user?.major || "") ||
+		college !== (user?.collegeMajor?.college || "") ||
+		major !== (user?.collegeMajor?.major || "") ||
 		admissionClass !== (user?.admissionClass ?? 26);
 	const canSubmit = isFormValid && hasChanges;
 
@@ -80,7 +80,6 @@ const EditProfileScreen = () => {
 			await userService.updateUser({
 				nickname: name,
 				collegeMajorId,
-				major,
 				admissionClass,
 			});
 

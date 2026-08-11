@@ -7,12 +7,7 @@ export type User = {
 	gender: string;
 	birthDate: string | null;
 	birthYear: string;
-	// 단과대
-	college: string;
-	// 학과
-	major: string;
-	// 단과대+학번 (위 2개 필드를 override)
-	collegeMajorId: number;
+	collegeMajor: CollegeMajor | null;
 	// 학번
 	admissionClass: number | null;
 	// 학년
