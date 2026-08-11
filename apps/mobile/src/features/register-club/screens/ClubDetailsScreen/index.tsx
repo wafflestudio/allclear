@@ -18,10 +18,10 @@ import { CLUB_RECRUIT_TYPES } from "@/shared/constants/club";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import {
-	type ActivityCycleMode,
-	decrementActivityCycleValue,
-	incrementActivityCycleValue,
-} from "@/shared/utils/activityCycle";
+	decrementMinActivityPeriodValue,
+	incrementMinActivityPeriodValue,
+	type MinActivityPeriodMode,
+} from "@/shared/utils/minActivityPeriod";
 import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
@@ -41,11 +41,13 @@ export const ClubDetailsScreen = ({
 	isLoading = false,
 	progress,
 }: Props) => {
-	const [activityCycleMode, setActivityCycleMode] = useState<ActivityCycleMode>(
-		formData.activityCycle ? "number" : "none",
-	);
+	const [minActivityPeriodMode, setMinActivityPeriodMode] =
+		useState<MinActivityPeriodMode>(
+			formData.minActivityPeriodInput ? "number" : "none",
+		);
 
-	const activitySemesters = parseInt(formData.activityCycle, 10) || 0;
+	const minActivityPeriodSemesters =
+		parseInt(formData.minActivityPeriodInput, 10) || 0;
 
 	const setHasDongbang = (value: boolean) => {
 		onFormDataChange(
@@ -55,28 +57,31 @@ export const ClubDetailsScreen = ({
 		);
 	};
 
-	const handleActivityCycleModeChange = (mode: ActivityCycleMode) => {
-		setActivityCycleMode(mode);
-		onFormDataChange({ activityCycle: mode === "number" ? "1" : "" });
+	const handleMinActivityPeriodModeChange = (mode: MinActivityPeriodMode) => {
+		setMinActivityPeriodMode(mode);
+		onFormDataChange({
+			minActivityPeriodInput: mode === "number" ? "1" : "",
+		});
 	};
 
-	const incrementActivityCycle = () => {
-		const next = incrementActivityCycleValue(activitySemesters);
-		setActivityCycleMode(next.mode);
-		onFormDataChange({ activityCycle: next.value });
+	const incrementMinActivityPeriod = () => {
+		const next = incrementMinActivityPeriodValue(minActivityPeriodSemesters);
+		setMinActivityPeriodMode(next.mode);
+		onFormDataChange({ minActivityPeriodInput: next.value });
 	};
 
-	const decrementActivityCycle = () => {
-		const next = decrementActivityCycleValue(activitySemesters);
-		setActivityCycleMode(next.mode);
-		onFormDataChange({ activityCycle: next.value });
+	const decrementMinActivityPeriod = () => {
+		const next = decrementMinActivityPeriodValue(minActivityPeriodSemesters);
+		setMinActivityPeriodMode(next.mode);
+		onFormDataChange({ minActivityPeriodInput: next.value });
 	};
 
 	const isComplete =
 		formData.recruitType.trim() &&
 		areValidSnsUrls(formData.clubSNSUrls) &&
 		formData.clubDescription.trim() &&
-		(activityCycleMode === "none" || formData.activityCycle.trim());
+		(minActivityPeriodMode === "none" ||
+			formData.minActivityPeriodInput.trim());
 
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
@@ -130,14 +135,15 @@ export const ClubDetailsScreen = ({
 								<Pressable
 									style={[
 										styles.typeButton,
-										activityCycleMode === "none" && styles.typeButtonSelected,
+										minActivityPeriodMode === "none" &&
+											styles.typeButtonSelected,
 									]}
-									onPress={() => handleActivityCycleModeChange("none")}
+									onPress={() => handleMinActivityPeriodModeChange("none")}
 								>
 									<Text
 										style={[
 											styles.typeButtonText,
-											activityCycleMode === "none" &&
+											minActivityPeriodMode === "none" &&
 												styles.typeButtonTextSelected,
 										]}
 									>
@@ -147,14 +153,15 @@ export const ClubDetailsScreen = ({
 								<Pressable
 									style={[
 										styles.typeButton,
-										activityCycleMode === "number" && styles.typeButtonSelected,
+										minActivityPeriodMode === "number" &&
+											styles.typeButtonSelected,
 									]}
-									onPress={() => handleActivityCycleModeChange("number")}
+									onPress={() => handleMinActivityPeriodModeChange("number")}
 								>
 									<Text
 										style={[
 											styles.typeButtonText,
-											activityCycleMode === "number" &&
+											minActivityPeriodMode === "number" &&
 												styles.typeButtonTextSelected,
 										]}
 									>
@@ -165,12 +172,12 @@ export const ClubDetailsScreen = ({
 
 							<View style={styles.periodStepper}>
 								<Text style={styles.semesterValue}>
-									{activitySemesters}학기
+									{minActivityPeriodSemesters}학기
 								</Text>
 								<View style={styles.stepperPill}>
 									<Pressable
 										style={styles.stepperButton}
-										onPress={decrementActivityCycle}
+										onPress={decrementMinActivityPeriod}
 									>
 										<MaterialIcons
 											name="remove"
@@ -181,7 +188,7 @@ export const ClubDetailsScreen = ({
 									<View style={styles.stepperDivider} />
 									<Pressable
 										style={styles.stepperButton}
-										onPress={incrementActivityCycle}
+										onPress={incrementMinActivityPeriod}
 									>
 										<MaterialIcons
 											name="add"

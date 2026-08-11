@@ -25,7 +25,7 @@ export type RegisterClubFormData = {
 
 	// Page 5: Club details
 	recruitType: string;
-	activityCycle: string;
+	minActivityPeriodInput: string;
 	hasDongbang: boolean;
 	dongbangLocation: string;
 	clubSNSUrls: string[];
@@ -45,7 +45,7 @@ export const initialFormData: RegisterClubFormData = {
 	department: "",
 	shortIntro: "",
 	recruitType: "",
-	activityCycle: "",
+	minActivityPeriodInput: "",
 	hasDongbang: false,
 	dongbangLocation: "",
 	clubSNSUrls: [""],

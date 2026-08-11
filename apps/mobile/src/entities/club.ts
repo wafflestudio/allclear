@@ -43,7 +43,6 @@ export type Club = {
 	hasDongbang: boolean;
 	dongbangLocation?: string | null;
 	minActivityPeriod?: number | null;
-	activityCycle: string;
 	membershipFee: string;
 	tags: string[];
 	imageUri: string;
