@@ -1329,7 +1329,8 @@ const styles = StyleSheet.create({
 		borderColor: Colors.BUTTON_SELECTED,
 	},
 	categoryText: {
-		...typography.bodyMMedium,
+		...typography.headerXLSemibold,
+		lineHeight: vs(30),
 		color: Colors.BODYTEXT_DISABLED,
 		textAlign: "center",
 	},

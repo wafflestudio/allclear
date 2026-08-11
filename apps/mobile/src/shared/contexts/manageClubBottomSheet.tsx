@@ -12,8 +12,9 @@ import {
 	useEffect,
 	useRef,
 } from "react";
-import { BackHandler } from "react-native";
+import { BackHandler, StyleSheet } from "react-native";
 import ManageClubView from "@/shared/components/ManageClubView";
+import { Colors } from "@/shared/constants/colors";
 
 const ManageClubBottomSheetContext = createContext<{
 	openBottomSheet: () => void;
@@ -89,15 +90,30 @@ export const ManageClubBottomSheetProvider = ({ children }: Props) => {
 					isBottomSheetOpenRef.current = false;
 				}}
 				backdropComponent={renderBackdrop}
+				backgroundStyle={styles.background}
 				// Remove the default handle visible on top of the sheet to match Figma
 				handleComponent={() => null}
 				enableHandlePanningGesture={false}
 				handleIndicatorStyle={{ height: 0 }}
 			>
-				<BottomSheetView style={{ flex: 1 }}>
+				<BottomSheetView style={styles.content}>
 					<ManageClubView closeBottomSheet={closeBottomSheet} />
 				</BottomSheetView>
 			</BottomSheetModal>
 		</ManageClubBottomSheetContext.Provider>
 	);
 };
+
+const styles = StyleSheet.create({
+	background: {
+		backgroundColor: Colors.WHITE,
+		borderTopLeftRadius: 12,
+		borderTopRightRadius: 12,
+	},
+	content: {
+		flex: 1,
+		borderTopLeftRadius: 12,
+		borderTopRightRadius: 12,
+		overflow: "hidden",
+	},
+});
