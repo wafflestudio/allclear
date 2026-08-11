@@ -364,10 +364,10 @@ const MyPageScreen = () => {
 						{user?.nickname || "이름 정보가 없습니다"}
 					</Text>
 					<Text style={styles.profileSub}>
-						{user?.college
-							? user.major
-								? `${user.college} ${user.major}`
-								: user.college
+						{user?.collegeMajor?.college
+							? user.collegeMajor.major
+								? `${user.collegeMajor.college} ${user.collegeMajor.major}`
+								: user.collegeMajor.college
 							: "단과대 정보가 없습니다"}
 					</Text>
 					<Text style={styles.profileSub}>

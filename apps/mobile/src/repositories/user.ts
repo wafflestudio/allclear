@@ -8,7 +8,9 @@ export type GetUserResponse = {
 	profile: User;
 };
 
-export type UpdateUserRequest = Partial<Omit<User, "id">>;
+export type UpdateUserRequest = Partial<Omit<User, "id" | "collegeMajor">> & {
+	collegeMajorId?: CollegeMajor["id"] | null;
+};
 
 export type CreateUserVoiceRequest = {
 	content: string;

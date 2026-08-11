@@ -1,7 +1,7 @@
 import axios from 'axios'
 import * as qs from 'qs'
 import { UserNotFoundError } from 'server/domain/error'
-import type { User } from 'server/domain/model/User'
+import type { LegacyUser } from 'server/domain/model/User'
 import { ENV } from 'server/ENV'
 import {
   AccountEntity,
@@ -28,7 +28,7 @@ export class AuthServiceV1 {
   @InjectRepository(ServiceUserEntity)
   private readonly serviceUserRepository: Repository<ServiceUserEntity>
 
-  async getUserByOauthId(type: AccountType, oauthId: string): Promise<User> {
+  async getUserByOauthId(type: AccountType, oauthId: string): Promise<LegacyUser> {
     const account = await this.accountRepository.findOneBy({
       type,
       username: oauthId,

@@ -1,4 +1,5 @@
-import { Column, Entity, Index, JoinColumn, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { CollegeMajorEntity } from './college-major.entity'
 import { TimeStampMixin } from './TimeStampMixin'
 import { UserEntity } from './user.entity'
 
@@ -26,6 +27,10 @@ export class ServiceUserEntity extends TimeStampMixin {
 
   @Column({ type: 'int', nullable: true, name: 'college_major_id' })
   collegeMajorId: number | null
+
+  @ManyToOne(() => CollegeMajorEntity, { nullable: true })
+  @JoinColumn({ name: 'college_major_id' })
+  collegeMajor: CollegeMajorEntity | null
 
   @Column({ type: 'smallint', nullable: true, name: 'admission_class' })
   admissionClass: number | null

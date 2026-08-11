@@ -1,6 +1,6 @@
 import type { UpdateProfileDto } from 'pages/api/v1/users/me'
 import { UserNotFoundError } from 'server/domain/error'
-import type { User } from 'server/domain/model/User'
+import type { LegacyUser } from 'server/domain/model/User'
 import {
   AccountEntity,
   AccountUserEntity,
@@ -41,7 +41,7 @@ export class UserServiceV1 {
   private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
 
   @InjectRepository(DeviceEntity)
-  public async getUserByAccountId(accountId: string): Promise<User> {
+  public async getUserByAccountId(accountId: string): Promise<LegacyUser> {
     if (!accountId) {
       throw new UserNotFoundError(`User not found`)
     }
@@ -99,7 +99,7 @@ export class UserServiceV1 {
     })
   }
 
-  async updateProfile(user: User, updateProfileDto: UpdateProfileDto) {
+  async updateProfile(user: LegacyUser, updateProfileDto: UpdateProfileDto) {
     await this.userRepository.update(user.id, {
       nickname: updateProfileDto.nickname,
       name: updateProfileDto.name,

@@ -55,7 +55,7 @@ export class UserService {
       where: {
         accountId,
       },
-      relations: ['user'],
+      relations: ['user', 'user.serviceUser', 'user.serviceUser.collegeMajor'],
     })
     if (!accountUser) {
       throw new UserNotFoundError(`AccountUser not found`)
@@ -77,6 +77,13 @@ export class UserService {
       birthYear: accountUser.user.birthYear,
       college: accountUser.user.serviceUser.college,
       major: accountUser.user.serviceUser.major,
+      collegeMajor: accountUser.user.serviceUser.collegeMajor
+        ? {
+            id: accountUser.user.serviceUser.collegeMajor.id,
+            college: accountUser.user.serviceUser.collegeMajor.college,
+            major: accountUser.user.serviceUser.collegeMajor.major,
+          }
+        : null,
       admissionClass: accountUser.user.serviceUser.admissionClass,
       grade: accountUser.user.serviceUser.grade,
     }
@@ -128,18 +135,16 @@ export class UserService {
     })
     let college = updateProfileDto.college
     let major = updateProfileDto.major
-    if (updateProfileDto.collegeMajorId) {
+    if (updateProfileDto.collegeMajorId !== undefined && updateProfileDto.collegeMajorId !== null) {
       const collegeMajor = await this.collegeMajorRepository.findOneByOrFail({
         id: updateProfileDto.collegeMajorId,
       })
-      if (collegeMajor) {
-        college = collegeMajor.college ?? ''
-        major = collegeMajor.major ?? ''
-      }
+      college = collegeMajor.college ?? ''
+      major = collegeMajor.major ?? ''
     }
     await this.serviceUserRepository.update(user.serviceUserId, {
-      college: college,
-      major: major,
+      college,
+      major,
       collegeMajorId: updateProfileDto.collegeMajorId,
       admissionClass: updateProfileDto.admissionClass,
       grade: updateProfileDto.grade,
