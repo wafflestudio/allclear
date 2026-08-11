@@ -43,15 +43,15 @@ const VerificationOverlay = ({ status, visible, style, onLayout }: Props) => {
 		>
 			{status === "VERIFIED" ? (
 				<Text style={styles.overlayText} numberOfLines={1}>
-					{"서울대학교총동아리연합회 "}
-					<Text style={styles.highlightText}>정등록 동아리</Text>
-					{"에요!"}
+					{"올클 "}
+					<Text style={styles.highlightText}>공식인증이 완료</Text>
+					{"된 동아리에요!"}
 				</Text>
 			) : (
 				<Text style={styles.overlayText} numberOfLines={1}>
-					{"서울대학교총동아리연합회에서 "}
-					<Text style={styles.highlightText}>아직 심사중</Text>
-					{"이에요."}
+					{"아직 올클 "}
+					<Text style={styles.highlightText}>공식인증 심사중</Text>
+					{"인 동아리에요."}
 				</Text>
 			)}
 		</Animated.View>
