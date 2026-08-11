@@ -77,7 +77,7 @@ jobs:
       - name: Compute version code
         shell: bash
         run: |
-          version_code=$((100009 + GITHUB_RUN_NUMBER))
+          version_code=$((100011 + GITHUB_RUN_NUMBER))
           echo "VERSION_CODE=${version_code}" >> "$GITHUB_ENV"
           echo "RELEASE_NAME=main internal ${version_code}" >> "$GITHUB_ENV"
 
