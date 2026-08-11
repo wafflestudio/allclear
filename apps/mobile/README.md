@@ -85,9 +85,17 @@ PROFILE=dev|staging|prod
 export type User = {
 	id: string
 	nickname: string
-	college: string // 단과대
-	major: string // 학과
-	grade: number | null
+	name: string
+	phone: string
+	email: string
+	collegeMajor: CollegeMajor | null
+	admissionClass: number | null
+}
+
+export type CollegeMajor = {
+	id: number
+	college: string | null
+	major: string | null
 }
 ```
 
