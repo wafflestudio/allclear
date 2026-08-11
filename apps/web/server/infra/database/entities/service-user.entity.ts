@@ -1,4 +1,12 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm'
 import { CollegeMajorEntity } from './college-major.entity'
 import { TimeStampMixin } from './TimeStampMixin'
 import { UserEntity } from './user.entity'

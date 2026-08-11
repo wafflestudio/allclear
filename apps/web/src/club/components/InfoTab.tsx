@@ -65,7 +65,6 @@ export function InfoTab({ club }: Props) {
         )}
 
         {hasIntroduction && <IntroductionSection introduction={club.introduction} />}
-
       </div>
     </BackgroundCard>
   )

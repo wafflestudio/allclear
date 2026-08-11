@@ -647,18 +647,13 @@ export class ClubService {
     return new Map(out)
   }
 
-  private aggregateReviewKeywords(
-    reviews: UserClubReviewEntity[],
-  ): Map<ReviewKeywordId, number> {
-    return reviews.reduce(
-      (acc, cur) => {
-        cur.reviewKeywordIds.forEach((keywordId) => {
-          acc.set(keywordId, (acc.get(keywordId) ?? 0) + 1)
-        })
-        return acc
-      },
-      new Map<ReviewKeywordId, number>(),
-    )
+  private aggregateReviewKeywords(reviews: UserClubReviewEntity[]): Map<ReviewKeywordId, number> {
+    return reviews.reduce((acc, cur) => {
+      cur.reviewKeywordIds.forEach((keywordId) => {
+        acc.set(keywordId, (acc.get(keywordId) ?? 0) + 1)
+      })
+      return acc
+    }, new Map<ReviewKeywordId, number>())
   }
 
   async updateClub(uuid: string, club: Partial<ClubEntity>): Promise<boolean> {
@@ -695,9 +690,7 @@ export class ClubService {
     return this.clubRepository.manager.transaction(async (manager) => {
       const clubRepository = manager.getRepository(ClubEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const clubManagerRequestRepository = manager.getRepository(
-        ClubManagerRequestEntity,
-      )
+      const clubManagerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
       const clubHistoryRepository = manager.getRepository(ClubHistoryEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
