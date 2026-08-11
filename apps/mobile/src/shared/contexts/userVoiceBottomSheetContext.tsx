@@ -2,6 +2,7 @@ import {
 	BottomSheetBackdrop,
 	type BottomSheetBackdropProps,
 	BottomSheetModal,
+	BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import type React from "react";
 import {
@@ -83,12 +84,15 @@ export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 				ref={bottomSheetModalRef}
 				index={0}
 				snapPoints={[Platform.OS === "ios" ? 400 : 350]}
+				enableDynamicSizing={false}
 				onDismiss={() => {
 					isBottomSheetOpenRef.current = false;
 				}}
 				backdropComponent={renderBackdrop}
 			>
-				<UserVoiceView closeBottomSheet={closeBottomSheet} />
+				<BottomSheetView style={{ flex: 1 }}>
+					<UserVoiceView closeBottomSheet={closeBottomSheet} />
+				</BottomSheetView>
 			</BottomSheetModal>
 		</UserVoiceBottomSheetContext.Provider>
 	);

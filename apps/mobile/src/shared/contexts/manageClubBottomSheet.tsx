@@ -2,6 +2,7 @@ import {
 	BottomSheetBackdrop,
 	type BottomSheetBackdropProps,
 	BottomSheetModal,
+	BottomSheetView,
 } from "@gorhom/bottom-sheet";
 import type React from "react";
 import {
@@ -83,6 +84,7 @@ export const ManageClubBottomSheetProvider = ({ children }: Props) => {
 				ref={bottomSheetModalRef}
 				index={0}
 				snapPoints={[370]}
+				enableDynamicSizing={false}
 				onDismiss={() => {
 					isBottomSheetOpenRef.current = false;
 				}}
@@ -92,7 +94,9 @@ export const ManageClubBottomSheetProvider = ({ children }: Props) => {
 				enableHandlePanningGesture={false}
 				handleIndicatorStyle={{ height: 0 }}
 			>
-				<ManageClubView closeBottomSheet={closeBottomSheet} />
+				<BottomSheetView style={{ flex: 1 }}>
+					<ManageClubView closeBottomSheet={closeBottomSheet} />
+				</BottomSheetView>
 			</BottomSheetModal>
 		</ManageClubBottomSheetContext.Provider>
 	);
