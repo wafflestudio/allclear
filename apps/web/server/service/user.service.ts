@@ -6,7 +6,6 @@ import type { User } from '../domain/model/User'
 import {
   AccountEntity,
   AccountUserEntity,
-  DeviceEntity,
   ServiceUserEntity,
   UserActivityLogEntity,
   UserActivityLogType,
@@ -30,8 +29,6 @@ export class UserService {
   private readonly userRepository: Repository<UserEntity>
   @InjectRepository(ServiceUserEntity)
   private readonly serviceUserRepository: Repository<ServiceUserEntity>
-  @InjectRepository(DeviceEntity)
-  private readonly deviceRepository: Repository<DeviceEntity>
   @InjectRepository(UserVoiceEntity)
   private readonly userVoiceRepository: Repository<UserVoiceEntity>
   @InjectRepository(UserActivityLogEntity)
@@ -72,11 +69,6 @@ export class UserService {
       name: accountUser.user.name,
       phone: accountUser.user.phone,
       email: accountUser.user.email,
-      gender: accountUser.user.gender,
-      birthDate: accountUser.user.birthDate,
-      birthYear: accountUser.user.birthYear,
-      college: accountUser.user.serviceUser.college,
-      major: accountUser.user.serviceUser.major,
       collegeMajor: accountUser.user.serviceUser.collegeMajor
         ? {
             id: accountUser.user.serviceUser.collegeMajor.id,
@@ -85,7 +77,6 @@ export class UserService {
           }
         : null,
       admissionClass: accountUser.user.serviceUser.admissionClass,
-      grade: accountUser.user.serviceUser.grade,
     }
   }
 
@@ -107,47 +98,15 @@ export class UserService {
     }
   }
 
-  public updateDevice(
-    userId: string,
-    pushId: string,
-    device: { appVersion?: string; info?: object },
-  ) {
-    const deviceEntity = this.deviceRepository.create({
-      userId,
-      pushId,
-      appVersion: device.appVersion,
-      deviceInfo: device.info ? JSON.stringify(device.info) : undefined,
-    })
-    return this.deviceRepository.upsert(deviceEntity, {
-      conflictPaths: ['userId', 'pushId'],
-      skipUpdateIfNoValuesChanged: true,
-    })
-  }
-
   async updateProfile(user: User, updateProfileDto: UpdateProfileDto) {
     await this.userRepository.update(user.id, {
       nickname: updateProfileDto.nickname,
       name: updateProfileDto.name,
       email: updateProfileDto.email,
-      gender: updateProfileDto.gender,
-      birthDate: updateProfileDto.birthDate,
-      birthYear: updateProfileDto.birthYear,
     })
-    let college = updateProfileDto.college
-    let major = updateProfileDto.major
-    if (updateProfileDto.collegeMajorId !== undefined && updateProfileDto.collegeMajorId !== null) {
-      const collegeMajor = await this.collegeMajorRepository.findOneByOrFail({
-        id: updateProfileDto.collegeMajorId,
-      })
-      college = collegeMajor.college ?? ''
-      major = collegeMajor.major ?? ''
-    }
     await this.serviceUserRepository.update(user.serviceUserId, {
-      college,
-      major,
       collegeMajorId: updateProfileDto.collegeMajorId,
       admissionClass: updateProfileDto.admissionClass,
-      grade: updateProfileDto.grade,
     })
   }
 

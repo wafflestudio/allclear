@@ -23,9 +23,6 @@ export class ClubReviewKeywordEntity extends TimeStampMixin {
   @Column({ type: 'varchar', length: 64, name: 'title' })
   title: string
 
-  @Column({ type: 'varchar', length: 16, default: '', name: 'color' })
-  color: string
-
   @Column({ type: 'varchar', length: 300, default: '', name: 'icon_uri' })
   iconUri: string
 }

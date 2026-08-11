@@ -27,8 +27,8 @@ const EditProfilePage = () => {
   useEffect(() => {
     if (!user) return
     setName(user.nickname ?? '')
-    setCollege(user.college ?? '')
-    setMajor(user.major ?? '')
+    setCollege(user.collegeMajor?.college ?? '')
+    setMajor(user.collegeMajor?.major ?? '')
     setAdmissionClass(user.admissionClass ?? 26)
   }, [user])
 
@@ -66,7 +66,7 @@ const EditProfilePage = () => {
       await authFetch<void>('/api/v2/users/me', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname: name, collegeMajorId, major, admissionClass }),
+        body: JSON.stringify({ nickname: name, collegeMajorId, admissionClass }),
       })
       const profile = await fetchProfile()
       setUser(profile)

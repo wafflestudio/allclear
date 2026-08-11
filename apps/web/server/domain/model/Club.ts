@@ -48,16 +48,13 @@ export type ManagedClubListItem = Club & {
 export type ReviewKeyword = {
   id: string
   title: string
-  color: string
   iconUri: string
   totalUpvotes: number
 }
 
 type ClubReviewSummary = {
   totalReviews: number
-  avgRating: number
   reviewKeywords: ReviewKeyword[]
-  latestComment: string
 }
 
 export type Club = {
@@ -65,40 +62,31 @@ export type Club = {
   id: string
   uuid: string
   name: string
-  fullName: string
   description: string
   shortDescription: string
   introduction: string
   type: string
   category: string
-  college: string
   affiliationType: string
   collegeMajorId: number | null
   collegeMajor: CollegeMajor | null
   recruitType: ClubRecruitType
   isOfficialVerified: boolean
   verifiedAt: string | null
-  isPopular: boolean
   hasDongbang: boolean
   dongbangLocation: string
-  activityCycle: string
   minActivityPeriod: number
   activeMemberCount: number
   foundedAt: string | null
-  membershipFee: string
   snsUrls: string[]
   activityImageUrls: string[]
-  tags: string[]
   imageUri: string
-  blurHash: string | null
   article: string
   articleUploadedAt: string | null
   status: ClubStatus
   rejectReason: string
-  avgRating: number
   totalReviews: number
   reviewKeywords: ReviewKeyword[]
-  latestComment: string
 }
 
 export type ClubDetail = Club & {
@@ -109,13 +97,11 @@ export const toClubDomain = (it: ClubEntity, review?: ClubReviewSummary): Club =
   id: it.uuid,
   uuid: it.uuid,
   name: it.name,
-  fullName: it.fullName,
   description: it.description,
   shortDescription: it.shortDescription ?? '',
   introduction: it.introduction ?? '',
   type: it.type,
   category: it.category,
-  college: it.college ?? '',
   affiliationType: it.affiliationType,
   collegeMajorId: it.collegeMajorId,
   collegeMajor: it.collegeMajor
@@ -128,27 +114,20 @@ export const toClubDomain = (it: ClubEntity, review?: ClubReviewSummary): Club =
   recruitType: normalizeClubRecruitType(it.recruitType),
   isOfficialVerified: it.isOfficialVerified,
   verifiedAt: it.verifiedAt,
-  isPopular: it.isPopular,
   hasDongbang: it.hasDongbang,
   dongbangLocation: it.dongbangLocation ?? '',
-  activityCycle: it.activityCycle ?? '',
   minActivityPeriod: it.minActivityPeriod ?? 0,
   activeMemberCount: it.activeMemberCount ?? 0,
   foundedAt: it.foundedAt ?? null,
-  membershipFee: it.membershipFee ?? '',
   snsUrls: it.snsUrls ?? [],
   activityImageUrls: it.activityImageUrls ?? [],
-  tags: it.tags,
   imageUri: encode(it.imageUri) || ENV.R2.DEFAULT_CLUB_IMAGE,
-  blurHash: it.blurHash,
   article: it.article ?? '',
   articleUploadedAt: it.articleUploadedAt,
   status: it.status,
   rejectReason: it.rejectReason ?? '',
-  avgRating: review?.avgRating ?? 0,
   totalReviews: review?.totalReviews ?? 0,
   reviewKeywords: review?.reviewKeywords ?? [],
-  latestComment: review?.latestComment ?? '',
 })
 
 export const toClubDetailDomain = (

@@ -50,10 +50,10 @@ const MyPage = () => {
     toast.info('회원 탈퇴 되었어요!')
   }
 
-  const collegeLine = user?.college
-    ? user.major
-      ? `${user.college} ${user.major}`
-      : user.college
+  const collegeLine = user?.collegeMajor?.college
+    ? user.collegeMajor.major
+      ? `${user.collegeMajor.college} ${user.collegeMajor.major}`
+      : user.collegeMajor.college
     : '단과대 정보가 없습니다'
   const admissionLine =
     user?.admissionClass != null

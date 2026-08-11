@@ -18,9 +18,9 @@ export class ReviewService {
   public async reviewClub(
     serviceUserId: string,
     clubId: string,
-    review: { rating?: number; reviewKeywordIds?: string[]; content?: string },
+    review: { reviewKeywordIds?: string[] },
   ) {
-    const { rating, reviewKeywordIds, content } = review
+    const { reviewKeywordIds } = review
     await this.clubAccessService.getPublicClub(clubId)
 
     const userClubReview = await this.userClubReviewRepository.findOneBy({
@@ -28,17 +28,13 @@ export class ReviewService {
       clubId,
     })
     if (userClubReview) {
-      userClubReview.rating = rating ?? userClubReview.rating
       userClubReview.reviewKeywordIds = reviewKeywordIds ?? userClubReview.reviewKeywordIds
-      userClubReview.content = content ?? userClubReview.content
       await this.userClubReviewRepository.save(userClubReview)
     } else {
       await this.userClubReviewRepository.insert({
         serviceUserId,
         clubId,
-        rating,
         reviewKeywordIds,
-        content,
       })
     }
   }
@@ -53,14 +49,11 @@ export class ReviewService {
     return categories.map((it) => ({
       id: it.id,
       title: it.title,
-      color: it.color,
-      iconUri: it.iconUri,
       keywords: it.reviewKeywords
         .sort((a, b) => a.sortOrder - b.sortOrder)
         .map((k) => ({
           id: k.id,
           title: k.title,
-          color: k.color,
           iconUri: k.iconUri,
         })),
     }))
@@ -74,9 +67,7 @@ export class ReviewService {
     })
     return review
       ? {
-          rating: review.rating,
           reviewKeywordIds: review.reviewKeywordIds,
-          content: review.content,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
         }

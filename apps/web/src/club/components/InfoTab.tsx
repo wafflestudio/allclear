@@ -17,7 +17,11 @@ export function InfoTab({ club }: Props) {
       value: club.type ? `${club.type} 동아리` : '',
       icon: '/icons/clubInfo/club-type.png',
     },
-    { key: '단과대학', value: club.college, icon: '/icons/clubInfo/college.png' },
+    {
+      key: '단과대학',
+      value: club.collegeMajor?.major ?? club.collegeMajor?.college ?? '',
+      icon: '/icons/clubInfo/college.png',
+    },
     {
       key: '모집형태',
       value: club.recruitType ? `${club.recruitType} 모집` : '',
@@ -25,13 +29,8 @@ export function InfoTab({ club }: Props) {
     },
   ].filter((item) => item.value.trim() !== '')
 
-  const detailRows = [
-    { label: '활동주기', value: club.activityCycle },
-    { label: '회비', value: club.membershipFee },
-  ].filter((row) => row.value.trim() !== '')
-
   const hasIntroduction = club.introduction.trim() !== ''
-  const isEmpty = iconItems.length === 0 && detailRows.length === 0 && !hasIntroduction
+  const isEmpty = iconItems.length === 0 && !hasIntroduction
 
   if (isEmpty) {
     return (
@@ -66,19 +65,6 @@ export function InfoTab({ club }: Props) {
         )}
 
         {hasIntroduction && <IntroductionSection introduction={club.introduction} />}
-
-        {detailRows.length > 0 && (
-          <div className="flex flex-col gap-3">
-            {detailRows.map((row) => (
-              <div key={row.label} className="flex items-start">
-                <span className="w-[76px] shrink-0 text-[14px] font-normal text-[#BCBCBC]">
-                  {row.label}
-                </span>
-                <span className="flex-1 text-[14px] font-medium text-[#757474]">{row.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </BackgroundCard>
   )

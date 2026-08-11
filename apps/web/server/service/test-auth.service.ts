@@ -4,7 +4,6 @@ import {
   AccountEntity,
   AccountType,
   AccountUserEntity,
-  SERVICE,
   ServiceUserEntity,
   UserEntity,
 } from 'server/infra/database/entities'
@@ -83,7 +82,6 @@ export class TestAuthService {
     return this.accountRepository.save({
       type: AccountType.KAKAO,
       username,
-      password: '',
       socialInfo: {
         provider: 'test',
         username: input.username,
@@ -117,7 +115,6 @@ export class TestAuthService {
     }
 
     const user = await this.userRepository.save({
-      service: SERVICE,
       nickname: input.nickname ?? input.username,
       name: input.name ?? input.nickname ?? input.username,
       email: input.email ?? `${input.username}@test.all-clear.local`,

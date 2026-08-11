@@ -32,17 +32,13 @@ export const ClubSearchQuerySchema = z
 
 export const UpdateClubReviewSchema = z
   .object({
-    rating: z.number().min(0).max(5).optional(),
     reviewKeywordIds: z.array(z.string().uuid()).optional(),
-    content: z.string().trim().nonempty().max(100).optional(),
   })
   .openapi('UpdateClubReview')
 
 export const MyReviewSchema = z
   .object({
-    rating: z.number(),
     reviewKeywordIds: z.array(z.string().uuid()),
-    content: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })

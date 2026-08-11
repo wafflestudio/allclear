@@ -1,5 +1,4 @@
-import dayjs from 'dayjs'
-import { groupBy, round, toPairs } from 'lodash-es'
+import { groupBy, toPairs } from 'lodash-es'
 import {
   type Club,
   type ClubDetail,
@@ -39,14 +38,14 @@ import {
   UserNotificationEntity,
 } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import { UserSavedClubEntity } from '../infra/database/entities/user-saved-club.entity'
 import { Inject, InjectRepository, Service } from '../provider'
-import { sortByPopularAndEachRandom } from '../util/club-sort'
+import { sortEachRandom } from '../util/club-sort'
 import { ClubAccessService } from './club-access.service'
 import { getClubResubmissionStatusPatch } from './club-registration-status'
 
@@ -89,8 +88,8 @@ export class ClubService {
   private readonly userSavedClubRepository: Repository<UserSavedClubEntity>
   @InjectRepository(ClubManagerEntity)
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
-  @InjectRepository(ClubManagerRegisterRequestEntity)
-  private readonly clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>
+  @InjectRepository(ClubManagerRequestEntity)
+  private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
   @InjectRepository(ClubVerificationRequestEntity)
   private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
   @InjectRepository(CollegeMajorEntity)
@@ -129,14 +128,6 @@ export class ClubService {
       }),
     ])
     return toClubDetailDomain(club, clubReview.get(club.uuid), verificationRequest)
-  }
-
-  async findByAuthKey(authkey: string): Promise<Club> {
-    const club = await this.clubRepository.findOneByOrFail({
-      authkey,
-      deletedAt: IsNull(),
-    })
-    return toClubDomain(club)
   }
 
   async getManagedClubByUuid(clubUuid: string, serviceUserId: string): Promise<ManagedClubDetail> {
@@ -198,7 +189,7 @@ export class ClubService {
     })
     const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
     const clubs = entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
-    return sortByPopularAndEachRandom(clubs)
+    return sortEachRandom(clubs)
   }
 
   async findAllManagedByUser(serviceUserId: string): Promise<ManagedClubListItem[]> {
@@ -211,7 +202,7 @@ export class ClubService {
           createdAt: 'DESC',
         },
       }),
-      this.clubManagerRegisterRequestRepository.find({
+      this.clubManagerRequestRepository.find({
         where: {
           serviceUserId,
         },
@@ -221,7 +212,7 @@ export class ClubService {
         },
       }),
     ])
-    const latestManagerRequestByClubId = new Map<string, ClubManagerRegisterRequestEntity>()
+    const latestManagerRequestByClubId = new Map<string, ClubManagerRequestEntity>()
     managerRequests.forEach((request) => {
       if (!latestManagerRequestByClubId.has(request.clubId)) {
         latestManagerRequestByClubId.set(request.clubId, request)
@@ -403,23 +394,6 @@ export class ClubService {
     await this.userSavedClubRepository.delete({ serviceUserId, clubId })
   }
 
-  async findPopular(): Promise<Club[]> {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.CALL_LIST_POPULAR_CLUBS_API,
-        params: '{}',
-      })
-      .catch(console.error)
-    const entities = await this.clubRepository.findBy({
-      isPopular: true,
-      status: PUBLIC_CLUB_STATUS,
-      deletedAt: IsNull(),
-    })
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
-    const clubs = entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
-    return sortByPopularAndEachRandom(clubs)
-  }
-
   async findLatestUploaded(topN = 20): Promise<Club[]> {
     const entities = await this.clubRepository.find({
       where: {
@@ -498,7 +472,7 @@ export class ClubService {
 
     const clubManager = await this.getOwnedRegistrationManager(
       this.clubManagerRepository,
-      this.clubManagerRegisterRequestRepository,
+      this.clubManagerRequestRepository,
       clubUuid,
       serviceUserId,
     )
@@ -513,7 +487,7 @@ export class ClubService {
 
   private async getOwnedRegistrationManager(
     clubManagerRepository: Repository<ClubManagerEntity>,
-    clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>,
+    clubManagerRequestRepository: Repository<ClubManagerRequestEntity>,
     clubUuid: string,
     serviceUserId: string,
   ): Promise<ClubManagerEntity> {
@@ -522,7 +496,7 @@ export class ClubService {
       serviceUserId,
     })
     if (clubManager) {
-      const managerRequest = await clubManagerRegisterRequestRepository.findOneBy({
+      const managerRequest = await clubManagerRequestRepository.findOneBy({
         clubId: clubUuid,
         serviceUserId,
       })
@@ -600,9 +574,7 @@ export class ClubService {
       ClubUuid,
       {
         totalReviews: number
-        avgRating: number
         reviewKeywords: ReviewKeyword[]
-        latestComment: string
       }
     >
   > {
@@ -614,15 +586,13 @@ export class ClubService {
         clubId: In(uuids),
       },
     })
-    const clubToRatingKeywords: Map<
+    const clubToReviewKeywords: Map<
       ClubUuid,
       {
         totalReviews: number
-        avgRating: number
-        latestComment: string
         keywordUpvotes: Map<ReviewKeywordId, number>
       }
-    > = this.clubToRatingKeywords(reviews)
+    > = this.clubToReviewKeywords(reviews)
 
     const keywords = await this.clubReviewKeywordRepository.find({
       order: {
@@ -630,36 +600,29 @@ export class ClubService {
       },
     })
     const out = uuids.map((uuid: ClubUuid) => {
-      const { totalReviews, avgRating, latestComment, keywordUpvotes } = clubToRatingKeywords.get(
-        uuid,
-      ) ?? {
+      const { totalReviews, keywordUpvotes } = clubToReviewKeywords.get(uuid) ?? {
         totalReviews: 0,
-        avgRating: 0,
-        latestComment: '',
         keywordUpvotes: new Map<ReviewKeywordId, number>(),
       }
       const reviewKeywords = keywords
         .map((it) => ({
           id: it.id,
           title: it.title,
-          color: it.color,
           iconUri: it.iconUri,
           totalUpvotes: keywordUpvotes.get(it.id) ?? 0,
         }))
         // 리뷰가 있는 키워드만 반환하도록 수정함
         .filter((it) => it.totalUpvotes > 0)
         .sort((a, b) => b.totalUpvotes - a.totalUpvotes)
-      return [uuid, { totalReviews, avgRating, reviewKeywords, latestComment }] as const
+      return [uuid, { totalReviews, reviewKeywords }] as const
     })
     return new Map(out)
   }
 
-  private clubToRatingKeywords(reviews: UserClubReviewEntity[]): Map<
+  private clubToReviewKeywords(reviews: UserClubReviewEntity[]): Map<
     ClubUuid,
     {
       totalReviews: number
-      avgRating: number
-      latestComment: string
       keywordUpvotes: Map<ReviewKeywordId, number>
     }
   > {
@@ -668,22 +631,14 @@ export class ClubService {
         ClubUuid,
         {
           totalReviews: number
-          avgRating: number
-          latestComment: string
           keywordUpvotes: Map<ReviewKeywordId, number>
         },
       ] => {
-        const { totalRatings, sumRatings, keywordUpvotes } = this.aggregate(reviews)
+        const keywordUpvotes = this.aggregateReviewKeywords(reviews)
         return [
           clubId,
           {
             totalReviews: reviews.length,
-            avgRating: totalRatings > 0 ? round(sumRatings / totalRatings, 1) : 0,
-            latestComment:
-              reviews
-                .filter((it) => it.content.length > 0)
-                .sort((a, b) => (dayjs(a.updatedAt).isBefore(b.updatedAt) ? 1 : -1))[0]?.content ??
-              '',
             keywordUpvotes,
           },
         ]
@@ -692,24 +647,13 @@ export class ClubService {
     return new Map(out)
   }
 
-  private aggregate(reviews: UserClubReviewEntity[]): {
-    totalRatings: number
-    sumRatings: number
-    keywordUpvotes: Map<ReviewKeywordId, number>
-  } {
-    return reviews.reduce(
-      (acc, cur) => {
-        if (cur.rating > 0) {
-          acc.totalRatings += 1
-          acc.sumRatings += cur.rating
-        }
-        cur.reviewKeywordIds.forEach((keywordId) => {
-          acc.keywordUpvotes.set(keywordId, (acc.keywordUpvotes.get(keywordId) ?? 0) + 1)
-        })
-        return acc
-      },
-      { totalRatings: 0, sumRatings: 0, keywordUpvotes: new Map<ReviewKeywordId, number>() },
-    )
+  private aggregateReviewKeywords(reviews: UserClubReviewEntity[]): Map<ReviewKeywordId, number> {
+    return reviews.reduce((acc, cur) => {
+      cur.reviewKeywordIds.forEach((keywordId) => {
+        acc.set(keywordId, (acc.get(keywordId) ?? 0) + 1)
+      })
+      return acc
+    }, new Map<ReviewKeywordId, number>())
   }
 
   async updateClub(uuid: string, club: Partial<ClubEntity>): Promise<boolean> {
@@ -746,9 +690,7 @@ export class ClubService {
     return this.clubRepository.manager.transaction(async (manager) => {
       const clubRepository = manager.getRepository(ClubEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const clubManagerRegisterRequestRepository = manager.getRepository(
-        ClubManagerRegisterRequestEntity,
-      )
+      const clubManagerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
       const clubHistoryRepository = manager.getRepository(ClubHistoryEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
@@ -775,7 +717,7 @@ export class ClubService {
       }
 
       if (body.manager_data || body.resubmit) {
-        const managerRequest = await clubManagerRegisterRequestRepository.findOneBy({
+        const managerRequest = await clubManagerRequestRepository.findOneBy({
           clubId: clubUuid,
           serviceUserId,
         })
@@ -952,35 +894,26 @@ export class ClubService {
     return {
       uuid: club.uuid,
       name: club.name,
-      full_name: club.fullName,
       description: club.description,
       short_description: club.shortDescription,
       type: club.type,
       category: club.category,
-      college: club.college,
       affiliation_type: club.affiliationType,
       college_major_id: club.collegeMajorId,
       image_uri: club.imageUri,
-      thumbnail_uri: club.thumbnailUri,
-      tags: club.tags,
       article: club.article,
       article_uploaded_at: club.articleUploadedAt,
-      is_popular: club.isPopular,
       has_dongbang: club.hasDongbang,
       dongbang_location: club.dongbangLocation,
-      activity_cycle: club.activityCycle,
       min_activity_period: club.minActivityPeriod,
       active_member_count: club.activeMemberCount,
       founded_at: club.foundedAt,
-      membership_fee: club.membershipFee,
       recruit_type: club.recruitType,
       is_official_verified: club.isOfficialVerified,
       verified_at: club.verifiedAt,
       sns_urls: club.snsUrls,
       activity_image_urls: club.activityImageUrls,
       introduction: club.introduction,
-      blur_image: club.blurImage,
-      blur_hash: club.blurHash,
       created_at: club.createdAt,
       updated_at: club.updatedAt,
       deleted_at: club.deletedAt,
@@ -990,25 +923,6 @@ export class ClubService {
     }
   }
 
-  async clubManagerRegisterRequest(
-    serviceUserId: string,
-    {
-      clubId,
-      name,
-      phone,
-      studentId,
-    }: { clubId: string; name: string; phone: string; studentId: string },
-  ) {
-    await this.clubAccessService.getExistingClub(clubId)
-    await this.clubManagerRegisterRequestRepository.insert({
-      serviceUserId,
-      clubId,
-      name,
-      phone,
-      studentId,
-    })
-  }
-
   async createClubManagerRequest(
     clubUuid: string,
     serviceUserId: string,
@@ -1016,9 +930,9 @@ export class ClubService {
   ): Promise<void> {
     await this.clubAccessService.getExistingClub(clubUuid)
 
-    await this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
+    await this.clubManagerRequestRepository.manager.transaction(async (manager) => {
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
       const existingManager = await clubManagerRepository.findOneBy({
@@ -1083,7 +997,7 @@ export class ClubService {
     clubUuid: string,
     serviceUserId: string,
   ): Promise<ClubManagerRequestResponse> {
-    const pendingRequest = await this.clubManagerRegisterRequestRepository.findOne({
+    const pendingRequest = await this.clubManagerRequestRepository.findOne({
       where: {
         clubId: clubUuid,
         serviceUserId,
@@ -1097,7 +1011,7 @@ export class ClubService {
 
     const managerRequest =
       pendingRequest ??
-      (await this.clubManagerRegisterRequestRepository.findOne({
+      (await this.clubManagerRequestRepository.findOne({
         where: {
           clubId: clubUuid,
           serviceUserId,
@@ -1121,8 +1035,8 @@ export class ClubService {
   }
 
   async deleteClubManagerRequest(clubUuid: string, serviceUserId: string): Promise<void> {
-    await this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+    await this.clubManagerRequestRepository.manager.transaction(async (manager) => {
+      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 
       const requests = await managerRequestRepository.findBy({
@@ -1151,8 +1065,8 @@ export class ClubService {
     serviceUserId: string,
     request: ClubManagerRequestPatch,
   ): Promise<void> {
-    await this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+    await this.clubManagerRequestRepository.manager.transaction(async (manager) => {
+      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
       const targetStatus = request.resubmit ? REJECTED_CLUB_STATUS : PENDING_CLUB_STATUS
       const managerRequest = await managerRequestRepository.findOne({

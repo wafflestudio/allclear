@@ -14,9 +14,6 @@ export class AccountEntity extends TimeStampMixin {
   @Column({ type: 'varchar', length: 255, name: 'username' })
   username: string
 
-  @Column({ type: 'varchar', length: 64, default: '', name: 'password' })
-  password: string
-
   @Column({ type: 'simple-json', nullable: true, name: 'social_info' })
   socialInfo: object | null
 

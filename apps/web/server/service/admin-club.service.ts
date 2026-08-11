@@ -22,7 +22,7 @@ import {
   UserEntity,
 } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRegisterRequestEntity } from '../infra/database/entities/club-manager-register-request.entity'
+import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import {
   UserNotificationEntity,
@@ -130,8 +130,8 @@ export class AdminClubService {
   @InjectRepository(ClubHistoryEntity)
   private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
 
-  @InjectRepository(ClubManagerRegisterRequestEntity)
-  private readonly clubManagerRegisterRequestRepository: Repository<ClubManagerRegisterRequestEntity>
+  @InjectRepository(ClubManagerRequestEntity)
+  private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
 
   @InjectRepository(ClubVerificationRequestEntity)
   private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
@@ -419,7 +419,7 @@ export class AdminClubService {
   }: AdminClubManagerRequestsQuery): Promise<
     AdminPaginatedList<'requests', AdminClubManagerRequestItem>
   > {
-    const baseQuery = this.clubManagerRegisterRequestRepository
+    const baseQuery = this.clubManagerRequestRepository
       .createQueryBuilder('manager_request')
       .leftJoin(ClubEntity, 'club', 'club.uuid = manager_request.club_id')
 
@@ -563,8 +563,8 @@ export class AdminClubService {
     status: AdminClubManagerRequestStatusUpdate['status']
     processed_at: string
   }> {
-    return this.clubManagerRegisterRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRegisterRequestEntity)
+    return this.clubManagerRequestRepository.manager.transaction(async (manager) => {
+      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
       const clubManagerRepository = manager.getRepository(ClubManagerEntity)
       const userNotificationRepository = manager.getRepository(UserNotificationEntity)
 

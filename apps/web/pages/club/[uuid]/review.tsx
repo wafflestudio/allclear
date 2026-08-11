@@ -10,9 +10,7 @@ import { BackgroundCard } from '../../../src/club/components/BackgroundCard'
 import { BackHeader } from '../../../src/club/components/BackHeader'
 
 type MyReview = {
-  rating: number
   reviewKeywordIds: string[]
-  content: string
   createdAt: string
   updatedAt: string
 }

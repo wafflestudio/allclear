@@ -8,7 +8,6 @@ import {
   AccountEntity,
   AccountType,
   AccountUserEntity,
-  SERVICE,
   ServiceUserEntity,
   UserEntity,
 } from '../infra/database/entities'
@@ -57,11 +56,6 @@ export class AuthService {
       name: accountUser.user.name,
       phone: accountUser.user.phone,
       email: accountUser.user.email,
-      gender: accountUser.user.gender,
-      birthDate: accountUser.user.birthDate,
-      birthYear: accountUser.user.birthYear,
-      college: accountUser.user.serviceUser.college,
-      major: accountUser.user.serviceUser.major,
       collegeMajor: accountUser.user.serviceUser.collegeMajor
         ? {
             id: accountUser.user.serviceUser.collegeMajor.id,
@@ -70,7 +64,6 @@ export class AuthService {
           }
         : null,
       admissionClass: accountUser.user.serviceUser.admissionClass,
-      grade: accountUser.user.serviceUser.grade,
     }
   }
 
@@ -81,9 +74,6 @@ export class AuthService {
     name,
     phone,
     email,
-    gender,
-    birthDate,
-    birthYear,
     socialAccountInfo,
   }: {
     type: AccountType
@@ -92,27 +82,19 @@ export class AuthService {
     name?: string
     phone?: string
     email?: string
-    gender?: string
-    birthDate?: string
-    birthYear?: string
     socialAccountInfo: object
   }): Promise<AccountId> {
     const account = await this.accountRepository.save({
       type,
       username,
-      password: '',
       socialInfo: socialAccountInfo,
     })
     const user = await this.userRepository.save({
-      service: SERVICE,
       nickname: nickname,
       name: name,
       phone: phone,
       email: email,
       role: UserRole.USER,
-      gender: gender,
-      birthDate: birthDate,
-      birthYear: birthYear,
     })
     await this.accountUserRepository.insert({ accountId: account.id, userId: user.id })
     await this.serviceUserRepository.insert({ userId: user.id })
@@ -163,19 +145,6 @@ export class AuthService {
       phone: kakaoAccount?.phone_number?.startsWith('+82 10')
         ? `010${kakaoAccount?.phone_number.slice('+82 10'.length)}`
         : kakaoAccount?.phone_number,
-      birthDate:
-        kakaoAccount.birthyear &&
-        kakaoAccount.birthday &&
-        `${kakaoAccount.birthyear}-${kakaoAccount.birthday.slice(
-          0,
-          2,
-        )}-${kakaoAccount.birthday.slice(2, 4)}`,
-      gender:
-        kakaoAccount.gender === 'female'
-          ? '여자'
-          : kakaoAccount.gender === 'male'
-            ? '남자'
-            : kakaoAccount.gender,
       socialAccountInfo: user,
     })
   }

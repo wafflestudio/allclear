@@ -42,7 +42,6 @@ export const ReviewKeywordSchema = z
   .object({
     id: z.string().uuid(),
     title: z.string(),
-    color: z.string(),
     iconUri: z.string(),
     totalUpvotes: z.number().int().optional(),
   })
@@ -52,8 +51,6 @@ export const ReviewKeywordCategorySchema = z
   .object({
     id: z.number().int(),
     title: z.string(),
-    color: z.string(),
-    iconUri: z.string().optional(),
     keywords: z.array(ReviewKeywordSchema),
   })
   .openapi('ReviewKeywordCategory')
@@ -97,14 +94,8 @@ export const UserSchema = z
     name: z.string(),
     phone: z.string(),
     email: z.string(),
-    gender: z.string(),
-    birthDate: z.string().nullable(),
-    birthYear: z.string(),
-    college: z.string(),
-    major: z.string(),
     collegeMajor: CollegeMajorSchema.nullable(),
     admissionClass: z.number().nullable(),
-    grade: z.number().nullable(),
   })
   .openapi('User')
 
@@ -113,40 +104,31 @@ export const ClubSchema = z
     id: z.string().uuid(),
     uuid: z.string().uuid(),
     name: z.string(),
-    fullName: z.string(),
     description: z.string(),
     shortDescription: z.string(),
     introduction: z.string(),
     type: z.string(),
     category: z.string(),
-    college: z.string(),
     affiliationType: z.string(),
     collegeMajorId: z.number().nullable(),
     collegeMajor: CollegeMajorSchema.nullable(),
     recruitType: z.enum(CLUB_RECRUIT_TYPES),
     isOfficialVerified: z.boolean(),
     verifiedAt: z.string().nullable(),
-    isPopular: z.boolean(),
     hasDongbang: z.boolean(),
     dongbangLocation: z.string(),
-    activityCycle: z.string(),
     minActivityPeriod: z.number().int(),
     activeMemberCount: z.number().int(),
     foundedAt: z.string().nullable(),
-    membershipFee: z.string(),
     snsUrls: z.array(z.string().url()).max(3),
     activityImageUrls: z.array(z.string()),
-    tags: z.array(z.string()),
     imageUri: z.string(),
-    blurHash: z.string().nullable(),
     article: z.string(),
     articleUploadedAt: z.string().nullable(),
     status: ClubStatusSchema,
     rejectReason: z.string(),
-    avgRating: z.number(),
     totalReviews: z.number().int(),
     reviewKeywords: z.array(ReviewKeywordSchema),
-    latestComment: z.string(),
   })
   .openapi('Club')
 

@@ -1,7 +1,6 @@
 import {
   CLUB_AFFILIATION_TYPES,
   CLUB_CATEGORIES,
-  CLUB_COLLEGES,
   CLUB_RECRUIT_TYPES,
 } from 'src/fixtures/club-options'
 import { ClubSchema } from 'src/lib/schemas/common'
@@ -40,15 +39,6 @@ export const ManagerClubParamsSchema = z
     uuid: z.string().uuid(),
   })
   .openapi('ManagerClubParams')
-
-export const ClubManagerRegisterRequestSchema = z
-  .object({
-    clubId: z.string().uuid(),
-    name: z.string().trim().optional(),
-    phone: z.string().trim().optional(),
-    studentId: z.string().trim().optional(),
-  })
-  .openapi('ClubManagerRegisterRequest')
 
 export const ClubManagerRequestSchema = z
   .object({
@@ -106,20 +96,9 @@ export type ClubRegistrationManagerPatch = z.infer<typeof ClubRegistrationManage
 
 const clubDraftShape = {
   name: z.string().nonempty().max(30),
-  fullName: z.string().nonempty().max(50),
   type: z.enum(['교내', '연합']),
   recruitType: ClubRecruitTypeInputSchema,
   category: z.enum(CLUB_CATEGORIES),
-  tags: z
-    .array(
-      z
-        .string()
-        .nonempty()
-        .max(10)
-        .regex(/^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9_\-.]+$/),
-    )
-    .max(5),
-  college: z.enum(CLUB_COLLEGES),
   affiliationType: z.enum(CLUB_AFFILIATION_TYPES),
   collegeMajorId: z.number().int().nullable().optional(),
   shortDescription: z.string().nullable().optional(),

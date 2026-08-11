@@ -1,11 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
-import type { Club, ManagedClubListItem } from 'server/domain/model/Club'
+import type { ManagedClubListItem } from 'server/domain/model/Club'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import { ClubManagerRegisterRequestSchema } from 'src/lib/schemas/managers'
-import { SlackService } from '../../../../../../server/service/slack.service'
 
 type ResponseData = {
   success: true
@@ -27,8 +25,6 @@ export default async function handler(
   try {
     const clubService = Provider.getService(ClubService)
     const userService = Provider.getService(UserService)
-    const slackService = Provider.getService(SlackService)
-
     const user = await userService.getUserByAccountId(req.headers.user as string)
     if (req.method == 'GET') {
       const clubs = await clubService.findAllManagedByUser(user.serviceUserId)
@@ -40,31 +36,6 @@ export default async function handler(
           clubs: clubs,
         },
       })
-    }
-    if (req.method === 'POST') {
-      const { clubId, name, phone, studentId } = ClubManagerRegisterRequestSchema.parse(req.body)
-      const requestName = name || user.name || user.nickname
-      const requestPhone = phone || user.phone
-      const requestStudentId = studentId || String(user.admissionClass ?? '')
-      await clubService.clubManagerRegisterRequest(user.serviceUserId, {
-        clubId,
-        name: requestName,
-        phone: requestPhone,
-        studentId: requestStudentId,
-      })
-      const clubs: Club[] = [await clubService.findByUuid(clubId)]
-      const clubDetails = clubs.map((club) => `- ${club.name} (ID: \`${club.id}\`)`).join('\n')
-      await slackService.sendMessage(
-        'DRAGONITE',
-        'C0AEQRLAGMU',
-        `*행운의 망나뇽이 동아리 관리자 등록 요청을 들고왔어요*
-유저: ${user.name || user.nickname} (Service User ID: ${user.serviceUserId})
-신청자명: ${requestName}
-연락처: ${requestPhone}
-학번: ${requestStudentId}
-동아리:\n${clubDetails}`,
-      )
-      return res.status(204).send(null)
     }
   } catch (err) {
     if (err instanceof UserNotFoundError) {

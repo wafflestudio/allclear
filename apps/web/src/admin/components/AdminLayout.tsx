@@ -168,11 +168,7 @@ export const TabFilterBar = ({
 
   return (
     <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <StatusFilterBar
-        value={statusFilter}
-        onChange={onStatusChange}
-        pendingCount={pendingCount}
-      />
+      <StatusFilterBar value={statusFilter} onChange={onStatusChange} pendingCount={pendingCount} />
       <div className="flex items-center gap-3 self-end md:self-auto">
         <StatusBadge status={statusFilter === 'ALL' ? undefined : statusFilter} />
         <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">
