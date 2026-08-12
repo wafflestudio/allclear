@@ -56,7 +56,9 @@ ALTER TABLE public."user"
 
 DROP TABLE IF EXISTS public.device;
 
-DROP INDEX IF EXISTS public.ux_club_authkey;
+ALTER TABLE public.club
+DROP CONSTRAINT IF EXISTS ux_club_authkey;
+
 DROP INDEX IF EXISTS public.ix_club_ispopular;
 
 ALTER TABLE public.club
