@@ -31,10 +31,10 @@ describe("club SNS presentation", () => {
 	});
 
 	it("sizes SNS icons to match their proportions in the design", () => {
-		expect(getSnsIconSize("https://instagram.com/club")).toBe(24);
-		expect(getSnsIconSize("https://youtube.com/@club")).toBe(26);
-		expect(getSnsIconSize("https://facebook.com/club")).toBe(24);
-		expect(getSnsIconSize("https://x.com/club")).toBe(24);
-		expect(getSnsIconSize("https://example.com")).toBe(26);
+		expect(getSnsIconSize("https://instagram.com/club")).toBe(16);
+		expect(getSnsIconSize("https://youtube.com/@club")).toBe(18);
+		expect(getSnsIconSize("https://facebook.com/club")).toBe(16);
+		expect(getSnsIconSize("https://x.com/club")).toBe(16);
+		expect(getSnsIconSize("https://example.com")).toBe(18);
 	});
 });

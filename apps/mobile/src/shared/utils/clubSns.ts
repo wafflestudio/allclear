@@ -47,5 +47,5 @@ export const getSnsIcon = (url: string): string => {
 
 export const getSnsIconSize = (url: string): number => {
 	const icon = getSnsIcon(url);
-	return icon === "youtube" || icon === "link-variant" ? 26 : 24;
+	return icon === "youtube" || icon === "link-variant" ? 18 : 16;
 };
