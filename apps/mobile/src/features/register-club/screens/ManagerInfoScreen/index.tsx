@@ -47,6 +47,8 @@ export const ManagerInfoScreen = ({
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.label}>이름</Text>
 						<TextField
+							height={54}
+							style={styles.input}
 							placeholder="홍길동"
 							value={formData.managerName}
 							onChangeText={(text) => onFormDataChange({ managerName: text })}
@@ -58,6 +60,8 @@ export const ManagerInfoScreen = ({
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.label}>전화번호</Text>
 						<TextField
+							height={54}
+							style={styles.input}
 							placeholder="010-1234-5678"
 							value={formData.managerPhone}
 							onChangeText={(text) =>
@@ -79,6 +83,8 @@ export const ManagerInfoScreen = ({
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.label}>학번</Text>
 						<TextField
+							height={54}
+							style={styles.input}
 							placeholder="1970-12345"
 							value={formData.studentId}
 							onChangeText={(text) =>
@@ -117,7 +123,7 @@ const styles = StyleSheet.create({
 		paddingBottom: vs(20),
 	},
 	header: {
-		marginBottom: vs(20),
+		marginBottom: vs(35),
 	},
 	title: {
 		...typography.headerXXL,
@@ -136,5 +142,8 @@ const styles = StyleSheet.create({
 		...typography.bodyMRegular,
 		color: Colors.POINTCOLOR,
 		marginTop: vs(5),
+	},
+	input: {
+		paddingHorizontal: s(15),
 	},
 });

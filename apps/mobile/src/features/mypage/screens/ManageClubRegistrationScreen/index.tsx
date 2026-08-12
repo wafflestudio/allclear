@@ -445,6 +445,8 @@ const ManageClubRegistrationScreen = () => {
 					<View>
 						<Text style={styles.formFieldLabel}>이름</Text>
 						<TextField
+							height={54}
+							style={styles.formInput}
 							placeholder="홍길동"
 							maxLength={50}
 							value={adminForm.name}
@@ -465,6 +467,8 @@ const ManageClubRegistrationScreen = () => {
 					<View>
 						<Text style={styles.formFieldLabel}>전화번호</Text>
 						<TextField
+							height={54}
+							style={styles.formInput}
 							placeholder="010-1234-5678"
 							keyboardType="number-pad"
 							maxLength={13}
@@ -491,6 +495,8 @@ const ManageClubRegistrationScreen = () => {
 					<View>
 						<Text style={styles.formFieldLabel}>학번</Text>
 						<TextField
+							height={54}
+							style={styles.formInput}
 							placeholder="1970-12345"
 							keyboardType="number-pad"
 							maxLength={10}
@@ -664,7 +670,7 @@ const styles = StyleSheet.create({
 		paddingBottom: vs(20),
 	},
 	formHeader: {
-		marginBottom: vs(20),
+		marginBottom: vs(35),
 	},
 	formTitle: {
 		...typography.headerXXL,
@@ -689,6 +695,9 @@ const styles = StyleSheet.create({
 		...typography.bodyMRegular,
 		color: Colors.POINTCOLOR,
 		marginTop: vs(5),
+	},
+	formInput: {
+		paddingHorizontal: s(15),
 	},
 	searchInputContainer: {
 		backgroundColor: Colors.BACKGROUND_SUB,
