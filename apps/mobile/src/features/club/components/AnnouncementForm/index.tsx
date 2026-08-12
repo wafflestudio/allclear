@@ -918,7 +918,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 							triggerWidth={DROPDOWN_WIDTHS.datePart}
 							unit="분"
 						/>
-						<Text style={styles.inlineHelperText}>모집 마감</Text>
+						<Text style={styles.deadlineLabel}>모집 마감</Text>
 					</View>
 				</View>
 
@@ -1490,8 +1490,12 @@ const styles = StyleSheet.create({
 		marginTop: 5,
 		paddingLeft: 5,
 	},
-	inlineHelperText: {
-		...HELPER_TEXT_STYLE,
+	deadlineLabel: {
+		fontFamily: FONT_FAMILY.semibold,
+		fontSize: 20,
+		fontWeight: "600",
+		lineHeight: 24,
+		color: HELPER_COLOR,
 		marginLeft: 4,
 	},
 
