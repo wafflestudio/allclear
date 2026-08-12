@@ -49,7 +49,7 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 							.slice(0, 2)
 							.map((keyword) => (
 								<ReviewKeywordPill
-									key={`${club.name}-${keyword}`}
+									key={keyword.id}
 									keyword={keyword}
 									themeColor={borderColor}
 									backgroundColor={backgroundColor}
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
 	},
 	reviewView: {
 		flexDirection: "row",
-		height: vs(21),
+		minHeight: ms(21),
 		gap: ms(4),
 	},
 	heartButton: {
