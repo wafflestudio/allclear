@@ -78,7 +78,7 @@ const DROPDOWN_WIDTHS = {
 	year: 88,
 	datePart: 68,
 	weekday: 92,
-	meetingTime: 76,
+	meetingTime: 90,
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -162,7 +162,10 @@ const CustomDropdown = ({
 				style={[styles.dropdown, open && styles.dropdownOpen]}
 				onPress={handleOpen}
 			>
-				<Text style={[styles.dropdownText, open && { color: PRIMARY }]}>
+				<Text
+					style={[styles.dropdownText, open && { color: PRIMARY }]}
+					numberOfLines={1}
+				>
 					{value}
 				</Text>
 				<Icon
@@ -261,7 +264,7 @@ const ConfirmModal = ({
 			<View style={styles.confirmBox}>
 				<Text style={[styles.confirmTitle, { marginBottom: 12 }]}>{title}</Text>
 				<Text style={[styles.confirmDesc, { marginBottom: 20 }]}>
-					{"공고는 언제든 동아리 관리 → 공고 관리 탭에서\n수정/등록 가능해요"}
+					{"공고는 언제든 동아리 관리 → 공고 관리\n탭에서 수정/등록 가능해요"}
 				</Text>
 				<View style={styles.confirmButtons}>
 					<TouchableOpacity
@@ -915,7 +918,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 							triggerWidth={DROPDOWN_WIDTHS.datePart}
 							unit="분"
 						/>
-						<Text style={styles.inlineHelperText}>모집 마감</Text>
+						<Text style={styles.deadlineLabel}>모집 마감</Text>
 					</View>
 				</View>
 
@@ -1077,12 +1080,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					</View>
 					{activityLocation === "동방 외" && (
 						<View style={styles.iconInputWrapper}>
-							<Icon
-								name="place"
-								size={16}
-								color="#999"
-								style={{ marginRight: 6 }}
-							/>
+							<Icon name="place" size={24} color="#999" />
 							<TextInput
 								style={styles.iconInput}
 								placeholder="장소를 입력하세요"
@@ -1251,12 +1249,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				<View style={styles.section}>
 					<Text style={styles.sectionLabel}>*가입 절차</Text>
 					<View style={styles.iconInputWrapper}>
-						<Icon
-							name="link"
-							size={16}
-							color="#999"
-							style={{ marginRight: 6 }}
-						/>
+						<Icon name="link" size={24} color="#999" />
 						<TextInput
 							style={styles.iconInput}
 							placeholder="지원 사이트의 url을 입력하세요"
@@ -1497,8 +1490,12 @@ const styles = StyleSheet.create({
 		marginTop: 5,
 		paddingLeft: 5,
 	},
-	inlineHelperText: {
-		...HELPER_TEXT_STYLE,
+	deadlineLabel: {
+		fontFamily: FONT_FAMILY.semibold,
+		fontSize: 20,
+		fontWeight: "600",
+		lineHeight: 24,
+		color: HELPER_COLOR,
 		marginLeft: 4,
 	},
 
@@ -1640,20 +1637,24 @@ const styles = StyleSheet.create({
 	iconInputWrapper: {
 		flexDirection: "row",
 		alignItems: "center",
+		gap: 5,
+		marginTop: 8,
+	},
+	iconInput: {
+		flex: 1,
+		height: 40,
 		backgroundColor: "#fff",
 		borderWidth: 1,
 		borderColor: BORDER,
 		borderRadius: 8,
 		paddingHorizontal: 15,
-		paddingVertical: 18,
-		minHeight: 60,
-		marginTop: 8,
-	},
-	iconInput: {
-		flex: 1,
+		paddingVertical: 0,
 		fontFamily: FONT_FAMILY.medium,
-		fontSize: 16,
+		fontSize: 14,
 		fontWeight: "500",
+		lineHeight: 24,
+		textAlignVertical: "center",
+		includeFontPadding: false,
 		color: FORM_TEXT_COLOR,
 	},
 

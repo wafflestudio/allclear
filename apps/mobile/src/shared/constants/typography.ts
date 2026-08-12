@@ -54,4 +54,9 @@ export const typography = {
 	bodyMMedium: base(14, "500"),
 	bodyMMedium13px: base(13, "500"),
 	bodyMBold13px: base(13, "700", 22),
+	textInputMedium: {
+		fontFamily: fontFamilyByWeight["500"],
+		fontSize: 16,
+		lineHeight: 24,
+	},
 };
