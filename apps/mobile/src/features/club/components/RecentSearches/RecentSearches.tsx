@@ -87,13 +87,13 @@ const styles = StyleSheet.create({
 		flexWrap: "wrap",
 	},
 	chip: {
-		height: vs(24),
+		minHeight: ms(24),
 		alignItems: "center",
 		justifyContent: "center",
 		marginLeft: s(8),
 		marginBottom: vs(8),
 		paddingHorizontal: s(10),
-		paddingVertical: vs(6),
+		paddingVertical: ms(5),
 		borderRadius: ms(20),
 		borderWidth: 0.3,
 		borderColor: Colors.POINTCOLOR,
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
 	},
 	chipText: {
 		...typography.bodySRegular,
-		lineHeight: vs(12),
+		lineHeight: ms(14),
 		color: Colors.BODYTEXT_SUB,
 	},
 });
