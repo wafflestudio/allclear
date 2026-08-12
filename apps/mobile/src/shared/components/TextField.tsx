@@ -4,9 +4,9 @@ import {
 	TextInput,
 	type TextInputProps,
 	type TextStyle,
-	type ViewStyle,
 } from "react-native";
 import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
 
 const COLORS = {
 	gray300: Colors.BODYTEXT_DISABLED,
@@ -54,9 +54,9 @@ const TextField = ({
 		onChangeText?.(text, isValid);
 	};
 
-	const containerStyle: ViewStyle[] = [
+	const containerStyle: TextStyle[] = [
 		styles.base,
-		{ height },
+		{ minHeight: height },
 		{ borderWidth: border?.width ?? 1 },
 		{ borderColor: border?.color ?? activeColor },
 		width !== undefined ? { width } : { flex: 1 },
@@ -86,12 +86,13 @@ const TextField = ({
 const styles = StyleSheet.create({
 	base: {
 		borderRadius: 8,
-		paddingVertical: 15,
+		paddingVertical: 0,
 		paddingHorizontal: 20,
+		textAlignVertical: "center",
 	},
 	text: {
-		fontSize: 16,
-		fontWeight: "500",
+		...typography.textInputMedium,
+		includeFontPadding: false,
 	},
 });
 
