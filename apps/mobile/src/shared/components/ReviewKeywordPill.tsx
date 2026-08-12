@@ -28,10 +28,10 @@ const styles = StyleSheet.create({
 		borderRadius: ms(24),
 		borderWidth: 0.5,
 		flexShrink: 1,
-		minHeight: ms(21),
+		minHeight: ms(20),
 		paddingHorizontal: s(6),
-		paddingTop: ms(5),
-		paddingBottom: ms(6),
+		paddingTop: ms(4),
+		paddingBottom: ms(5),
 	},
 	text: {
 		...typography.bodyXSRegular,
