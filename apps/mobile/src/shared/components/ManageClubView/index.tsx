@@ -128,11 +128,11 @@ const styles = StyleSheet.create({
 		marginBottom: 10,
 	},
 	optionButton: {
-		height: 54,
+		height: 56,
 		paddingHorizontal: 20,
-		paddingVertical: 15,
 		borderRadius: 8,
 		alignItems: "flex-start",
+		justifyContent: "center",
 		marginBottom: 10,
 	},
 	optionButtonUnselected: {
