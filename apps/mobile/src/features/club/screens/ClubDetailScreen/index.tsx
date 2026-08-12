@@ -534,13 +534,13 @@ const styles = StyleSheet.create({
 	},
 	snsRow: {
 		flexDirection: "row",
-		gap: s(8),
+		gap: s(5),
 		marginTop: vs(10),
 	},
 	snsButton: {
-		width: ms(44),
-		height: ms(44),
-		borderRadius: ms(22),
+		width: ms(30),
+		height: ms(30),
+		borderRadius: ms(15),
 		backgroundColor: Colors.POINTCOLOR_10,
 		alignItems: "center",
 		justifyContent: "center",
