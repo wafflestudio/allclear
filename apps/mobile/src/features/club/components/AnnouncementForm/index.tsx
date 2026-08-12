@@ -78,7 +78,7 @@ const DROPDOWN_WIDTHS = {
 	year: 88,
 	datePart: 68,
 	weekday: 92,
-	meetingTime: 76,
+	meetingTime: 90,
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -162,7 +162,10 @@ const CustomDropdown = ({
 				style={[styles.dropdown, open && styles.dropdownOpen]}
 				onPress={handleOpen}
 			>
-				<Text style={[styles.dropdownText, open && { color: PRIMARY }]}>
+				<Text
+					style={[styles.dropdownText, open && { color: PRIMARY }]}
+					numberOfLines={1}
+				>
 					{value}
 				</Text>
 				<Icon
