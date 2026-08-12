@@ -16,7 +16,7 @@ const CategorySection = () => (
 					style={styles.titleIcon}
 				/>
 				<View style={styles.titleWrapper}>
-					<Text style={styles.subtitle}>원하는 활동이 있으신가요?</Text>
+					<Text style={styles.subtitle}>이번 학기엔 동아리까지,</Text>
 					<Text style={styles.title}>
 						<Text style={styles.titleAccent}>카테고리 </Text>모아보기
 					</Text>
@@ -71,13 +71,13 @@ const styles = StyleSheet.create({
 		marginBottom: vs(12),
 	},
 	titleIcon: {
-		width: s(43.85),
-		height: s(42),
+		width: s(47),
+		height: s(46),
 		marginHorizontal: s(8),
 	},
 	subtitle: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
+		...typography.bodyMSemibold,
+		color: Colors.POINTCOLOR,
 	},
 	title: {
 		...typography.headerXL,
