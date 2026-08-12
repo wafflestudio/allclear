@@ -1080,12 +1080,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 					</View>
 					{activityLocation === "동방 외" && (
 						<View style={styles.iconInputWrapper}>
-							<Icon
-								name="place"
-								size={16}
-								color="#999"
-								style={{ marginRight: 6 }}
-							/>
+							<Icon name="place" size={24} color="#999" />
 							<TextInput
 								style={styles.iconInput}
 								placeholder="장소를 입력하세요"
@@ -1254,12 +1249,7 @@ const AnnouncementForm = (props: AnnouncementFormProps) => {
 				<View style={styles.section}>
 					<Text style={styles.sectionLabel}>*가입 절차</Text>
 					<View style={styles.iconInputWrapper}>
-						<Icon
-							name="link"
-							size={16}
-							color="#999"
-							style={{ marginRight: 6 }}
-						/>
+						<Icon name="link" size={24} color="#999" />
 						<TextInput
 							style={styles.iconInput}
 							placeholder="지원 사이트의 url을 입력하세요"
@@ -1643,20 +1633,24 @@ const styles = StyleSheet.create({
 	iconInputWrapper: {
 		flexDirection: "row",
 		alignItems: "center",
+		gap: 5,
+		marginTop: 8,
+	},
+	iconInput: {
+		flex: 1,
+		height: 40,
 		backgroundColor: "#fff",
 		borderWidth: 1,
 		borderColor: BORDER,
 		borderRadius: 8,
 		paddingHorizontal: 15,
-		paddingVertical: 18,
-		minHeight: 60,
-		marginTop: 8,
-	},
-	iconInput: {
-		flex: 1,
+		paddingVertical: 0,
 		fontFamily: FONT_FAMILY.medium,
-		fontSize: 16,
+		fontSize: 14,
 		fontWeight: "500",
+		lineHeight: 24,
+		textAlignVertical: "center",
+		includeFontPadding: false,
 		color: FORM_TEXT_COLOR,
 	},
 
