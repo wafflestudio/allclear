@@ -264,7 +264,7 @@ const ConfirmModal = ({
 			<View style={styles.confirmBox}>
 				<Text style={[styles.confirmTitle, { marginBottom: 12 }]}>{title}</Text>
 				<Text style={[styles.confirmDesc, { marginBottom: 20 }]}>
-					{"공고는 언제든 동아리 관리 → 공고 관리 탭에서\n수정/등록 가능해요"}
+					{"공고는 언제든 동아리 관리 → 공고 관리\n탭에서 수정/등록 가능해요"}
 				</Text>
 				<View style={styles.confirmButtons}>
 					<TouchableOpacity
