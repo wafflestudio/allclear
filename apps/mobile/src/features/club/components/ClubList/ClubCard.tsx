@@ -38,7 +38,9 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 			</View>
 			<View style={styles.contentWrapper}>
 				<View style={styles.textGroup}>
-					<Text style={styles.title}>{club.name}</Text>
+					<Text numberOfLines={1} ellipsizeMode="tail" style={styles.title}>
+						{club.name}
+					</Text>
 					<Text numberOfLines={2} style={styles.description}>
 						{getClubSummaryWithAffiliation(club)}
 					</Text>
