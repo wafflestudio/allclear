@@ -44,7 +44,7 @@ const HomeScreen = ({ navigation }: Props) => {
 		<WithViewEventLog params={{ screen_name: "home_screen" }}>
 			<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 				<View style={styles.headerContainer}>
-					<Text style={styles.subtitle}>서울대 모든 동아리</Text>
+					<Text style={styles.subtitle}>이번 학기엔 동아리까지,</Text>
 					<Image
 						style={styles.logo}
 						source={require("@/assets/images/brand/header-logo.png")}
@@ -76,17 +76,17 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: Colors.BACKGROUND_MAIN,
 		alignItems: "center",
-		paddingTop: vs(32),
+		paddingTop: vs(12),
 	},
 	headerContainer: {
 		width: s(353),
 		alignItems: "flex-start",
 		marginLeft: s(4),
-		marginBottom: vs(40),
+		marginBottom: vs(17),
 	},
 	subtitle: {
-		...typography.bodySMedium,
-		color: Colors.BODYTEXT_MAIN,
+		...typography.bodyMSemibold,
+		color: Colors.POINTCOLOR,
 	},
 	logo: {
 		width: s(119),
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
 	categoryContainer: {
 		width: s(353),
 		alignItems: "flex-start",
-		marginBottom: vs(30),
+		marginBottom: vs(50),
 	},
 	sectionTitle: {
 		...typography.headerXLSemibold,

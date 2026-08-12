@@ -16,7 +16,7 @@ const CategorySection = () => (
 					style={styles.titleIcon}
 				/>
 				<View style={styles.titleWrapper}>
-					<Text style={styles.subtitle}>이번 학기엔 동아리까지,</Text>
+					<Text style={styles.subtitle}>원하는 활동이 있으신가요?</Text>
 					<Text style={styles.title}>
 						<Text style={styles.titleAccent}>카테고리 </Text>모아보기
 					</Text>
@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
 		marginHorizontal: s(8),
 	},
 	subtitle: {
-		...typography.bodyMSemibold,
-		color: Colors.POINTCOLOR,
+		...typography.bodySRegular,
+		color: Colors.BODYTEXT_SUB,
 	},
 	title: {
 		...typography.headerXL,
