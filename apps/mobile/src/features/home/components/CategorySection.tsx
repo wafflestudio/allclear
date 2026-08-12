@@ -71,8 +71,8 @@ const styles = StyleSheet.create({
 		marginBottom: vs(12),
 	},
 	titleIcon: {
-		width: s(43.85),
-		height: s(42),
+		width: s(47),
+		height: s(46),
 		marginHorizontal: s(8),
 	},
 	subtitle: {
