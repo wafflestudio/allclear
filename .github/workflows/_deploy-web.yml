@@ -29,7 +29,7 @@ jobs:
       cancel-in-progress: true
 
     env:
-      IMAGE_TAG: ${{ github.run_number }}
+      IMAGE_TAG: ${{ github.run_id }}-${{ github.run_attempt }}
       OCIR_REGISTRY: yny.ocir.io
       OCIR_NAMESPACE: ax1dvc8vmenm
       OCIR_REPOSITORY: ${{ inputs.ocir_repository }}
