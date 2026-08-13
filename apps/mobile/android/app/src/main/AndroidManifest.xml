@@ -7,8 +7,14 @@
       android:label="@string/app_name"
       android:icon="@mipmap/ic_launcher"
       android:allowBackup="false"
+      <!-- React Native 0.77 still dispatches hardware back through onBackPressed. -->
+      android:enableOnBackInvokedCallback="false"
       android:screenOrientation="portrait"
       android:theme="@style/AppTheme">
+      <!-- Keep the existing portrait-only behavior on large screens while API 36 UI QA is pending. -->
+      <property
+        android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+        android:value="true" />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"
