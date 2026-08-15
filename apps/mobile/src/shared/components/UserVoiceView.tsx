@@ -10,7 +10,9 @@ import {
 } from "react-native";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/shared/constants/colors";
+import { typography } from "@/shared/constants/typography";
 import { serviceContext } from "@/shared/contexts/serviceContext";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
 	closeBottomSheet: () => void;
@@ -79,24 +81,9 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 					<TouchableOpacity
 						disabled={!input}
 						onPress={handleSubmit}
-						style={[
-							styles.button,
-							{
-								backgroundColor: "#3A3434" /* #deprecated color */,
-								marginTop: "auto",
-							},
-						]}
+						style={styles.button}
 					>
-						<Text
-							style={{
-								color: "#FFFFFF", // #deprecated color
-								fontSize: 16,
-								textAlign: "center",
-								fontWeight: "bold",
-							}}
-						>
-							의견 보내기
-						</Text>
+						<Text style={styles.buttonText}>의견 보내기</Text>
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -108,10 +95,11 @@ export default UserVoiceView;
 
 const styles = StyleSheet.create({
 	mainWrapper: {
-		display: "flex",
-		paddingVertical: 32,
-		paddingHorizontal: 24,
-		backgroundColor: "white",
+		flex: 1,
+		paddingTop: vs(24),
+		paddingBottom: vs(16),
+		paddingHorizontal: s(24),
+		backgroundColor: Colors.WHITE,
 	},
 
 	titleWrapper: {
@@ -119,43 +107,44 @@ const styles = StyleSheet.create({
 		flex: 0,
 		justifyContent: "center",
 		alignItems: "center",
-		marginBottom: 24,
+		marginBottom: vs(24),
 	},
 
 	title: {
-		fontSize: 16,
-		lineHeight: 24,
+		...typography.textInputMedium,
+		color: Colors.BODYTEXT_MAIN,
 	},
 
 	bold: {
-		fontWeight: "bold",
+		...typography.headerL,
 	},
 
 	inputWrapper: {},
 
 	input: {
-		height: "100%",
-		maxHeight: 120,
-		backgroundColor: "#FFFFFF", // #deprecated color
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		borderRadius: 12,
-		fontSize: 16,
-		color: "#3A3434", // #deprecated color
+		height: vs(120),
+		backgroundColor: Colors.WHITE,
+		paddingHorizontal: s(16),
+		paddingVertical: vs(8),
+		borderRadius: ms(12),
+		...typography.textInputMedium,
+		color: Colors.BODYTEXT_MAIN,
 		textAlignVertical: "top",
 	},
 
 	buttonWrapper: {
 		marginTop: "auto",
-		bottom: 0,
 		width: "100%",
-		left: 0,
-		right: 0,
 	},
 
 	button: {
-		padding: 16,
-		borderRadius: 12,
-		marginBottom: 12,
+		backgroundColor: Colors.BODYTEXT_MAIN,
+		padding: s(16),
+		borderRadius: ms(12),
+	},
+	buttonText: {
+		...typography.headerL,
+		color: Colors.WHITE,
+		textAlign: "center",
 	},
 });

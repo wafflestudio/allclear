@@ -12,7 +12,7 @@ import {
 	useEffect,
 	useRef,
 } from "react";
-import { BackHandler, Platform } from "react-native";
+import { BackHandler, Platform, StyleSheet } from "react-native";
 import UserVoiceView from "@/shared/components/UserVoiceView";
 
 const UserVoiceBottomSheetContext = createContext<{
@@ -83,17 +83,26 @@ export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 			<BottomSheetModal
 				ref={bottomSheetModalRef}
 				index={0}
-				snapPoints={[Platform.OS === "ios" ? 400 : 350]}
+				snapPoints={[Platform.OS === "ios" ? 440 : 420]}
 				enableDynamicSizing={false}
+				enablePanDownToClose
+				enableBlurKeyboardOnGesture
+				keyboardBlurBehavior="restore"
 				onDismiss={() => {
 					isBottomSheetOpenRef.current = false;
 				}}
 				backdropComponent={renderBackdrop}
 			>
-				<BottomSheetView style={{ flex: 1 }}>
+				<BottomSheetView style={styles.content}>
 					<UserVoiceView closeBottomSheet={closeBottomSheet} />
 				</BottomSheetView>
 			</BottomSheetModal>
 		</UserVoiceBottomSheetContext.Provider>
 	);
 };
+
+const styles = StyleSheet.create({
+	content: {
+		flex: 1,
+	},
+});
