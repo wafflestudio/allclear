@@ -510,6 +510,7 @@ $RECYCLE.BIN/
 #CocoaPods
 apps/mobile/ios/Pods
 apps/mobile/ios/tmp.xcconfig
+apps/mobile/ios/.xcode.env.local
 
 
 # End of https://www.toptal.com/developers/gitignore/api/reactnative,windows,macos,intellij+all,visualstudiocode,yarn,node

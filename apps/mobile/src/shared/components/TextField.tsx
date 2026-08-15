@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import {
+	Platform,
 	StyleSheet,
 	TextInput,
 	type TextInputProps,
@@ -86,7 +87,8 @@ const TextField = ({
 const styles = StyleSheet.create({
 	base: {
 		borderRadius: 8,
-		paddingVertical: 0,
+		paddingTop: 0,
+		paddingBottom: Platform.OS === "ios" ? 2 : 0,
 		paddingHorizontal: 20,
 		textAlignVertical: "center",
 	},

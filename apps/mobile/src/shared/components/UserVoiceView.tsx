@@ -5,9 +5,11 @@ import {
 	StyleSheet,
 	Text,
 	TouchableOpacity,
+	TouchableWithoutFeedback,
 	View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import { Colors } from "@/shared/constants/colors";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 
 type Props = {
@@ -45,55 +47,60 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 	};
 
 	return (
-		<View style={styles.mainWrapper}>
-			<View style={styles.titleWrapper}>
+		<TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
+			<View style={styles.mainWrapper}>
+				<View style={styles.titleWrapper}>
+					<View>
+						<Text style={[styles.title, styles.bold]}>
+							여러분의 의견이 필요해요!
+						</Text>
+						<Text style={styles.title}>
+							올클에 건의사항이 있다면 자유롭게 알려주세요😊
+						</Text>
+					</View>
+				</View>
 				<View>
-					<Text style={[styles.title, styles.bold]}>
-						여러분의 의견이 필요해요!
-					</Text>
-					<Text style={styles.title}>
-						올클에 건의사항이 있다면 자유롭게 알려주세요😊
-					</Text>
+					<View style={styles.inputWrapper}>
+						<BottomSheetTextInput
+							value={input}
+							onChangeText={setInput}
+							multiline
+							numberOfLines={4}
+							maxLength={1000}
+							returnKeyType="done"
+							submitBehavior="blurAndSubmit"
+							style={styles.input}
+							placeholder="여기에 의견을 적어주세요. (1000자 이내)"
+							placeholderTextColor={Colors.BODYTEXT_SUB}
+						/>
+					</View>
 				</View>
-			</View>
-			<View>
-				<View style={styles.inputWrapper}>
-					<BottomSheetTextInput
-						value={input}
-						onChangeText={setInput}
-						multiline
-						numberOfLines={4}
-						maxLength={1000}
-						style={styles.input}
-						placeholder="여기에 의견을 적어주세요. (1000자 이내)"
-					/>
-				</View>
-			</View>
-			<View style={styles.buttonWrapper}>
-				<TouchableOpacity
-					disabled={!input}
-					onPress={handleSubmit}
-					style={[
-						styles.button,
-						{
-							backgroundColor: "#3A3434" /* #deprecated color */,
-							marginTop: "auto",
-						},
-					]}
-				>
-					<Text
-						style={{
-							color: "#FFFFFF", // #deprecated color
-							fontSize: 16,
-							textAlign: "center",
-							fontWeight: "bold",
-						}}
+				<View style={styles.buttonWrapper}>
+					<TouchableOpacity
+						disabled={!input}
+						onPress={handleSubmit}
+						style={[
+							styles.button,
+							{
+								backgroundColor: "#3A3434" /* #deprecated color */,
+								marginTop: "auto",
+							},
+						]}
 					>
-						의견 보내기
-					</Text>
-				</TouchableOpacity>
+						<Text
+							style={{
+								color: "#FFFFFF", // #deprecated color
+								fontSize: 16,
+								textAlign: "center",
+								fontWeight: "bold",
+							}}
+						>
+							의견 보내기
+						</Text>
+					</TouchableOpacity>
+				</View>
 			</View>
-		</View>
+		</TouchableWithoutFeedback>
 	);
 };
 

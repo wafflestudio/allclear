@@ -121,6 +121,8 @@ const EditProfileScreen = () => {
 				<View style={[styles.card, { zIndex: 10 }]}>
 					<Text style={styles.label}>단과대 및 학과</Text>
 					<DropDownPicker
+						zIndex={2000}
+						zIndexInverse={1000}
 						open={openCollegeDropDown}
 						setOpen={(val) => {
 							setOpenCollegeDropDown(val);
@@ -143,6 +145,8 @@ const EditProfileScreen = () => {
 					/>
 					<View style={styles.pickerGap} />
 					<DropDownPicker
+						zIndex={1000}
+						zIndexInverse={2000}
 						disabled={!college}
 						disabledStyle={styles.pickerDisabled}
 						open={openMajorDropDown}
@@ -154,7 +158,7 @@ const EditProfileScreen = () => {
 						setValue={setMajor}
 						items={majors?.map((c) => ({ label: c, value: c })) ?? []}
 						placeholder="학과를 선택해주세요"
-						style={[styles.picker, { zIndex: -1 }]}
+						style={styles.picker}
 						dropDownContainerStyle={styles.pickerDropdown}
 						placeholderStyle={styles.pickerPlaceholder}
 						textStyle={styles.pickerText}
