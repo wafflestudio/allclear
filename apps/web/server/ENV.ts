@@ -36,6 +36,6 @@ export const ENV = {
     DEFAULT_CLUB_IMAGE: 'https://cdn.all-clear.cc/default.png',
   },
   DISCORD: {
-    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL ?? '',
+    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL_USER_VOICE ?? '',
   },
 }
