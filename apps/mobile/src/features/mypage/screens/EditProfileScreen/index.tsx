@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import CommunityIcon from "react-native-vector-icons/MaterialCommunityIcons";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { buildUpdatedProfile } from "@/features/mypage/profileUpdate";
 import Header from "@/shared/components/BackHeader";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
@@ -83,8 +84,17 @@ const EditProfileScreen = () => {
 				admissionClass,
 			});
 
-			const updatedUser = await userService.getUser();
-			setUser(updatedUser);
+			if (user) {
+				setUser(
+					buildUpdatedProfile(user, {
+						nickname: name,
+						collegeMajorId,
+						college,
+						major,
+						admissionClass,
+					}),
+				);
+			}
 			navigation.goBack();
 
 			Toast.show({ type: "info", text1: "프로필이 수정되었어요!" });
@@ -158,7 +168,7 @@ const EditProfileScreen = () => {
 						setValue={setMajor}
 						items={majors?.map((c) => ({ label: c, value: c })) ?? []}
 						placeholder="학과를 선택해주세요"
-						style={styles.picker}
+						style={[styles.picker, styles.majorPicker]}
 						dropDownContainerStyle={styles.pickerDropdown}
 						placeholderStyle={styles.pickerPlaceholder}
 						textStyle={styles.pickerText}
@@ -288,6 +298,9 @@ const styles = StyleSheet.create({
 		paddingVertical: vs(4),
 		backgroundColor: Colors.WHITE,
 		borderRadius: ms(12),
+	},
+	majorPicker: {
+		paddingHorizontal: s(12),
 	},
 	pickerDropdown: {
 		borderWidth: 0,

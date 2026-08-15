@@ -1,8 +1,4 @@
-import {
-	type RouteProp,
-	useNavigation,
-	useRoute,
-} from "@react-navigation/native";
+import { type RouteProp, useRoute } from "@react-navigation/native";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useContext, useEffect, useState } from "react";
 import {
@@ -52,7 +48,6 @@ type AdminFormErrors = {
 const ManageClubRegistrationScreen = () => {
 	const { clubService } = useContext(serviceContext);
 	const { user } = useProfile();
-	const nav = useNavigation();
 	const queryClient = useQueryClient();
 	const route =
 		useRoute<
@@ -65,14 +60,6 @@ const ManageClubRegistrationScreen = () => {
 	const isClubRegistrationEditMode = editMode === "clubRegistration";
 	const isEditMode = editClubId !== undefined && editMode !== undefined;
 
-	useEffect(() => {
-		const parent = nav.getParent();
-		parent?.setOptions({ tabBarStyle: { display: "none" } });
-
-		return () => {
-			parent?.setOptions({ tabBarStyle: undefined });
-		};
-	}, [nav]);
 	const [formStep, setFormStep] = useState<"form" | "clubSearch">("form");
 	const [adminForm, setAdminForm] = useState<AdminFormData>({
 		name: isEditMode ? "" : (user?.name ?? ""),

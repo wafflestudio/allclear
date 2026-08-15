@@ -10,6 +10,7 @@ import EditProfileScreen from "@/features/mypage/screens/EditProfileScreen";
 import TextField from "@/shared/components/TextField";
 import UserVoiceView from "@/shared/components/UserVoiceView";
 import { Colors } from "@/shared/constants/colors";
+import { vs } from "@/shared/utils/scale";
 
 jest.mock("react", () => {
 	const actual = jest.requireActual("react");
@@ -119,6 +120,10 @@ describe("TestFlight QA UI regressions", () => {
 			zIndex: 1000,
 			zIndexInverse: 2000,
 		});
+		const majorPickerStyle = StyleSheet.flatten(
+			pickers[1].props.style as TextStyle,
+		);
+		expect(majorPickerStyle.paddingHorizontal).toBeGreaterThan(0);
 	});
 
 	it("dismisses the feedback keyboard and uses a readable placeholder", () => {
@@ -144,6 +149,21 @@ describe("TestFlight QA UI regressions", () => {
 		expect(dismissArea).toBeDefined();
 		(dismissArea.props.onPress as () => void)();
 		expect(dismissSpy).toHaveBeenCalled();
+	});
+
+	it("keeps feedback content and its submit button inside the sheet", () => {
+		const view = UserVoiceView({ closeBottomSheet: jest.fn() });
+		const content = view.props.children as ElementWithProps;
+		const contentStyle = StyleSheet.flatten(content.props.style as TextStyle);
+		const [input] = findAll(
+			view,
+			(element) =>
+				element.props.placeholder === "여기에 의견을 적어주세요. (1000자 이내)",
+		);
+		const inputStyle = StyleSheet.flatten(input.props.style as TextStyle);
+
+		expect(contentStyle.flex).toBe(1);
+		expect(inputStyle.height).toBe(vs(120));
 	});
 
 	it("optically centers single-line text on iOS", () => {

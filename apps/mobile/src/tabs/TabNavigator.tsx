@@ -18,6 +18,7 @@ import { s, vs } from "@/shared/utils/scale";
 import { HomeTab } from "@/tabs/HomeTab";
 import { MyPageTab } from "@/tabs/MyPageTab";
 import { RegisterClubTab } from "@/tabs/RegisterClubTab";
+import { shouldHideTabBar } from "@/tabs/tabBarVisibility";
 import { SavedTab } from "./SaveTab";
 import { SearchTab } from "./SearchTab";
 
@@ -80,7 +81,7 @@ export function TabNavigator() {
 		route: RouteProp<Record<string, object | undefined>, string>,
 	) => {
 		const focusedRouteName = getFocusedRouteNameFromRoute(route);
-		if (focusedRouteName === SCREEN_TYPE.WEBVIEW) {
+		if (shouldHideTabBar(focusedRouteName)) {
 			return { display: "none" as const };
 		}
 		return defaultTabBarStyle;

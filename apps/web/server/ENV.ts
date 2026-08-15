@@ -35,9 +35,7 @@ export const ENV = {
     GET_CLUB_IMAGE_PATH: (filename: string) => `https://cdn.all-clear.cc/club%2F${filename}`,
     DEFAULT_CLUB_IMAGE: 'https://cdn.all-clear.cc/default.png',
   },
-  SLACK: {
-    TOKEN: {
-      DRAGONITE: process.env.SLACK_TOKEN_DRAGONITE ?? '',
-    },
+  DISCORD: {
+    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL_USER_VOICE ?? '',
   },
 }
