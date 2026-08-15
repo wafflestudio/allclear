@@ -119,6 +119,10 @@ describe("TestFlight QA UI regressions", () => {
 			zIndex: 1000,
 			zIndexInverse: 2000,
 		});
+		const majorPickerStyle = StyleSheet.flatten(
+			pickers[1].props.style as TextStyle,
+		);
+		expect(majorPickerStyle.paddingHorizontal).toBeGreaterThan(0);
 	});
 
 	it("dismisses the feedback keyboard and uses a readable placeholder", () => {
