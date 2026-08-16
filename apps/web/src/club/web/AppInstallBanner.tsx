@@ -1,11 +1,11 @@
 import { useRouter } from 'next/router'
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react'
-import * as GA from '../../common/connectors/ga'
-import LocalStorage from '../../common/storage/storage'
-import { APP_BANNER_DISMISSED_STORAGE_KEY } from '../../common/storage/storage-key'
 import { MdiIcon } from '../shared/components/icons'
 import { detectMobilePlatform, isAppBannerPath, type MobilePlatform, toPathname } from './appLink'
+import * as GA from './ga'
 import { openCurrentPageInApp } from './openInApp'
+import LocalStorage from './storage'
+import { APP_BANNER_DISMISSED_STORAGE_KEY } from './storage-key'
 
 export const APP_BANNER_HEIGHT = 64
 

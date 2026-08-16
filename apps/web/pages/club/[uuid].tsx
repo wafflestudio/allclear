@@ -31,8 +31,8 @@ import { getCategoryTheme } from '../../src/club/shared/constants'
 import { useSaveClub } from '../../src/club/shared/hooks/useSaveClub'
 import { getClubSummaryWithAffiliation } from '../../src/club/shared/utils/club'
 import { getClubSnsUrls } from '../../src/club/shared/utils/clubSns'
+import { OpenGraph } from '../../src/club/web/OpenGraph'
 import { openClubInApp } from '../../src/club/web/openInApp'
-import { OpenGraph } from '../../src/common/components/OpenGraph'
 
 type Props = {
   club: ClubDetail
