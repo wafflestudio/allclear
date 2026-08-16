@@ -13,7 +13,7 @@ import { Analytics } from '@vercel/analytics/react'
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import { AuthProvider } from '../src/club/auth/AuthContext'
-import { AppBannerProvider } from '../src/club/components/AppInstallBanner'
+import { AppBannerProvider } from '../src/club/web/AppInstallBanner'
 import * as GA from '../src/common/connectors/ga'
 import { WEB_ENV } from '../src/WEB_ENV'
 

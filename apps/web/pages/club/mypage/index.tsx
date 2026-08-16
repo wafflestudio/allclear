@@ -5,29 +5,31 @@ import { useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
 import {
   isRejectedRequest,
-  leaveAccount,
   type ManagedClubListItem,
   useCancelManagedClubRequest,
-  useCreateUserVoice,
   useManageClubs,
+} from '../../../src/club/api/managers'
+import {
+  leaveAccount,
+  useCreateUserVoice,
   useReadNotification,
   useUserNotifications,
-} from '../../../src/club/api.mypage'
+} from '../../../src/club/api/users'
 import { useProfile, useRequireLogin } from '../../../src/club/auth/AuthContext'
 import { clearLoginToken } from '../../../src/club/auth/token'
-import { AlertModal } from '../../../src/club/components/AlertModal'
-import { AppTabBar } from '../../../src/club/components/AppTabBar'
-import { MdiIcon } from '../../../src/club/components/icons'
-import { EditPencilButton } from '../../../src/club/components/mypage/EditPencilButton'
-import { ManageClubList } from '../../../src/club/components/mypage/ManageClubList'
-import { ManageClubSheet } from '../../../src/club/components/mypage/ManageClubSheet'
-import { RequestRemovalSuccessModal } from '../../../src/club/components/mypage/RequestRemovalSuccessModal'
-import { UserVoiceSheet } from '../../../src/club/components/mypage/UserVoiceSheet'
+import { ManageClubList } from '../../../src/club/features/mypage/ManageClubList'
+import { ManageClubSheet } from '../../../src/club/features/mypage/ManageClubSheet'
+import { RequestRemovalSuccessModal } from '../../../src/club/features/mypage/RequestRemovalSuccessModal'
+import { UserVoiceSheet } from '../../../src/club/features/mypage/UserVoiceSheet'
+import { AlertModal } from '../../../src/club/shared/components/AlertModal'
+import { AppTabBar } from '../../../src/club/shared/components/AppTabBar'
+import { EditPencilButton } from '../../../src/club/shared/components/EditPencilButton'
+import { MdiIcon } from '../../../src/club/shared/components/icons'
 import {
   getNotificationClub,
   getUserNotificationContent,
-} from '../../../src/club/components/mypage/userNotification'
-import { openAppDeepLink } from '../../../src/club/openInApp'
+} from '../../../src/club/shared/utils/userNotification'
+import { openAppDeepLink } from '../../../src/club/web/openInApp'
 
 /**
  * 앱 MyPageScreen 과 동일: bg #F3F0F5, padding 16 (아래 32) gap 12

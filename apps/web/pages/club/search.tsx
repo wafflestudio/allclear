@@ -6,26 +6,25 @@ import {
   buildSearchParams,
   type ClubSearchFilters,
   DEFAULT_SEARCH_FILTERS,
-  useClearRecentSearches,
-  useRecentSearches,
+  useRandomRecommendationsMutation,
   useSearchClubs,
-} from '../../src/club/api'
-import { useRandomRecommendationsMutation } from '../../src/club/api.lists'
-import { AppTabBar } from '../../src/club/components/AppTabBar'
-import { ClubList } from '../../src/club/components/ClubCard'
-import { PopularClubs } from '../../src/club/components/search/PopularClubs'
+} from '../../src/club/api/clubs'
+import { useClearRecentSearches, useRecentSearches } from '../../src/club/api/recentSearches'
+import { ClubList } from '../../src/club/features/club/list/ClubCard'
+import { PopularClubs } from '../../src/club/features/search/PopularClubs'
 import {
   RandomRecommendations,
   RandomRecommendationsSkeleton,
-} from '../../src/club/components/search/RandomRecommendations'
-import { RecentSearches } from '../../src/club/components/search/RecentSearches'
-import { SearchBar } from '../../src/club/components/search/SearchBar'
-import { SearchFilterBar } from '../../src/club/components/search/SearchFilterBar'
+} from '../../src/club/features/search/RandomRecommendations'
+import { RecentSearches } from '../../src/club/features/search/RecentSearches'
+import { SearchBar } from '../../src/club/features/search/SearchBar'
+import { SearchFilterBar } from '../../src/club/features/search/SearchFilterBar'
 import {
   resetClubSearchOverlayFilters,
   SearchFilterOverlay,
-} from '../../src/club/components/search/SearchFilterOverlay'
-import { TypoCorrectionNotice } from '../../src/club/components/search/TypoCorrectionNotice'
+} from '../../src/club/features/search/SearchFilterOverlay'
+import { TypoCorrectionNotice } from '../../src/club/features/search/TypoCorrectionNotice'
+import { AppTabBar } from '../../src/club/shared/components/AppTabBar'
 
 const SEARCH_PATH = '/club/search'
 const TAB_BAR_HEIGHT = 86

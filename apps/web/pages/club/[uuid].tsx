@@ -9,26 +9,29 @@ import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { z } from 'zod'
 import { useProfile, useRequireLogin } from '../../src/club/auth/AuthContext'
-import { BackgroundCard } from '../../src/club/components/BackgroundCard'
-import { ClubDetailHeader, DETAIL_HEADER_HEIGHT } from '../../src/club/components/ClubDetailHeader'
+import { BackgroundCard } from '../../src/club/features/club/detail/BackgroundCard'
+import {
+  ClubDetailHeader,
+  DETAIL_HEADER_HEIGHT,
+} from '../../src/club/features/club/detail/ClubDetailHeader'
 import {
   CLUB_DETAIL_TABS,
   ClubDetailTabBar,
   type ClubTabKey,
-} from '../../src/club/components/ClubDetailTabBar'
-import { getClubSummaryWithAffiliation } from '../../src/club/components/detail/club'
-import { getClubSnsUrls } from '../../src/club/components/detail/clubSns'
-import { SnsRow } from '../../src/club/components/detail/SnsRow'
-import { VerificationMarkButton } from '../../src/club/components/detail/VerificationMark'
-import { VerificationOverlay } from '../../src/club/components/detail/VerificationOverlay'
-import { InfoTab } from '../../src/club/components/InfoTab'
-import { MdiIcon } from '../../src/club/components/icons'
-import { RecruitTab } from '../../src/club/components/RecruitTab'
-import { ReviewKeywordPill } from '../../src/club/components/ReviewKeywordPill'
-import { ReviewTab } from '../../src/club/components/ReviewTab'
-import { getCategoryTheme } from '../../src/club/constants'
-import { openClubInApp } from '../../src/club/openInApp'
-import { useSaveClub } from '../../src/club/useSaveClub'
+} from '../../src/club/features/club/detail/ClubDetailTabBar'
+import { InfoTab } from '../../src/club/features/club/detail/InfoTab'
+import { RecruitTab } from '../../src/club/features/club/detail/RecruitTab'
+import { ReviewTab } from '../../src/club/features/club/detail/ReviewTab'
+import { SnsRow } from '../../src/club/features/club/detail/SnsRow'
+import { VerificationMarkButton } from '../../src/club/features/club/detail/VerificationMark'
+import { VerificationOverlay } from '../../src/club/features/club/detail/VerificationOverlay'
+import { MdiIcon } from '../../src/club/shared/components/icons'
+import { ReviewKeywordPill } from '../../src/club/shared/components/ReviewKeywordPill'
+import { getCategoryTheme } from '../../src/club/shared/constants'
+import { useSaveClub } from '../../src/club/shared/hooks/useSaveClub'
+import { getClubSummaryWithAffiliation } from '../../src/club/shared/utils/club'
+import { getClubSnsUrls } from '../../src/club/shared/utils/clubSns'
+import { openClubInApp } from '../../src/club/web/openInApp'
 import { OpenGraph } from '../../src/common/components/OpenGraph'
 
 type Props = {

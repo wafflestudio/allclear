@@ -2,11 +2,15 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { toast } from 'react-toastify'
-import { useClub, useReviewKeywordCategories } from '../../../src/club/api'
-import { useCreateClubReview, useMyClubReview } from '../../../src/club/api.detail'
+import { useClub } from '../../../src/club/api/clubs'
+import {
+  useCreateClubReview,
+  useMyClubReview,
+  useReviewKeywordCategories,
+} from '../../../src/club/api/reviews'
 import { useProfile, useRequireLogin } from '../../../src/club/auth/AuthContext'
-import { BackgroundCard } from '../../../src/club/components/BackgroundCard'
-import { BackHeader } from '../../../src/club/components/BackHeader'
+import { BackgroundCard } from '../../../src/club/features/club/detail/BackgroundCard'
+import { BackHeader } from '../../../src/club/shared/components/BackHeader'
 
 // 앱 reviewCard: padding 20, radius 15, 그림자 (0,1) 5% blur 5
 const REVIEW_CARD_STYLE = {

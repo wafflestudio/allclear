@@ -2,11 +2,11 @@ import { useRouter } from 'next/router'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 import { useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
-import { isAppBannerPath, toPathname } from '../appLink'
-import { AppModalManager } from './AppModalManager'
-import { LoginSheet } from './LoginSheet'
+import { AppModalManager } from '../shared/components/AppModalManager'
+import { LoginSheet } from '../shared/components/LoginSheet'
+import type { Term } from '../shared/hooks/usePendingTerms'
+import { isAppBannerPath, toPathname } from '../web/appLink'
 import { authFetch, clearLoginToken, getLoginToken } from './token'
-import type { Term } from './usePendingTerms'
 
 // GET /api/v2/users/me 의 profile (server/domain/model/User.ts)
 export type User = {

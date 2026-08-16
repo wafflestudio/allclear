@@ -1,9 +1,9 @@
 import Head from 'next/head'
 import { useRouter } from 'next/router'
-import { useClubsByCategory } from '../../../src/club/api'
-import { AppTabBar } from '../../../src/club/components/AppTabBar'
-import { BackHeader } from '../../../src/club/components/BackHeader'
-import { ClubList } from '../../../src/club/components/ClubCard'
+import { useClubsByCategory } from '../../../src/club/api/clubs'
+import { ClubList } from '../../../src/club/features/club/list/ClubCard'
+import { AppTabBar } from '../../../src/club/shared/components/AppTabBar'
+import { BackHeader } from '../../../src/club/shared/components/BackHeader'
 
 // 앱 ClubListScreen과 동일: BackHeader("{카테고리} 동아리", 뒤로 → 홈) + 카테고리 테마의 카드 목록
 // (로딩: 스켈레톤 / 0건: "조건에 맞는 동아리가 없어요")

@@ -1,10 +1,10 @@
 import Head from 'next/head'
 import { useEffect } from 'react'
 import { useProfile, useRequireLogin } from '../../src/club/auth/AuthContext'
-import { AppTabBar } from '../../src/club/components/AppTabBar'
-import { BackHeader } from '../../src/club/components/BackHeader'
-import { ClubList } from '../../src/club/components/ClubCard'
-import { useSavedClubs } from '../../src/club/useSaveClub'
+import { ClubList } from '../../src/club/features/club/list/ClubCard'
+import { AppTabBar } from '../../src/club/shared/components/AppTabBar'
+import { BackHeader } from '../../src/club/shared/components/BackHeader'
+import { useSavedClubs } from '../../src/club/shared/hooks/useSaveClub'
 
 // 앱 SavedClubListScreen과 동일: 가운데 타이틀 헤더("저장한 동아리", 뒤로가기 없음) + 카드 목록
 // (로딩: 스켈레톤 / 0건: "저장한 동아리가 없어요")

@@ -1,10 +1,14 @@
 import Head from 'next/head'
 import Link from 'next/link'
-import { useLatestClubs } from '../../src/club/api'
-import { AppTabBar } from '../../src/club/components/AppTabBar'
-import { ClubPreviewCardSkeleton } from '../../src/club/components/ClubPreviewCard'
-import { HorizontalCarousel } from '../../src/club/components/HorizontalCarousel'
-import { CategoryIconMap, type CategoryName, CLUB_CATEGORY_NAMES } from '../../src/club/constants'
+import { useLatestClubs } from '../../src/club/api/clubs'
+import { AppTabBar } from '../../src/club/shared/components/AppTabBar'
+import { ClubPreviewCardSkeleton } from '../../src/club/shared/components/ClubPreviewCard'
+import { HorizontalCarousel } from '../../src/club/shared/components/HorizontalCarousel'
+import {
+  CategoryIconMap,
+  type CategoryName,
+  CLUB_CATEGORY_NAMES,
+} from '../../src/club/shared/constants'
 
 // 앱 HomeScreen과 동일한 구성: 헤더(문구 + 로고) → 카테고리 섹션 → 최신 공고 캐러셀
 const ClubHomePage = () => {

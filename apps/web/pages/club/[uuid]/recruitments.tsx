@@ -6,13 +6,13 @@ import {
   useClubRecruitments,
   useRecruitmentDetail,
   useRepresentativeRecruitment,
-} from '../../../src/club/api.detail'
+} from '../../../src/club/api/recruitments'
 import { useProfile, useRequireLogin } from '../../../src/club/auth/AuthContext'
-import { BackgroundCard } from '../../../src/club/components/BackgroundCard'
-import { BackHeader } from '../../../src/club/components/BackHeader'
-import { RecruitmentDetailCard } from '../../../src/club/components/detail/RecruitmentDetailCard'
-import { getNextExpandedRecruitmentId } from '../../../src/club/components/detail/recruitmentPresentation'
-import { MdiIcon } from '../../../src/club/components/icons'
+import { BackgroundCard } from '../../../src/club/features/club/detail/BackgroundCard'
+import { RecruitmentDetailCard } from '../../../src/club/features/club/detail/RecruitmentDetailCard'
+import { getNextExpandedRecruitmentId } from '../../../src/club/features/club/utils/recruitmentPresentation'
+import { BackHeader } from '../../../src/club/shared/components/BackHeader'
+import { MdiIcon } from '../../../src/club/shared/components/icons'
 
 // 앱 itemCard: paddingVertical 14 (좌우는 BackgroundCard 기본 16)
 const ITEM_CARD_STYLE = { paddingTop: 14, paddingBottom: 14 } as const
