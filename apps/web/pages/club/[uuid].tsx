@@ -140,7 +140,11 @@ const ClubDetailPage = ({ club }: Props) => {
           </div>
 
           {/* 탭바: 스크롤 시 헤더(56px) 아래에 핀 고정 (앱의 pinned 탭바와 동일) */}
-          <div ref={tabBarRef} className="sticky top-14 z-20">
+          <div
+            ref={tabBarRef}
+            className="sticky z-20"
+            style={{ top: 'calc(3.5rem + var(--app-banner-h))' }}
+          >
             <ClubDetailTabBar activeTab={activeTab} onChange={setActiveTab} />
           </div>
 

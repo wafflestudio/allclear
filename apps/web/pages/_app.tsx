@@ -13,6 +13,7 @@ import { Analytics } from '@vercel/analytics/react'
 import type { Metadata } from 'next'
 import Script from 'next/script'
 import { AuthProvider } from '../src/club/auth/AuthContext'
+import { AppBannerProvider } from '../src/club/components/AppInstallBanner'
 import * as GA from '../src/common/connectors/ga'
 import { WEB_ENV } from '../src/WEB_ENV'
 
@@ -78,7 +79,9 @@ const App = ({ Component, pageProps }: AppProps) => {
       />
       <QueryClientProvider client={queryClientRef.current}>
         <AuthProvider>
-          <Component {...pageProps} />
+          <AppBannerProvider>
+            <Component {...pageProps} />
+          </AppBannerProvider>
         </AuthProvider>
         <ToastContainer
           position="top-center"

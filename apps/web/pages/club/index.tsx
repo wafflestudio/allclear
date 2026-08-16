@@ -21,10 +21,8 @@ const ClubHomePage = () => {
 
       {/* 앱 홈과 동일하게 뷰포트에 꽉 차는 고정 화면 (페이지 스크롤 없음).
           섹션 사이 여백은 화면이 낮으면 min까지 줄어들고, 그래도 넘치면 내부 스크롤로 폴백. */}
-      <div
-        className="h-screen bg-[#FAFAFA] font-pretendard text-[#202020]"
-        style={{ height: '100dvh' }}
-      >
+      {/* h-screen은 globals.css에서 dvh + 앱 배너 높이를 반영하도록 확장해두었다 */}
+      <div className="h-screen bg-[#FAFAFA] font-pretendard text-[#202020]">
         <main className="scrollbar-hide mx-auto flex h-full w-full max-w-[480px] flex-col items-center overflow-y-auto pt-8">
           {/* 상단 헤더 */}
           <div className="w-full shrink-0 px-[18px]">

@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router'
 import { type RefObject, useEffect, useState } from 'react'
+import { useAppBannerHeight } from './AppInstallBanner'
 import { MdiIcon } from './icons'
 
 export const DETAIL_HEADER_HEIGHT = 56
@@ -18,16 +19,19 @@ export function ClubDetailHeader({ title, tabBarRef }: Props) {
   const router = useRouter()
   const [bgOpacity, setBgOpacity] = useState(0)
   const [isPinned, setIsPinned] = useState(false)
+  // 앱 설치 배너가 떠 있으면 헤더도 그만큼 아래에서 시작한다
+  const bannerHeight = useAppBannerHeight()
 
   useEffect(() => {
+    const headerBottom = bannerHeight + DETAIL_HEADER_HEIGHT
     const onScroll = () => {
       const el = tabBarRef.current
       if (!el) return
       const top = el.getBoundingClientRect().top
-      // 핀 여부: 스티키 탭바 윗변이 헤더 하단(56)에 닿았는가
-      setIsPinned(top <= DETAIL_HEADER_HEIGHT)
-      // 임계 스크롤량 = 탭바의 문서상 y좌표 − 56 (핀 시 top==56이라 자동으로 1)
-      const threshold = window.scrollY + top - DETAIL_HEADER_HEIGHT
+      // 핀 여부: 스티키 탭바 윗변이 헤더 하단에 닿았는가
+      setIsPinned(top <= headerBottom)
+      // 임계 스크롤량 = 탭바의 문서상 y좌표 − 헤더 하단 (핀 시 top==헤더 하단이라 자동으로 1)
+      const threshold = window.scrollY + top - headerBottom
       setBgOpacity(threshold > 0 ? Math.min(window.scrollY / threshold, 1) : 1)
     }
     onScroll()
@@ -37,7 +41,7 @@ export function ClubDetailHeader({ title, tabBarRef }: Props) {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
     }
-  }, [tabBarRef])
+  }, [tabBarRef, bannerHeight])
 
   const handleBack = () => {
     if (window.history.length > 1) {
@@ -48,7 +52,7 @@ export function ClubDetailHeader({ title, tabBarRef }: Props) {
   }
 
   return (
-    <div className="fixed inset-x-0 top-0 z-40">
+    <div className="fixed inset-x-0 z-40" style={{ top: bannerHeight }}>
       <div className="relative mx-auto flex h-14 max-w-[480px] items-center px-4">
         <div
           className="pointer-events-none absolute inset-0 bg-[#FAFAFA]"
