@@ -21,8 +21,11 @@ type Props = {
 const UserVoiceView = ({ closeBottomSheet }: Props) => {
 	const [input, setInput] = React.useState("");
 	const { userService } = useContext(serviceContext);
+	const canSubmit = input.trim().length > 0;
 
 	const handleSubmit = async () => {
+		if (!canSubmit) return;
+
 		try {
 			Keyboard.dismiss();
 			closeBottomSheet();
@@ -69,8 +72,8 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 							multiline
 							numberOfLines={4}
 							maxLength={1000}
-							returnKeyType="done"
-							submitBehavior="blurAndSubmit"
+							returnKeyType="default"
+							submitBehavior="newline"
 							style={styles.input}
 							placeholder="여기에 의견을 적어주세요. (1000자 이내)"
 							placeholderTextColor={Colors.BODYTEXT_SUB}
@@ -79,9 +82,10 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 				</View>
 				<View style={styles.buttonWrapper}>
 					<TouchableOpacity
-						disabled={!input}
+						disabled={!canSubmit}
+						accessibilityState={{ disabled: !canSubmit }}
 						onPress={handleSubmit}
-						style={styles.button}
+						style={[styles.button, !canSubmit && styles.buttonDisabled]}
 					>
 						<Text style={styles.buttonText}>의견 보내기</Text>
 					</TouchableOpacity>
@@ -97,7 +101,7 @@ const styles = StyleSheet.create({
 	mainWrapper: {
 		flex: 1,
 		paddingTop: vs(24),
-		paddingBottom: vs(16),
+		paddingBottom: vs(8),
 		paddingHorizontal: s(24),
 		backgroundColor: Colors.WHITE,
 	},
@@ -122,7 +126,7 @@ const styles = StyleSheet.create({
 	inputWrapper: {},
 
 	input: {
-		height: vs(120),
+		height: vs(144),
 		backgroundColor: Colors.WHITE,
 		paddingHorizontal: s(16),
 		paddingVertical: vs(8),
@@ -141,6 +145,9 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BODYTEXT_MAIN,
 		padding: s(16),
 		borderRadius: ms(12),
+	},
+	buttonDisabled: {
+		backgroundColor: Colors.BUTTON_UNSELECTED,
 	},
 	buttonText: {
 		...typography.headerL,
