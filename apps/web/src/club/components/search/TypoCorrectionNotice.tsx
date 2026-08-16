@@ -2,10 +2,11 @@ import { MdiIcon } from '../icons'
 
 type Props = {
   correctedQuery: string
-  onClose: () => void
+  onClose?: () => void
 }
 
-// 앱 TypoCorrectionNotice와 동일: 아이콘 원 + 안내 2줄 + 닫기
+// 앱 TypoCorrectionNotice와 동일: 좌우 17 / 위아래 13, radius 10, 배경 rgba(243,240,245,0.5),
+// 흰 원(34) 안 auto-fix 18 #874FFF + 안내 2줄(12/500 lh17 #757474, 교정어는 #874FFF) + 닫기(16 원, #C1C1C1, close 12 흰색, hitSlop 8)
 export function TypoCorrectionNotice({ correctedQuery, onClose }: Props) {
   return (
     <div className="flex w-full items-center justify-between rounded-[10px] bg-[rgba(243,240,245,0.5)] px-[17px] py-[13px]">
@@ -23,14 +24,18 @@ export function TypoCorrectionNotice({ correctedQuery, onClose }: Props) {
           </p>
         </div>
       </div>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="안내 닫기"
-        className="ml-3 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#C1C1C1] text-white"
-      >
-        <MdiIcon name="close" size={12} />
-      </button>
+      {onClose ? (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="안내 닫기"
+          className="-m-2 ml-1 shrink-0 p-2"
+        >
+          <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C1C1C1] text-white">
+            <MdiIcon name="close" size={12} />
+          </span>
+        </button>
+      ) : null}
     </div>
   )
 }

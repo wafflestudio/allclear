@@ -111,27 +111,41 @@ export function useSanitizedHtml(html: string): string | null {
   return safeHtml
 }
 
-// 앱의 HtmlView 기본 타이포그래피: 12/400/18, #757474, p 마진 제거
-export const HTML_CONTENT_CLASS =
-  'whitespace-pre-wrap break-words text-[12px] font-normal leading-[18px] text-[#757474] [&_p]:m-0 [&_p]:p-0'
+// 앱 HtmlView 의 공통 규칙: whiteSpace pre(줄바꿈/공백 보존), p 마진 제거
+export const HTML_CONTENT_LAYOUT_CLASS =
+  'whitespace-pre-wrap break-words [&_p]:m-0 [&_p]:p-0 [&_a]:underline'
+
+// 앱 HtmlView 기본 타이포그래피(BASE_STYLE): bodySRegular 12/400/18, #757474
+export const HTML_CONTENT_TYPOGRAPHY_CLASS = 'text-[12px] font-normal leading-[18px] text-[#757474]'
+
+export const HTML_CONTENT_CLASS = `${HTML_CONTENT_LAYOUT_CLASS} ${HTML_CONTENT_TYPOGRAPHY_CLASS}`
 
 type Props = {
   html: string
   className?: string
+  /**
+   * 앱 HtmlView 의 baseStyle 오버라이드에 대응. 기본 12/400/18 #757474 대신 쓸 타이포 클래스.
+   * (예: 모집공고 본문은 14/400/21)
+   */
+  typographyClassName?: string
 }
 
 /**
  * 동아리 소개/모집공고 HTML 렌더러.
  * XSS 방지를 위해 클라이언트에서 DOM 기반 새니타이즈 후 주입한다.
  */
-export function HtmlContent({ html, className }: Props) {
+export function HtmlContent({
+  html,
+  className,
+  typographyClassName = HTML_CONTENT_TYPOGRAPHY_CLASS,
+}: Props) {
   const safeHtml = useSanitizedHtml(html)
 
   if (safeHtml === null) return null
 
   return (
     <div
-      className={`${HTML_CONTENT_CLASS} ${className ?? ''}`}
+      className={`${HTML_CONTENT_LAYOUT_CLASS} ${typographyClassName} ${className ?? ''}`}
       dangerouslySetInnerHTML={{ __html: safeHtml }}
     />
   )

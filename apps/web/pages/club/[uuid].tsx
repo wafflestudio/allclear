@@ -4,14 +4,23 @@ import { useRouter } from 'next/router'
 import { useRef, useState } from 'react'
 import { toast } from 'react-toastify'
 import { NotFoundError } from 'server/domain/error'
-import type { Club } from 'server/domain/model/Club'
+import type { ClubDetail } from 'server/domain/model/Club'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { z } from 'zod'
-import { useRequireLogin } from '../../src/club/auth/AuthContext'
+import { useProfile, useRequireLogin } from '../../src/club/auth/AuthContext'
 import { BackgroundCard } from '../../src/club/components/BackgroundCard'
 import { ClubDetailHeader, DETAIL_HEADER_HEIGHT } from '../../src/club/components/ClubDetailHeader'
-import { ClubDetailTabBar, type ClubTabKey } from '../../src/club/components/ClubDetailTabBar'
+import {
+  CLUB_DETAIL_TABS,
+  ClubDetailTabBar,
+  type ClubTabKey,
+} from '../../src/club/components/ClubDetailTabBar'
+import { getClubSummaryWithAffiliation } from '../../src/club/components/detail/club'
+import { getClubSnsUrls } from '../../src/club/components/detail/clubSns'
+import { SnsRow } from '../../src/club/components/detail/SnsRow'
+import { VerificationMarkButton } from '../../src/club/components/detail/VerificationMark'
+import { VerificationOverlay } from '../../src/club/components/detail/VerificationOverlay'
 import { InfoTab } from '../../src/club/components/InfoTab'
 import { MdiIcon } from '../../src/club/components/icons'
 import { RecruitTab } from '../../src/club/components/RecruitTab'
@@ -23,36 +32,56 @@ import { useSaveClub } from '../../src/club/useSaveClub'
 import { OpenGraph } from '../../src/common/components/OpenGraph'
 
 type Props = {
-  club: Club
+  club: ClubDetail
 }
 
+/**
+ * 앱 ClubDetailScreen 의 웹 미러.
+ * 로고 배너(300, 상하 페이드) → 히어로 카드(-72 겹침) → 탭바(스크롤 시 헤더 아래 고정) → 탭 콘텐츠.
+ * 헤더는 항상 떠 있고 스크롤에 따라 배경이 채워지며, 탭바가 고정되는 순간 동아리명이 노출된다 (ClubDetailHeader).
+ */
 const ClubDetailPage = ({ club }: Props) => {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<ClubTabKey>('detail')
+  const [isVerificationOverlayVisible, setIsVerificationOverlayVisible] = useState(false)
   const tabBarRef = useRef<HTMLDivElement>(null)
   const theme = getCategoryTheme(club.category)
+  const { user } = useProfile()
   const { isSaved, toggle: toggleSave } = useSaveClub(club)
   const requireLogin = useRequireLogin()
+  const verificationStatus = club.officialVerificationStatus
+  const heroDescription = getClubSummaryWithAffiliation(club)
+  const snsUrls = getClubSnsUrls(club)
 
   const handleWriteReview = () => {
     requireLogin(() => router.push(`/club/${club.uuid}/review`))
   }
 
+  const handlePreviousRecruitments = (representativeRecruitmentId: number | null) => {
+    const query =
+      representativeRecruitmentId === null ? '' : `?representative=${representativeRecruitmentId}`
+    router.push(`/club/${club.uuid}/recruitments${query}`)
+  }
+
+  const handleLoginRequired = () => {
+    requireLogin(() => {})
+  }
+
   const handleShare = async () => {
-    const url = window.location.href
+    const shareUrl = `${window.location.origin}/club/${club.uuid}`
     if (navigator.share) {
       try {
         await navigator.share({
           title: club.name,
           text: `${club.name}의 동아리 정보를 확인해보세요!`,
-          url,
+          url: shareUrl,
         })
       } catch {
         // 사용자가 공유를 취소한 경우
       }
       return
     }
-    await navigator.clipboard.writeText(url)
+    await navigator.clipboard.writeText(shareUrl)
     toast.success('링크를 복사했어요!')
   }
 
@@ -60,12 +89,12 @@ const ClubDetailPage = ({ club }: Props) => {
     <>
       <Head>
         <title>{`${club.name} - 서울대 모든 동아리 올클리어`}</title>
-        <meta name="description" content={club.description} />
+        <meta name="description" content={heroDescription || club.description} />
       </Head>
       <OpenGraph
         container={Head}
         title={club.name}
-        description={club.description}
+        description={heroDescription || club.description}
         imageUrl={club.imageUri}
       />
 
@@ -73,7 +102,7 @@ const ClubDetailPage = ({ club }: Props) => {
         <ClubDetailHeader title={club.name} tabBarRef={tabBarRef} />
 
         <main className="mx-auto w-full max-w-[480px] pb-32">
-          {/* 로고 배너 */}
+          {/* 로고 배너: 상/하단은 배경색(#FAFAFA)으로 완전히 덮고, 중앙은 30% 베일 */}
           <div className="relative h-[300px] overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -90,40 +119,55 @@ const ClubDetailPage = ({ club }: Props) => {
             />
           </div>
 
-          {/* 히어로 카드 */}
+          {/* 히어로 카드: 로고 하단을 72px 덮고 올라온다 */}
           <div className="relative -mt-[72px] mx-4 mb-3">
-            <BackgroundCard>
+            <BackgroundCard className="overflow-visible">
               <div className="mb-1.5 flex items-center justify-between">
-                <h1 className="min-w-0 truncate text-[20px] font-bold text-[#202020]">
-                  {club.name}
-                </h1>
-                <div className="ml-3 flex shrink-0 items-center gap-3">
+                <div className="flex min-w-0 shrink items-center gap-1">
+                  <h1 className="min-w-0 truncate text-[20px] font-bold text-[#202020]">
+                    {club.name}
+                  </h1>
+                  <VerificationMarkButton
+                    status={verificationStatus}
+                    onPress={() => setIsVerificationOverlayVisible((prev) => !prev)}
+                  />
+                </div>
+                <div className="ml-3 flex shrink-0 items-center gap-2.5">
                   <button
                     type="button"
                     onClick={toggleSave}
-                    aria-label={isSaved ? '동아리 저장 해제' : '동아리 저장'}
-                    className="active:opacity-50"
+                    aria-label={isSaved ? '저장 취소' : '동아리 저장'}
+                    className="flex items-center active:opacity-50"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={isSaved ? '/icons/heart-fill.png' : '/icons/heart.png'}
                       alt=""
-                      width={22}
-                      height={22}
-                      className="object-contain"
+                      width={18}
+                      height={18}
+                      className="h-[18px] w-[18px] object-contain"
                     />
                   </button>
                   <button
                     type="button"
                     onClick={handleShare}
-                    aria-label="공유하기"
-                    className="text-[#874FFF] active:opacity-50"
+                    aria-label="동아리 공유"
+                    className="flex items-center text-[#874FFF] active:opacity-50"
                   >
-                    <MdiIcon name="shareVariant" size={22} />
+                    <MdiIcon name="shareVariant" size={18} />
                   </button>
                 </div>
               </div>
-              <p className="mb-2.5 text-[14px] font-normal text-[#757474]">{club.description}</p>
+              {/* 인증 안내 말풍선: 카드 오른쪽 위, 카드 상단에서 8px 위에 떠 있다 (앱과 동일) */}
+              <VerificationOverlay
+                status={verificationStatus}
+                visible={isVerificationOverlayVisible}
+                className="absolute right-0 top-0"
+                style={{ transform: 'translateY(calc(-100% - 8px))' }}
+              />
+              {!!heroDescription && (
+                <p className="mb-2.5 text-[14px] font-normal text-[#757474]">{heroDescription}</p>
+              )}
               {club.reviewKeywords.length > 0 && (
                 <div className="flex flex-wrap gap-1">
                   {club.reviewKeywords.slice(0, 2).map((keyword) => (
@@ -136,6 +180,7 @@ const ClubDetailPage = ({ club }: Props) => {
                   ))}
                 </div>
               )}
+              <SnsRow clubName={club.name} snsUrls={snsUrls} />
             </BackgroundCard>
           </div>
 
@@ -152,12 +197,29 @@ const ClubDetailPage = ({ club }: Props) => {
           {/* 탭 콘텐츠 */}
           <div className="px-4">
             {activeTab === 'detail' && <InfoTab club={club} />}
-            {activeTab === 'recruit' && <RecruitTab club={club} />}
-            {activeTab === 'review' && <ReviewTab club={club} onWriteReview={handleWriteReview} />}
+            {activeTab === 'recruit' && (
+              <RecruitTab
+                club={club}
+                tabLabel={CLUB_DETAIL_TABS[activeTab]}
+                isLoggedIn={!!user}
+                onLoginPress={handleLoginRequired}
+                onPreviousPress={handlePreviousRecruitments}
+              />
+            )}
+            {activeTab === 'review' && (
+              <ReviewTab
+                club={club}
+                tabLabel={CLUB_DETAIL_TABS[activeTab]}
+                theme={theme}
+                isLoggedIn={!!user}
+                onLoginPress={handleLoginRequired}
+                onWriteReview={handleWriteReview}
+              />
+            )}
           </div>
         </main>
 
-        {/* 하단 고정 앱 유도 CTA */}
+        {/* 하단 고정 앱 유도 CTA (웹 전용) */}
         <div className="fixed inset-x-0 bottom-0 z-30">
           <div className="mx-auto max-w-[480px] bg-gradient-to-t from-[#FAFAFA] via-[#FAFAFA]/80 to-transparent px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-6">
             <button
@@ -182,7 +244,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) 
 
   try {
     const clubService = Provider.getService(ClubService)
-    // v2: APPROVED 상태의 공개 동아리만 노출
+    // v2: APPROVED 상태의 공개 동아리만 노출 (officialVerificationStatus 포함)
     const club = await clubService.findPublicByUuid(uuid.data)
     return {
       props: {

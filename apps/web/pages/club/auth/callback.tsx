@@ -5,6 +5,7 @@ import { consumeLoginNextPath, fetchProfile, useProfile } from '../../../src/clu
 import { setLoginToken } from '../../../src/club/auth/token'
 
 // 카카오 OAuth 완료 후 #token=... 을 받아 저장하는 페이지 (admin/auth/callback과 동일 패턴)
+// 앱 useLoginActions.handleLoginSuccess 대응: 토큰 저장 → 프로필 조회 → "로그인 되었어요!" 토스트
 const AuthCallbackPage = () => {
   const router = useRouter()
   const { setUser } = useProfile()
@@ -19,7 +20,7 @@ const AuthCallbackPage = () => {
     window.history.replaceState(null, '', '/club/auth/callback')
 
     if (!token) {
-      toast.error('로그인에 실패했어요!')
+      toast.info('로그인에 실패했어요!')
       router.replace('/club')
       return
     }
@@ -31,7 +32,7 @@ const AuthCallbackPage = () => {
         toast.info('로그인 되었어요!')
       })
       .catch(() => {
-        toast.error('로그인에 실패했어요!')
+        toast.info('로그인에 실패했어요!')
       })
       .finally(() => {
         router.replace(consumeLoginNextPath())
@@ -40,7 +41,7 @@ const AuthCallbackPage = () => {
   }, [])
 
   return (
-    <div className="flex h-screen items-center justify-center bg-[#FAFAFA]">
+    <div className="flex h-screen items-center justify-center bg-[#FAFAFA] font-pretendard">
       <p className="text-[14px] font-normal text-[#757474]">로그인 중...</p>
     </div>
   )

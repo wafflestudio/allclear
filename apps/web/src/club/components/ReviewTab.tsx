@@ -1,25 +1,45 @@
 import type { Club } from '../../../server/domain/model/Club'
-import { getCategoryTheme } from '../constants'
+import type { CategoryTheme } from '../constants'
 import { BackgroundCard } from './BackgroundCard'
+import type { ClubTabLabel } from './ClubDetailTabBar'
+import { LoginBlurOverlay } from './detail/LoginBlurOverlay'
 import { MdiIcon } from './icons'
 import { ReviewKeywordBar } from './ReviewKeywordBar'
 
 type Props = {
   club: Club
+  tabLabel: ClubTabLabel
+  theme: CategoryTheme
+  isLoggedIn: boolean
+  onLoginPress: () => void
   onWriteReview: () => void
 }
 
-export function ReviewTab({ club, onWriteReview }: Props) {
-  const theme = getCategoryTheme(club.category)
+/**
+ * 앱 ClubDetail/ReviewTab.tsx 와 동일:
+ * "이런 점이 좋았어요" 카드(공감 순 키워드 게이지 / 빈 상태), 비로그인 시 LoginBlurOverlay,
+ * 아래 "동아리 활동 후기 남기기" CTA 카드.
+ */
+export function ReviewTab({
+  club,
+  tabLabel,
+  theme,
+  isLoggedIn,
+  onLoginPress,
+  onWriteReview,
+}: Props) {
   const sortedKeywords = [...club.reviewKeywords].sort((a, b) => b.totalUpvotes - a.totalUpvotes)
 
   return (
     <div className="mt-4 flex flex-col gap-3">
-      <BackgroundCard className="relative">
+      <BackgroundCard>
+        {!isLoggedIn && (
+          <LoginBlurOverlay clubName={club.name} tabLabel={tabLabel} onLoginPress={onLoginPress} />
+        )}
         <p className="text-[16px] font-semibold text-[#757474]">이런 점이 좋았어요</p>
         {club.totalReviews > 0 && (
           <p className="mt-1 text-[12px] font-medium text-[#757474]">
-            현재까지 {club.totalReviews}명이 참여했어요
+            {`현재까지 ${club.totalReviews}명이 참여했어요`}
           </p>
         )}
         {sortedKeywords.length > 0 ? (
@@ -38,7 +58,7 @@ export function ReviewTab({ club, onWriteReview }: Props) {
         ) : (
           <div className="mt-3 flex min-h-[80px] flex-col items-center justify-center">
             <p className="text-center text-[12px] font-medium text-[#757474]">
-              혹시 {club.name}에서 활동하셨나요?
+              {`혹시 ${club.name}에서 활동하셨나요?`}
             </p>
             <p className="text-center text-[12px] font-medium text-[#757474]">
               다음에 들어올 부원들을 위해 경험을 공유해주세요!
@@ -55,7 +75,7 @@ export function ReviewTab({ club, onWriteReview }: Props) {
         <span className="flex flex-col">
           <span className="text-[14px] font-semibold text-[#874FFF]">동아리 활동 후기 남기기</span>
           <span className="mt-1 text-[12px] font-normal leading-[18px] text-[#BCBCBC]">
-            현재까지 {club.totalReviews}명이 참여했어요
+            {`현재까지 ${club.totalReviews}명이 참여했어요`}
           </span>
         </span>
         <span className="text-[#874FFF]">
