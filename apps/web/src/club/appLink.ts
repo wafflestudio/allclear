@@ -8,15 +8,13 @@ export type MobilePlatform = 'ios' | 'android'
 /** iOS Info.plist / AndroidManifest에 등록된 커스텀 스킴 */
 export const APP_SCHEME = 'allclear'
 
+/** 스토어 URL은 이 페이지가 플랫폼에 맞게 골라준다 (pages/download/app.tsx) */
 export const APP_DOWNLOAD_PATH = '/download/app'
-
-export const APP_STORE_URL = 'https://apps.apple.com/kr/app/id6461214029'
-export const PLAY_STORE_URL =
-  'https://play.google.com/store/apps/details?id=com.padocorp.clubhouse.applicationId'
 
 /**
  * 데스크톱 브라우저에는 배너를 띄우지 않으므로 모바일 OS만 구분한다.
- * (iPadOS 13+ Safari는 기본이 데스크톱 UA라 감지되지 않는다 — 의도된 동작)
+ * iPadOS 13+ Safari는 기본 UA가 데스크톱(Macintosh)이라 여기서 걸리지 않고,
+ * 모바일 UA를 보내는 구형 iPad만 ios로 잡힌다.
  */
 export function detectMobilePlatform(userAgent: string): MobilePlatform | null {
   const ua = userAgent.toLowerCase()
@@ -27,10 +25,6 @@ export function detectMobilePlatform(userAgent: string): MobilePlatform | null {
     return 'ios'
   }
   return null
-}
-
-export function storeUrl(platform: MobilePlatform | null): string {
-  return platform === 'android' ? PLAY_STORE_URL : APP_STORE_URL
 }
 
 /** '/club/{uuid}?tab=1#a' → '/club/{uuid}' */

@@ -57,8 +57,9 @@ export function AppBannerProvider({ children }: { children: ReactNode }) {
 
   const handleDismiss = () => {
     GA.setEvent({ category: 'AppBanner', action: 'dismiss', label: platform ?? '' })
-    LocalStorage.setWithExpiry(APP_BANNER_DISMISSED_STORAGE_KEY, 'true', DISMISS_DURATION_MS)
+    // 스토리지 쓰기가 막힌 환경(사파리 시크릿 모드 등)에서도 배너는 닫히도록 상태부터 바꾼다
     setIsDismissed(true)
+    LocalStorage.setWithExpiry(APP_BANNER_DISMISSED_STORAGE_KEY, 'true', DISMISS_DURATION_MS)
   }
 
   return (

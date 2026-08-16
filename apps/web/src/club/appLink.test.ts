@@ -76,6 +76,13 @@ describe('buildAndroidIntentUrl', () => {
       `intent://club/${UUID}#Intent;scheme=allclear;S.browser_fallback_url=https%3A%2F%2Fall-clear.cc%2Fdownload%2Fapp;end`,
     )
   })
+
+  // 상세 화면이 아닌 모든 경로가 타는 분기 (앱 첫 화면 = allclear://)
+  it('딥링크 경로가 없으면 스킴만 여는 intent가 된다', () => {
+    expect(buildAndroidIntentUrl('', 'https://all-clear.cc/download/app')).toBe(
+      'intent://#Intent;scheme=allclear;S.browser_fallback_url=https%3A%2F%2Fall-clear.cc%2Fdownload%2Fapp;end',
+    )
+  })
 })
 
 describe('isAppBannerPath', () => {

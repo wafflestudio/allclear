@@ -12,7 +12,9 @@ const FALLBACK_DELAY_MS = 1500
 
 /**
  * 앱 딥링크를 시도하고, 앱이 없으면 다운로드 페이지로 폴백한다.
- * - 안드로이드: intent:// 의 browser_fallback_url로 브라우저가 직접 폴백
+ * - 안드로이드: intent:// 의 browser_fallback_url로 크롬 계열이 직접 폴백해준다.
+ *   단 카카오톡·인스타그램 등 인앱 브라우저는 intent://를 처리하지 못해
+ *   ERR_UNKNOWN_URL_SCHEME으로 끝나므로 타이머 폴백도 함께 건다.
  * - iOS: 커스텀 스킴을 열어보고 화면이 전환되지 않으면 타이머로 폴백
  * - 데스크톱: 시도할 앱이 없으므로 곧바로 다운로드 페이지로
  */
@@ -21,14 +23,6 @@ export function openAppDeepLink(deepPath = '') {
 
   if (platform === null) {
     window.location.href = APP_DOWNLOAD_PATH
-    return
-  }
-
-  if (platform === 'android') {
-    window.location.href = buildAndroidIntentUrl(
-      deepPath,
-      `${window.location.origin}${APP_DOWNLOAD_PATH}`,
-    )
     return
   }
 
@@ -52,7 +46,10 @@ export function openAppDeepLink(deepPath = '') {
   document.addEventListener('visibilitychange', onVisibilityChange)
   window.addEventListener('pagehide', cancelFallback)
 
-  window.location.href = buildSchemeUrl(deepPath)
+  window.location.href =
+    platform === 'android'
+      ? buildAndroidIntentUrl(deepPath, `${window.location.origin}${APP_DOWNLOAD_PATH}`)
+      : buildSchemeUrl(deepPath)
 }
 
 export function openClubInApp(uuid: string) {

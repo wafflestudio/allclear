@@ -10,7 +10,7 @@ import { ClubService } from 'server/service/club.service'
 import { z } from 'zod'
 import { useRequireLogin } from '../../src/club/auth/AuthContext'
 import { BackgroundCard } from '../../src/club/components/BackgroundCard'
-import { ClubDetailHeader } from '../../src/club/components/ClubDetailHeader'
+import { ClubDetailHeader, DETAIL_HEADER_HEIGHT } from '../../src/club/components/ClubDetailHeader'
 import { ClubDetailTabBar, type ClubTabKey } from '../../src/club/components/ClubDetailTabBar'
 import { InfoTab } from '../../src/club/components/InfoTab'
 import { MdiIcon } from '../../src/club/components/icons'
@@ -139,11 +139,12 @@ const ClubDetailPage = ({ club }: Props) => {
             </BackgroundCard>
           </div>
 
-          {/* 탭바: 스크롤 시 헤더(56px) 아래에 핀 고정 (앱의 pinned 탭바와 동일) */}
+          {/* 탭바: 스크롤 시 헤더 아래에 핀 고정 (앱의 pinned 탭바와 동일).
+              ClubDetailHeader가 핀 여부를 같은 값으로 계산하므로 상수를 공유한다 */}
           <div
             ref={tabBarRef}
             className="sticky z-20"
-            style={{ top: 'calc(3.5rem + var(--app-banner-h))' }}
+            style={{ top: `calc(${DETAIL_HEADER_HEIGHT}px + var(--app-banner-h, 0px))` }}
           >
             <ClubDetailTabBar activeTab={activeTab} onChange={setActiveTab} />
           </div>

@@ -85,6 +85,8 @@ const App = ({ Component, pageProps }: AppProps) => {
         </AuthProvider>
         <ToastContainer
           position="top-center"
+          // 앱 설치 배너가 떠 있으면 그 아래에 뜨게 한다 (배너가 없으면 기본 위치)
+          style={{ top: 'calc(1em + var(--app-banner-h, 0px))' }}
           autoClose={2000}
           theme="colored"
           hideProgressBar={false}

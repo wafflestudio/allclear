@@ -12,14 +12,18 @@
 /* 배너는 문서 최상단을 차지하므로, 화면 높이를 쓰는 레이아웃은 그만큼 줄여야
    화면이 배너 높이만큼 더 스크롤되지 않는다. (배너가 없으면 변수가 0이라 화면 높이 그대로)
    @tailwind utilities 뒤에 와서 같은 이름의 유틸리티를 덮어쓴다.
-   dvh를 모르는 구형 브라우저는 이 선언을 무시하고 위쪽 100vh 규칙
-   (postcss-100vh-fix가 iOS용 -webkit-fill-available까지 붙여둔)을 그대로 쓴다. */
-.h-screen {
-  height: calc(100dvh - var(--app-banner-h));
-}
 
-.min-h-screen {
-  min-height: calc(100dvh - var(--app-banner-h));
+   @supports 필수: var()가 든 선언은 파싱 때 버려지지 않고 computed-value 단계에서
+   무효가 되어 height: auto로 떨어진다. 즉 dvh 미지원 브라우저에서 위쪽 100vh 규칙으로
+   폴백되지 않고 레이아웃이 무너지므로, 지원하는 브라우저에서만 적용한다. */
+@supports (height: 100dvh) {
+  .h-screen {
+    height: calc(100dvh - var(--app-banner-h, 0px));
+  }
+
+  .min-h-screen {
+    min-height: calc(100dvh - var(--app-banner-h, 0px));
+  }
 }
 
 html,
