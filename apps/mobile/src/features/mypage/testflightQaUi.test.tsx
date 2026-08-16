@@ -123,7 +123,12 @@ describe("TestFlight QA UI regressions", () => {
 		const majorPickerStyle = StyleSheet.flatten(
 			pickers[1].props.style as TextStyle,
 		);
-		expect(majorPickerStyle.paddingHorizontal).toBeGreaterThan(0);
+		const collegePickerStyle = StyleSheet.flatten(
+			pickers[0].props.style as TextStyle,
+		);
+		expect(majorPickerStyle.paddingHorizontal).toBe(
+			collegePickerStyle.paddingHorizontal,
+		);
 	});
 
 	it("dismisses the feedback keyboard and uses a readable placeholder", () => {
@@ -142,8 +147,8 @@ describe("TestFlight QA UI regressions", () => {
 		);
 
 		expect(input.props).toMatchObject({
-			returnKeyType: "done",
-			submitBehavior: "blurAndSubmit",
+			returnKeyType: "default",
+			submitBehavior: "newline",
 			placeholderTextColor: Colors.BODYTEXT_SUB,
 		});
 		expect(dismissArea).toBeDefined();
@@ -161,9 +166,21 @@ describe("TestFlight QA UI regressions", () => {
 				element.props.placeholder === "여기에 의견을 적어주세요. (1000자 이내)",
 		);
 		const inputStyle = StyleSheet.flatten(input.props.style as TextStyle);
+		const [submitButton] = findAll(
+			view,
+			(element) =>
+				element.props.disabled === true &&
+				typeof element.props.onPress === "function",
+		);
+		const submitButtonStyle = StyleSheet.flatten(
+			submitButton.props.style as TextStyle,
+		);
 
 		expect(contentStyle.flex).toBe(1);
-		expect(inputStyle.height).toBe(vs(120));
+		expect(contentStyle.paddingBottom).toBe(vs(8));
+		expect(inputStyle.height).toBe(vs(144));
+		expect(submitButtonStyle.backgroundColor).toBe(Colors.BUTTON_UNSELECTED);
+		expect(submitButton.props.accessibilityState).toEqual({ disabled: true });
 	});
 
 	it("optically centers single-line text on iOS", () => {

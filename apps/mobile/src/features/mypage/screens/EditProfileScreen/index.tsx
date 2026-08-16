@@ -168,7 +168,7 @@ const EditProfileScreen = () => {
 						setValue={setMajor}
 						items={majors?.map((c) => ({ label: c, value: c })) ?? []}
 						placeholder="학과를 선택해주세요"
-						style={[styles.picker, styles.majorPicker]}
+						style={styles.picker}
 						dropDownContainerStyle={styles.pickerDropdown}
 						placeholderStyle={styles.pickerPlaceholder}
 						textStyle={styles.pickerText}
@@ -298,9 +298,6 @@ const styles = StyleSheet.create({
 		paddingVertical: vs(4),
 		backgroundColor: Colors.WHITE,
 		borderRadius: ms(12),
-	},
-	majorPicker: {
-		paddingHorizontal: s(12),
 	},
 	pickerDropdown: {
 		borderWidth: 0,
