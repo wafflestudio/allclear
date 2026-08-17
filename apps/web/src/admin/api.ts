@@ -1,13 +1,13 @@
 import type { CollegeMajor } from 'server/domain/model/CollegeMajor'
-import { ADMIN_AUTH_TOKEN_KEY, buildQuery } from 'src/admin/constants'
-import type { AffiliationFilter, ClubStatus, StatusFilter } from 'src/admin/types'
 import type {
   AdminClubDetailResponse,
   AdminClubHistoriesResponse,
   AdminClubManagerRequestsResponse,
   AdminClubsResponse,
   AdminClubVerificationRequestsResponse,
-} from 'src/lib/schemas/admin'
+} from 'server/schemas/admin'
+import { ADMIN_AUTH_TOKEN_KEY, buildQuery } from 'src/admin/constants'
+import type { AffiliationFilter, ClubStatus, StatusFilter } from 'src/admin/types'
 
 type FetchOptions = NonNullable<Parameters<typeof fetch>[1]>
 type PaginationParams = {

@@ -1,10 +1,10 @@
-import { ConflictError, NotFoundError } from 'server/domain/error'
 import {
   type ClubStatus,
   PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
 } from 'server/domain/constants/club-status'
+import { ConflictError, NotFoundError } from 'server/domain/error'
 import type {
   AdminClubHistoriesQuery,
   AdminClubManagerRequestStatusUpdate,
@@ -13,7 +13,7 @@ import type {
   AdminClubsQuery,
   AdminClubVerificationRequestStatusUpdate,
   AdminClubVerificationRequestsQuery,
-} from 'src/lib/schemas/admin'
+} from 'server/schemas/admin'
 import { type FindOptionsWhere, In, IsNull, Not, type Repository } from 'typeorm'
 import {
   ClubEntity,

@@ -6,13 +6,13 @@ import {
   UserNotFoundError,
 } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
-import { UserService } from 'server/service/user.service'
 import {
   ClubRecruitmentParamsSchema,
   CreateClubRecruitmentSchema,
   type CreateRecruitmentResponse,
-} from 'src/lib/schemas/club-recruitments'
+} from 'server/schemas/club-recruitments'
+import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
+import { UserService } from 'server/service/user.service'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

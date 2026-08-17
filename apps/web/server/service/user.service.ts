@@ -1,5 +1,5 @@
+import type { UpdateProfileDto } from 'server/schemas/users'
 import { IsNull, Not, type Repository } from 'typeorm'
-import type { UpdateProfileDto } from '../../src/lib/schemas/users'
 import { ForbiddenError, UserNotFoundError } from '../domain/error'
 import type { CollegeMajor } from '../domain/model/CollegeMajor'
 import type { User } from '../domain/model/User'

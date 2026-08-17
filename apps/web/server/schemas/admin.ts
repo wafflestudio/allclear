@@ -1,6 +1,6 @@
-import { UserRole } from 'server/infra/database/entities/user-role.enum'
 import { CLUB_STATUSES, REJECTED_CLUB_STATUS } from 'server/domain/constants/club-status'
-import { z } from 'src/lib/schemas/zod'
+import { UserRole } from 'server/infra/database/entities/user-role.enum'
+import { z } from 'server/schemas/zod'
 
 const AdminClubManagerSchema = z.object({
   name: z.string(),

@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
 import {
   ClubRecruitmentParamsSchema,
   type PublicClubRecruitmentsResponse,
-} from 'src/lib/schemas/club-recruitments'
+} from 'server/schemas/club-recruitments'
+import { ClubRecruitmentService } from 'server/service/club-recruitment.service'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

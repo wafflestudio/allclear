@@ -1,8 +1,8 @@
 import type { NextApiHandler } from 'next'
 import { NotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
+import { ManagerClubParamsSchema } from 'server/schemas/managers'
 import { ClubService } from 'server/service/club.service'
-import { ManagerClubParamsSchema } from 'src/lib/schemas/managers'
 import { z } from 'zod'
 import { UserService } from '../../../../../../../server/service/user.service'
 

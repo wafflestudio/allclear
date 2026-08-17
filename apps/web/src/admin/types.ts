@@ -5,7 +5,7 @@ import type {
   AdminClubManagerRequestsResponse,
   AdminClubsResponse,
   AdminClubVerificationRequestsResponse,
-} from 'src/lib/schemas/admin'
+} from 'server/schemas/admin'
 
 export type { ClubDecisionStatus as DecisionStatus, ClubStatus }
 

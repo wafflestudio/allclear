@@ -1,4 +1,4 @@
-import { registry } from 'src/lib/openapi/swagger'
+import { registry } from 'server/openapi/swagger'
 import {
   AdminClubDetailResponseSchema,
   AdminClubHistoriesQuerySchema,
@@ -20,22 +20,22 @@ import {
   AdminUserRoleUpdateParamsSchema,
   AdminUserRoleUpdateResponseSchema,
   AdminUserRoleUpdateSchema,
-} from 'src/lib/schemas/admin'
+} from 'server/schemas/admin'
 import {
   AnnouncementsResponseSchema,
   DismissAnnouncementsSchema,
-} from 'src/lib/schemas/announcements'
+} from 'server/schemas/announcements'
 import {
   AppVersionCheckResponseSchema,
   AppVersionCheckSchema,
   AppVersionPolicyResponseSchema,
   AppVersionPolicyUpdateSchema,
-} from 'src/lib/schemas/app-versions'
+} from 'server/schemas/app-versions'
 import {
   AppleLoginCallbackPayloadSchema,
   KakaoCallbackQuerySchema,
   KakaoNativeCallbackPayloadSchema,
-} from 'src/lib/schemas/auth'
+} from 'server/schemas/auth'
 import {
   ClubRecruitmentParamsSchema,
   ClubRecruitmentSchema,
@@ -46,7 +46,7 @@ import {
   RecruitmentIdParamsSchema,
   UpdateClubRecruitmentSchema,
   UpdateRecruitmentResponseSchema,
-} from 'src/lib/schemas/club-recruitments'
+} from 'server/schemas/club-recruitments'
 import {
   ClubCategoriesResponseSchema,
   ClubListByCategoryQuerySchema,
@@ -60,7 +60,7 @@ import {
   MyReviewSchema,
   ReviewKeywordCategoriesResponseSchema,
   UpdateClubReviewSchema,
-} from 'src/lib/schemas/clubs'
+} from 'server/schemas/clubs'
 import {
   ClubDetailSchema,
   HealthCheckSchema,
@@ -69,7 +69,7 @@ import {
   TokenResponseSchema,
   UserSchema,
   ValidationIssueSchema,
-} from 'src/lib/schemas/common'
+} from 'server/schemas/common'
 import {
   ClubActivityImageUploadResponseSchema,
   ClubImageUploadSchema,
@@ -83,14 +83,14 @@ import {
   ManagedClubPatchSchema,
   ManagedClubsResponseSchema,
   ManagerClubParamsSchema,
-} from 'src/lib/schemas/managers'
-import { AgreeTermsSchema, TermsResponseSchema } from 'src/lib/schemas/terms'
+} from 'server/schemas/managers'
+import { AgreeTermsSchema, TermsResponseSchema } from 'server/schemas/terms'
 import {
   TestGuestRecentSearchDebugQuerySchema,
   TestGuestRecentSearchDebugResponseSchema,
   TestLoginResponseSchema,
   TestLoginSchema,
-} from 'src/lib/schemas/test'
+} from 'server/schemas/test'
 import {
   CollegeMajorsQuerySchema,
   CollegeMajorsResponseSchema,
@@ -103,8 +103,8 @@ import {
   UserNotificationsResponseSchema,
   UserProfileResponseSchema,
   UserVoiceSchema,
-} from 'src/lib/schemas/users'
-import { z } from 'src/lib/schemas/zod'
+} from 'server/schemas/users'
+import { z } from 'server/schemas/zod'
 
 const ErrorMessageSchema = z.string()
 const NoContentResponse = { description: '성공적으로 처리되었습니다.' }

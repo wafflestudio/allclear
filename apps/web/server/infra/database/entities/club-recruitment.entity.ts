@@ -1,4 +1,4 @@
-import { formatYearMonth } from 'src/common/utils/formatYearMonth'
+import { formatYearMonth } from 'server/util/formatYearMonth'
 import {
   BeforeInsert,
   BeforeUpdate,

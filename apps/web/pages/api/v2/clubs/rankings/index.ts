@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
+import { type ClubRanking, ClubRankingsQuerySchema } from 'server/schemas/clubs'
 import { ReviewService } from 'server/service/review.service'
-import { type ClubRanking, ClubRankingsQuerySchema } from 'src/lib/schemas/clubs'
 
 type ResponseData = {
   rankings: ClubRanking[]

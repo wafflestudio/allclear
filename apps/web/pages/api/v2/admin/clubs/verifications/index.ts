@@ -1,12 +1,12 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ForbiddenError } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { AdminClubService } from 'server/service/admin-club.service'
-import { UserService } from 'server/service/user.service'
 import {
   AdminClubVerificationRequestsQuerySchema,
   type AdminClubVerificationRequestsResponse,
-} from 'src/lib/schemas/admin'
+} from 'server/schemas/admin'
+import { AdminClubService } from 'server/service/admin-club.service'
+import { UserService } from 'server/service/user.service'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

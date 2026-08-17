@@ -1,5 +1,5 @@
-import { ClubSchema, CollegeMajorSchema, UserSchema } from 'src/lib/schemas/common'
-import { z } from 'src/lib/schemas/zod'
+import { ClubSchema, CollegeMajorSchema, UserSchema } from 'server/schemas/common'
+import { z } from 'server/schemas/zod'
 
 export const UpdateProfileSchema = z
   .object({

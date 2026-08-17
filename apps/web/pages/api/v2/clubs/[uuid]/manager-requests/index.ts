@@ -1,14 +1,14 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ConflictError, NotFoundError, UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
-import { ClubService } from 'server/service/club.service'
-import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
+import { ClubUuidParamsSchema } from 'server/schemas/clubs'
 import {
   ClubManagerRequestPatchSchema,
   type ClubManagerRequestResponse,
   ClubManagerRequestSchema,
-} from 'src/lib/schemas/managers'
+} from 'server/schemas/managers'
+import { ClubService } from 'server/service/club.service'
+import { UserService } from 'server/service/user.service'
 import { type ZodIssue, z } from 'zod'
 
 type ClubManagerRequestMutationResponse = {

@@ -2,7 +2,7 @@ import {
   CLUB_RECRUITMENT_ACTIVITY_LOCATION_TYPES,
   REGULAR_MEETING_DAYS,
 } from 'server/domain/constants/club-recruitment'
-import { z } from 'src/lib/schemas/zod'
+import { z } from 'server/schemas/zod'
 
 const TimestampStringSchema = z
   .string()

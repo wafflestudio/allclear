@@ -1,6 +1,6 @@
+import type { ClubRanking, MyReview } from 'server/schemas/clubs'
+import type { ReviewKeywordCategory } from 'server/schemas/common'
 import type { Repository } from 'typeorm'
-import type { ClubRanking, MyReview } from '../../src/lib/schemas/clubs'
-import type { ReviewKeywordCategory } from '../../src/lib/schemas/common'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import { ClubReviewKeywordCategoryEntity } from '../infra/database/entities/user-club-review-category.entity'
 import { Inject, InjectRepository, Service } from '../provider'

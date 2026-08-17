@@ -3,12 +3,12 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
-import { UserService } from 'server/service/user.service'
 import {
   AdminUserRoleUpdateParamsSchema,
   type AdminUserRoleUpdateResponse,
   AdminUserRoleUpdateSchema,
-} from 'src/lib/schemas/admin'
+} from 'server/schemas/admin'
+import { UserService } from 'server/service/user.service'
 import { type ZodIssue, z } from 'zod'
 
 const isValidAdminRoleApiKey = (apiKey: string | string[] | undefined): boolean => {

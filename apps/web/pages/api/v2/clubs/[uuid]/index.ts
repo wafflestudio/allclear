@@ -2,8 +2,8 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError } from 'server/domain/error'
 import type { ClubDetail } from 'server/domain/model/Club'
 import { Provider } from 'server/provider'
+import { ClubUuidParamsSchema } from 'server/schemas/clubs'
 import { ClubService } from 'server/service/club.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

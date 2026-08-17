@@ -1,8 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { Provider } from 'server/provider'
+import { TestLoginSchema } from 'server/schemas/test'
 import { TestAuthService, type TestLoginResult } from 'server/service/test-auth.service'
 import { isTestApiEnabled } from 'server/util/test-api'
-import { TestLoginSchema } from 'src/lib/schemas/test'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

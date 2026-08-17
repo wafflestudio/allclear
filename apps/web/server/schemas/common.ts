@@ -1,7 +1,7 @@
 import { CLUB_RECRUIT_TYPES } from 'server/domain/constants/club-recruit-type'
 import { CLUB_STATUSES } from 'server/domain/constants/club-status'
 import { OFFICIAL_VERIFICATION_STATUSES } from 'server/domain/constants/official-verification-status'
-import { z } from 'src/lib/schemas/zod'
+import { z } from 'server/schemas/zod'
 
 export const ValidationIssueSchema = z
   .object({

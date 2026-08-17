@@ -1,4 +1,4 @@
-import { z } from 'src/lib/schemas/zod'
+import { z } from 'server/schemas/zod'
 import { RecentSearchSchema } from './users'
 
 export const TestLoginSchema = z

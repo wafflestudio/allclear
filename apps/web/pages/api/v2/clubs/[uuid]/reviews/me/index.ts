@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError, UserNotFoundError } from 'server/domain/error'
 import { Provider } from 'server/provider'
+import { ClubUuidParamsSchema, type MyReview } from 'server/schemas/clubs'
 import { ReviewService } from 'server/service/review.service'
 import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema, type MyReview } from 'src/lib/schemas/clubs'
 import { type ZodIssue, z } from 'zod'
 
 type ResponseData = MyReview | null

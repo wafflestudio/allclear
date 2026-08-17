@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
 import {
   ConflictError,
   ForbiddenError,
@@ -6,11 +7,10 @@ import {
   UserNotFoundError,
 } from 'server/domain/error'
 import { Provider } from 'server/provider'
+import { ClubUuidParamsSchema } from 'server/schemas/clubs'
+import type { CreateVerificationRequestResponse } from 'server/schemas/managers'
 import { ClubVerificationService } from 'server/service/club-verification.service'
 import { UserService } from 'server/service/user.service'
-import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import type { CreateVerificationRequestResponse } from 'src/lib/schemas/managers'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

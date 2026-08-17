@@ -9,9 +9,9 @@ import {
 import { ENV } from 'server/ENV'
 import { uploadClubImageStream } from 'server/infra/client/s3'
 import { Provider } from 'server/provider'
+import { ClubUuidParamsSchema } from 'server/schemas/clubs'
 import { ClubAccessService } from 'server/service/club-access.service'
 import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 

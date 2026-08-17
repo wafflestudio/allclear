@@ -1,4 +1,4 @@
-import { z } from 'src/lib/schemas/zod'
+import { z } from 'server/schemas/zod'
 import { AnnouncementSchema } from './common'
 
 export const DismissAnnouncementsSchema = z

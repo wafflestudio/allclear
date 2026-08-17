@@ -7,10 +7,10 @@ import {
   UserNotFoundError,
 } from 'server/domain/error'
 import { Provider } from 'server/provider'
+import { ClubUuidParamsSchema } from 'server/schemas/clubs'
+import type { ClubRegistrationManager } from 'server/schemas/managers'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import type { ClubRegistrationManager } from 'src/lib/schemas/managers'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

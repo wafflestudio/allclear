@@ -1,4 +1,13 @@
 import { groupBy, toPairs } from 'lodash-es'
+import { CATEGORIES } from 'server/domain/constants/club-categories'
+import { normalizeClubRecruitType } from 'server/domain/constants/club-recruit-type'
+import {
+  PENDING_CLUB_STATUS,
+  PUBLIC_CLUB_STATUS,
+  REJECTED_CLUB_STATUS,
+} from 'server/domain/constants/club-status'
+import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
+import { getOfficialVerificationTermKey } from 'server/domain/constants/official-verification-term'
 import {
   type Club,
   type ClubDetail,
@@ -8,14 +17,6 @@ import {
   toClubDetailDomain,
   toClubDomain,
 } from 'server/domain/model/Club'
-import { normalizeClubRecruitType } from 'server/domain/constants/club-recruit-type'
-import {
-  PENDING_CLUB_STATUS,
-  PUBLIC_CLUB_STATUS,
-  REJECTED_CLUB_STATUS,
-} from 'server/domain/constants/club-status'
-import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
-import { getOfficialVerificationTermKey } from 'server/domain/constants/official-verification-term'
 import type {
   ClubData,
   ClubManagerRequest,
@@ -24,9 +25,8 @@ import type {
   ClubRegisterRequest,
   ClubRegistrationManager,
   ManagedClubPatch,
-} from 'src/lib/schemas/managers'
+} from 'server/schemas/managers'
 import { In, IsNull, type Repository } from 'typeorm'
-import { CATEGORIES } from 'server/domain/constants/club-categories'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import type { ClubCategory } from '../domain/model/ClubCategory'
 import {

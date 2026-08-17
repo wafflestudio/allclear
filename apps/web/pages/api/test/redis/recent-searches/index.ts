@@ -1,10 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { TestGuestRecentSearchDebugQuerySchema } from 'server/schemas/test'
 import {
   findGuestRecentSearchDebug,
   type GuestRecentSearchDebug,
 } from 'server/service/recent-search.service'
 import { isTestApiEnabled } from 'server/util/test-api'
-import { TestGuestRecentSearchDebugQuerySchema } from 'src/lib/schemas/test'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
