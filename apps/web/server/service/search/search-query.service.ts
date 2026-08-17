@@ -1,7 +1,7 @@
+import { PUBLIC_CLUB_STATUS } from 'server/domain/constants/club-status'
 import { ClubEntity } from 'server/infra/database/entities'
 import { CollegeMajorEntity } from 'server/infra/database/entities/college-major.entity'
 import { InjectRepository, Service } from 'server/provider'
-import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
 import {
   type FindOptionsWhere,
   ILike,

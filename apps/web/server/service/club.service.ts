@@ -8,14 +8,14 @@ import {
   toClubDetailDomain,
   toClubDomain,
 } from 'server/domain/model/Club'
-import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
+import { normalizeClubRecruitType } from 'server/domain/constants/club-recruit-type'
 import {
   PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
-} from 'src/common/constants/club-status'
-import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'src/common/constants/official-verification-status'
-import { getOfficialVerificationTermKey } from 'src/common/constants/official-verification-term'
+} from 'server/domain/constants/club-status'
+import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
+import { getOfficialVerificationTermKey } from 'server/domain/constants/official-verification-term'
 import type {
   ClubData,
   ClubManagerRequest,
@@ -26,7 +26,7 @@ import type {
   ManagedClubPatch,
 } from 'src/lib/schemas/managers'
 import { In, IsNull, type Repository } from 'typeorm'
-import { CATEGORIES } from '../../src/fixtures/category'
+import { CATEGORIES } from 'server/domain/constants/club-categories'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import type { ClubCategory } from '../domain/model/ClubCategory'
 import {

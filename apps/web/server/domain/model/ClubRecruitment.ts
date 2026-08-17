@@ -1,7 +1,7 @@
 import type {
   ClubRecruitmentActivityLocationType,
   RegularMeetingDay,
-} from 'src/common/constants/club-recruitment'
+} from 'server/domain/constants/club-recruitment'
 import type { ClubRecruitmentEntity } from '../../infra/database/entities/club-recruitment.entity'
 
 export type RegularMeeting = {

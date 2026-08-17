@@ -1,4 +1,4 @@
-export { CLUB_RECRUIT_TYPES } from 'src/common/constants/club-recruit-type'
+export { CLUB_RECRUIT_TYPES } from 'server/domain/constants/club-recruit-type'
 
 export const CLUB_COLLEGES = [
   '단과대무관',

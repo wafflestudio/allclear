@@ -53,8 +53,6 @@ pnpm dev
 - {root directory}/pages 폴더 내에 생성합니다.
 - NextPage 타입을 활용합니다.
 - 레이아웃을 사용하지 않거나 커스터마이징하고 싶은 경우, page에 getLayout 속성을 제공합니다.
-- 페이지를 추가/수정/삭제할때 다음 작업을 수행합니다.
-- 페이지 경로: src/common/constants/PagePath.ts의 PagePath enum 수정
 
 
 

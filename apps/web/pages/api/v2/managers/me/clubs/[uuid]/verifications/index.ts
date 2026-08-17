@@ -8,7 +8,7 @@ import {
 import { Provider } from 'server/provider'
 import { ClubVerificationService } from 'server/service/club-verification.service'
 import { UserService } from 'server/service/user.service'
-import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'src/common/constants/official-verification-status'
+import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
 import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import type { CreateVerificationRequestResponse } from 'src/lib/schemas/managers'
 import { type ZodIssue, z } from 'zod'

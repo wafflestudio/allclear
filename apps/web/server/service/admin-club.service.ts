@@ -4,7 +4,7 @@ import {
   PENDING_CLUB_STATUS,
   PUBLIC_CLUB_STATUS,
   REJECTED_CLUB_STATUS,
-} from 'src/common/constants/club-status'
+} from 'server/domain/constants/club-status'
 import type {
   AdminClubHistoriesQuery,
   AdminClubManagerRequestStatusUpdate,

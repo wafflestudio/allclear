@@ -1,4 +1,4 @@
-import type { ClubStatus } from 'src/common/constants/club-status'
+import type { ClubStatus } from 'server/domain/constants/club-status'
 import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { CollegeMajorEntity } from './college-major.entity'
 import { ClubTimeStampMixin } from './TimeStampMixin'
