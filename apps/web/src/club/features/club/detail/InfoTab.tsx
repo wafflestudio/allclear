@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Club } from '../../../server/domain/model/Club'
+import type { Club } from 'server/domain/model/Club'
+import { HTML_CONTENT_CLASS, useSanitizedHtml } from 'src/club/shared/components/HtmlContent'
+import { MdiIcon } from 'src/club/shared/components/icons'
 import { BackgroundCard } from './BackgroundCard'
-import { HTML_CONTENT_CLASS, useSanitizedHtml } from './HtmlContent'
-import { MdiIcon } from './icons'
 
 const COLLAPSED_MAX_HEIGHT = 115
 

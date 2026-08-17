@@ -1,8 +1,8 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/ko'
-import type { Club } from '../../../server/domain/model/Club'
+import type { Club } from 'server/domain/model/Club'
+import { HtmlContent } from 'src/club/shared/components/HtmlContent'
 import { BackgroundCard } from './BackgroundCard'
-import { HtmlContent } from './HtmlContent'
 
 const UPDATE_REQUEST_FORM_URL = 'https://tally.so/r/EkQrQN'
 

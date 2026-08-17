@@ -1,6 +1,9 @@
-import { useRandomRecommendations } from '../../api'
-import { ClubPreviewCard, ClubPreviewCardSkeleton } from '../ClubPreviewCard'
-import { HorizontalCarousel } from '../HorizontalCarousel'
+import { useRandomRecommendations } from 'src/club/api'
+import {
+  ClubPreviewCard,
+  ClubPreviewCardSkeleton,
+} from 'src/club/shared/components/ClubPreviewCard'
+import { HorizontalCarousel } from 'src/club/shared/components/HorizontalCarousel'
 
 type Props = {
   enabled: boolean

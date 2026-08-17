@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router'
 import { type RefObject, useEffect, useState } from 'react'
-import { MdiIcon } from './icons'
+import { MdiIcon } from 'src/club/shared/components/icons'
 
 export const DETAIL_HEADER_HEIGHT = 56
 

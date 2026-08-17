@@ -1,4 +1,4 @@
-import { useClearRecentSearches, useRecentSearches } from '../../api'
+import { useClearRecentSearches, useRecentSearches } from 'src/club/api'
 
 type Props = {
   onSelect: (query: string) => void

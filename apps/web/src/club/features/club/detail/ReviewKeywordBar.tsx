@@ -1,4 +1,4 @@
-import type { CategoryTheme } from '../constants'
+import type { CategoryTheme } from 'src/club/shared/constants'
 
 type Props = {
   iconUri: string // 이모지 문자열

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from 'react-query'
+import { getGuestId } from 'src/club/auth/guestId'
 import type { Club } from '../../server/domain/model/Club'
 import { ApiError, authHeaders } from './auth/token'
-import { getGuestId } from './guestId'
 
 export type { Club }
 

@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import type { Club } from '../api'
-import { getCategoryTheme } from '../constants'
-import { useSaveClub } from '../useSaveClub'
-import { ReviewKeywordPill } from './ReviewKeywordPill'
+import type { Club } from 'src/club/api'
+import { ReviewKeywordPill } from 'src/club/shared/components/ReviewKeywordPill'
+import { getCategoryTheme } from 'src/club/shared/constants'
+import { useSaveClub } from 'src/club/shared/hooks/useSaveClub'
 
 type Props = {
   club: Club

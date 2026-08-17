@@ -1,7 +1,7 @@
-import type { Club } from '../../../server/domain/model/Club'
-import { getCategoryTheme } from '../constants'
+import type { Club } from 'server/domain/model/Club'
+import { MdiIcon } from 'src/club/shared/components/icons'
+import { getCategoryTheme } from 'src/club/shared/constants'
 import { BackgroundCard } from './BackgroundCard'
-import { MdiIcon } from './icons'
 import { ReviewKeywordBar } from './ReviewKeywordBar'
 
 type Props = {

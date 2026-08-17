@@ -3,11 +3,11 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
+import { BackgroundCard } from 'src/club/features/club/detail/BackgroundCard'
+import { BackHeader } from 'src/club/shared/components/BackHeader'
 import { useClub, useReviewKeywordCategories } from '../../../src/club/api'
 import { useProfile, useRequireLogin } from '../../../src/club/auth/AuthContext'
 import { authFetch } from '../../../src/club/auth/token'
-import { BackgroundCard } from '../../../src/club/components/BackgroundCard'
-import { BackHeader } from '../../../src/club/components/BackHeader'
 
 type MyReview = {
   reviewKeywordIds: string[]

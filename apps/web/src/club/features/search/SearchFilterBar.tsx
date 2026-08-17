@@ -1,5 +1,5 @@
-import type { ClubSearchFilters } from '../../api'
-import { MdiIcon } from '../icons'
+import type { ClubSearchFilters } from 'src/club/api'
+import { MdiIcon } from 'src/club/shared/components/icons'
 import { FilterChip } from './FilterChip'
 
 const AFFILIATION_OPTIONS = ['중앙동아리', '학과/단과대동아리'] as const

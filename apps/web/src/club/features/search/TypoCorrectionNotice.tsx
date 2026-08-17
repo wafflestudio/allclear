@@ -1,4 +1,4 @@
-import { MdiIcon } from '../icons'
+import { MdiIcon } from 'src/club/shared/components/icons'
 
 type Props = {
   correctedQuery: string

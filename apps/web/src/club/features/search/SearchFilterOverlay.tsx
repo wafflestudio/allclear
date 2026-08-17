@@ -1,5 +1,5 @@
-import { type ClubSearchFilters, DEFAULT_SEARCH_FILTERS } from '../../api'
-import { MdiIcon } from '../icons'
+import { type ClubSearchFilters, DEFAULT_SEARCH_FILTERS } from 'src/club/api'
+import { MdiIcon } from 'src/club/shared/components/icons'
 import { FilterChip } from './FilterChip'
 import { MinDurationToggle } from './MinDurationToggle'
 

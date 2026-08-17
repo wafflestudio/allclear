@@ -4,11 +4,11 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
+import { AlertModal } from 'src/club/shared/components/AlertModal'
+import { AppTabBar } from 'src/club/shared/components/AppTabBar'
+import { openAppDeepLink } from 'src/club/web/openInApp'
 import { useProfile, useRequireLogin } from '../../../src/club/auth/AuthContext'
 import { authFetch, clearLoginToken } from '../../../src/club/auth/token'
-import { AlertModal } from '../../../src/club/components/AlertModal'
-import { AppTabBar } from '../../../src/club/components/AppTabBar'
-import { openAppDeepLink } from '../../../src/club/openInApp'
 
 // 앱 MyPageScreen과 동일: bg #F3F0F5, 프로필 카드 → 운영진 카드 → 메뉴 카드 → 계정 카드
 const MyPage = () => {

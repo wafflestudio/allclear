@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { useClubRankings } from '../../api'
+import { useClubRankings } from 'src/club/api'
 
 // 앱 PopularClubs와 동일: "인기 동아리" 랭킹 5개 리스트
 export function PopularClubs() {
