@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import type { Club } from 'src/club/api'
+import type { Club } from 'src/club/api/clubs'
 import { ReviewKeywordPill } from 'src/club/shared/components/ReviewKeywordPill'
 import { getCategoryTheme } from 'src/club/shared/constants'
 import { useSaveClub } from 'src/club/shared/hooks/useSaveClub'

@@ -1,9 +1,9 @@
 import Head from 'next/head'
 import { useRouter } from 'next/router'
+import { useClubsByCategory } from 'src/club/api/clubs'
 import { ClubCard, ClubCardSkeleton } from 'src/club/features/club/list/ClubCard'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
 import { BackHeader } from 'src/club/shared/components/BackHeader'
-import { useClubsByCategory } from '../../../src/club/api'
 
 // 앱 ClubListScreen과 동일: BackHeader + 카드 목록 (gap 25, px 20)
 const ClubListPage = () => {

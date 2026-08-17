@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import { useState } from 'react'
+import { type ClubSearchFilters, DEFAULT_SEARCH_FILTERS, useSearchClubs } from 'src/club/api/clubs'
 import { ClubCard, ClubCardSkeleton } from 'src/club/features/club/list/ClubCard'
 import { PopularClubs } from 'src/club/features/search/PopularClubs'
 import { RandomRecommendations } from 'src/club/features/search/RandomRecommendations'
@@ -9,7 +10,6 @@ import { SearchFilterBar } from 'src/club/features/search/SearchFilterBar'
 import { SearchFilterOverlay } from 'src/club/features/search/SearchFilterOverlay'
 import { TypoCorrectionNotice } from 'src/club/features/search/TypoCorrectionNotice'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
-import { type ClubSearchFilters, DEFAULT_SEARCH_FILTERS, useSearchClubs } from '../../src/club/api'
 
 // 앱 SearchScreen과 동일: 헤더 → 검색바 → (초기: 최근검색/인기) | (결과: 필터바 + 목록)
 const SearchPage = () => {

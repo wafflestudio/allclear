@@ -1,4 +1,4 @@
-import { useRandomRecommendations } from 'src/club/api'
+import { useRandomRecommendations } from 'src/club/api/clubs'
 import {
   ClubPreviewCard,
   ClubPreviewCardSkeleton,

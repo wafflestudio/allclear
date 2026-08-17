@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from 'react-query'
-import { getGuestId } from 'src/club/auth/guestId'
-import type { Club } from '../../server/domain/model/Club'
-import { ApiError, authHeaders } from './auth/token'
+// 앱 repositories/club.ts 대응 — 동아리 조회/검색/추천
+import { useQuery, useQueryClient } from 'react-query'
+import type { Club } from 'server/domain/model/Club'
+import { fetchJson, identityHeaders } from './client'
+import { RECENT_SEARCHES_QUERY_KEY } from './recentSearches'
 
 export type { Club }
 
@@ -42,20 +43,6 @@ export const DEFAULT_SEARCH_FILTERS: ClubSearchFilters = {
   min_activity_period: [],
 }
 
-async function fetchJson<T>(url: string, headers?: Record<string, string>): Promise<T> {
-  const res = await fetch(url, { headers })
-  if (!res.ok) {
-    throw new Error(`${url} failed: ${res.status}`)
-  }
-  return res.json()
-}
-
-// 앱 apiConnector 인터셉터와 동일: 로그인 시 Bearer 토큰, 비로그인 시 x-guest-id
-function identityHeaders(): Record<string, string> {
-  const auth = authHeaders()
-  return Object.keys(auth).length > 0 ? auth : { 'x-guest-id': getGuestId() }
-}
-
 export function useLatestClubs() {
   return useQuery(['clubs', 'latest'], () => fetchJson<ClubListResponse>('/api/v2/clubs/latest'), {
     staleTime: Infinity,
@@ -90,6 +77,13 @@ export function useRandomRecommendations(enabled: boolean) {
   )
 }
 
+export function useClub(uuid: string | undefined) {
+  return useQuery(['clubs', uuid], () => fetchJson<Club>(`/api/v2/clubs/${uuid}`), {
+    enabled: !!uuid,
+    staleTime: Infinity,
+  })
+}
+
 // 앱 createSearchClubsRequest와 동일한 파라미터 조립 규칙
 export function buildSearchParams(query: string, filters: ClubSearchFilters): URLSearchParams {
   const params = new URLSearchParams()
@@ -111,36 +105,6 @@ export function buildSearchParams(query: string, filters: ClubSearchFilters): UR
   return params
 }
 
-export type ReviewKeyword = {
-  id: string
-  title: string
-  iconUri: string
-}
-
-export type ReviewKeywordCategory = {
-  id: number
-  title: string
-  keywords: ReviewKeyword[]
-}
-
-export function useReviewKeywordCategories() {
-  return useQuery(
-    ['reviewKeywords'],
-    () =>
-      fetchJson<{ categories: ReviewKeywordCategory[]; totalSize: number }>(
-        '/api/v2/clubs/reviews/keywords',
-      ),
-    { staleTime: Infinity, select: (data) => data.categories },
-  )
-}
-
-export function useClub(uuid: string | undefined) {
-  return useQuery(['clubs', uuid], () => fetchJson<Club>(`/api/v2/clubs/${uuid}`), {
-    enabled: !!uuid,
-    staleTime: Infinity,
-  })
-}
-
 export function useSearchClubs(query: string, filters: ClubSearchFilters) {
   const queryClient = useQueryClient()
   const params = buildSearchParams(query, filters)
@@ -159,59 +123,6 @@ export function useSearchClubs(query: string, filters: ClubSearchFilters) {
       onSuccess: () => {
         queryClient.cancelQueries(RECENT_SEARCHES_QUERY_KEY)
         queryClient.invalidateQueries(RECENT_SEARCHES_QUERY_KEY)
-      },
-    },
-  )
-}
-
-// --- 최근 검색어 (앱 SearchScreen과 동일: 서버 /v2/users/me/recent-searches) ---
-
-export type RecentSearch = {
-  query: string
-  searchedAt: string
-}
-
-type RecentSearchesResponse = {
-  recentSearches: RecentSearch[]
-  totalSize: number
-}
-
-export const RECENT_SEARCHES_QUERY_KEY = ['recentSearches'] as const
-
-export function useRecentSearches() {
-  return useQuery(
-    RECENT_SEARCHES_QUERY_KEY,
-    () => fetchJson<RecentSearchesResponse>('/api/v2/users/me/recent-searches', identityHeaders()),
-    { staleTime: 0, select: (data) => data.recentSearches.map((it) => it.query) },
-  )
-}
-
-export function useClearRecentSearches() {
-  const queryClient = useQueryClient()
-
-  return useMutation<void, unknown, void, { previous?: RecentSearchesResponse }>(
-    async () => {
-      const url = '/api/v2/users/me/recent-searches'
-      const res = await fetch(url, { method: 'DELETE', headers: identityHeaders() })
-      if (!res.ok) {
-        throw new ApiError(url, res.status)
-      }
-    },
-    {
-      // 앱과 동일: 낙관적으로 비우고 실패 시 롤백
-      onMutate: async () => {
-        await queryClient.cancelQueries(RECENT_SEARCHES_QUERY_KEY)
-        const previous = queryClient.getQueryData<RecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY)
-        queryClient.setQueryData<RecentSearchesResponse>(RECENT_SEARCHES_QUERY_KEY, {
-          recentSearches: [],
-          totalSize: 0,
-        })
-        return { previous }
-      },
-      onError: (_error, _variables, context) => {
-        if (context?.previous) {
-          queryClient.setQueryData(RECENT_SEARCHES_QUERY_KEY, context.previous)
-        }
       },
     },
   )

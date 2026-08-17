@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useQuery, useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
-import type { Club, ClubListResponse } from 'src/club/api'
+import type { Club, ClubListResponse } from 'src/club/api/clubs'
 import { useProfile, useRequireLogin } from 'src/club/auth/AuthContext'
 import { authFetch } from 'src/club/auth/token'
 

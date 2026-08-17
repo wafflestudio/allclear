@@ -1,4 +1,4 @@
-import type { ClubSearchFilters } from 'src/club/api'
+import type { ClubSearchFilters } from 'src/club/api/clubs'
 import { MdiIcon } from 'src/club/shared/components/icons'
 import { FilterChip } from './FilterChip'
 

@@ -1,5 +1,6 @@
 import Head from 'next/head'
 import Link from 'next/link'
+import { useLatestClubs } from 'src/club/api/clubs'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
 import {
   ClubPreviewCard,
@@ -7,7 +8,6 @@ import {
 } from 'src/club/shared/components/ClubPreviewCard'
 import { HorizontalCarousel } from 'src/club/shared/components/HorizontalCarousel'
 import { CategoryIconMap, CLUB_CATEGORY_NAMES } from 'src/club/shared/constants'
-import { useLatestClubs } from '../../src/club/api'
 
 // 앱 HomeScreen과 동일한 구성: 헤더 → 카테고리 섹션 → 최신 공고 캐러셀
 const ClubHomePage = () => {
