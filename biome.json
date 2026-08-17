@@ -100,6 +100,55 @@
 					"semicolons": "asNeeded"
 				}
 			}
+		},
+		{
+			"includes": ["apps/web/server/**", "apps/web/middleware.ts"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["src/**", "**/src/**"],
+										"message": "server/ must not depend on frontend code under src/. Move shared domain code into server/domain."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["apps/web/src/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"server/service/**",
+											"server/infra/**",
+											"server/provider",
+											"server/provider/**",
+											"**/server/service/**",
+											"**/server/infra/**",
+											"**/server/provider",
+											"**/server/provider/**"
+										],
+										"message": "Frontend code under src/ may only import types from server/domain and server/schemas. Reach the backend through pages/api or getServerSideProps in pages/."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
 		}
 	]
 }
