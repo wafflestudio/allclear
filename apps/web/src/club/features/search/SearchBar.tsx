@@ -1,3 +1,6 @@
+import searchIcon from './assets/search-icon.png'
+import searchResetIcon from './assets/search-reset.png'
+
 const MAX_QUERY_LENGTH = 20
 
 type Props = {
@@ -17,7 +20,7 @@ export function SearchBar({ value, onChange, onSubmit }: Props) {
       className="flex items-center rounded-[10px] bg-[#F3F0F5] py-4 pl-[18px] pr-[15px]"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/icons/search-icon.png" alt="" width={15} height={15} className="object-contain" />
+      <img src={searchIcon.src} alt="" width={15} height={15} className="object-contain" />
       <input
         type="search"
         enterKeyHint="search"
@@ -38,7 +41,7 @@ export function SearchBar({ value, onChange, onSubmit }: Props) {
           <button type="button" onClick={() => onChange('')} aria-label="검색어 지우기">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/icons/search-reset.png"
+              src={searchResetIcon.src}
               alt=""
               width={14}
               height={14}

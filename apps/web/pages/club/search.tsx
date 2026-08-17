@@ -9,6 +9,7 @@ import { SearchBar } from 'src/club/features/search/SearchBar'
 import { SearchFilterBar } from 'src/club/features/search/SearchFilterBar'
 import { SearchFilterOverlay } from 'src/club/features/search/SearchFilterOverlay'
 import { TypoCorrectionNotice } from 'src/club/features/search/TypoCorrectionNotice'
+import notFoundImage from 'src/club/shared/assets/not-found.png'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
 
 // 앱 SearchScreen과 동일: 헤더 → 검색바 → (초기: 최근검색/인기) | (결과: 필터바 + 목록)
@@ -119,7 +120,7 @@ const SearchPage = () => {
                   <>
                     <div className="flex flex-1 flex-col items-center justify-center py-10">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/images/not-found.png" alt="" width={122} height={99} />
+                      <img src={notFoundImage.src} alt="" width={122} height={99} />
                       <p className="mt-5 text-center text-[12px] font-normal leading-[18px] text-[#202020]">
                         앗 검색 결과가 없어요!
                         <br />

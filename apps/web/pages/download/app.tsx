@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { useRouter } from 'next/router'
 import * as qs from 'qs'
 import React, { useEffect, useState } from 'react'
+import homescreenPreview from 'src/download/assets/homescreen-preview.png'
 
 const checkMobile = (): 'ios' | 'android' | 'other' | '' => {
   const device = navigator.userAgent.toLowerCase() // userAgent 값 얻기
@@ -135,7 +136,7 @@ const AppDownload = () => {
               <div className="h-[46px] w-[3px] bg-gray-800 absolute -left-[17px] top-[178px] rounded-l-lg"></div>
               <div className="h-[64px] w-[3px] bg-gray-800 absolute -right-[17px] top-[142px] rounded-r-lg"></div>
               <div className="rounded-[2.5rem] overflow-hidden w-[272px] h-[572px] bg-white">
-                <img src="/images/homescreen-preview.png" className="w-[272px] h-[572px]" alt="" />
+                <img src={homescreenPreview.src} className="w-[272px] h-[572px]" alt="" />
               </div>
             </div>
           </div>

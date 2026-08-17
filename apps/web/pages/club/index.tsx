@@ -1,6 +1,8 @@
 import Head from 'next/head'
 import Link from 'next/link'
 import { useLatestClubs } from 'src/club/api/clubs'
+import categoryTitleIcon from 'src/club/shared/assets/category-title.png'
+import headerLogo from 'src/club/shared/assets/header-allclear.png'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
 import {
   ClubPreviewCard,
@@ -35,7 +37,7 @@ const ClubHomePage = () => {
               <p className="text-[12px] font-medium text-[#202020]">서울대 모든 동아리</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/header/allclear.png"
+                src={headerLogo.src}
                 alt="올클리어"
                 width={106}
                 height={34}
@@ -56,7 +58,7 @@ const ClubHomePage = () => {
                 <div className="flex min-w-0 items-center">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="/icons/category-title.png"
+                    src={categoryTitleIcon.src}
                     alt=""
                     width={44}
                     height={42}
@@ -128,7 +130,7 @@ function CategoryCard({ name }: { name: string }) {
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={CategoryIconMap[name as keyof typeof CategoryIconMap]}
+        src={CategoryIconMap[name as keyof typeof CategoryIconMap].src}
         alt=""
         width={30}
         height={30}

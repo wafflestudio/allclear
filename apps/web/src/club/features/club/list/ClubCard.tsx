@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import type { Club } from 'src/club/api/clubs'
+import heartIcon from 'src/club/shared/assets/heart.png'
+import heartFillIcon from 'src/club/shared/assets/heart-fill.png'
 import { ReviewKeywordPill } from 'src/club/shared/components/ReviewKeywordPill'
 import { getCategoryTheme } from 'src/club/shared/constants'
 import { useSaveClub } from 'src/club/shared/hooks/useSaveClub'
@@ -72,7 +74,7 @@ export function ClubCard({ club, useCategoryTheme = false }: Props) {
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={isSaved ? '/icons/heart-fill.png' : '/icons/heart.png'}
+          src={isSaved ? heartFillIcon.src : heartIcon.src}
           alt=""
           width={20}
           height={20}

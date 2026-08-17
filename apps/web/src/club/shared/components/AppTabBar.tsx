@@ -1,13 +1,39 @@
+import type { StaticImageData } from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import exploreActive from '../assets/tab/explore-active.png'
+import exploreDefault from '../assets/tab/explore-default.png'
+import homeActive from '../assets/tab/home-active.png'
+import homeDefault from '../assets/tab/home-default.png'
+import mypageActive from '../assets/tab/mypage-active.png'
+import mypageDefault from '../assets/tab/mypage-default.png'
+import savedActive from '../assets/tab/saved-active.png'
+import savedDefault from '../assets/tab/saved-default.png'
 
 type TabKey = 'home' | 'explore' | 'saved' | 'mypage'
 
-const TABS: { key: TabKey; label: string; href: string }[] = [
-  { key: 'home', label: '홈', href: '/club' },
-  { key: 'explore', label: '탐색', href: '/club/search' },
-  { key: 'saved', label: '저장', href: '/club/saved' },
-  { key: 'mypage', label: '마이', href: '/club/mypage' },
+type TabIcon = { active: StaticImageData; default: StaticImageData }
+
+const TABS: { key: TabKey; label: string; href: string; icon: TabIcon }[] = [
+  { key: 'home', label: '홈', href: '/club', icon: { active: homeActive, default: homeDefault } },
+  {
+    key: 'explore',
+    label: '탐색',
+    href: '/club/search',
+    icon: { active: exploreActive, default: exploreDefault },
+  },
+  {
+    key: 'saved',
+    label: '저장',
+    href: '/club/saved',
+    icon: { active: savedActive, default: savedDefault },
+  },
+  {
+    key: 'mypage',
+    label: '마이',
+    href: '/club/mypage',
+    icon: { active: mypageActive, default: mypageDefault },
+  },
 ]
 
 type Props = {
@@ -24,7 +50,7 @@ export function AppTabBar({ active }: Props) {
       <div className="mx-auto flex h-[86px] max-w-[480px] bg-[#F3F0F5] pb-[26px]">
         {TABS.map((tab) => {
           const isActive = tab.key === active
-          const icon = `/icons/tab/${tab.key}-${isActive ? 'active' : 'default'}.png`
+          const icon = isActive ? tab.icon.active : tab.icon.default
           return (
             <Link
               key={tab.key}
@@ -39,7 +65,7 @@ export function AppTabBar({ active }: Props) {
               }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={icon} alt="" width={22} height={22} className="mt-2.5 object-contain" />
+              <img src={icon.src} alt="" width={22} height={22} className="mt-2.5 object-contain" />
               <span
                 className={`mt-1 text-[12px] font-medium ${
                   isActive ? 'text-[#874FFF]' : 'text-[#C1C1C1]'

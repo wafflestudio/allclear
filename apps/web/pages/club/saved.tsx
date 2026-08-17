@@ -1,6 +1,7 @@
 import Head from 'next/head'
 import { useEffect } from 'react'
 import { ClubCard, ClubCardSkeleton } from 'src/club/features/club/list/ClubCard'
+import notFoundImage from 'src/club/shared/assets/not-found.png'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
 import { useSavedClubs } from 'src/club/shared/hooks/useSaveClub'
 import { useProfile, useRequireLogin } from '../../src/club/auth/AuthContext'
@@ -56,7 +57,7 @@ const SavedClubListPage = () => {
           ) : (clubs ?? []).length === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/not-found.png" alt="" width={122} height={99} />
+              <img src={notFoundImage.src} alt="" width={122} height={99} />
               <p className="mt-5 text-center text-[12px] font-normal leading-[18px] text-[#202020]">
                 저장한 동아리가 없어요
               </p>

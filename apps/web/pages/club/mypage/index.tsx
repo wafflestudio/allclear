@@ -4,6 +4,8 @@ import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import { useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
+import editPencilIcon from 'src/club/shared/assets/edit-pencil.png'
+import snuLogo from 'src/club/shared/assets/snu-logo.png'
 import { AlertModal } from 'src/club/shared/components/AlertModal'
 import { AppTabBar } from 'src/club/shared/components/AppTabBar'
 import { openAppDeepLink } from 'src/club/web/openInApp'
@@ -91,10 +93,10 @@ const MyPage = () => {
                   className="absolute right-5 top-5 active:opacity-50"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/icons/edit-pencil.png" alt="" width={22} height={22} />
+                  <img src={editPencilIcon.src} alt="" width={22} height={22} />
                 </Link>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/images/mypage/snu-logo.png" alt="" width={48} height={48} />
+                <img src={snuLogo.src} alt="" width={48} height={48} />
                 <p className="mt-2.5 text-[20px] font-bold text-[#202020]">
                   {user.nickname || '이름 정보가 없습니다'}
                 </p>

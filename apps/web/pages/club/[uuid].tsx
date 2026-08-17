@@ -13,6 +13,8 @@ import { ClubDetailTabBar, type ClubTabKey } from 'src/club/features/club/detail
 import { InfoTab } from 'src/club/features/club/detail/InfoTab'
 import { RecruitTab } from 'src/club/features/club/detail/RecruitTab'
 import { ReviewTab } from 'src/club/features/club/detail/ReviewTab'
+import heartIcon from 'src/club/shared/assets/heart.png'
+import heartFillIcon from 'src/club/shared/assets/heart-fill.png'
 import { MdiIcon } from 'src/club/shared/components/icons'
 import { ReviewKeywordPill } from 'src/club/shared/components/ReviewKeywordPill'
 import { getCategoryTheme } from 'src/club/shared/constants'
@@ -106,7 +108,7 @@ const ClubDetailPage = ({ club }: Props) => {
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={isSaved ? '/icons/heart-fill.png' : '/icons/heart.png'}
+                      src={isSaved ? heartFillIcon.src : heartIcon.src}
                       alt=""
                       width={22}
                       height={22}

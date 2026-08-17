@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { Club } from 'server/domain/model/Club'
 import { HTML_CONTENT_CLASS, useSanitizedHtml } from 'src/club/shared/components/HtmlContent'
 import { MdiIcon } from 'src/club/shared/components/icons'
+import clubTypeIcon from './assets/club-type.png'
+import collegeIcon from './assets/college.png'
+import recruitTypeIcon from './assets/recruit-type.png'
 import { BackgroundCard } from './BackgroundCard'
 
 const COLLAPSED_MAX_HEIGHT = 115
@@ -15,17 +18,17 @@ export function InfoTab({ club }: Props) {
     {
       key: '분류',
       value: club.type ? `${club.type} 동아리` : '',
-      icon: '/icons/clubInfo/club-type.png',
+      icon: clubTypeIcon.src,
     },
     {
       key: '단과대학',
       value: club.collegeMajor?.major ?? club.collegeMajor?.college ?? '',
-      icon: '/icons/clubInfo/college.png',
+      icon: collegeIcon.src,
     },
     {
       key: '모집형태',
       value: club.recruitType ? `${club.recruitType} 모집` : '',
-      icon: '/icons/clubInfo/recruit-type.png',
+      icon: recruitTypeIcon.src,
     },
   ].filter((item) => item.value.trim() !== '')
 

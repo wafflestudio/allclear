@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from 'react-query'
 import { toast } from 'react-toastify'
+import kakaoIcon from './assets/kakao.png'
 import { authFetch, clearLoginToken, getLoginToken } from './token'
 
 // GET /api/v2/users/me 의 profile (server/domain/model/User.ts)
@@ -147,7 +148,7 @@ function LoginSheet({ onClose }: { onClose: () => void }) {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/icons/kakao.png"
+              src={kakaoIcon.src}
               alt=""
               width={24}
               height={24}

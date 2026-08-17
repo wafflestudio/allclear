@@ -1,3 +1,14 @@
+import type { StaticImageData } from 'next/image'
+import academicIcon from './assets/category/academic.png'
+import careerIcon from './assets/category/career.png'
+import cultureIcon from './assets/category/culture.png'
+import hobbyIcon from './assets/category/hobby.png'
+import performanceIcon from './assets/category/performance.png'
+import promotionIcon from './assets/category/promotion.png'
+import religionIcon from './assets/category/religion.png'
+import sportsIcon from './assets/category/sports.png'
+import volunteerIcon from './assets/category/volunteer.png'
+
 // allclear-app의 디자인 토큰 (src/shared/constants/colors.ts, category.ts와 동기화)
 export const ClubColors = {
   BACKGROUND_MAIN: '#FAFAFA',
@@ -52,16 +63,16 @@ export const CategoryThemeMap: Record<CategoryName, CategoryTheme> = {
 }
 
 // 앱 홈 화면 카테고리 카드 아이콘 (allclear-app src/assets/icons/category/*)
-export const CategoryIconMap: Record<CategoryName, string> = {
-  학술: '/icons/category-home/academic.png',
-  종교: '/icons/category-home/religion.png',
-  봉사: '/icons/category-home/volunteer.png',
-  공연: '/icons/category-home/performance.png',
-  운동: '/icons/category-home/sports.png',
-  홍보: '/icons/category-home/promotion.png',
-  취미: '/icons/category-home/hobby.png',
-  문화: '/icons/category-home/culture.png',
-  진로: '/icons/category-home/career.png',
+export const CategoryIconMap: Record<CategoryName, StaticImageData> = {
+  학술: academicIcon,
+  종교: religionIcon,
+  봉사: volunteerIcon,
+  공연: performanceIcon,
+  운동: sportsIcon,
+  홍보: promotionIcon,
+  취미: hobbyIcon,
+  문화: cultureIcon,
+  진로: careerIcon,
 }
 
 export function getCategoryTheme(category: string): CategoryTheme {
