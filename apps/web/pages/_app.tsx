@@ -12,8 +12,8 @@ import 'react-toastify/dist/ReactToastify.css'
 import { Analytics } from '@vercel/analytics/react'
 import type { Metadata } from 'next'
 import Script from 'next/script'
+import * as GA from 'src/club/web/ga'
 import { AuthProvider } from '../src/club/auth/AuthContext'
-import * as GA from '../src/common/connectors/ga'
 import { WEB_ENV } from '../src/WEB_ENV'
 
 export const metadata: Metadata = {

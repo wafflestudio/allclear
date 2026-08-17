@@ -7,6 +7,7 @@ import { NotFoundError } from 'server/domain/error'
 import type { Club } from 'server/domain/model/Club'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
+import { OpenGraph } from 'src/club/web/OpenGraph'
 import { z } from 'zod'
 import { useRequireLogin } from '../../src/club/auth/AuthContext'
 import { BackgroundCard } from '../../src/club/components/BackgroundCard'
@@ -20,7 +21,6 @@ import { ReviewTab } from '../../src/club/components/ReviewTab'
 import { getCategoryTheme } from '../../src/club/constants'
 import { openClubInApp } from '../../src/club/openInApp'
 import { useSaveClub } from '../../src/club/useSaveClub'
-import { OpenGraph } from '../../src/common/components/OpenGraph'
 
 type Props = {
   club: Club

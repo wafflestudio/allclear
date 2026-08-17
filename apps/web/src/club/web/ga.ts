@@ -1,5 +1,5 @@
 import ReactGA from 'react-ga'
-import { WEB_ENV } from '../../WEB_ENV'
+import { WEB_ENV } from 'src/WEB_ENV'
 
 function isBrowser() {
   return typeof window !== 'undefined'
