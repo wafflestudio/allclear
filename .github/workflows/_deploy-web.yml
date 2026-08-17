@@ -1,0 +1,65 @@
+name: Deploy web image
+
+on:
+  workflow_call:
+    inputs:
+      ocir_repository:
+        description: OCIR repository that receives the web image
+        required: true
+        type: string
+      gitops_overlay_path:
+        description: Kustomize overlay path in waffle-world-oci
+        required: true
+        type: string
+    secrets:
+      OCI_AUTH_TOKEN:
+        required: true
+      DEPLOYER_APP_PRIVATE_KEY:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and push web image
+    runs-on: ubuntu-24.04-arm
+    concurrency:
+      group: deploy-${{ inputs.ocir_repository }}
+      cancel-in-progress: true
+
+    env:
+      IMAGE_TAG: ${{ github.run_id }}-${{ github.run_attempt }}
+      OCIR_REGISTRY: yny.ocir.io
+      OCIR_NAMESPACE: ax1dvc8vmenm
+      OCIR_REPOSITORY: ${{ inputs.ocir_repository }}
+
+    steps:
+      - name: Checkout merged commit
+        uses: actions/checkout@v5.0.1
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+
+      - name: Login to OCIR
+        run: echo "${{ secrets.OCI_AUTH_TOKEN }}" | docker login "$OCIR_REGISTRY" -u "$OCIR_NAMESPACE/members/waffle-deployer" --password-stdin
+
+      - name: Build web image
+        run: |
+          docker build \
+            --file apps/web/Dockerfile \
+            --platform linux/arm64 \
+            --tag "$OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG" \
+            .
+
+      - name: Push web image
+        run: docker push "$OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Update GitOps image tag
+        uses: wafflestudio/waffle-world-oci/.github/actions/update-image@main
+        with:
+          image: ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/${{ env.OCIR_REPOSITORY }}
+          tag: ${{ env.IMAGE_TAG }}
+          # The OCIR repository includes the service suffix, while the GitOps
+          # overlay is rooted at the environment directory (for example, argocd/allclear-dev).
+          overlay-path: ${{ inputs.gitops_overlay_path }}
+          private-key: ${{ secrets.DEPLOYER_APP_PRIVATE_KEY }}

@@ -1,0 +1,88 @@
+import type { ClubStatus } from 'src/common/constants/club-status'
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm'
+import { CollegeMajorEntity } from './college-major.entity'
+import { ClubTimeStampMixin } from './TimeStampMixin'
+
+@Entity('club')
+@Index('ux_club_uuid', ['uuid'])
+@Index('ix_club_category', ['category'])
+export class ClubEntity extends ClubTimeStampMixin {
+  @PrimaryGeneratedColumn('uuid', { name: 'uuid' })
+  uuid: string
+
+  @Column({ type: 'varchar', name: 'name' })
+  name: string
+
+  @Column({ type: 'varchar', default: '', name: 'description' })
+  description: string
+
+  @Column({ type: 'varchar', default: '', name: 'short_description' })
+  shortDescription: string
+
+  @Column({ type: 'varchar', default: '', name: 'type' })
+  type: string
+
+  @Column({ type: 'varchar', default: '', name: 'category' })
+  category: string
+
+  @Column({ type: 'varchar', default: '', name: 'affiliation_type' })
+  affiliationType: string
+
+  @Column({ type: 'int', nullable: true, name: 'college_major_id' })
+  collegeMajorId: number | null
+
+  @ManyToOne(() => CollegeMajorEntity, { nullable: true, eager: true })
+  @JoinColumn({ name: 'college_major_id' })
+  collegeMajor: CollegeMajorEntity | null
+
+  @Column({ type: 'varchar', default: '', length: 300, name: 'image_uri' })
+  imageUri: string
+
+  @Column({ type: 'varchar', default: '', name: 'article', nullable: true })
+  article: string | null
+
+  @Column({ type: 'timestamp with time zone', nullable: true, name: 'article_uploaded_at' })
+  articleUploadedAt: string | null
+
+  @Column({ type: 'boolean', default: false, name: 'has_dongbang' })
+  hasDongbang: boolean
+
+  @Column({ type: 'varchar', default: '', name: 'dongbang_location' })
+  dongbangLocation: string
+
+  @Column({ type: 'int', default: 0, name: 'min_activity_period' })
+  minActivityPeriod: number
+
+  @Column({ type: 'int', default: 0, name: 'active_member_count' })
+  activeMemberCount: number
+
+  @Column({ type: 'date', nullable: true, name: 'founded_at' })
+  foundedAt: string | null
+
+  @Column({ type: 'varchar', default: '', nullable: true, name: 'recruit_type' })
+  recruitType: string | null
+
+  @Column({ type: 'boolean', default: false, name: 'is_official_verified' })
+  isOfficialVerified: boolean
+
+  @Column({ type: 'timestamp without time zone', nullable: true, name: 'verified_at' })
+  verifiedAt: string | null
+
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb", name: 'sns_urls' })
+  snsUrls: string[]
+
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb", name: 'activity_image_urls' })
+  activityImageUrls: string[]
+
+  @Column({ type: 'varchar', default: '', nullable: true, name: 'introduction' })
+  introduction: string | null
+
+  @Column({ type: 'timestamp without time zone', nullable: true, name: 'approved_at' })
+  approvedAt: string | null
+
+  @Column({ type: 'varchar', default: 'PENDING', name: 'status' })
+  status: ClubStatus
+
+  @Column({ type: 'varchar', default: '', nullable: true, name: 'reject_reason' })
+  rejectReason: string | null
+}

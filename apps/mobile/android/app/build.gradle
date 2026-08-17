@@ -1,0 +1,188 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+apply plugin: 'com.google.gms.google-services'
+
+// react-native-config 설정
+// 의도적으로 소문자 사용
+project.ext.envConfigFiles = [
+    debug: ".env.local",
+    devrelease: ".env.local",
+    release: ".env.prod",
+]
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
+// The vector-icons Gradle script defaults to apps/mobile/node_modules.
+// In this monorepo dependencies live at the repository root.
+project.ext.vectoricons = [
+    iconFontsDir: file("../../../../node_modules/react-native-vector-icons/Fonts"),
+]
+apply from: file("../../../../node_modules/react-native-vector-icons/fonts.gradle")
+
+/**
+ * This is the configuration block to customize your React Native Android app.
+ * By default you don't need to apply any configuration, just uncomment the lines you need.
+ */
+react {
+    autolinkLibrariesWithApp()
+
+    /* Folders */
+    root = file("../..")
+    reactNativeDir = file("../../../../node_modules/react-native")
+    codegenDir = file("../../../../node_modules/@react-native/codegen")
+    cliFile = file("../../../../node_modules/react-native/cli.js")
+    hermesCommand = file("../../../../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc").absolutePath
+
+    /* Variants */
+    //   The list of variants to that are debuggable. For those we're going to
+    //   skip the bundling of the JS bundle and the assets. By default is just 'debug'.
+    //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
+    debuggableVariants = ["debug"]
+
+    /* Bundling */
+    //   A list containing the node command and its flags. Default is just 'node'.
+    // nodeExecutableAndArgs = ["node"]
+    //
+    //   The command to run when bundling. By default is 'bundle'
+    // bundleCommand = "ram-bundle"
+    //
+    //   The path to the CLI configuration file. Default is empty.
+    // bundleConfig = file(../rn-cli.config.js)
+    //
+    //   The name of the generated asset file containing your JS bundle
+    // bundleAssetName = "MyApplication.android.bundle"
+    //
+    //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
+    // entryFile = file("../js/MyApplication.android.js")
+    //
+    //   A list of extra flags to pass to the 'bundle' commands.
+    //   See https://github.com/react-native-community/cli/blob/main/docs/commands.md#bundle
+    // extraPackagerArgs = []
+
+    /* Hermes Commands */
+    //   The hermes compiler command to run. By default it is 'hermesc'
+    // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
+    //
+    //   The list of flags to pass to the Hermes compiler. By default is "-O", "-output-source-map"
+    // hermesFlags = ["-O", "-output-source-map"]
+}
+
+/**
+ * Private function to get the list of Native Architectures you want to build.
+ * This reads the value from reactNativeArchitectures in your gradle.properties
+ * file and works together with the --active-arch-only flag of react-native run-android.
+ */
+def reactNativeArchitectures() {
+    def value = project.getProperties().get("reactNativeArchitectures")
+    return value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+}
+
+def resolveVersionCode = { propertyName, defaultValue ->
+    def value = findProperty(propertyName)
+    return value != null ? value.toString().toInteger() : defaultValue
+}
+
+def appVersionCode = resolveVersionCode("VERSION_CODE", 31)
+def hasReleaseSigningProps =
+    hasProperty("ALLCLEAR_UPLOAD_STORE_FILE") &&
+    hasProperty("ALLCLEAR_UPLOAD_KEY_ALIAS") &&
+    hasProperty("ALLCLEAR_UPLOAD_STORE_PASSWORD") &&
+    hasProperty("ALLCLEAR_UPLOAD_KEY_PASSWORD")
+def kakaoAppKey = project.env.get("KAKAO_APP_KEY")
+
+if (!kakaoAppKey) {
+    throw new GradleException("KAKAO_APP_KEY is not set in the selected env file")
+}
+
+def kakaoScheme = "kakao${kakaoAppKey}"
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    namespace "com.padocorp.clubhouse"
+    defaultConfig {
+        applicationId "com.padocorp.clubhouse.applicationId"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode appVersionCode
+        versionName "3.0.1"
+        manifestPlaceholders = [kakaoScheme: kakaoScheme]
+        resValue "string", "build_config_package", "com.padocorp.clubhouse"
+        resValue "string", "app_name", "올클"
+        resValue "string", "kakao_app_key", kakaoAppKey
+
+        // Enable 16KB page size compatible shared library build on NDK r27+.
+        externalNativeBuild {
+            cmake {
+                arguments "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
+            }
+        }
+    }
+
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigningProps) {
+                storeFile file(ALLCLEAR_UPLOAD_STORE_FILE)
+                storePassword ALLCLEAR_UPLOAD_STORE_PASSWORD
+                keyAlias ALLCLEAR_UPLOAD_KEY_ALIAS
+                keyPassword ALLCLEAR_UPLOAD_KEY_PASSWORD
+            }
+        }
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+            versionNameSuffix "-DEBUG"
+            applicationIdSuffix ".debug"
+            debuggable true
+            resValue "string", "app_name", "(dev)올클"
+        }
+        devRelease {
+            initWith release
+            matchingFallbacks = ['release', 'debug']
+            signingConfig signingConfigs.debug
+            versionNameSuffix "-DEBUG"
+            applicationIdSuffix ".debug"
+            debuggable false
+            resValue "string", "app_name", "(dev)올클"
+        }
+        release {
+            if (hasReleaseSigningProps) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+dependencies {
+    // The version of react-native is set by the React Native Gradle Plugin
+    implementation("com.facebook.react:react-android")
+
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.0.0")
+
+    implementation project(':react-native-config')
+
+    implementation project(':react-native-splash-screen')
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation("org.webkit:android-jsc:+")
+    }
+}

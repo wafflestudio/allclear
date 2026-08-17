@@ -1,110 +1,31 @@
 {
-	"name": "clubhouse-app",
-	"version": "1.0.0",
+	"name": "allclear",
 	"private": true,
-	"scripts": {
-		"clean": "rm -rf android/build && rm -rf android/app/build",
-		"re-install": "rm -rf node_modules && yarn install",
-		"reset": "cd ios && pod deintegrate && cd ../android && ENVFILE=.env.local ./gradlew clean && cd .. && rm -rf node_modules && yarn install && cd ios && pod install && cd ..",
-		"android:clean": "cd android && ENVFILE=.env.local ./gradlew clean && cd ..",
-		"android:debug": "ENVFILE=.env.local react-native run-android --mode=debug --appId=com.padocorp.clubhouse.applicationId.debug",
-		"android:release": "ENVFILE=.env.prod react-native run-android --mode=release --appId=com.padocorp.clubhouse.applicationId",
-		"ios": "react-native run-ios",
-		"ios:local": "ENVFILE=.env.local react-native run-ios --scheme \"Local\"",
-		"ios:prod": "ENVFILE=.env.prod react-native run-ios --scheme \"clubhouse\"",
-		"lint": "eslint . --max-warnings=0",
-		"typecheck": "tsc --noEmit",
-		"bundle:android": "react-native bundle --platform android --dev true --entry-file index.js --bundle-output .bundle-check/android.bundle --assets-dest .bundle-check/android",
-		"bundle:ios": "react-native bundle --platform ios --dev true --entry-file index.js --bundle-output .bundle-check/ios.bundle --assets-dest .bundle-check/ios",
-		"fix": "prettier --write . && eslint . --fix",
-		"start": "react-native start",
-		"build:android:debug": "cd android && ENVFILE=.env.local ./gradlew assembleDebug",
-		"build:android:release": "cd android && ENVFILE=.env.prod ./gradlew bundleRelease",
-		"build:ios:prod:release": "ENVFILE=.env.prod react-native run-ios --configuration Release",
-		"postinstall": "patch-package",
-		"prepare": "husky"
+	"packageManager": "pnpm@11.9.0",
+	"engines": {
+		"node": ">=22.13"
 	},
-	"dependencies": {
-		"@babel/plugin-proposal-decorators": "^7.21.0",
-		"@gorhom/bottom-sheet": "^4.6.0",
-		"@homielab/react-native-auto-scroll": "^1.1.2",
-		"@invertase/react-native-apple-authentication": "^2.3.0",
-		"@react-native-async-storage/async-storage": "^1.17.11",
-		"@react-native-community/blur": "^4.3.2",
-		"@react-native-firebase/analytics": "^20.3.0",
-		"@react-native-firebase/app": "^20.3.0",
-		"@react-native-masked-view/masked-view": "^0.3.1",
-		"@react-native-seoul/kakao-login": "^5.4.1",
-		"@react-native/metro-config": "0.77.3",
-		"@react-navigation/bottom-tabs": "^6.5.12",
-		"@react-navigation/native": "^6.1.3",
-		"@react-navigation/native-stack": "^6.9.9",
-		"@tanstack/react-query": "^4.29.14",
-		"axios": "^1.6.2",
-		"dayjs": "^1.11.10",
-		"patch-package": "^8.0.0",
-		"postinstall-postinstall": "^2.1.0",
-		"react": "18.2.0",
-		"react-native": "0.77.3",
-		"react-native-config": "^1.5.0",
-		"react-native-device-info": "14",
-		"react-native-dropdown-picker": "^5.4.6",
-		"react-native-elements": "^3.4.3",
-		"react-native-gesture-handler": "2.22.0",
-		"react-native-linear-gradient": "^2.8.3",
-		"react-native-reanimated": "3.18.2",
-		"react-native-render-html": "^6.3.4",
-		"react-native-safe-area-context": "5.7.0",
-		"react-native-screens": "4.8.0",
-		"react-native-skeleton-placeholder": "^5.2.4",
-		"react-native-splash-screen": "^3.3.0",
-		"react-native-store-review": "^0.4.3",
-		"react-native-toast-message": "^2.2.0",
-		"react-native-vector-icons": "^10.3.0",
-		"react-native-webview": "13.16.1"
+	"scripts": {
+		"start": "pnpm --dir apps/mobile run start",
+		"dev:web": "pnpm --dir apps/web run dev",
+		"ios": "pnpm --dir apps/mobile run ios",
+		"ios:local": "pnpm --dir apps/mobile run ios:local",
+		"ios:prod": "pnpm --dir apps/mobile run ios:prod",
+		"android:debug": "pnpm --dir apps/mobile run android:debug",
+		"android:release": "pnpm --dir apps/mobile run android:release",
+		"build": "turbo run build",
+		"lint": "turbo run lint",
+		"typecheck": "turbo run typecheck",
+		"test": "turbo run test",
+		"verify": "turbo run lint typecheck test",
+		"verify:full": "pnpm --dir apps/mobile run verify:full",
+		"fix": "pnpm --dir apps/mobile run fix"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.20.0",
-		"@babel/preset-env": "^7.20.0",
-		"@babel/runtime": "^7.20.0",
-		"@eslint/js": "9.39.4",
-		"@react-native-community/cli": "15.0.1",
-		"@react-native-community/cli-platform-android": "15.0.1",
-		"@react-native-community/cli-platform-ios": "15.0.1",
-		"@tsconfig/react-native": "^2.0.2",
-		"@types/react": "18.3.28",
-		"@typescript-eslint/eslint-plugin": "8.57.0",
-		"@typescript-eslint/parser": "8.57.0",
-		"babel-plugin-module-resolver": "^5.0.0",
-		"eslint": "9.39.4",
-		"eslint-config-prettier": "10.1.8",
-		"eslint-plugin-prettier": "^5.5.5",
-		"eslint-plugin-react": "7.37.5",
-		"eslint-plugin-react-hooks": "7.0.1",
-		"eslint-plugin-react-native": "5.0.0",
-		"globals": "16.4.0",
-		"husky": "^9.1.7",
-		"lint-staged": "^16",
-		"prettier": "^3.8.1",
-		"react-native-url-polyfill": "^2.0.0",
-		"typescript": "^5.9.3"
+		"@biomejs/biome": "2.5.6",
+		"turbo": "^2.10.8"
 	},
-	"resolutions": {
-		"@types/react": "18.3.28"
-	},
-	"jest": {
-		"preset": "react-native"
-	},
-	"engines": {
-		"node": ">=18"
-	},
-	"lint-staged": {
-		"*.{ts,tsx}": [
-			"prettier --write",
-			"eslint --fix --max-warnings=0"
-		],
-		"*.{js,json,md}": [
-			"prettier --write"
-		]
+	"dependencies": {
+		"@babel/runtime": "^7.29.7"
 	}
 }
