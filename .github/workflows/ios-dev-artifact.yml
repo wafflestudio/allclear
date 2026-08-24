@@ -1,0 +1,318 @@
+name: iOS Dev Artifact Build
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    environment: ios-dev-artifact
+    timeout-minutes: 45
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.1
+
+      - name: Configure build paths
+        shell: bash
+        run: |
+          {
+            echo "IOS_ARCHIVE_PATH=${RUNNER_TEMP}/allclear-dev.xcarchive"
+            echo "IOS_EXPORT_PATH=${RUNNER_TEMP}/allclear-dev-export"
+            echo "KEYCHAIN_PATH=${RUNNER_TEMP}/allclear-signing.keychain-db"
+            echo "CERTIFICATE_PATH=${RUNNER_TEMP}/allclear-dev.p12"
+            echo "PROVISIONING_PROFILE_PATH=${RUNNER_TEMP}/allclear-dev.mobileprovision"
+            echo "PROFILE_PLIST_PATH=${RUNNER_TEMP}/allclear-dev-profile.plist"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify Xcode toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "Xcode 16.4 is not installed on this runner"
+            exit 1
+          fi
+          xcodebuild -version
+
+      - name: Setup Node environment
+        uses: ./.github/actions/setup-node-env
+
+      - name: Install CocoaPods
+        working-directory: apps/mobile/ios
+        env:
+          BUNDLE_PATH: ${{ runner.temp }}/bundle
+        run: |
+          set -euo pipefail
+          bundle install --jobs 4 --retry 3
+          bundle exec pod install --deployment
+
+      - name: Restore private build configuration
+        shell: bash
+        env:
+          IOS_DEV_CERTIFICATE_BASE64: ${{ secrets.IOS_DEV_CERTIFICATE_BASE64 }}
+          IOS_DEV_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DEV_CERTIFICATE_PASSWORD }}
+          IOS_DEV_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_DEV_PROVISIONING_PROFILE_BASE64 }}
+          IOS_ENV_LOCAL: ${{ secrets.IOS_ENV_LOCAL }}
+          IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64: ${{ secrets.IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64 }}
+        run: |
+          set -euo pipefail
+
+          for secret_name in \
+            IOS_DEV_CERTIFICATE_BASE64 \
+            IOS_DEV_CERTIFICATE_PASSWORD \
+            IOS_DEV_PROVISIONING_PROFILE_BASE64 \
+            IOS_ENV_LOCAL \
+            IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64
+          do
+            if [ -z "${!secret_name}" ]; then
+              echo "${secret_name} is not set"
+              exit 1
+            fi
+          done
+
+          umask 077
+          printf '%s' "$IOS_DEV_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          printf '%s' "$IOS_DEV_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROVISIONING_PROFILE_PATH"
+          printf '%s' "$IOS_ENV_LOCAL" > apps/mobile/.env.local
+          printf '%s' "$IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64" | base64 --decode > apps/mobile/ios/GoogleService-Info.plist
+
+          if ! grep -q '^PROFILE=dev$' apps/mobile/.env.local; then
+            echo "IOS_ENV_LOCAL must configure PROFILE=dev"
+            exit 1
+          fi
+          plutil -lint apps/mobile/ios/GoogleService-Info.plist
+          security cms -D -i "$PROVISIONING_PROFILE_PATH" > "$PROFILE_PLIST_PATH"
+
+      - name: Install and validate signing assets
+        shell: bash
+        env:
+          IOS_DEV_CERTIFICATE_PASSWORD: ${{ secrets.IOS_DEV_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          profile_name=$(plutil -extract Name raw -o - "$PROFILE_PLIST_PATH")
+          profile_uuid=$(plutil -extract UUID raw -o - "$PROFILE_PLIST_PATH")
+          profile_expiration=$(plutil -extract ExpirationDate raw -o - "$PROFILE_PLIST_PATH")
+          profile_app_id=$(plutil -extract Entitlements.application-identifier raw -o - "$PROFILE_PLIST_PATH")
+          profile_team_id=$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.developer.team-identifier" "$PROFILE_PLIST_PATH")
+          profile_get_task_allow=$(plutil -extract Entitlements.get-task-allow raw -o - "$PROFILE_PLIST_PATH")
+
+          if [ "$profile_name" != "allclear-dev" ]; then
+            echo "Unexpected provisioning profile name"
+            exit 1
+          fi
+          if [ "$profile_app_id" != "K9883YB4VR.com.padocorp.clubhouse.dev" ]; then
+            echo "Provisioning profile does not match the dev bundle identifier"
+            exit 1
+          fi
+          if [ "$profile_team_id" != "K9883YB4VR" ]; then
+            echo "Provisioning profile does not match the development team"
+            exit 1
+          fi
+          if [ "$profile_get_task_allow" != "true" ]; then
+            echo "Provisioning profile is not a development profile"
+            exit 1
+          fi
+          if ! /usr/libexec/PlistBuddy -c "Print :ProvisionedDevices:0" "$PROFILE_PLIST_PATH" >/dev/null 2>&1; then
+            echo "Provisioning profile does not include a registered device"
+            exit 1
+          fi
+          if ! /usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.developer.associated-domains" "$PROFILE_PLIST_PATH" >/dev/null 2>&1; then
+            echo "Provisioning profile does not include Associated Domains"
+            exit 1
+          fi
+
+          expiration_epoch=$(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$profile_expiration" "+%s")
+          minimum_expiration_epoch=$(( $(date "+%s") + 86400 ))
+          if [ "$expiration_epoch" -le "$minimum_expiration_epoch" ]; then
+            echo "Provisioning profile expires in less than 24 hours"
+            exit 1
+          fi
+
+          keychain_password=$(openssl rand -base64 32)
+          security create-keychain -p "$keychain_password" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$keychain_password" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -P "$IOS_DEV_CERTIFICATE_PASSWORD" \
+            -A \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple:,codesign: \
+            -s \
+            -k "$keychain_password" \
+            "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security default-keychain -d user -s "$KEYCHAIN_PATH"
+
+          identity_hashes=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH" |
+            awk '/"Apple Development:/{print $2}')
+          if [ -z "$identity_hashes" ]; then
+            echo "No Apple Development signing identity was imported"
+            exit 1
+          fi
+
+          profile_certificate_matches=false
+          certificate_index=0
+          while true; do
+            profile_certificate_path="${RUNNER_TEMP}/profile-certificate-${certificate_index}.der"
+            if ! /usr/libexec/PlistBuddy \
+              -c "Print :DeveloperCertificates:${certificate_index}" \
+              "$PROFILE_PLIST_PATH" \
+              > "$profile_certificate_path" 2>/dev/null
+            then
+              break
+            fi
+
+            profile_certificate_hash=$(openssl x509 \
+              -inform DER \
+              -in "$profile_certificate_path" \
+              -noout \
+              -fingerprint \
+              -sha1 |
+              sed 's/.*=//;s/://g')
+
+            for identity_hash in $identity_hashes; do
+              if [ "$profile_certificate_hash" = "$identity_hash" ]; then
+                profile_certificate_matches=true
+                break
+              fi
+            done
+            certificate_index=$((certificate_index + 1))
+          done
+
+          if [ "$profile_certificate_matches" != "true" ]; then
+            echo "Profile does not include the imported signing certificate"
+            exit 1
+          fi
+
+          profile_directory="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          installed_profile_path="${profile_directory}/${profile_uuid}.mobileprovision"
+          mkdir -p "$profile_directory"
+          cp "$PROVISIONING_PROFILE_PATH" "$installed_profile_path"
+
+          {
+            echo "PROFILE_UUID=${profile_uuid}"
+            echo "INSTALLED_PROFILE_PATH=${installed_profile_path}"
+          } >> "$GITHUB_ENV"
+
+      - name: Archive dev app
+        shell: bash
+        env:
+          ENVFILE: .env.local
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace apps/mobile/ios/clubhouse.xcworkspace \
+            -scheme Local \
+            -configuration Local \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -archivePath "$IOS_ARCHIVE_PATH" \
+            archive
+
+      - name: Export registered-device IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive \
+            -archivePath "$IOS_ARCHIVE_PATH" \
+            -exportPath "$IOS_EXPORT_PATH" \
+            -exportOptionsPlist .github/ios/ExportOptions.dev.plist
+
+      - name: Verify exported IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ipa_count=$(find "$IOS_EXPORT_PATH" -maxdepth 1 -type f -name '*.ipa' | wc -l | tr -d ' ')
+          if [ "$ipa_count" != "1" ]; then
+            echo "Expected exactly one IPA, found ${ipa_count}"
+            exit 1
+          fi
+
+          ipa_path=$(find "$IOS_EXPORT_PATH" -maxdepth 1 -type f -name '*.ipa' -print -quit)
+          verification_directory="${RUNNER_TEMP}/allclear-dev-verification"
+          mkdir -p "$verification_directory"
+          ditto -x -k "$ipa_path" "$verification_directory"
+
+          app_path=$(find "${verification_directory}/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)
+          if [ -z "$app_path" ]; then
+            echo "Exported IPA does not contain an app bundle"
+            exit 1
+          fi
+
+          codesign --verify --deep --strict --verbose=2 "$app_path"
+          bundle_id=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$app_path/Info.plist")
+          if [ "$bundle_id" != "com.padocorp.clubhouse.dev" ]; then
+            echo "Exported IPA has an unexpected bundle identifier"
+            exit 1
+          fi
+
+          embedded_profile_plist="${RUNNER_TEMP}/embedded-profile.plist"
+          security cms -D -i "$app_path/embedded.mobileprovision" > "$embedded_profile_plist"
+          embedded_app_id=$(plutil -extract Entitlements.application-identifier raw -o - "$embedded_profile_plist")
+          embedded_get_task_allow=$(plutil -extract Entitlements.get-task-allow raw -o - "$embedded_profile_plist")
+          if [ "$embedded_app_id" != "K9883YB4VR.com.padocorp.clubhouse.dev" ]; then
+            echo "Exported IPA embeds an unexpected provisioning profile"
+            exit 1
+          fi
+          if [ "$embedded_get_task_allow" != "true" ]; then
+            echo "Exported IPA is not development signed"
+            exit 1
+          fi
+
+      - name: Upload dev IPA artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ios-dev-ipa-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/allclear-dev-export/*.ipa
+            ${{ runner.temp }}/allclear-dev.xcarchive/dSYMs/**
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Publish artifact summary
+        shell: bash
+        run: |
+          {
+            echo "## iOS Dev Artifact"
+            echo ""
+            echo "Branch: ${GITHUB_REF_NAME}"
+            echo "Build: development-signed IPA"
+            echo "Bundle ID: com.padocorp.clubhouse.dev"
+            echo "Artifact: ios-dev-ipa-${GITHUB_RUN_NUMBER}"
+            echo "Retention: 7 days"
+            echo ""
+            echo "This IPA installs only on devices included in the provisioning profile."
+            echo "Install it with Xcode or Apple Configurator after enabling Developer Mode."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cleanup signing material
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${KEYCHAIN_PATH:-}" ] && security show-keychain-info "$KEYCHAIN_PATH" >/dev/null 2>&1; then
+            security delete-keychain "$KEYCHAIN_PATH"
+          fi
+          rm -f "${INSTALLED_PROFILE_PATH:-}"
+          rm -f "$CERTIFICATE_PATH"
+          rm -f "$PROVISIONING_PROFILE_PATH"
+          rm -f "$PROFILE_PLIST_PATH"
+          rm -f apps/mobile/.env.local
+          rm -f apps/mobile/ios/GoogleService-Info.plist
