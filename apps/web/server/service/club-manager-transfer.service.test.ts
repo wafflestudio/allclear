@@ -228,6 +228,9 @@ describe('ClubManagerTransferService', () => {
       sourceId: '10',
       metadata: { clubName: '와플스튜디오' },
     })
+    expect(clubManagerRepository.softDelete).toHaveBeenCalledTimes(1)
+    expect(clubManagerRepository.insert).toHaveBeenCalledTimes(1)
+    expect(notificationRepository.insert).toHaveBeenCalledTimes(1)
   })
 
   it('rejects a self-transfer before mutating manager state', async () => {
@@ -305,6 +308,77 @@ describe('ClubManagerTransferService', () => {
     })
     expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
     expect(clubManagerRepository.insert).not.toHaveBeenCalled()
+  })
+
+  it('hides a concurrently accepted invitation when another recipient removed the manager', async () => {
+    const { service, invitationRepository, clubManagerRepository, notificationRepository } =
+      createTestContext()
+    invitationRepository.findOne
+      .mockResolvedValueOnce({
+        id: '10',
+        clubId: clubUuid,
+        senderServiceUserId,
+        expiresAt: '2026-08-27T00:00:00.000Z',
+        revokedAt: null,
+        acceptedByServiceUserId: null,
+        acceptedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: '10',
+        clubId: clubUuid,
+        senderServiceUserId,
+        expiresAt: '2026-08-27T00:00:00.000Z',
+        revokedAt: null,
+        acceptedByServiceUserId: '04cc77e4-b65d-4df5-b4d6-3a52bdd49974',
+        acceptedAt: '2026-08-24T00:00:00.000Z',
+      })
+    clubManagerRepository.findOne.mockResolvedValue(null)
+
+    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
+      NotFoundError,
+    )
+    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
+      where: { id: '10' },
+    })
+    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
+    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
+    expect(notificationRepository.insert).not.toHaveBeenCalled()
+  })
+
+  it('hides a concurrently accepted invitation after acquiring the invitation lock', async () => {
+    const { service, invitationRepository, clubManagerRepository, notificationRepository } =
+      createTestContext()
+    invitationRepository.findOne
+      .mockResolvedValueOnce({
+        id: '10',
+        clubId: clubUuid,
+        senderServiceUserId,
+        expiresAt: '2026-08-27T00:00:00.000Z',
+        revokedAt: null,
+        acceptedByServiceUserId: null,
+        acceptedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: '10',
+        clubId: clubUuid,
+        senderServiceUserId,
+        expiresAt: '2026-08-27T00:00:00.000Z',
+        revokedAt: null,
+        acceptedByServiceUserId: '04cc77e4-b65d-4df5-b4d6-3a52bdd49974',
+        acceptedAt: '2026-08-24T00:00:00.000Z',
+      })
+    clubManagerRepository.findOne.mockResolvedValue({ id: 7 })
+
+    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
+      NotFoundError,
+    )
+    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
+      where: { id: '10' },
+      lock: { mode: 'pessimistic_write' },
+    })
+    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
+    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
+    expect(notificationRepository.insert).not.toHaveBeenCalled()
   })
 
   it('hides an accepted invitation from a different recipient', async () => {
