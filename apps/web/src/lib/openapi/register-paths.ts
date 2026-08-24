@@ -71,6 +71,12 @@ import {
   ValidationIssueSchema,
 } from 'src/lib/schemas/common'
 import {
+  ManagerTransferAcceptanceResponseSchema,
+  ManagerTransferInvitationCreateResponseSchema,
+  ManagerTransferInvitationResponseSchema,
+  ManagerTransferTokenParamsSchema,
+} from 'src/lib/schemas/manager-transfer'
+import {
   ClubActivityImageUploadResponseSchema,
   ClubImageUploadSchema,
   ClubManagerRequestPatchSchema,
@@ -1668,6 +1674,89 @@ registry.registerPath({
     },
     401: unauthorizedResponse,
     404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/v2/managers/me/clubs/{uuid}/manager-transfer-invitations',
+  tags: ['Managers'],
+  summary: '동아리 관리자 권한 이전 링크 발급',
+  description:
+    '현재 관리자만 72시간 유효한 일회용 이전 링크를 발급할 수 있습니다. 같은 동아리에 발급된 기존 미사용 링크는 즉시 폐기됩니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ClubUuidParamsSchema,
+  },
+  responses: {
+    201: {
+      description: '권한 이전 링크 발급 성공',
+      content: {
+        'application/json': {
+          schema: ManagerTransferInvitationCreateResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    403: forbiddenResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/v2/manager-transfer-invitations/{token}',
+  tags: ['Managers'],
+  summary: '동아리 관리자 권한 이전 초대 조회',
+  description:
+    '로그인한 회원이 유효한 일회용 링크의 동아리 정보와 만료 시각을 조회합니다. 존재하지 않거나 만료·폐기·사용된 링크는 모두 404로 응답합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ManagerTransferTokenParamsSchema,
+  },
+  responses: {
+    200: {
+      description: '권한 이전 초대 조회 성공',
+      content: {
+        'application/json': {
+          schema: ManagerTransferInvitationResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    500: internalServerErrorResponse,
+  },
+})
+
+registry.registerPath({
+  method: 'put',
+  path: '/api/v2/manager-transfer-invitations/{token}/acceptance',
+  tags: ['Managers'],
+  summary: '동아리 관리자 권한 이전 수락',
+  description:
+    '최초 로그인 회원이 관리자 권한을 이전받습니다. 기존 관리자 해제, 새 관리자 등록, 초대 사용 처리를 한 트랜잭션에서 수행합니다. 같은 수신자의 재시도는 멱등 처리합니다.',
+  security: [{ bearerAuth: [] }],
+  request: {
+    params: ManagerTransferTokenParamsSchema,
+  },
+  responses: {
+    200: {
+      description: '권한 이전 수락 성공',
+      content: {
+        'application/json': {
+          schema: ManagerTransferAcceptanceResponseSchema,
+        },
+      },
+    },
+    400: validationErrorResponse,
+    401: unauthorizedResponse,
+    404: notFoundResponse,
+    409: conflictResponse,
     500: internalServerErrorResponse,
   },
 })
