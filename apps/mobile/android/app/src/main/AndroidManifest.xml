@@ -38,6 +38,7 @@
            <action android:name="android.intent.action.VIEW" />
            <category android:name="android.intent.category.DEFAULT" />
            <category android:name="android.intent.category.BROWSABLE" />
+           <data android:scheme="http" android:host="all-clear.cc" />
            <data android:scheme="https" android:host="all-clear.cc" />
         </intent-filter>
 
@@ -45,6 +46,7 @@
            <action android:name="android.intent.action.VIEW" />
            <category android:name="android.intent.category.DEFAULT" />
            <category android:name="android.intent.category.BROWSABLE" />
+           <data android:scheme="http" android:host="dev.all-clear.cc" />
            <data android:scheme="https" android:host="dev.all-clear.cc" />
         </intent-filter>
       </activity>

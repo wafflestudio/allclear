@@ -1,6 +1,6 @@
 import type { AppModalFlowState } from "@/shared/utils/appModalFlow";
 
-const MANAGER_TRANSFER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{20,256}$/;
+const MANAGER_TRANSFER_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 const WEB_LINK_HOSTS = new Set(["all-clear.cc", "dev.all-clear.cc"]);
 
 export type PendingEntryIntent = {
@@ -18,7 +18,8 @@ export const parsePendingEntryIntent = (
 		const isCustomScheme =
 			url.protocol === "allclear:" && url.hostname === "manager-transfer";
 		const isWebLink =
-			url.protocol === "https:" && WEB_LINK_HOSTS.has(url.hostname);
+			(url.protocol === "https:" || url.protocol === "http:") &&
+			WEB_LINK_HOSTS.has(url.hostname);
 		const encodedToken = isCustomScheme
 			? url.pathname.match(/^\/([^/]+)\/?$/)?.[1]
 			: isWebLink

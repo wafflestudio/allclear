@@ -70,14 +70,20 @@ jobs:
               const associations = JSON.parse(
                 readFileSync("../web/public/.well-known/assetlinks.json", "utf8"),
               );
-              const developmentApp = associations.find(
-                ({ target }) =>
-                  target.package_name ===
-                  "com.padocorp.clubhouse.applicationId.debug",
-              );
-              if (!developmentApp) process.exit(1);
+              const developmentFingerprints = associations
+                .filter(
+                  ({ relation, target }) =>
+                    relation.includes(
+                      "delegate_permission/common.handle_all_urls",
+                    ) &&
+                    target.namespace === "android_app" &&
+                    target.package_name ===
+                    "com.padocorp.clubhouse.applicationId.debug",
+                )
+                .flatMap(({ target }) => target.sha256_cert_fingerprints);
+              if (developmentFingerprints.length === 0) process.exit(1);
               process.stdout.write(
-                developmentApp.target.sha256_cert_fingerprints.join("\n"),
+                [...new Set(developmentFingerprints)].join("\n"),
               );
             '
           )"

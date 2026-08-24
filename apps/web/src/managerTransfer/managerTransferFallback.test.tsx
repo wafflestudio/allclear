@@ -8,6 +8,7 @@ import {
   buildManagerTransferAppUrl,
   buildManagerTransferWebUrl,
   parseManagerTransferToken,
+  shouldAutomaticallyOpenManagerTransfer,
 } from './managerTransferFallback'
 
 describe('manager transfer web fallback', () => {
@@ -19,6 +20,18 @@ describe('manager transfer web fallback', () => {
     expect(buildManagerTransferWebUrl(token, 'dev.all-clear.cc')).toBe(
       `https://dev.all-clear.cc/manager-transfer/${token}`,
     )
+  })
+
+  it('지원하지 않는 www 호스트는 entitlement에 등록된 운영 호스트로 정규화한다', () => {
+    expect(buildManagerTransferWebUrl(token, 'www.all-clear.cc')).toBe(
+      `https://all-clear.cc/manager-transfer/${token}`,
+    )
+  })
+
+  it('같은 토큰은 한 번만 자동 실행하고 새 토큰은 다시 자동 실행한다', () => {
+    expect(shouldAutomaticallyOpenManagerTransfer(token, null)).toBe(true)
+    expect(shouldAutomaticallyOpenManagerTransfer(token, token)).toBe(false)
+    expect(shouldAutomaticallyOpenManagerTransfer('b'.repeat(43), token)).toBe(true)
   })
 
   it('유효한 동적 경로를 redirect 없이 서버 렌더링한다', async () => {

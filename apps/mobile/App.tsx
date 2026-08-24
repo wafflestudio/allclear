@@ -15,7 +15,10 @@ import {
 	SafeAreaProvider,
 } from "react-native-safe-area-context";
 import Toast, { type ToastConfig } from "react-native-toast-message";
-import { createAppLinking } from "@/config/linking";
+import {
+	createAppLinking,
+	createBufferedUrlSubscription,
+} from "@/config/linking";
 import AnnouncementEditScreen from "@/features/club/screens/AnnouncementEditScreen";
 import AnnouncementRegistrationScreen from "@/features/club/screens/AnnouncementRegistrationScreen";
 import ManagerTransferAcceptanceScreen from "@/features/club/screens/ManagerTransferAcceptanceScreen";
@@ -106,7 +109,7 @@ const PendingEntryIntentHandler = ({
 		if (!executableIntent) return;
 
 		onConsume();
-		navigation.navigate(SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE, {
+		navigation.replace(SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE, {
 			token: executableIntent.token,
 		});
 	}, [appModalFlowState, isNavigationReady, onConsume, pendingEntryIntent]);
@@ -116,53 +119,43 @@ const PendingEntryIntentHandler = ({
 
 function App(): React.JSX.Element {
 	const { Provider: ServiceProvider } = serviceContext;
+	const services = useMemo(() => {
+		const announcementRepository = getAnnouncementRepository();
+		const appVersionRepository = getAppVersionRepository();
+		const authRepository = getAuthRepository();
+		const categoryRepository = getCategoryRepository();
+		const clubRepository = getClubRepository();
+		const recentSearchRepository = getRecentSearchRepository();
+		const recruitmentRepository = getRecruitmentRepository();
+		const reviewRepository = getReviewRepository();
+		const termRepository = getTermRepository();
+		const userRepository = getUserRepository();
 
-	const announcementRepository = getAnnouncementRepository();
-	const appVersionRepository = getAppVersionRepository();
-	const authRepository = getAuthRepository();
-	const categoryRepository = getCategoryRepository();
-	const clubRepository = getClubRepository();
-	const recentSearchRepository = getRecentSearchRepository();
-	const recruitmentRepository = getRecruitmentRepository();
-	const reviewRepository = getReviewRepository();
-	const termRepository = getTermRepository();
-	const userRepository = getUserRepository();
-
-	const announcementService = getAnnouncementService({
-		repositories: [announcementRepository],
-	});
-	const appVersionService = getAppVersionService({
-		repositories: [appVersionRepository],
-	});
-	const authService = getAuthService({ repositories: [authRepository] });
-	const categoryService = getCategoryService({
-		repositories: [categoryRepository],
-	});
-	const clubService = getClubService({ repositories: [clubRepository] });
-	const eventLogService = getEventLogService();
-	const recentSearchService = getRecentSearchService({
-		repositories: [recentSearchRepository],
-	});
-	const recruitmentService = getRecruitmentService({
-		repositories: [recruitmentRepository],
-	});
-	const reviewService = getReviewService({ repositories: [reviewRepository] });
-	const termService = getTermService({ repositories: [termRepository] });
-	const userService = getUserService({ repositories: [userRepository] });
-
-	const services = {
-		announcementService,
-		appVersionService,
-		authService,
-		categoryService,
-		clubService,
-		eventLogService,
-		recentSearchService,
-		recruitmentService,
-		reviewService,
-		termService,
-		userService,
-	};
+		return {
+			announcementService: getAnnouncementService({
+				repositories: [announcementRepository],
+			}),
+			appVersionService: getAppVersionService({
+				repositories: [appVersionRepository],
+			}),
+			authService: getAuthService({ repositories: [authRepository] }),
+			categoryService: getCategoryService({
+				repositories: [categoryRepository],
+			}),
+			clubService: getClubService({ repositories: [clubRepository] }),
+			eventLogService: getEventLogService(),
+			recentSearchService: getRecentSearchService({
+				repositories: [recentSearchRepository],
+			}),
+			recruitmentService: getRecruitmentService({
+				repositories: [recruitmentRepository],
+			}),
+			reviewService: getReviewService({ repositories: [reviewRepository] }),
+			termService: getTermService({ repositories: [termRepository] }),
+			userService: getUserService({ repositories: [userRepository] }),
+		};
+	}, []);
+	const urlEvents = useMemo(() => createBufferedUrlSubscription(), []);
 
 	// 토큰을 메모리로 복원한 뒤에야 인증 요청을 하는 트리(ProfileProvider 등)를 마운트한다.
 	// 그렇지 않으면 _token이 채워지기 전에 /v2/users/me가 게스트로 나가 자동로그인이 깨진다.
@@ -196,30 +189,37 @@ function App(): React.JSX.Element {
 			createAppLinking({
 				initialUrl: initialNavigationUrl,
 				onPendingEntryIntent: handlePendingEntryIntent,
+				subscribeToUrls: urlEvents.subscribe,
 			}),
-		[handlePendingEntryIntent, initialNavigationUrl],
+		[handlePendingEntryIntent, initialNavigationUrl, urlEvents.subscribe],
 	);
 
 	useEffect(() => {
 		let isCancelled = false;
+		const subscription = Linking.addEventListener("url", ({ url }) => {
+			urlEvents.publish(url);
+		});
 		const bootstrap = async () => {
 			const [, initialUrl] = await Promise.all([
 				initToken(),
-				Linking.getInitialURL(),
+				Linking.getInitialURL().catch(() => null),
 			]);
 			if (isCancelled) return;
 
-			const initialEntryIntent = parsePendingEntryIntent(initialUrl);
-			setPendingEntryIntent(initialEntryIntent);
-			setInitialNavigationUrl(getNavigationInitialUrl(initialUrl));
+			if (!urlEvents.hasPublishedUrl()) {
+				const initialEntryIntent = parsePendingEntryIntent(initialUrl);
+				setPendingEntryIntent(initialEntryIntent);
+				setInitialNavigationUrl(getNavigationInitialUrl(initialUrl));
+			}
 			setIsBootstrapped(true);
 		};
 		bootstrap();
 
 		return () => {
 			isCancelled = true;
+			subscription.remove();
 		};
-	}, []);
+	}, [urlEvents]);
 
 	useEffect(
 		() => () => {

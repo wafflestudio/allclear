@@ -47,6 +47,7 @@ describe('android app links', () => {
     )
 
     expect(manifest).toContain('android:scheme="allclear"')
+    expect(manifest).toContain('android:scheme="http"')
     expect(manifest).toContain('android:autoVerify="true"')
     expect(manifest).toContain('android:host="all-clear.cc"')
     expect(manifest).toContain('android:host="dev.all-clear.cc"')
@@ -56,13 +57,23 @@ describe('android app links', () => {
     const association = JSON.parse(
       readFileSync(join(process.cwd(), 'public/.well-known/assetlinks.json'), 'utf8'),
     ) as Array<{
-      target: { package_name: string; sha256_cert_fingerprints: string[] }
+      relation: string[]
+      target: {
+        namespace: string
+        package_name: string
+        sha256_cert_fingerprints: string[]
+      }
     }>
-    const developmentApp = association.find(
-      ({ target }) => target.package_name === 'com.padocorp.clubhouse.applicationId.debug',
-    )
+    const developmentFingerprints = association
+      .filter(
+        ({ relation, target }) =>
+          relation.includes('delegate_permission/common.handle_all_urls') &&
+          target.namespace === 'android_app' &&
+          target.package_name === 'com.padocorp.clubhouse.applicationId.debug',
+      )
+      .flatMap(({ target }) => target.sha256_cert_fingerprints)
 
-    expect(developmentApp?.target.sha256_cert_fingerprints).toContain(
+    expect(developmentFingerprints).toContain(
       '18:DE:12:2E:AE:A1:E4:69:C9:32:16:7C:09:FF:F9:E1:85:A0:51:F9:0E:26:39:1A:E6:C6:2D:CF:9B:54:4F:C2',
     )
   })
@@ -76,6 +87,10 @@ describe('android app links', () => {
     expect(workflow).toContain('Verify Android App Link certificate')
     expect(workflow).toContain('sha256_cert_fingerprints')
     expect(workflow).toContain('keytool -exportcert')
+    expect(workflow).toContain('.filter(')
+    expect(workflow).toContain('.flatMap(')
+    expect(workflow).toContain('delegate_permission/common.handle_all_urls')
+    expect(workflow).toContain('target.namespace === "android_app"')
   })
 })
 
@@ -98,5 +113,20 @@ describe('app association response headers', () => {
         headers: [{ key: 'Content-Type', value: 'application/json' }],
       })
     }
+  })
+
+  it('prevents manager transfer tokens from leaking through referrer headers', async () => {
+    const require = createRequire(import.meta.url)
+    const nextConfig = require('../../next.config.js') as {
+      headers: () => Promise<
+        Array<{ source: string; headers: Array<{ key: string; value: string }> }>
+      >
+    }
+
+    const headers = await nextConfig.headers()
+    expect(headers).toContainEqual({
+      source: '/manager-transfer/:token',
+      headers: [{ key: 'Referrer-Policy', value: 'no-referrer' }],
+    })
   })
 })

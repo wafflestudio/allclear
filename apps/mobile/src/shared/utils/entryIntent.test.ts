@@ -13,6 +13,8 @@ describe("manager transfer entry intent", () => {
 	it.each([
 		`https://all-clear.cc/manager-transfer/${firstToken}`,
 		`https://dev.all-clear.cc/manager-transfer/${firstToken}`,
+		`http://all-clear.cc/manager-transfer/${firstToken}`,
+		`http://dev.all-clear.cc/manager-transfer/${firstToken}`,
 		`allclear://manager-transfer/${firstToken}`,
 	])("관리자 권한 이전 URL %s를 보류 진입 의도로 파싱한다", (url) => {
 		expect(parsePendingEntryIntent(url)).toEqual({
@@ -33,6 +35,7 @@ describe("manager transfer entry intent", () => {
 		"https://example.com/manager-transfer/token",
 		"allclear://manager-transfer/contains%2Fslash",
 		"allclear://manager-transfer/",
+		"allclear://manager-transfer/short-token",
 	])("허용되지 않은 URL %s를 관리자 이전 의도로 취급하지 않는다", (url) => {
 		expect(parsePendingEntryIntent(url)).toBeNull();
 	});

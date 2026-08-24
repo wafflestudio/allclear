@@ -7,6 +7,7 @@ import {
   buildManagerTransferDeepPath,
   buildManagerTransferWebUrl,
   parseManagerTransferToken,
+  shouldAutomaticallyOpenManagerTransfer,
 } from '../../src/managerTransfer/managerTransferFallback'
 
 type Props = {
@@ -19,7 +20,7 @@ const ManagerTransferFallbackPage = ({
   managerTransferUrl,
 }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
   const [hasAttemptedAppOpen, setHasAttemptedAppOpen] = useState(false)
-  const hasAutomaticallyAttemptedAppOpen = useRef(false)
+  const automaticallyAttemptedToken = useRef<string | null>(null)
   const openManagerTransferInApp = useCallback(() => {
     setHasAttemptedAppOpen(true)
     return openAppDeepLink(buildManagerTransferDeepPath(token), {
@@ -28,16 +29,17 @@ const ManagerTransferFallbackPage = ({
   }, [token])
 
   useEffect(() => {
-    if (hasAutomaticallyAttemptedAppOpen.current) return
-    hasAutomaticallyAttemptedAppOpen.current = true
+    if (!shouldAutomaticallyOpenManagerTransfer(token, automaticallyAttemptedToken.current)) return
+    automaticallyAttemptedToken.current = token
     return openManagerTransferInApp()
-  }, [openManagerTransferInApp])
+  }, [openManagerTransferInApp, token])
 
   return (
     <>
       <Head>
         <title>관리자 권한 이전 | 올클</title>
         <meta name="description" content="올클 앱에서 동아리 관리자 권한 이전 요청을 확인하세요." />
+        <meta name="referrer" content="no-referrer" />
         <meta
           name="apple-itunes-app"
           content={`app-id=6461214029, app-argument=${managerTransferUrl}`}
