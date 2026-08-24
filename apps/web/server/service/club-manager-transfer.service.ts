@@ -119,14 +119,46 @@ export class ClubManagerTransferService {
       const clubManagerRepository = transactionManager.getRepository(ClubManagerEntity)
       const clubRepository = transactionManager.getRepository(ClubEntity)
       const notificationRepository = transactionManager.getRepository(UserNotificationEntity)
-      const invitation = await invitationRepository.findOne({
+      const candidate = await invitationRepository.findOne({
         where: { tokenHash: hashManagerTransferToken(rawToken) },
+      })
+      if (!candidate) {
+        throw new NotFoundError('manager transfer invitation not found')
+      }
+
+      if (candidate.acceptedAt) {
+        if (candidate.acceptedByServiceUserId !== recipient.serviceUserId) {
+          throw new NotFoundError('manager transfer invitation not found')
+        }
+        return this.getClubAcceptanceResponse(clubRepository, candidate.clubId)
+      }
+      if (!this.isActive(candidate)) {
+        throw new NotFoundError('manager transfer invitation not found')
+      }
+      if (candidate.senderServiceUserId === recipient.serviceUserId) {
+        throw new ConflictError('cannot transfer club management to yourself')
+      }
+
+      const clubManager = await clubManagerRepository.findOne({
+        where: {
+          clubId: candidate.clubId,
+          serviceUserId: candidate.senderServiceUserId,
+        },
+        lock: { mode: 'pessimistic_write' },
+      })
+      if (!clubManager) {
+        throw new NotFoundError('manager transfer invitation not found')
+      }
+
+      // Reissue and acceptance both lock manager -> invitation. Keeping that order
+      // prevents the two transactions from deadlocking when they race.
+      const invitation = await invitationRepository.findOne({
+        where: { id: candidate.id },
         lock: { mode: 'pessimistic_write' },
       })
       if (!invitation) {
         throw new NotFoundError('manager transfer invitation not found')
       }
-
       if (invitation.acceptedAt) {
         if (invitation.acceptedByServiceUserId !== recipient.serviceUserId) {
           throw new NotFoundError('manager transfer invitation not found')
@@ -136,20 +168,7 @@ export class ClubManagerTransferService {
       if (!this.isActive(invitation)) {
         throw new NotFoundError('manager transfer invitation not found')
       }
-      if (invitation.senderServiceUserId === recipient.serviceUserId) {
-        throw new ConflictError('cannot transfer club management to yourself')
-      }
 
-      const clubManager = await clubManagerRepository.findOne({
-        where: {
-          clubId: invitation.clubId,
-          serviceUserId: invitation.senderServiceUserId,
-        },
-        lock: { mode: 'pessimistic_write' },
-      })
-      if (!clubManager) {
-        throw new NotFoundError('manager transfer invitation not found')
-      }
       const club = await this.getClubAcceptanceResponse(clubRepository, invitation.clubId)
       const acceptedAt = new Date().toISOString()
 
@@ -174,7 +193,7 @@ export class ClubManagerTransferService {
         clubId: invitation.clubId,
         sourceType: 'MANAGER_TRANSFER',
         sourceId: invitation.id,
-        metadata: null,
+        metadata: { clubName: club.club_name },
       })
 
       return club

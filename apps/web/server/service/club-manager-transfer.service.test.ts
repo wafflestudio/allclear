@@ -195,10 +195,16 @@ describe('ClubManagerTransferService', () => {
       club_name: '와플스튜디오',
     })
 
-    expect(invitationRepository.findOne).toHaveBeenCalledWith({
+    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(1, {
       where: { tokenHash: hashManagerTransferToken(rawToken) },
+    })
+    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
+      where: { id: '10' },
       lock: { mode: 'pessimistic_write' },
     })
+    expect(clubManagerRepository.findOne.mock.invocationCallOrder[0]).toBeLessThan(
+      invitationRepository.findOne.mock.invocationCallOrder[1],
+    )
     expect(clubManagerRepository.softDelete).toHaveBeenCalledWith({ id: 7 })
     expect(clubManagerRepository.insert).toHaveBeenCalledWith({
       clubId: clubUuid,
@@ -220,7 +226,7 @@ describe('ClubManagerTransferService', () => {
       clubId: clubUuid,
       sourceType: 'MANAGER_TRANSFER',
       sourceId: '10',
-      metadata: null,
+      metadata: { clubName: '와플스튜디오' },
     })
   })
 

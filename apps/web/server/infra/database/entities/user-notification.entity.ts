@@ -11,6 +11,7 @@ export type UserNotificationSourceType = 'CLUB' | 'CLUB_MANAGER_REQUEST' | 'MANA
 
 export type UserNotificationMetadata = {
   rejectReason?: string
+  clubName?: string
 }
 
 @Entity('user_notification')
