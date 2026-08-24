@@ -7,9 +7,9 @@ import {
 	getEntrySplashStages,
 	getEntrySplashViewport,
 	resolveEntrySplashLayoutMetrics,
+	shouldCompleteAppEntry,
 	shouldExitEntrySplash,
 	shouldShowAppInitializationLoading,
-	shouldShowGlobalAppModals,
 } from "@/shared/utils/entrySplash";
 
 describe("entry splash timeline", () => {
@@ -118,9 +118,21 @@ describe("entry splash timeline", () => {
 		).toBe(true);
 	});
 
-	it("shows global app modals only after the entry flow has completed", () => {
-		expect(shouldShowGlobalAppModals({ entryFlowComplete: false })).toBe(false);
-		expect(shouldShowGlobalAppModals({ entryFlowComplete: true })).toBe(true);
+	it("시작 화면이 끝나도 강제 업데이트 대상이면 앱 진입을 완료하지 않는다", () => {
+		expect(
+			shouldCompleteAppEntry({
+				entrySplashComplete: true,
+				isUpdateCheckReady: true,
+				updateRequired: true,
+			}),
+		).toBe(false);
+		expect(
+			shouldCompleteAppEntry({
+				entrySplashComplete: true,
+				isUpdateCheckReady: true,
+				updateRequired: false,
+			}),
+		).toBe(true);
 	});
 
 	it("waits two seconds before showing the app initialization screen", () => {

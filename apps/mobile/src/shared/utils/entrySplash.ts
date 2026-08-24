@@ -64,13 +64,18 @@ export const shouldExitEntrySplash = ({
 	guestEntryRequested,
 }: EntrySplashExitParams): boolean => isAuthenticated || guestEntryRequested;
 
-type GlobalAppModalVisibilityParams = {
-	entryFlowComplete: boolean;
+type CompleteAppEntryParams = {
+	entrySplashComplete: boolean;
+	isUpdateCheckReady: boolean;
+	updateRequired: boolean;
 };
 
-export const shouldShowGlobalAppModals = ({
-	entryFlowComplete,
-}: GlobalAppModalVisibilityParams): boolean => entryFlowComplete;
+export const shouldCompleteAppEntry = ({
+	entrySplashComplete,
+	isUpdateCheckReady,
+	updateRequired,
+}: CompleteAppEntryParams): boolean =>
+	entrySplashComplete && isUpdateCheckReady && !updateRequired;
 
 type AppInitializationLoadingParams = {
 	delayElapsed: boolean;

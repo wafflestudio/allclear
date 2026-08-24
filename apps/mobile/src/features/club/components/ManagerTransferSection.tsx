@@ -5,6 +5,7 @@ import Toast from "react-native-toast-message";
 import {
 	copyManagerTransferLink,
 	getManagerTransferErrorContent,
+	MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION,
 } from "@/features/club/utils/managerTransfer";
 import type { ClubManager } from "@/repositories/club";
 import AlertModal from "@/shared/components/AlertModal";
@@ -99,7 +100,7 @@ const ManagerTransferSection = ({ clubId, clubName, managers }: Props) => {
 				visible={phase === "copied"}
 				onClose={() => setPhase("idle")}
 				title="링크 복사 완료!"
-				description="관리자 권한을 이전할 상대에게\n링크를 보내주세요"
+				description={MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION}
 				buttonLabel="확인"
 				onButtonPress={() => setPhase("idle")}
 			/>

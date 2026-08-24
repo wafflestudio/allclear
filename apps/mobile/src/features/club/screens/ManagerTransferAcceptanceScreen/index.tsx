@@ -1,9 +1,10 @@
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+	canLoadManagerTransferInvitation,
 	getManagerTransferErrorAction,
 	getManagerTransferErrorContent,
 } from "@/features/club/utils/managerTransfer";
@@ -16,6 +17,7 @@ import type {
 	SCREEN_TYPE,
 } from "@/shared/constants/screen";
 import { typography } from "@/shared/constants/typography";
+import { useAppModalFlow } from "@/shared/contexts/appModalFlowContext";
 import { useLoginBottomSheet } from "@/shared/contexts/loginBottomSheetContext";
 import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
@@ -34,21 +36,27 @@ const ManagerTransferAcceptanceScreen = ({
 	const { clubService } = useContext(serviceContext);
 	const { user, isLoading: isProfileLoading } = useProfile();
 	const { openBottomSheet } = useLoginBottomSheet();
+	const { state: appModalFlowState } = useAppModalFlow();
 	const queryClient = useQueryClient();
 	const hasPromptedLogin = useRef(false);
 	const [acceptedClubName, setAcceptedClubName] = useState<string | null>(null);
 	const [acceptanceError, setAcceptanceError] = useState<unknown>(null);
+	const openLoginForTransfer = useCallback(() => {
+		openBottomSheet(() => {
+			queryClient.invalidateQueries({ queryKey: ["terms"] });
+		});
+	}, [openBottomSheet, queryClient]);
 
 	useEffect(() => {
 		if (isProfileLoading || user || hasPromptedLogin.current) return;
 		hasPromptedLogin.current = true;
-		openBottomSheet();
-	}, [isProfileLoading, openBottomSheet, user]);
+		openLoginForTransfer();
+	}, [isProfileLoading, openLoginForTransfer, user]);
 
 	const invitationQuery = useQuery({
 		queryKey: ["managerTransferInvitation", token],
 		queryFn: () => clubService.getManagerTransferInvitation({ token }),
-		enabled: !!user,
+		enabled: canLoadManagerTransferInvitation(Boolean(user), appModalFlowState),
 		retry: false,
 	});
 
@@ -89,7 +97,9 @@ const ManagerTransferAcceptanceScreen = ({
 		invitationQuery.refetch();
 	};
 
-	const isLoading = isProfileLoading || (!!user && invitationQuery.isLoading);
+	const isLoading =
+		isProfileLoading ||
+		(!!user && (appModalFlowState !== "settled" || invitationQuery.isLoading));
 	const invitation = invitationQuery.data;
 
 	return (
@@ -107,7 +117,7 @@ const ManagerTransferAcceptanceScreen = ({
 						</Text>
 						<Button
 							label="로그인하고 권한 받기"
-							onPress={() => openBottomSheet()}
+							onPress={openLoginForTransfer}
 							style={styles.loginButton}
 						/>
 					</View>

@@ -7,15 +7,15 @@ import {
 	QueryClientProvider,
 } from "@tanstack/react-query";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { AppState, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AppState, Linking, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import {
 	initialWindowMetrics,
 	SafeAreaProvider,
 } from "react-native-safe-area-context";
 import Toast, { type ToastConfig } from "react-native-toast-message";
-import { linking } from "@/config/linking";
+import { createAppLinking } from "@/config/linking";
 import AnnouncementEditScreen from "@/features/club/screens/AnnouncementEditScreen";
 import AnnouncementRegistrationScreen from "@/features/club/screens/AnnouncementRegistrationScreen";
 import ManagerTransferAcceptanceScreen from "@/features/club/screens/ManagerTransferAcceptanceScreen";
@@ -37,15 +37,26 @@ import {
 	SCREEN_TYPE,
 } from "@/shared/constants/screen";
 import { typography } from "@/shared/constants/typography";
+import {
+	AppModalFlowProvider,
+	useAppModalFlow,
+} from "@/shared/contexts/appModalFlowContext";
 import { LoginBottomSheetProvider } from "@/shared/contexts/loginBottomSheetContext";
 import { ManageClubBottomSheetProvider } from "@/shared/contexts/manageClubBottomSheet";
 import { ProfileProvider } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import { UserVoiceBottomSheetProvider } from "@/shared/contexts/userVoiceBottomSheetContext";
 import { initToken } from "@/shared/utils/api";
-import { shouldShowGlobalAppModals } from "@/shared/utils/entrySplash";
+import {
+	getNavigationInitialUrl,
+	type PendingEntryIntent,
+	parsePendingEntryIntent,
+	replacePendingEntryIntent,
+	resolveExecutableEntryIntent,
+} from "@/shared/utils/entryIntent";
 import {
 	_navigationRef,
+	navigation,
 	setIsNavigationReady,
 } from "@/shared/utils/navigation";
 import { ms, s, vs } from "@/shared/utils/scale";
@@ -72,6 +83,36 @@ const queryClient = new QueryClient({
 		},
 	},
 });
+
+type PendingEntryIntentHandlerProps = {
+	pendingEntryIntent: PendingEntryIntent;
+	isNavigationReady: boolean;
+	onConsume: () => void;
+};
+
+const PendingEntryIntentHandler = ({
+	pendingEntryIntent,
+	isNavigationReady,
+	onConsume,
+}: PendingEntryIntentHandlerProps) => {
+	const { state: appModalFlowState } = useAppModalFlow();
+
+	useEffect(() => {
+		const executableIntent = resolveExecutableEntryIntent({
+			pendingIntent: pendingEntryIntent,
+			isNavigationReady,
+			appModalFlowState,
+		});
+		if (!executableIntent) return;
+
+		onConsume();
+		navigation.navigate(SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE, {
+			token: executableIntent.token,
+		});
+	}, [appModalFlowState, isNavigationReady, onConsume, pendingEntryIntent]);
+
+	return null;
+};
 
 function App(): React.JSX.Element {
 	const { Provider: ServiceProvider } = serviceContext;
@@ -127,16 +168,65 @@ function App(): React.JSX.Element {
 	// 그렇지 않으면 _token이 채워지기 전에 /v2/users/me가 게스트로 나가 자동로그인이 깨진다.
 	const [isBootstrapped, setIsBootstrapped] = useState(false);
 	const [entryFlowComplete, setEntryFlowComplete] = useState(false);
+	const [initialNavigationUrl, setInitialNavigationUrl] = useState<
+		string | null
+	>(null);
+	const [pendingEntryIntent, setPendingEntryIntent] =
+		useState<PendingEntryIntent>(null);
+	const [isNavigationReady, setNavigationReady] = useState(false);
 	const handleEntryComplete = useCallback(() => setEntryFlowComplete(true), []);
+	const handlePendingEntryIntent = useCallback(
+		(intent: NonNullable<PendingEntryIntent>) => {
+			setPendingEntryIntent((currentIntent) =>
+				replacePendingEntryIntent(currentIntent, intent),
+			);
+		},
+		[],
+	);
+	const handleConsumePendingEntryIntent = useCallback(
+		() => setPendingEntryIntent(null),
+		[],
+	);
+	const handleNavigationReady = useCallback(() => {
+		setIsNavigationReady(true);
+		setNavigationReady(true);
+	}, []);
+	const appLinking = useMemo(
+		() =>
+			createAppLinking({
+				initialUrl: initialNavigationUrl,
+				onPendingEntryIntent: handlePendingEntryIntent,
+			}),
+		[handlePendingEntryIntent, initialNavigationUrl],
+	);
 
 	useEffect(() => {
+		let isCancelled = false;
 		const bootstrap = async () => {
-			await initToken();
-			setIsNavigationReady(true);
+			const [, initialUrl] = await Promise.all([
+				initToken(),
+				Linking.getInitialURL(),
+			]);
+			if (isCancelled) return;
+
+			const initialEntryIntent = parsePendingEntryIntent(initialUrl);
+			setPendingEntryIntent(initialEntryIntent);
+			setInitialNavigationUrl(getNavigationInitialUrl(initialUrl));
 			setIsBootstrapped(true);
 		};
 		bootstrap();
+
+		return () => {
+			isCancelled = true;
+		};
 	}, []);
+
+	useEffect(
+		() => () => {
+			setIsNavigationReady(false);
+		},
+		[],
+	);
 
 	useEffect(() => {
 		const subscription = AppState.addEventListener("change", (nextAppState) => {
@@ -159,40 +249,46 @@ function App(): React.JSX.Element {
 						<GestureHandlerRootView style={{ flex: 1 }}>
 							<BottomSheetModalProvider>
 								<LoginBottomSheetProvider>
-									<UserVoiceBottomSheetProvider>
-										<ManageClubBottomSheetProvider>
-											<ForceUpdateGate onEntryComplete={handleEntryComplete}>
-												<NavigationContainer
-													ref={_navigationRef}
-													linking={linking}
-												>
-													<RootStack.Navigator
-														screenOptions={{ headerShown: false }}
+									<AppModalFlowProvider active={entryFlowComplete}>
+										<UserVoiceBottomSheetProvider>
+											<ManageClubBottomSheetProvider>
+												<ForceUpdateGate onEntryComplete={handleEntryComplete}>
+													<NavigationContainer
+														ref={_navigationRef}
+														linking={appLinking}
+														onReady={handleNavigationReady}
 													>
-														<RootStack.Screen
-															name="Main"
-															component={TabNavigator}
-														/>
-														<RootStack.Screen
-															name={SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION}
-															component={AnnouncementRegistrationScreen}
-														/>
-														<RootStack.Screen
-															name={SCREEN_TYPE.ANNOUNCEMENT_EDIT}
-															component={AnnouncementEditScreen}
-														/>
-														<RootStack.Screen
-															name={SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE}
-															component={ManagerTransferAcceptanceScreen}
-														/>
-													</RootStack.Navigator>
-												</NavigationContainer>
-												{shouldShowGlobalAppModals({ entryFlowComplete }) && (
+														<RootStack.Navigator
+															screenOptions={{ headerShown: false }}
+														>
+															<RootStack.Screen
+																name="Main"
+																component={TabNavigator}
+															/>
+															<RootStack.Screen
+																name={SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION}
+																component={AnnouncementRegistrationScreen}
+															/>
+															<RootStack.Screen
+																name={SCREEN_TYPE.ANNOUNCEMENT_EDIT}
+																component={AnnouncementEditScreen}
+															/>
+															<RootStack.Screen
+																name={SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE}
+																component={ManagerTransferAcceptanceScreen}
+															/>
+														</RootStack.Navigator>
+													</NavigationContainer>
+													<PendingEntryIntentHandler
+														pendingEntryIntent={pendingEntryIntent}
+														isNavigationReady={isNavigationReady}
+														onConsume={handleConsumePendingEntryIntent}
+													/>
 													<AppModalManager />
-												)}
-											</ForceUpdateGate>
-										</ManageClubBottomSheetProvider>
-									</UserVoiceBottomSheetProvider>
+												</ForceUpdateGate>
+											</ManageClubBottomSheetProvider>
+										</UserVoiceBottomSheetProvider>
+									</AppModalFlowProvider>
 								</LoginBottomSheetProvider>
 							</BottomSheetModalProvider>
 						</GestureHandlerRootView>

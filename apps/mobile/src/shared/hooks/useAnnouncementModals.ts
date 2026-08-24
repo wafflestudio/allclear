@@ -4,7 +4,7 @@ import type { Announcement } from "@/entities/announcement";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import type { AnnouncementService } from "@/usecases/announcement";
 
-type HomeAnnouncementModalItem = {
+export type HomeAnnouncementModalItem = {
 	key: string;
 	uuid: string;
 	title: string;
@@ -13,24 +13,42 @@ type HomeAnnouncementModalItem = {
 
 let hasShownAnnouncementsThisSession = false;
 
-const useAnnouncementModals = () => {
+const useAnnouncementModals = (enabled = true) => {
 	const { announcementService } = useContext(serviceContext);
 	const queryClient = useQueryClient();
 	const [modalQueue, setModalQueue] = useState<HomeAnnouncementModalItem[]>([]);
-	const { data: announcements = [], isSuccess: hasLoadedAnnouncements } =
-		useAnnouncements(announcementService);
+	const [hasInitializedAnnouncements, setHasInitializedAnnouncements] =
+		useState(false);
+	const {
+		data: announcements = [],
+		isSuccess: hasLoadedAnnouncements,
+		isError: hasAnnouncementsError,
+	} = useAnnouncements(announcementService, enabled);
 	const dismissAnnouncementsMutation = useDismissAnnouncements(
 		announcementService,
 		queryClient,
 	);
 
 	useEffect(() => {
+		if (!enabled) {
+			setModalQueue([]);
+			setHasInitializedAnnouncements(false);
+			return;
+		}
+		if (hasAnnouncementsError) {
+			setHasInitializedAnnouncements(true);
+			return;
+		}
 		if (!hasLoadedAnnouncements) return;
-		if (hasShownAnnouncementsThisSession) return;
+		if (hasShownAnnouncementsThisSession) {
+			setHasInitializedAnnouncements(true);
+			return;
+		}
 
 		setModalQueue(announcements.map(createAnnouncementModalItem));
 		hasShownAnnouncementsThisSession = true;
-	}, [announcements, hasLoadedAnnouncements]);
+		setHasInitializedAnnouncements(true);
+	}, [announcements, enabled, hasAnnouncementsError, hasLoadedAnnouncements]);
 
 	const handleCloseAnnouncement = () => {
 		setModalQueue((prev) => prev.slice(1));
@@ -47,6 +65,8 @@ const useAnnouncementModals = () => {
 
 	return {
 		currentAnnouncement: modalQueue[0],
+		hasResolvedAnnouncements:
+			enabled && (hasAnnouncementsError || hasInitializedAnnouncements),
 		handleCloseAnnouncement,
 		handleHideAnnouncement,
 	};
@@ -63,11 +83,15 @@ const createAnnouncementModalItem = (
 	description: announcement.content,
 });
 
-const useAnnouncements = (announcementService: AnnouncementService) => {
+const useAnnouncements = (
+	announcementService: AnnouncementService,
+	enabled: boolean,
+) => {
 	return useQuery({
 		queryKey: ["announcements"],
 		queryFn: () => announcementService.listAnnouncements(),
 		select: (data) => data.data,
+		enabled,
 		staleTime: 60 * 1000,
 	});
 };

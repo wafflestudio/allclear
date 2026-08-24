@@ -2,9 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useContext } from "react";
 import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
+import { resolveShouldShowTermsModal } from "@/shared/utils/appModalFlow";
 import type { TermService } from "@/usecases/term";
 
-const usePendingTerms = () => {
+const usePendingTerms = (enabled = true) => {
 	const { termService } = useContext(serviceContext);
 	const { user, isLoading: isProfileLoading } = useProfile();
 	const queryClient = useQueryClient();
@@ -12,15 +13,18 @@ const usePendingTerms = () => {
 		data: pendingTerms = [],
 		isFetched: hasFetchedPendingTerms,
 		isError: hasPendingTermsError,
-	} = usePendingTermsQuery(termService, !isProfileLoading && !!user);
+		isFetching,
+	} = usePendingTermsQuery(termService, enabled && !isProfileLoading && !!user);
 	const agreeTermsMutation = useAgreeTerms(termService, queryClient);
-	const shouldShowTermsModal = isProfileLoading
-		? null
-		: !user
-			? false
-			: hasFetchedPendingTerms || hasPendingTermsError
-				? pendingTerms.length > 0
-				: null;
+	const shouldShowTermsModal = resolveShouldShowTermsModal({
+		enabled,
+		isProfileLoading,
+		isAuthenticated: Boolean(user),
+		isFetching,
+		hasFetchedPendingTerms,
+		hasPendingTermsError,
+		pendingTermCount: pendingTerms.length,
+	});
 
 	return {
 		pendingTerms,

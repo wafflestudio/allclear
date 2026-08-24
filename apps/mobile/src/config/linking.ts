@@ -1,9 +1,14 @@
 import type { LinkingOptions } from "@react-navigation/native";
+import { Linking } from "react-native";
 import { ENV } from "@/config/ENV";
 import {
 	type RootStackParamList,
 	SCREEN_TYPE,
 } from "@/shared/constants/screen";
+import {
+	type PendingEntryIntent,
+	parsePendingEntryIntent,
+} from "@/shared/utils/entryIntent";
 
 export const linking: LinkingOptions<RootStackParamList> = {
 	prefixes: [
@@ -27,3 +32,29 @@ export const linking: LinkingOptions<RootStackParamList> = {
 		},
 	},
 };
+
+type CreateAppLinkingParams = {
+	initialUrl: string | null;
+	onPendingEntryIntent: (intent: NonNullable<PendingEntryIntent>) => void;
+};
+
+export const createAppLinking = ({
+	initialUrl,
+	onPendingEntryIntent,
+}: CreateAppLinkingParams): LinkingOptions<RootStackParamList> => ({
+	...linking,
+	getInitialURL: () => initialUrl,
+	subscribe: (listener) => {
+		const subscription = Linking.addEventListener("url", ({ url }) => {
+			const pendingIntent = parsePendingEntryIntent(url);
+			if (pendingIntent) {
+				onPendingEntryIntent(pendingIntent);
+				return;
+			}
+
+			listener(url);
+		});
+
+		return () => subscription.remove();
+	},
+});

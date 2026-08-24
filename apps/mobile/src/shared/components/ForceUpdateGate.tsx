@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking } from "react-native";
 import SplashScreen from "react-native-splash-screen";
 import AlertModal from "@/shared/components/AlertModal";
@@ -9,6 +9,7 @@ import { useProfile } from "@/shared/contexts/profileContext";
 import useForceUpdateCheck from "@/shared/hooks/useForceUpdateCheck";
 import {
 	APP_INITIALIZATION_LOADING_DELAY_MS,
+	shouldCompleteAppEntry,
 	shouldShowAppInitializationLoading,
 } from "@/shared/utils/entrySplash";
 
@@ -27,6 +28,7 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 		useState(false);
 	const [splashHidden, setSplashHidden] = useState(false);
 	const [entryComplete, setEntryComplete] = useState(false);
+	const hasNotifiedEntryComplete = useRef(false);
 
 	useEffect(() => {
 		const timer = setTimeout(
@@ -74,10 +76,21 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	const noop = useCallback(() => {}, []);
 	const handleEntryComplete = useCallback(() => {
 		setEntryComplete(true);
-		onEntryComplete();
-	}, [onEntryComplete]);
+	}, []);
 
 	const showUpdateModal = state.status === "ready" && state.updateRequired;
+
+	useEffect(() => {
+		const canCompleteAppEntry = shouldCompleteAppEntry({
+			entrySplashComplete: entryComplete,
+			isUpdateCheckReady: state.status === "ready",
+			updateRequired: state.status === "ready" && state.updateRequired,
+		});
+		if (!canCompleteAppEntry || hasNotifiedEntryComplete.current) return;
+
+		hasNotifiedEntryComplete.current = true;
+		onEntryComplete();
+	}, [entryComplete, onEntryComplete, state]);
 
 	return (
 		<>
