@@ -25,6 +25,7 @@ import Icon from "react-native-vector-icons/MaterialIcons";
 const clubManagementSnuLogo =
 	require("@/assets/images/club-management-snu-logo.png") as number;
 
+import ManagerTransferSection from "@/features/club/components/ManagerTransferSection";
 import OfficialVerificationRequestButton from "@/features/club/components/OfficialVerificationRequestButton";
 import VerificationMark from "@/features/club/components/VerificationMark";
 import { getOfficialVerificationRequestErrorContent } from "@/features/club/utils/officialVerificationRequest";
@@ -425,39 +426,11 @@ const ClubManagementScreen = () => {
 					</View>
 				</View>
 
-				{/* 운영진 목록 */}
-				<View style={styles.section}>
-					<View style={styles.sectionLabel}>
-						<Text style={styles.sectionLabelText}>운영진 목록</Text>
-					</View>
-					<View style={styles.listContainer}>
-						{!club?.managers || club.managers.length === 0 ? (
-							<View
-								style={[
-									styles.row,
-									styles.rowNormal,
-									{ justifyContent: "center" },
-								]}
-							>
-								<Text style={styles.rowTextGray}>등록된 운영진이 없어요</Text>
-							</View>
-						) : (
-							club.managers.map((manager) => (
-								<View
-									key={manager.serviceUserId}
-									style={[styles.row, styles.rowNormal]}
-								>
-									<Text style={styles.managerName}>{manager.name}</Text>
-									{!!manager.studentId && (
-										<Text style={styles.managerStudentId}>
-											{manager.studentId}
-										</Text>
-									)}
-								</View>
-							))
-						)}
-					</View>
-				</View>
+				<ManagerTransferSection
+					clubId={clubId}
+					clubName={club?.name ?? ""}
+					managers={club?.managers ?? []}
+				/>
 			</ScrollView>
 
 			<AlertModal
@@ -935,20 +908,6 @@ const styles = StyleSheet.create({
 		color: "#757474",
 		flex: 1,
 	},
-	managerName: {
-		fontFamily: "Pretendard",
-		fontWeight: "600",
-		fontSize: ms(13),
-		color: "#333",
-		flex: 1,
-	},
-	managerStudentId: {
-		fontFamily: "Pretendard",
-		fontWeight: "400",
-		fontSize: ms(12),
-		color: "#757474",
-	},
-
 	// ── 삭제 확인 모달
 	modalOverlay: {
 		flex: 1,

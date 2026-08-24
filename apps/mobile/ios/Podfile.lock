@@ -1803,6 +1803,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNCClipboard (1.16.3):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.11.18.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNCMaskedView (0.3.2):
     - DoubleConversion
     - glog
@@ -2124,6 +2145,7 @@ DEPENDENCIES:
   - ReactCommon/turbomodule/core (from `../../../node_modules/react-native/ReactCommon`)
   - "RNAppleAuthentication (from `../../../node_modules/@invertase/react-native-apple-authentication`)"
   - "RNCAsyncStorage (from `../../../node_modules/@react-native-async-storage/async-storage`)"
+  - "RNCClipboard (from `../../../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCMaskedView (from `../../../node_modules/@react-native-masked-view/masked-view`)"
   - RNDeviceInfo (from `../../../node_modules/react-native-device-info`)
   - "RNFBAnalytics (from `../../../node_modules/@react-native-firebase/analytics`)"
@@ -2305,6 +2327,8 @@ EXTERNAL SOURCES:
     :path: "../../../node_modules/@invertase/react-native-apple-authentication"
   RNCAsyncStorage:
     :path: "../../../node_modules/@react-native-async-storage/async-storage"
+  RNCClipboard:
+    :path: "../../../node_modules/@react-native-clipboard/clipboard"
   RNCMaskedView:
     :path: "../../../node_modules/@react-native-masked-view/masked-view"
   RNDeviceInfo:
@@ -2414,6 +2438,7 @@ SPEC CHECKSUMS:
   ReactCommon: bf4612cba0fa356b529385029f470d5529dddde4
   RNAppleAuthentication: a89c9804592b38ed4ab11f0aee68d05ba12ad432
   RNCAsyncStorage: dc5ca6aeca46e73f963ea4f79e222838c2d186cb
+  RNCClipboard: ba9fda8e2c9f003a29f7f66793069c4d0dada955
   RNCMaskedView: 308c763227e237d4d260bd8841870e099572bb3e
   RNDeviceInfo: bcce8752b5043a623fe3c26789679b473f705d3c
   RNFBAnalytics: f12c83fab147fea9b422524c0a1d9548d908ba90

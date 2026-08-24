@@ -18,6 +18,7 @@ import Toast, { type ToastConfig } from "react-native-toast-message";
 import { linking } from "@/config/linking";
 import AnnouncementEditScreen from "@/features/club/screens/AnnouncementEditScreen";
 import AnnouncementRegistrationScreen from "@/features/club/screens/AnnouncementRegistrationScreen";
+import ManagerTransferAcceptanceScreen from "@/features/club/screens/ManagerTransferAcceptanceScreen";
 import { getAnnouncementRepository } from "@/repositories/announcement";
 import { getAppVersionRepository } from "@/repositories/appVersion";
 import { getAuthRepository } from "@/repositories/auth";
@@ -31,7 +32,10 @@ import { getUserRepository } from "@/repositories/user";
 import AppModalManager from "@/shared/components/AppModalManager";
 import ForceUpdateGate from "@/shared/components/ForceUpdateGate";
 import { Colors } from "@/shared/constants/colors";
-import { SCREEN_TYPE } from "@/shared/constants/screen";
+import {
+	type RootStackParamList,
+	SCREEN_TYPE,
+} from "@/shared/constants/screen";
 import { typography } from "@/shared/constants/typography";
 import { LoginBottomSheetProvider } from "@/shared/contexts/loginBottomSheetContext";
 import { ManageClubBottomSheetProvider } from "@/shared/contexts/manageClubBottomSheet";
@@ -58,7 +62,7 @@ import { getReviewService } from "@/usecases/review";
 import { getTermService } from "@/usecases/term";
 import { getUserService } from "@/usecases/user";
 
-const RootStack = createNativeStackNavigator();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const queryClient = new QueryClient({
 	defaultOptions: {
@@ -176,6 +180,10 @@ function App(): React.JSX.Element {
 														<RootStack.Screen
 															name={SCREEN_TYPE.ANNOUNCEMENT_EDIT}
 															component={AnnouncementEditScreen}
+														/>
+														<RootStack.Screen
+															name={SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE}
+															component={ManagerTransferAcceptanceScreen}
 														/>
 													</RootStack.Navigator>
 												</NavigationContainer>

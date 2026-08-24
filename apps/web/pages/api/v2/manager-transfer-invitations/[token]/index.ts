@@ -1,0 +1,48 @@
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { NotFoundError, UserNotFoundError } from 'server/domain/error'
+import { Provider } from 'server/provider'
+import { ClubManagerTransferService } from 'server/service/club-manager-transfer.service'
+import { UserService } from 'server/service/user.service'
+import {
+  type ManagerTransferInvitationResponse,
+  ManagerTransferTokenParamsSchema,
+} from 'src/lib/schemas/manager-transfer'
+import { type ZodIssue, z } from 'zod'
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<ManagerTransferInvitationResponse | string | ZodIssue[]>,
+) {
+  if (req.method !== 'GET') {
+    return res.status(405).end()
+  }
+
+  try {
+    const userService = Provider.getService(UserService)
+    const transferService = Provider.getService(ClubManagerTransferService)
+    await userService.getUserByAccountId(req.headers.user as string)
+    const { token } = ManagerTransferTokenParamsSchema.parse(req.query)
+    const invitation = await transferService.getInvitation(token)
+
+    return res.status(200).json({
+      success: true,
+      message: '관리자 권한 이전 초대를 조회했어요.',
+      data: invitation,
+    })
+  } catch (error) {
+    if (error instanceof UserNotFoundError) {
+      return res.status(401).send('Unauthorized')
+    }
+    if (error instanceof NotFoundError) {
+      return res.status(404).send('Not Found')
+    }
+    if (error instanceof z.ZodError) {
+      return res.status(400).json(error.errors)
+    }
+    console.error(
+      'get manager transfer invitation failed',
+      error instanceof Error ? error.name : '',
+    )
+    return res.status(500).send('Internal Server Error')
+  }
+}

@@ -42,6 +42,9 @@ importers:
       '@react-native-async-storage/async-storage':
         specifier: ^1.17.11
         version: 1.24.0(react-native@0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0))
+      '@react-native-clipboard/clipboard':
+        specifier: 1.16.3
+        version: 1.16.3(react-native@0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0))(react@18.2.0)
       '@react-native-community/blur':
         specifier: ^4.3.2
         version: 4.4.1(react-native@0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0))(react@18.2.0)
@@ -1976,6 +1979,19 @@ packages:
     resolution: {integrity: sha512-W4/vbwUOYOjco0x3toB8QCr7EjIP6nE9G7o8PMguvvjYT5Awg09lyV4enACRx4s++PPulBiBSjL0KTFx2u0Z/g==}
     peerDependencies:
       react-native: ^0.0.0-0 || >=0.60 <1.0
+
+  '@react-native-clipboard/clipboard@1.16.3':
+    resolution: {integrity: sha512-cMIcvoZKIrShzJHEaHbTAp458R9WOv0fB6UyC7Ek4Qk561Ow/DrzmmJmH/rAZg21Z6ixJ4YSdFDC14crqIBmCQ==}
+    peerDependencies:
+      react: '>= 16.9.0'
+      react-native: '>= 0.61.5'
+      react-native-macos: '>= 0.61.0'
+      react-native-windows: '>= 0.61.0'
+    peerDependenciesMeta:
+      react-native-macos:
+        optional: true
+      react-native-windows:
+        optional: true
 
   '@react-native-community/blur@4.4.1':
     resolution: {integrity: sha512-XBSsRiYxE/MOEln2ayunShfJtWztHwUxLFcSL20o+HNNRnuUDv+GXkF6FmM2zE8ZUfrnhQ/zeTqvnuDPGw6O8A==}
@@ -8408,6 +8424,11 @@ snapshots:
   '@react-native-async-storage/async-storage@1.24.0(react-native@0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0))':
     dependencies:
       merge-options: 3.0.4
+      react-native: 0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0)
+
+  '@react-native-clipboard/clipboard@1.16.3(react-native@0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0))(react@18.2.0)':
+    dependencies:
+      react: 18.2.0
       react-native: 0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0)
 
   '@react-native-community/blur@4.4.1(react-native@0.77.3(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@react-native-community/cli@15.0.1(typescript@5.9.3))(@types/react@18.3.28)(react@18.2.0))(react@18.2.0)':

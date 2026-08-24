@@ -77,13 +77,19 @@ export const UserNotificationTypeSchema = z.enum([
   'CLUB_REGISTRATION_REJECTED',
   'MANAGER_REQUEST_APPROVED',
   'MANAGER_REQUEST_REJECTED',
+  'MANAGER_TRANSFER_COMPLETED',
 ])
 
-export const UserNotificationSourceTypeSchema = z.enum(['CLUB', 'CLUB_MANAGER_REQUEST'])
+export const UserNotificationSourceTypeSchema = z.enum([
+  'CLUB',
+  'CLUB_MANAGER_REQUEST',
+  'MANAGER_TRANSFER',
+])
 
 export const UserNotificationMetadataSchema = z
   .object({
     rejectReason: z.string().optional(),
+    clubName: z.string().optional(),
   })
   .openapi('UserNotificationMetadata')
 
