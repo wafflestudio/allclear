@@ -147,6 +147,18 @@ export class ClubManagerTransferService {
         lock: { mode: 'pessimistic_write' },
       })
       if (!clubManager) {
+        // A concurrent request from the same recipient may have committed while
+        // this SELECT waited for the old manager row. Re-read the immutable
+        // acceptance result before treating the invitation as unavailable.
+        const completedInvitation = await invitationRepository.findOne({
+          where: { id: candidate.id },
+        })
+        if (
+          completedInvitation?.acceptedAt &&
+          completedInvitation.acceptedByServiceUserId === recipient.serviceUserId
+        ) {
+          return this.getClubAcceptanceResponse(clubRepository, completedInvitation.clubId)
+        }
         throw new NotFoundError('manager transfer invitation not found')
       }
 
