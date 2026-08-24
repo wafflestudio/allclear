@@ -1,6 +1,7 @@
 import Clipboard from "@react-native-clipboard/clipboard";
 import {
 	copyManagerTransferLink,
+	getManagerTransferErrorAction,
 	getManagerTransferErrorContent,
 } from "@/features/club/utils/managerTransfer";
 
@@ -41,5 +42,21 @@ describe("manager transfer UI helpers", () => {
 			title: "관리자 권한을 이전하지 못했어요",
 			description: "네트워크 상태를 확인한 후 다시 시도해주세요",
 		});
+	});
+
+	it.each([
+		[401, "exit"],
+		[403, "exit"],
+		[404, "exit"],
+		[409, "exit"],
+		[500, "retry"],
+	])("API 상태 %s에 맞는 후속 동작을 반환한다", (status, action) => {
+		expect(getManagerTransferErrorAction({ response: { status } })).toBe(
+			action,
+		);
+	});
+
+	it("네트워크 오류는 재시도할 수 있다", () => {
+		expect(getManagerTransferErrorAction(new Error("network"))).toBe("retry");
 	});
 });

@@ -1,3 +1,4 @@
+import type { NavigatorScreenParams } from "@react-navigation/native";
 import type { Club } from "@/entities/club";
 
 export enum SCREEN_TYPE {
@@ -20,6 +21,7 @@ export enum SCREEN_TYPE {
 	ANNOUNCEMENT_EDIT = "AnnouncementEdit",
 	CLUB_MANAGEMENT = "ClubManagement",
 	CLUB_INFO_EDIT = "ClubInfoEdit",
+	MANAGER_TRANSFER_ACCEPTANCE = "ManagerTransferAcceptance",
 
 	WEBVIEW = "WebView",
 }
@@ -79,10 +81,24 @@ export type StackParamList = {
 			studentId?: string;
 		};
 	};
+	[SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE]: { token: string };
 
 	[SCREEN_TYPE.WEBVIEW]: {
 		uri: string;
 		title?: string;
 		authorization?: string;
 	};
+};
+
+export type RootStackParamList = {
+	Main:
+		| NavigatorScreenParams<{
+				홈: NavigatorScreenParams<{
+					[SCREEN_TYPE.CLUB_DETAIL]: StackParamList[SCREEN_TYPE.CLUB_DETAIL];
+				}>;
+		  }>
+		| undefined;
+	[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION]: StackParamList[SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION];
+	[SCREEN_TYPE.ANNOUNCEMENT_EDIT]: StackParamList[SCREEN_TYPE.ANNOUNCEMENT_EDIT];
+	[SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE]: StackParamList[SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE];
 };

@@ -1,7 +1,11 @@
+import type { LinkingOptions } from "@react-navigation/native";
 import { ENV } from "@/config/ENV";
-import { SCREEN_TYPE } from "@/shared/constants/screen";
+import {
+	type RootStackParamList,
+	SCREEN_TYPE,
+} from "@/shared/constants/screen";
 
-export const linking = {
+export const linking: LinkingOptions<RootStackParamList> = {
 	prefixes: [
 		"allclear://",
 		"https://all-clear.cc",
@@ -10,6 +14,7 @@ export const linking = {
 	],
 	config: {
 		screens: {
+			[SCREEN_TYPE.MANAGER_TRANSFER_ACCEPTANCE]: "manager-transfer/:token",
 			Main: {
 				screens: {
 					홈: {

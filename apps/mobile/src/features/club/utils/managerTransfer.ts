@@ -39,6 +39,13 @@ export const getManagerTransferErrorContent = (
 	return (status && ERROR_CONTENT_BY_STATUS[status]) || DEFAULT_ERROR_CONTENT;
 };
 
+export const getManagerTransferErrorAction = (
+	error: unknown,
+): "retry" | "exit" => {
+	const status = getApiErrorStatus(error);
+	return status == null || status >= 500 ? "retry" : "exit";
+};
+
 export const copyManagerTransferLink = (transferUrl: string): void => {
 	Clipboard.setString(transferUrl);
 };
