@@ -11,6 +11,7 @@ import {
 	useContext,
 	useEffect,
 	useRef,
+	useState,
 } from "react";
 import { BackHandler, Platform } from "react-native";
 import LoginView from "@/shared/components/LoginView";
@@ -19,6 +20,7 @@ import { vs } from "@/shared/utils/scale";
 const LoginBottomSheetContext = createContext<{
 	openBottomSheet: (onSuccess?: () => void) => void;
 	closeBottomSheet: () => void;
+	isOpen: boolean;
 } | null>(null);
 
 export const useLoginBottomSheet = () => {
@@ -35,6 +37,7 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const isBottomSheetOpenRef = useRef(false);
 	const onSuccessRef = useRef<(() => void) | undefined>(undefined);
+	const [isOpen, setIsOpen] = useState(false);
 
 	const renderBackdrop = useCallback(
 		(props: BottomSheetBackdropProps) => (
@@ -50,12 +53,12 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 
 	const openBottomSheet = useCallback((onSuccess?: () => void) => {
 		isBottomSheetOpenRef.current = true;
+		setIsOpen(true);
 		onSuccessRef.current = onSuccess;
 		bottomSheetModalRef.current?.present();
 	}, []);
 
 	const closeBottomSheet = useCallback(() => {
-		isBottomSheetOpenRef.current = false;
 		bottomSheetModalRef.current?.close();
 	}, []);
 
@@ -86,6 +89,7 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 			value={{
 				openBottomSheet,
 				closeBottomSheet,
+				isOpen,
 			}}
 		>
 			{children}
@@ -96,6 +100,7 @@ export const LoginBottomSheetProvider = ({ children }: Props) => {
 				enableDynamicSizing={false}
 				onDismiss={() => {
 					isBottomSheetOpenRef.current = false;
+					setIsOpen(false);
 					// 로그인 없이 닫힌 경우 stale 콜백이 다음 로그인에 잘못 실행되지 않도록 정리
 					onSuccessRef.current = undefined;
 				}}

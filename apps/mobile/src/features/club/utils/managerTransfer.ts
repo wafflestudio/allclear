@@ -1,5 +1,6 @@
 import Clipboard from "@react-native-clipboard/clipboard";
 import { getApiErrorStatus } from "@/shared/utils/apiError";
+import type { AppModalFlowState } from "@/shared/utils/appModalFlow";
 
 export type ManagerTransferErrorContent = {
 	title: string;
@@ -10,6 +11,14 @@ const DEFAULT_ERROR_CONTENT: ManagerTransferErrorContent = {
 	title: "관리자 권한을 이전하지 못했어요",
 	description: "네트워크 상태를 확인한 후 다시 시도해주세요",
 };
+
+export const MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION =
+	"관리자 권한을 이전할 상대에게\n링크를 보내주세요";
+
+export const canLoadManagerTransferInvitation = (
+	isAuthenticated: boolean,
+	appModalFlowState: AppModalFlowState,
+): boolean => isAuthenticated && appModalFlowState === "settled";
 
 const ERROR_CONTENT_BY_STATUS: Partial<
 	Record<number, ManagerTransferErrorContent>

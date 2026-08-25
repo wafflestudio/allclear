@@ -1,7 +1,6 @@
 import AnnouncementModal from "@/shared/components/AnnouncementModal";
 import TermsAgreementModal from "@/shared/components/TermsAgreementModal";
-import useAnnouncementModals from "@/shared/hooks/useAnnouncementModals";
-import usePendingTerms from "@/shared/hooks/usePendingTerms";
+import { useAppModalFlow } from "@/shared/contexts/appModalFlowContext";
 
 /**
  * 약관 동의 / 공지 모달을 화면과 무관하게 전역에서 표시한다.
@@ -10,20 +9,25 @@ import usePendingTerms from "@/shared/hooks/usePendingTerms";
  */
 const AppModalManager = () => {
 	const {
+		isLoginBottomSheetOpen,
 		currentAnnouncement,
-		handleCloseAnnouncement,
-		handleHideAnnouncement,
-	} = useAnnouncementModals();
-	const { pendingTerms, isSubmitting, shouldShowTermsModal, handleAgreeTerms } =
-		usePendingTerms();
+		closeAnnouncement,
+		hideAnnouncement,
+		pendingTerms,
+		isSubmittingTerms,
+		shouldShowTermsModal,
+		agreeTerms,
+	} = useAppModalFlow();
+
+	if (isLoginBottomSheetOpen) return null;
 
 	if (shouldShowTermsModal === true) {
 		return (
 			<TermsAgreementModal
 				visible
 				terms={pendingTerms}
-				isSubmitting={isSubmitting}
-				onAgree={(termUuids) => handleAgreeTerms({ termUuids })}
+				isSubmitting={isSubmittingTerms}
+				onAgree={agreeTerms}
 			/>
 		);
 	}
@@ -35,8 +39,8 @@ const AppModalManager = () => {
 				announcementUuid={currentAnnouncement.uuid}
 				title={currentAnnouncement.title}
 				description={currentAnnouncement.description}
-				onHide={handleHideAnnouncement}
-				onClose={handleCloseAnnouncement}
+				onHide={hideAnnouncement}
+				onClose={closeAnnouncement}
 			/>
 		);
 	}

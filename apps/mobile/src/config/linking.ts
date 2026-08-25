@@ -4,6 +4,10 @@ import {
 	type RootStackParamList,
 	SCREEN_TYPE,
 } from "@/shared/constants/screen";
+import {
+	type PendingEntryIntent,
+	parsePendingEntryIntent,
+} from "@/shared/utils/entryIntent";
 
 export const linking: LinkingOptions<RootStackParamList> = {
 	prefixes: [
@@ -27,3 +31,68 @@ export const linking: LinkingOptions<RootStackParamList> = {
 		},
 	},
 };
+
+type CreateAppLinkingParams = {
+	initialUrl: string | null;
+	onPendingEntryIntent: (intent: NonNullable<PendingEntryIntent>) => void;
+	subscribeToUrls: SubscribeToUrls;
+};
+
+type UrlListener = (url: string) => void;
+export type SubscribeToUrls = (listener: UrlListener) => () => void;
+
+export const createBufferedUrlSubscription = () => {
+	let listener: UrlListener | null = null;
+	let latestNavigationUrl: string | null = null;
+	let latestManagerTransferUrl: string | null = null;
+	let hasPublishedUrl = false;
+
+	return {
+		publish: (url: string) => {
+			hasPublishedUrl = true;
+			if (listener) {
+				listener(url);
+				return;
+			}
+
+			if (parsePendingEntryIntent(url)) {
+				latestManagerTransferUrl = url;
+			} else {
+				latestNavigationUrl = url;
+			}
+		},
+		subscribe: (nextListener: UrlListener) => {
+			listener = nextListener;
+			const pendingUrls = [latestNavigationUrl, latestManagerTransferUrl];
+			latestNavigationUrl = null;
+			latestManagerTransferUrl = null;
+			for (const pendingUrl of pendingUrls) {
+				if (pendingUrl) nextListener(pendingUrl);
+			}
+
+			return () => {
+				if (listener === nextListener) listener = null;
+			};
+		},
+		hasPublishedUrl: () => hasPublishedUrl,
+	};
+};
+
+export const createAppLinking = ({
+	initialUrl,
+	onPendingEntryIntent,
+	subscribeToUrls,
+}: CreateAppLinkingParams): LinkingOptions<RootStackParamList> => ({
+	...linking,
+	getInitialURL: () => initialUrl,
+	subscribe: (listener) =>
+		subscribeToUrls((url) => {
+			const pendingIntent = parsePendingEntryIntent(url);
+			if (pendingIntent) {
+				onPendingEntryIntent(pendingIntent);
+				return;
+			}
+
+			listener(url);
+		}),
+});

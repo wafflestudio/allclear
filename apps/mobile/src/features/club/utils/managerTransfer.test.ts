@@ -1,8 +1,10 @@
 import Clipboard from "@react-native-clipboard/clipboard";
 import {
+	canLoadManagerTransferInvitation,
 	copyManagerTransferLink,
 	getManagerTransferErrorAction,
 	getManagerTransferErrorContent,
+	MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION,
 } from "@/features/club/utils/managerTransfer";
 
 jest.mock("axios", () => ({
@@ -16,6 +18,20 @@ jest.mock("@react-native-clipboard/clipboard", () => ({
 }));
 
 describe("manager transfer UI helpers", () => {
+	it("링크 복사 안내에 실제 개행을 사용한다", () => {
+		expect(MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION).toBe(
+			"관리자 권한을 이전할 상대에게\n링크를 보내주세요",
+		);
+		expect(MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION).not.toContain("\\n");
+	});
+
+	it("로그인과 전역 진입 절차가 끝난 뒤에만 초대 정보를 조회한다", () => {
+		expect(canLoadManagerTransferInvitation(true, "settled")).toBe(true);
+		expect(canLoadManagerTransferInvitation(false, "settled")).toBe(false);
+		expect(canLoadManagerTransferInvitation(true, "resolving")).toBe(false);
+		expect(canLoadManagerTransferInvitation(true, "presenting")).toBe(false);
+	});
+
 	it("권한 이전 링크를 클립보드에 복사한다", () => {
 		const setString = jest.spyOn(Clipboard, "setString").mockImplementation();
 
