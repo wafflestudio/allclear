@@ -47,6 +47,12 @@ describe("iOS dev artifact workflow", () => {
 		expect(workflow).toContain("ProvisionedDevices:0");
 		expect(workflow).toContain("DeveloperCertificates");
 		expect(workflow).toContain(
+			"firebase_bundle_id=$(plutil -extract BUNDLE_ID raw -o - apps/mobile/ios/GoogleService-Info.plist)",
+		);
+		expect(workflow).toContain(
+			'[ "$firebase_bundle_id" != "com.padocorp.clubhouse.dev" ]',
+		);
+		expect(workflow).toContain(
 			"Profile does not include the imported signing certificate",
 		);
 	});

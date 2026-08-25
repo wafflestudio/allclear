@@ -27,7 +27,7 @@ Create an `ios-dev-artifact` GitHub environment and configure these secrets:
 | `IOS_DEV_CERTIFICATE_PASSWORD` | Password used when exporting the `.p12` |
 | `IOS_DEV_PROVISIONING_PROFILE_BASE64` | Base64-encoded `allclear-dev.mobileprovision` |
 | `IOS_ENV_LOCAL` | Contents of `apps/mobile/.env.local` with `PROFILE=dev` |
-| `IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64` | Base64-encoded `GoogleService-Info.plist` |
+| `IOS_GOOGLE_SERVICE_INFO_PLIST_BASE64` | Base64-encoded `GoogleService-Info.plist` registered for `com.padocorp.clubhouse.dev` |
 
 The certificate must be one of the certificates embedded in the provisioning
 profile. The workflow rejects mismatched, expired, non-development, wrong-team,

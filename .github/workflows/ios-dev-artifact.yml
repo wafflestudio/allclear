@@ -94,6 +94,11 @@ jobs:
             exit 1
           fi
           plutil -lint apps/mobile/ios/GoogleService-Info.plist
+          firebase_bundle_id=$(plutil -extract BUNDLE_ID raw -o - apps/mobile/ios/GoogleService-Info.plist)
+          if [ "$firebase_bundle_id" != "com.padocorp.clubhouse.dev" ]; then
+            echo "GoogleService-Info.plist does not match the dev bundle identifier"
+            exit 1
+          fi
           security cms -D -i "$PROVISIONING_PROFILE_PATH" > "$PROFILE_PLIST_PATH"
 
       - name: Install and validate signing assets
