@@ -18,8 +18,7 @@ export const parsePendingEntryIntent = (
 		const isCustomScheme =
 			url.protocol === "allclear:" && url.hostname === "manager-transfer";
 		const isWebLink =
-			(url.protocol === "https:" || url.protocol === "http:") &&
-			WEB_LINK_HOSTS.has(url.hostname);
+			url.protocol === "https:" && WEB_LINK_HOSTS.has(url.hostname);
 		const encodedToken = isCustomScheme
 			? url.pathname.match(/^\/([^/]+)\/?$/)?.[1]
 			: isWebLink
@@ -37,9 +36,27 @@ export const parsePendingEntryIntent = (
 	}
 };
 
+const isInsecureManagerTransferUrl = (rawUrl: string | null): boolean => {
+	if (!rawUrl) return false;
+
+	try {
+		const url = new URL(rawUrl);
+		return (
+			url.protocol === "http:" &&
+			WEB_LINK_HOSTS.has(url.hostname) &&
+			/^\/manager-transfer\/[^/]+\/?$/.test(url.pathname)
+		);
+	} catch {
+		return false;
+	}
+};
+
 export const getNavigationInitialUrl = (
 	rawUrl: string | null,
-): string | null => (parsePendingEntryIntent(rawUrl) ? null : rawUrl);
+): string | null =>
+	parsePendingEntryIntent(rawUrl) || isInsecureManagerTransferUrl(rawUrl)
+		? null
+		: rawUrl;
 
 export const replacePendingEntryIntent = (
 	_currentIntent: PendingEntryIntent,
