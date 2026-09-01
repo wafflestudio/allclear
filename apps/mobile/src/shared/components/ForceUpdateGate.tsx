@@ -1,6 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
 import SplashScreen from "react-native-splash-screen";
 import AlertModal from "@/shared/components/AlertModal";
 import AppInitializationScreen from "@/shared/components/AppInitializationScreen";
@@ -26,7 +26,7 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	const [minDelayElapsed, setMinDelayElapsed] = useState(false);
 	const [initializationDelayElapsed, setInitializationDelayElapsed] =
 		useState(false);
-	const [splashHidden, setSplashHidden] = useState(false);
+	const [splashHidden, setSplashHidden] = useState(Platform.OS === "ios");
 	const [entryComplete, setEntryComplete] = useState(false);
 	const hasNotifiedEntryComplete = useRef(false);
 
@@ -59,7 +59,9 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 			minDelayElapsed && (isInitializationReady || initializationDelayElapsed);
 
 		if (!splashHidden && canRevealReactScreen) {
-			SplashScreen.hide();
+			if (Platform.OS === "android") {
+				SplashScreen.hide();
+			}
 			setSplashHidden(true);
 		}
 	}, [
@@ -95,7 +97,7 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	return (
 		<>
 			{children}
-			{!entryComplete && isInitializationReady && (
+			{!entryComplete && (Platform.OS === "ios" || isInitializationReady) && (
 				<EntrySplashScreen
 					active={splashHidden}
 					onComplete={handleEntryComplete}
