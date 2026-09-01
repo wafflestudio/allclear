@@ -40,14 +40,15 @@ describe('apple universal links', () => {
 })
 
 describe('android app links', () => {
-  it('keeps verified HTTPS domains and the custom scheme in the Android manifest', () => {
+  it('keeps verified HTTPS domains and the custom scheme without intercepting HTTP links', () => {
     const manifest = readFileSync(
       join(process.cwd(), '../mobile/android/app/src/main/AndroidManifest.xml'),
       'utf8',
     )
 
     expect(manifest).toContain('android:scheme="allclear"')
-    expect(manifest).toContain('android:scheme="http"')
+    expect(manifest).not.toContain('android:scheme="http"')
+    expect(manifest).toContain('android:scheme="https"')
     expect(manifest).toContain('android:autoVerify="true"')
     expect(manifest).toContain('android:host="all-clear.cc"')
     expect(manifest).toContain('android:host="dev.all-clear.cc"')
