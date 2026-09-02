@@ -3,7 +3,6 @@
 #import <Firebase.h>
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
-#import "RNSplashScreen.h"
 #import <RNKakaoLogins.h>
 #import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
 
@@ -17,7 +16,6 @@
   self.dependencyProvider = [RCTAppDependencyProvider new];
 
   BOOL result = [super application:application didFinishLaunchingWithOptions:launchOptions];
-  [RNSplashScreen show];
   return result;
 }
 

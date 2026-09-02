@@ -15,6 +15,11 @@ const DEFAULT_ERROR_CONTENT: ManagerTransferErrorContent = {
 export const MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION =
 	"관리자 권한을 이전할 상대에게\n링크를 보내주세요";
 
+export const getManagerTransferConfirmationContent = (clubName: string) => ({
+	title: "관리자 권한을 이전받을까요?",
+	description: `‘${clubName}’ 동아리의\n관리자 권한을 이전받을 수 있어요.`,
+});
+
 export const canLoadManagerTransferInvitation = (
 	isAuthenticated: boolean,
 	appModalFlowState: AppModalFlowState,

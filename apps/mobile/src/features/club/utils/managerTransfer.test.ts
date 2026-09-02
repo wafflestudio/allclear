@@ -2,6 +2,7 @@ import Clipboard from "@react-native-clipboard/clipboard";
 import {
 	canLoadManagerTransferInvitation,
 	copyManagerTransferLink,
+	getManagerTransferConfirmationContent,
 	getManagerTransferErrorAction,
 	getManagerTransferErrorContent,
 	MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION,
@@ -18,6 +19,13 @@ jest.mock("@react-native-clipboard/clipboard", () => ({
 }));
 
 describe("manager transfer UI helpers", () => {
+	it("권한 수락 전에는 완료형이 아닌 확인 문구를 사용한다", () => {
+		expect(getManagerTransferConfirmationContent("와플스튜디오")).toEqual({
+			title: "관리자 권한을 이전받을까요?",
+			description: "‘와플스튜디오’ 동아리의\n관리자 권한을 이전받을 수 있어요.",
+		});
+	});
+
 	it("링크 복사 안내에 실제 개행을 사용한다", () => {
 		expect(MANAGER_TRANSFER_LINK_COPIED_DESCRIPTION).toBe(
 			"관리자 권한을 이전할 상대에게\n링크를 보내주세요",

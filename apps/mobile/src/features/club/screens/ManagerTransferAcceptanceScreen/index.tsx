@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
 	canLoadManagerTransferInvitation,
+	getManagerTransferConfirmationContent,
 	getManagerTransferErrorAction,
 	getManagerTransferErrorContent,
 } from "@/features/club/utils/managerTransfer";
@@ -101,6 +102,9 @@ const ManagerTransferAcceptanceScreen = ({
 		isProfileLoading ||
 		(!!user && (appModalFlowState !== "settled" || invitationQuery.isLoading));
 	const invitation = invitationQuery.data;
+	const confirmationContent = invitation
+		? getManagerTransferConfirmationContent(invitation.clubName)
+		: null;
 
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.safeArea}>
@@ -131,10 +135,10 @@ const ManagerTransferAcceptanceScreen = ({
 			</View>
 
 			<AlertModal
-				visible={!!invitation && !acceptedClubName && !error}
+				visible={!!confirmationContent && !acceptedClubName && !error}
 				onClose={leaveTransferFlow}
-				title="관리자 권한을 받았어요"
-				description={`‘${invitation?.clubName ?? ""}’ 동아리의\n관리자 권한을 받으시겠어요?`}
+				title={confirmationContent?.title ?? ""}
+				description={confirmationContent?.description}
 				buttonLabel={
 					acceptanceMutation.isPending ? "권한 받는 중..." : "권한 받기"
 				}

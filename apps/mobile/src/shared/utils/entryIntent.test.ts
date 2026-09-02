@@ -13,8 +13,6 @@ describe("manager transfer entry intent", () => {
 	it.each([
 		`https://all-clear.cc/manager-transfer/${firstToken}`,
 		`https://dev.all-clear.cc/manager-transfer/${firstToken}`,
-		`http://all-clear.cc/manager-transfer/${firstToken}`,
-		`http://dev.all-clear.cc/manager-transfer/${firstToken}`,
 		`allclear://manager-transfer/${firstToken}`,
 	])("관리자 권한 이전 URL %s를 보류 진입 의도로 파싱한다", (url) => {
 		expect(parsePendingEntryIntent(url)).toEqual({
@@ -31,8 +29,16 @@ describe("manager transfer entry intent", () => {
 		expect(getNavigationInitialUrl(url)).toBe(url);
 	});
 
+	it("HTTP 관리자 이전 URL은 일반 딥링크로도 전달하지 않는다", () => {
+		const url = `http://all-clear.cc/manager-transfer/${firstToken}`;
+
+		expect(getNavigationInitialUrl(url)).toBeNull();
+	});
+
 	it.each([
 		"https://example.com/manager-transfer/token",
+		`http://all-clear.cc/manager-transfer/${firstToken}`,
+		`http://dev.all-clear.cc/manager-transfer/${firstToken}`,
 		"allclear://manager-transfer/contains%2Fslash",
 		"allclear://manager-transfer/",
 		"allclear://manager-transfer/short-token",
