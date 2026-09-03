@@ -12,6 +12,7 @@ export type HomeAnnouncementModalItem = {
 };
 
 let hasShownAnnouncementsThisSession = false;
+const EMPTY_ANNOUNCEMENTS: Announcement[] = [];
 
 const useAnnouncementModals = (enabled = true) => {
 	const { announcementService } = useContext(serviceContext);
@@ -20,7 +21,7 @@ const useAnnouncementModals = (enabled = true) => {
 	const [hasInitializedAnnouncements, setHasInitializedAnnouncements] =
 		useState(false);
 	const {
-		data: announcements = [],
+		data: announcements = EMPTY_ANNOUNCEMENTS,
 		isSuccess: hasLoadedAnnouncements,
 		isError: hasAnnouncementsError,
 	} = useAnnouncements(announcementService, enabled);
