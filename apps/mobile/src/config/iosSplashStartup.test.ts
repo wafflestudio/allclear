@@ -6,26 +6,31 @@ const appDelegate = readFileSync(
 	resolve(mobileRoot, "ios/clubhouse/AppDelegate.mm"),
 	"utf8",
 );
+const mainActivity = readFileSync(
+	resolve(
+		mobileRoot,
+		"android/app/src/main/java/com/padocorp/clubhouse/MainActivity.kt",
+	),
+	"utf8",
+);
 const forceUpdateGate = readFileSync(
 	resolve(mobileRoot, "src/shared/components/ForceUpdateGate.tsx"),
 	"utf8",
 );
 
-describe("iOS splash startup", () => {
-	it("does not block app launch with the legacy native splash loop", () => {
+describe("native splash startup", () => {
+	it("does not block iOS launch with the legacy native splash loop", () => {
 		expect(appDelegate).not.toContain("[RNSplashScreen show]");
 	});
 
-	it("hides the legacy native splash only on Android", () => {
-		expect(forceUpdateGate).toMatch(
-			/Platform\.OS === "android"[\s\S]*SplashScreen\.hide\(\)/,
-		);
+	it("does not cover the Android React entry flow with a legacy splash dialog", () => {
+		expect(mainActivity).not.toContain("SplashScreen.show(this)");
+		expect(forceUpdateGate).not.toContain('from "react-native-splash-screen"');
 	});
 
-	it("shows and activates the React entry screen immediately on iOS", () => {
-		expect(forceUpdateGate).toContain('useState(Platform.OS === "ios")');
-		expect(forceUpdateGate).toContain(
-			'Platform.OS === "ios" || isInitializationReady',
+	it("shows and activates the React entry screen immediately on both platforms", () => {
+		expect(forceUpdateGate).toMatch(
+			/!entryComplete && \([\s\S]*<EntrySplashScreen active/,
 		);
 	});
 });

@@ -1,7 +1,6 @@
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, Platform } from "react-native";
-import SplashScreen from "react-native-splash-screen";
+import { Linking } from "react-native";
 import AlertModal from "@/shared/components/AlertModal";
 import AppInitializationScreen from "@/shared/components/AppInitializationScreen";
 import EntrySplashScreen from "@/shared/components/EntrySplashScreen";
@@ -13,8 +12,6 @@ import {
 	shouldShowAppInitializationLoading,
 } from "@/shared/utils/entrySplash";
 
-const SPLASH_MIN_DURATION_MS = 1000;
-
 type Props = {
 	children: React.ReactNode;
 	onEntryComplete: () => void;
@@ -23,20 +20,10 @@ type Props = {
 const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	const state = useForceUpdateCheck();
 	const { isLoading: isProfileLoading } = useProfile();
-	const [minDelayElapsed, setMinDelayElapsed] = useState(false);
 	const [initializationDelayElapsed, setInitializationDelayElapsed] =
 		useState(false);
-	const [splashHidden, setSplashHidden] = useState(Platform.OS === "ios");
 	const [entryComplete, setEntryComplete] = useState(false);
 	const hasNotifiedEntryComplete = useRef(false);
-
-	useEffect(() => {
-		const timer = setTimeout(
-			() => setMinDelayElapsed(true),
-			SPLASH_MIN_DURATION_MS,
-		);
-		return () => clearTimeout(timer);
-	}, []);
 
 	useEffect(() => {
 		const timer = setTimeout(
@@ -47,29 +34,11 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	}, []);
 
 	const isUpdateCheckReady = state.status === "ready";
-	const isInitializationReady = isUpdateCheckReady && !isProfileLoading;
 	const showInitializationScreen = shouldShowAppInitializationLoading({
 		delayElapsed: initializationDelayElapsed,
 		isProfileLoading,
 		isUpdateCheckReady,
 	});
-
-	useEffect(() => {
-		const canRevealReactScreen =
-			minDelayElapsed && (isInitializationReady || initializationDelayElapsed);
-
-		if (!splashHidden && canRevealReactScreen) {
-			if (Platform.OS === "android") {
-				SplashScreen.hide();
-			}
-			setSplashHidden(true);
-		}
-	}, [
-		initializationDelayElapsed,
-		isInitializationReady,
-		minDelayElapsed,
-		splashHidden,
-	]);
 
 	const handleOpenStore = useCallback((storeUrl: string) => {
 		Linking.openURL(storeUrl).catch(() => {});
@@ -97,13 +66,10 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	return (
 		<>
 			{children}
-			{!entryComplete && (Platform.OS === "ios" || isInitializationReady) && (
-				<EntrySplashScreen
-					active={splashHidden}
-					onComplete={handleEntryComplete}
-				/>
+			{!entryComplete && (
+				<EntrySplashScreen active onComplete={handleEntryComplete} />
 			)}
-			{showInitializationScreen && splashHidden && <AppInitializationScreen />}
+			{showInitializationScreen && <AppInitializationScreen />}
 			{showUpdateModal && (
 				<AlertModal
 					visible
