@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
 import { AuthService } from 'server/service/auth.service'
+import { getSafeErrorName } from 'server/util/safe-error'
 import { AppleLoginCallbackPayloadSchema } from 'src/lib/schemas/auth'
 import type { ZodIssue } from 'zod'
 import { z } from 'zod'
@@ -28,11 +29,11 @@ export default async function handler(
         email?: string
       } | null
       if (!decodedObj) {
-        console.error('appleLoginNativeCallback jwt.decode error', payload.id_token)
+        console.error('appleLoginNativeCallback jwt.decode error')
         return res.status(401).send('Unauthorized')
       }
       if (!decodedObj.sub) {
-        console.error('appleLoginNativeCallback missing sub', decodedObj)
+        console.error('appleLoginNativeCallback missing sub')
         return res.status(401).send('Unauthorized')
       }
       const accountId = await authService.createAppleUser({
@@ -46,7 +47,9 @@ export default async function handler(
         { algorithm: 'HS256', expiresIn: '1y' },
         (err, token) => {
           if (err || !token) {
-            console.error('appleLoginNativeCallback jwt.sign error', err)
+            console.error('appleLoginNativeCallback jwt.sign error', {
+              errorName: getSafeErrorName(err),
+            })
             return res.status(500).send('Internal Server Error')
           }
           return res.status(200).json({
@@ -60,7 +63,9 @@ export default async function handler(
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
     }
-    console.error('appleLoginNativeCallback error: ', err)
+    console.error('appleLoginNativeCallback error', {
+      errorName: getSafeErrorName(err),
+    })
     return res.status(500).send('Internal Server Error')
   }
 }
