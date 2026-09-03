@@ -1,5 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
+import { StyleSheet } from "react-native";
 import ManagerTransferAcceptanceScreen from "@/features/club/screens/ManagerTransferAcceptanceScreen";
+import Button, { type ButtonProps } from "@/shared/components/Button";
 
 const mockOpenBottomSheet = jest.fn();
 const mockInvalidateQueries = jest.fn();
@@ -50,11 +52,6 @@ jest.mock("@/shared/components/AlertModal", () => ({
 jest.mock("@/shared/components/BackHeader", () => ({
 	__esModule: true,
 	default: "BackHeader",
-}));
-
-jest.mock("@/shared/components/Button", () => ({
-	__esModule: true,
-	default: "Button",
 }));
 
 jest.mock("@/shared/contexts/appModalFlowContext", () => ({
@@ -113,13 +110,29 @@ describe("manager transfer acceptance login flow", () => {
 		const [loginButton] = findAll(
 			screen,
 			(element) =>
-				element.type === "Button" &&
+				element.type === Button &&
 				element.props.label === "로그인하고 권한 받기",
 		);
 
 		expect(loginButton).toBeDefined();
 		(loginButton.props.onPress as () => void)();
 		expect(mockOpenBottomSheet).toHaveBeenCalledTimes(2);
+	});
+
+	it("게스트 CTA는 카드 너비를 채우고 콘텐츠 높이를 유지한다", () => {
+		const screen = renderScreen();
+		const [loginButton] = findAll(
+			screen,
+			(element) =>
+				element.type === Button &&
+				element.props.label === "로그인하고 권한 받기",
+		);
+		const pressable = Button(loginButton.props as ButtonProps);
+		const style = StyleSheet.flatten(pressable.props.style({ pressed: false }));
+
+		// 공용 Button의 기본 flex까지 합친 최종 스타일을 확인한다.
+		expect(style).toMatchObject({ flex: 0, width: "100%" });
+		expect(style.height).toBeUndefined();
 	});
 
 	it("바텀시트 로그인 성공 후 약관 상태를 다시 확인한다", () => {
