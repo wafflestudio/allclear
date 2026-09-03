@@ -204,6 +204,7 @@ const styles = StyleSheet.create({
 		lineHeight: ms(22),
 	},
 	loginButton: {
+		flex: 0,
 		marginTop: vs(24),
 		width: "100%",
 	},
