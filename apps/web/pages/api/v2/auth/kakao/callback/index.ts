@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { ENV } from 'server/ENV'
 import { Provider } from 'server/provider'
 import { AuthService } from 'server/service/auth.service'
+import { getSafeErrorName } from 'server/util/safe-error'
 import { KakaoCallbackQuerySchema } from 'src/lib/schemas/auth'
 import type { ZodIssue } from 'zod'
 import { z } from 'zod'
@@ -49,7 +50,9 @@ export default async function handler(
           token,
         })
       } catch (err) {
-        console.error('kakaoLoginCallback jwt.sign error', err)
+        console.error('kakaoLoginCallback jwt.sign error', {
+          errorName: getSafeErrorName(err),
+        })
         return res.status(500).send('Internal Server Error')
       }
     }
@@ -58,7 +61,9 @@ export default async function handler(
     if (err instanceof z.ZodError) {
       return res.status(400).json(err.errors)
     }
-    console.error('kakaoLoginCallback error: ', err)
+    console.error('kakaoLoginCallback error', {
+      errorName: getSafeErrorName(err),
+    })
     return res.status(500).send('Internal Server Error')
   }
 }

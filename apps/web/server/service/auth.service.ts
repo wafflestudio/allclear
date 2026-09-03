@@ -13,6 +13,7 @@ import {
 } from '../infra/database/entities'
 import { UserRole } from '../infra/database/entities/user-role.enum'
 import { InjectRepository, Service } from '../provider'
+import { getSafeErrorName } from '../util/safe-error'
 
 type AccountId = string
 
@@ -46,7 +47,7 @@ export class AuthService {
     }
     if (!accountUser.user?.serviceUser) {
       // 유저가 회원탈퇴를 한 경우 account는 남아있고 해당 서비스의 user만 soft delete 되어있다
-      console.error(`User not found for account ${account.id}`)
+      console.error('active service user not found for account', { accountType: type })
       throw new UserNotFoundError(`User not found`)
     }
     return {
@@ -128,7 +129,6 @@ export class AuthService {
       },
     })
     const user = userResponse.data
-    console.log('[kakao user profile] ', user)
 
     const account = await this.findOrRestoreAccount(AccountType.KAKAO, user.id)
     if (account) {
@@ -158,9 +158,6 @@ export class AuthService {
     email?: string
     user?: string
   }) {
-    console.info(`Apple Account ID: ${accountId}`)
-    console.info(`Apple Email: ${email}`)
-
     const account = await this.findOrRestoreAccount(AccountType.APPLE, accountId)
     if (account) {
       return account.id
@@ -170,7 +167,9 @@ export class AuthService {
     try {
       parsedUser = JSON.parse(user || '{}')
     } catch (err) {
-      console.error('Failed to parse Apple user payload', err)
+      console.error('Failed to parse Apple user payload', {
+        errorName: getSafeErrorName(err),
+      })
     }
 
     // Names are only shown in the first time.
