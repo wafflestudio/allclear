@@ -23,7 +23,7 @@ vi.mock('server/service/user.service', () => ({
 
 import { ClubManagerTransferService } from 'server/service/club-manager-transfer.service'
 import { UserService } from 'server/service/user.service'
-import handler from './acceptance'
+import handler from '../../pages/api/v2/manager-transfer-invitations/[token]/acceptance'
 
 const token = 'a'.repeat(43)
 

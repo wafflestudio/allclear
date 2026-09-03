@@ -19,7 +19,7 @@ vi.mock('jsonwebtoken', () => ({
   default: { sign: mocks.sign },
 }))
 
-import handler from './index'
+import handler from '../../pages/api/v2/auth/kakao/native/callback'
 
 const createResponse = () => {
   const response = {
