@@ -10,6 +10,12 @@ import {
   UserNotificationEntity,
 } from '../infra/database/entities'
 import { InjectRepository, Service } from '../provider'
+import { getSafeDatabaseErrorContext } from '../util/safe-error'
+
+const MANAGER_TRANSFER_CONFLICT_CONSTRAINTS = new Set([
+  'uq_club_manager_active_club',
+  'club_manager_clubid_serviceuserid',
+])
 
 const INVITATION_TTL_MS = 72 * 60 * 60 * 1000
 
@@ -112,7 +118,7 @@ export class ClubManagerTransferService {
     rawToken: string,
     recipient: User,
   ): Promise<ManagerTransferAcceptanceResponse> {
-    return this.invitationRepository.manager.transaction(async (transactionManager) => {
+    const acceptance = this.invitationRepository.manager.transaction(async (transactionManager) => {
       const invitationRepository = transactionManager.getRepository(
         ClubManagerTransferInvitationEntity,
       )
@@ -210,6 +216,27 @@ export class ClubManagerTransferService {
 
       return club
     })
+    return this.withPersistenceConflictMapping(acceptance)
+  }
+
+  private async withPersistenceConflictMapping<T>(operation: Promise<T>): Promise<T> {
+    try {
+      return await operation
+    } catch (error) {
+      if (this.isManagerTransferPersistenceConflict(error)) {
+        throw new ConflictError('manager transfer state conflict')
+      }
+      throw error
+    }
+  }
+
+  private isManagerTransferPersistenceConflict(error: unknown): boolean {
+    const { databaseCode, constraint } = getSafeDatabaseErrorContext(error)
+    return (
+      databaseCode === '23505' &&
+      typeof constraint === 'string' &&
+      MANAGER_TRANSFER_CONFLICT_CONSTRAINTS.has(constraint)
+    )
   }
 
   private isActive(invitation: ClubManagerTransferInvitationEntity): boolean {

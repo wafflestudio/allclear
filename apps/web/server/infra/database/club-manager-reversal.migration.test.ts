@@ -9,6 +9,7 @@ vi.mock('../../provider', () => ({
   Service: () => undefined,
 }))
 
+import { ConflictError } from '../../domain/error'
 import type { User } from '../../domain/model/User'
 import {
   ClubManagerTransferService,
@@ -148,7 +149,7 @@ describeWithPostgres('club manager reversal migration (PostgreSQL)', () => {
         reversalToken,
         createUser(firstManagerServiceUserId, '첫 관리자'),
       ),
-    ).rejects.toBeInstanceOf(QueryFailedError)
+    ).rejects.toBeInstanceOf(ConflictError)
 
     const stateAfterFailedReversal = await testDataSource.query<Array<{ service_user_id: string }>>(
       'SELECT service_user_id FROM public.club_manager WHERE club_id = $1 AND deleted_at IS NULL',
