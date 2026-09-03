@@ -10,7 +10,10 @@ import {
 
 jest.mock("axios", () => ({
 	isAxiosError: (error: unknown) =>
-		typeof error === "object" && error !== null && "response" in error,
+		typeof error === "object" &&
+		error !== null &&
+		"isAxiosError" in error &&
+		error.isAxiosError === true,
 }));
 
 jest.mock("@react-native-clipboard/clipboard", () => ({
@@ -54,17 +57,42 @@ describe("manager transfer UI helpers", () => {
 		[401, "로그인이 필요해요"],
 		[403, "권한 이전 링크를 만들 수 없어요"],
 		[404, "유효하지 않은 이전 링크예요"],
-		[409, "본인에게는 권한을 이전할 수 없어요"],
+		[409, "권한 이전 상태가 변경되었어요"],
 	])("API 상태 %s에 맞는 안내를 반환한다", (status, title) => {
-		expect(getManagerTransferErrorContent({ response: { status } }).title).toBe(
-			title,
-		);
+		expect(
+			getManagerTransferErrorContent({
+				isAxiosError: true,
+				response: { status },
+			}).title,
+		).toBe(title);
 	});
 
-	it("알 수 없는 오류는 재시도 가능한 안내를 반환한다", () => {
-		expect(getManagerTransferErrorContent(new Error("network"))).toEqual({
+	it("실제 네트워크 오류는 네트워크 안내를 반환한다", () => {
+		expect(
+			getManagerTransferErrorContent({ isAxiosError: true, request: {} }),
+		).toEqual({
 			title: "관리자 권한을 이전하지 못했어요",
 			description: "네트워크 상태를 확인한 후 다시 시도해주세요",
+		});
+	});
+
+	it("서버 500 오류는 네트워크 문제가 아닌 서버 처리 실패로 안내한다", () => {
+		expect(
+			getManagerTransferErrorContent({
+				isAxiosError: true,
+				response: { status: 500 },
+			}),
+		).toEqual({
+			title: "관리자 권한을 이전하지 못했어요",
+			description:
+				"서버에서 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요",
+		});
+	});
+
+	it("앱 내부 오류를 네트워크 오류로 오인하지 않는다", () => {
+		expect(getManagerTransferErrorContent(new Error("unexpected"))).toEqual({
+			title: "관리자 권한을 이전하지 못했어요",
+			description: "요청을 처리하는 중 문제가 발생했어요. 다시 시도해주세요",
 		});
 	});
 
@@ -75,12 +103,17 @@ describe("manager transfer UI helpers", () => {
 		[409, "exit"],
 		[500, "retry"],
 	])("API 상태 %s에 맞는 후속 동작을 반환한다", (status, action) => {
-		expect(getManagerTransferErrorAction({ response: { status } })).toBe(
-			action,
-		);
+		expect(
+			getManagerTransferErrorAction({
+				isAxiosError: true,
+				response: { status },
+			}),
+		).toBe(action);
 	});
 
 	it("네트워크 오류는 재시도할 수 있다", () => {
-		expect(getManagerTransferErrorAction(new Error("network"))).toBe("retry");
+		expect(
+			getManagerTransferErrorAction({ isAxiosError: true, request: {} }),
+		).toBe("retry");
 	});
 });

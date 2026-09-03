@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { QueryFailedError } from 'typeorm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../provider', () => ({
@@ -74,12 +75,23 @@ const createTestContext = () => {
 
   return {
     service,
+    transaction,
     invitationRepository,
     clubManagerRepository,
     clubRepository,
     notificationRepository,
   }
 }
+
+const createUniqueViolation = (constraint: string): QueryFailedError =>
+  new QueryFailedError(
+    'INSERT INTO club_manager ...',
+    ['sensitive-value'],
+    Object.assign(new Error('unique violation'), {
+      code: '23505',
+      constraint,
+    }),
+  )
 
 describe('ClubManagerTransferService', () => {
   beforeEach(() => {
@@ -231,6 +243,33 @@ describe('ClubManagerTransferService', () => {
     expect(clubManagerRepository.softDelete).toHaveBeenCalledTimes(1)
     expect(clubManagerRepository.insert).toHaveBeenCalledTimes(1)
     expect(notificationRepository.insert).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['uq_club_manager_active_club', 'club_manager_clubid_serviceuserid'])(
+    'maps the %s database conflict to a safe domain conflict',
+    async (constraint) => {
+      const { service, transaction } = createTestContext()
+      transaction.mockRejectedValue(createUniqueViolation(constraint))
+
+      await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
+        ConflictError,
+      )
+    },
+  )
+
+  it('does not hide unexpected database failures', async () => {
+    const { service, transaction } = createTestContext()
+    const databaseFailure = new QueryFailedError(
+      'INSERT INTO club_manager ...',
+      [],
+      Object.assign(new Error('foreign key violation'), {
+        code: '23503',
+        constraint: 'club_manager_club_id_fkey',
+      }),
+    )
+    transaction.mockRejectedValue(databaseFailure)
+
+    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBe(databaseFailure)
   })
 
   it('rejects a self-transfer before mutating manager state', async () => {

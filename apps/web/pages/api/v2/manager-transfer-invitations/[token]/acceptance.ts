@@ -3,6 +3,7 @@ import { ConflictError, NotFoundError, UserNotFoundError } from 'server/domain/e
 import { Provider } from 'server/provider'
 import { ClubManagerTransferService } from 'server/service/club-manager-transfer.service'
 import { UserService } from 'server/service/user.service'
+import { getSafeDatabaseErrorContext } from 'server/util/safe-error'
 import {
   type ManagerTransferAcceptanceResponse,
   ManagerTransferTokenParamsSchema,
@@ -42,10 +43,7 @@ export default async function handler(
     if (error instanceof z.ZodError) {
       return res.status(400).json(error.errors)
     }
-    console.error(
-      'accept manager transfer invitation failed',
-      error instanceof Error ? error.name : '',
-    )
+    console.error('accept manager transfer invitation failed', getSafeDatabaseErrorContext(error))
     return res.status(500).send('Internal Server Error')
   }
 }
