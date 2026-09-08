@@ -1,6 +1,6 @@
 import { UserRole } from 'server/domain/constants/user-role.enum'
 import { IsNull, Not, type Repository } from 'typeorm'
-import type { UpdateProfileDto } from '../../src/lib/schemas/users'
+import type { UpdateProfileDto } from '../../server/http/schemas/users'
 import { ForbiddenError, UserNotFoundError } from '../domain/error'
 import type { CollegeMajor } from '../domain/model/CollegeMajor'
 import type { User } from '../domain/model/User'

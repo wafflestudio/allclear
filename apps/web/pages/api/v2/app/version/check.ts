@@ -1,8 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError } from 'server/domain/error'
+import {
+  type AppVersionCheckResponse,
+  AppVersionCheckSchema,
+} from 'server/http/schemas/app-versions'
 import { Provider } from 'server/provider'
 import { AppVersionService } from 'server/service/app-version.service'
-import { type AppVersionCheckResponse, AppVersionCheckSchema } from 'src/lib/schemas/app-versions'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

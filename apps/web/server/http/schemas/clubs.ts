@@ -1,5 +1,9 @@
-import { ClubCategorySchema, ClubSchema, ReviewKeywordCategorySchema } from 'src/lib/schemas/common'
-import { z } from 'src/lib/schemas/zod'
+import {
+  ClubCategorySchema,
+  ClubSchema,
+  ReviewKeywordCategorySchema,
+} from 'server/http/schemas/common'
+import { z } from 'server/http/schemas/zod'
 
 export const ClubUuidParamsSchema = z
   .object({

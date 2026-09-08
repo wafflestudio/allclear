@@ -25,7 +25,7 @@ import type {
   ClubRegisterRequest,
   ClubRegistrationManager,
   ManagedClubPatch,
-} from 'src/lib/schemas/managers'
+} from 'server/http/schemas/managers'
 import { In, IsNull, type Repository } from 'typeorm'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import type { ClubCategory } from '../domain/model/ClubCategory'

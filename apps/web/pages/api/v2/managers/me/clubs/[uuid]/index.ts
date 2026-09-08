@@ -6,11 +6,11 @@ import {
   NotFoundError,
   UserNotFoundError,
 } from 'server/domain/error'
+import { ClubUuidParamsSchema } from 'server/http/schemas/clubs'
+import { ManagedClubPatchSchema } from 'server/http/schemas/managers'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
-import { ManagedClubPatchSchema } from 'src/lib/schemas/managers'
 import { z } from 'zod'
 
 const api: NextApiHandler = async (req, res) => {

@@ -1,4 +1,4 @@
-import { z } from 'src/lib/schemas/zod'
+import { z } from 'server/http/schemas/zod'
 
 const ManagerTransferClubSchema = z.object({
   club_uuid: z.string().uuid(),

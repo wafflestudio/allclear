@@ -13,7 +13,7 @@ import type {
   AdminClubsQuery,
   AdminClubVerificationRequestStatusUpdate,
   AdminClubVerificationRequestsQuery,
-} from 'src/lib/schemas/admin'
+} from 'server/http/schemas/admin'
 import { type FindOptionsWhere, In, IsNull, Not, type Repository } from 'typeorm'
 import {
   ClubEntity,

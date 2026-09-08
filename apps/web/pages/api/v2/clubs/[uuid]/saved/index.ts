@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { NotFoundError, UserNotFoundError } from 'server/domain/error'
+import { ClubUuidParamsSchema } from 'server/http/schemas/clubs'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { z } from 'zod'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<null | string>) {

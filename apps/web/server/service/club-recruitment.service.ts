@@ -1,8 +1,8 @@
-import { formatYearMonth } from 'src/common/utils/formatYearMonth'
 import type {
   CreateClubRecruitment,
   UpdateClubRecruitment,
-} from 'src/lib/schemas/club-recruitments'
+} from 'server/http/schemas/club-recruitments'
+import { formatYearMonth } from 'src/common/utils/formatYearMonth'
 import { IsNull, QueryFailedError, type Repository } from 'typeorm'
 import { ConflictError, NotFoundError } from '../domain/error'
 import { type ClubRecruitment, toClubRecruitmentDomain } from '../domain/model/ClubRecruitment'
