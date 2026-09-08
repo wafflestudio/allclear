@@ -1,5 +1,5 @@
-import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'src/common/constants/official-verification-status'
-import { getOfficialVerificationTermKey } from 'src/common/constants/official-verification-term'
+import { MAX_OFFICIAL_VERIFICATION_RETRY_COUNT } from 'server/domain/constants/official-verification-status'
+import { getOfficialVerificationTermKey } from 'server/domain/constants/official-verification-term'
 import type { Repository } from 'typeorm'
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity } from '../infra/database/entities'

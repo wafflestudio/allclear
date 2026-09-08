@@ -1,4 +1,4 @@
-import type { ClubDecisionStatus, ClubStatus } from 'src/common/constants/club-status'
+import type { ClubDecisionStatus, ClubStatus } from 'server/domain/constants/club-status'
 import type {
   AdminClubDetailResponse,
   AdminClubHistoriesResponse,

@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken'
+import { UserRole } from 'server/domain/constants/user-role.enum'
 import { ENV } from 'server/ENV'
 import {
   AccountEntity,
@@ -7,7 +8,6 @@ import {
   ServiceUserEntity,
   UserEntity,
 } from 'server/infra/database/entities'
-import { UserRole } from 'server/infra/database/entities/user-role.enum'
 import { InjectRepository, Service } from 'server/provider'
 import type { Repository } from 'typeorm'
 

@@ -1,8 +1,9 @@
-import type { ClubRecruitType } from 'src/common/constants/club-recruit-type'
-import { normalizeClubRecruitType } from 'src/common/constants/club-recruit-type'
-import type { ClubStatus } from 'src/common/constants/club-status'
-import { PENDING_CLUB_STATUS } from 'src/common/constants/club-status'
-import type { OfficialVerificationStatus } from 'src/common/constants/official-verification-status'
+import {
+  type ClubRecruitType,
+  normalizeClubRecruitType,
+} from 'server/domain/constants/club-recruit-type'
+import { type ClubStatus, PENDING_CLUB_STATUS } from 'server/domain/constants/club-status'
+import type { OfficialVerificationStatus } from 'server/domain/constants/official-verification-status'
 import { ENV } from '../../ENV'
 import type { ClubEntity } from '../../infra/database/entities'
 import type { CollegeMajor } from './CollegeMajor'

@@ -1,7 +1,7 @@
+import { UserRole } from 'server/domain/constants/user-role.enum'
 import { Column, Entity, OneToOne, PrimaryGeneratedColumn } from 'typeorm'
 import { ServiceUserEntity } from './service-user.entity'
 import { TimeStampMixin } from './TimeStampMixin'
-import { UserRole } from './user-role.enum'
 
 @Entity('user')
 export class UserEntity extends TimeStampMixin {

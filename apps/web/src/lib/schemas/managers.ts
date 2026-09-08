@@ -2,7 +2,7 @@ import {
   CLUB_AFFILIATION_TYPES,
   CLUB_CATEGORIES,
   CLUB_RECRUIT_TYPES,
-} from 'src/fixtures/club-options'
+} from 'server/domain/constants/club-options'
 import { ClubSchema } from 'src/lib/schemas/common'
 import { z } from 'src/lib/schemas/zod'
 
