@@ -1,3 +1,4 @@
+import { BlurView } from "@react-native-community/blur";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Animated,
@@ -81,6 +82,13 @@ const ManagementGuideModal = ({ visible, type, onStart, onSkip }: Props) => {
 			onRequestClose={onSkip}
 		>
 			<View style={styles.overlay}>
+				<BlurView
+					style={styles.blur}
+					blurType="light"
+					blurAmount={2}
+					overlayColor="transparent"
+					reducedTransparencyFallbackColor="transparent"
+				/>
 				<Animated.View
 					style={[
 						styles.card,
@@ -319,6 +327,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		backgroundColor: "rgba(0,0,0,0.5)",
 	},
+	blur: { ...StyleSheet.absoluteFillObject },
 	card: {
 		width: s(342),
 		paddingTop: vs(20),
@@ -357,20 +366,20 @@ const styles = StyleSheet.create({
 	dots: {
 		flexDirection: "row",
 		justifyContent: "center",
-		gap: s(4),
+		gap: s(6),
 		marginTop: vs(20),
 	},
 	activeDot: {
-		width: s(25),
-		height: vs(3),
-		borderRadius: 2,
+		width: ms(10),
+		height: ms(10),
+		borderRadius: ms(5),
 		backgroundColor: Colors.POINTCOLOR,
 	},
 	dot: {
-		width: s(8),
-		height: vs(3),
-		borderRadius: 2,
-		backgroundColor: "#D9D9D9",
+		width: ms(10),
+		height: ms(10),
+		borderRadius: ms(5),
+		backgroundColor: "#E9E6EF",
 	},
 	vertical: { width: s(266), height: vs(214), marginTop: vs(20) },
 	preview: {
