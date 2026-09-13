@@ -10,6 +10,9 @@ import {
 	View,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { NewAnnouncementAction } from "@/features/club/components/NewAnnouncementAction";
+import { ManagerRegistrationCard } from "@/features/mypage/components/ManagerRegistrationCard";
+import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import { ms, s, vs } from "@/shared/utils/scale";
@@ -146,14 +149,14 @@ const GuidePage = ({ item }: { item: (typeof pages)[number] }) => (
 	<View style={styles.page}>
 		<Text style={styles.title}>{item.title}</Text>
 		{item.id === "announcementManagement" ? (
-			<Preview kind="manage" />
+			<GuideScene kind="management" state="first" />
 		) : (
 			<VerticalStates
 				kind={
 					item.id === "clubRegistration"
-						? "club"
+						? "myPage"
 						: item.id === "announcementRegistration"
-							? "announcement"
+							? "registration"
 							: "approval"
 				}
 			/>
@@ -163,7 +166,7 @@ const GuidePage = ({ item }: { item: (typeof pages)[number] }) => (
 const VerticalStates = ({
 	kind,
 }: {
-	kind: "club" | "announcement" | "approval";
+	kind: "myPage" | "registration" | "approval";
 }) => (
 	<ScrollView
 		pagingEnabled
@@ -171,7 +174,7 @@ const VerticalStates = ({
 		showsVerticalScrollIndicator={false}
 		style={styles.vertical}
 	>
-		{["first", "second", "third"].map((state) => (
+		{(["first", "second", "third"] as const).map((state) => (
 			<State key={state} kind={kind} state={state} />
 		))}
 	</ScrollView>
@@ -180,12 +183,12 @@ const State = ({
 	kind,
 	state,
 }: {
-	kind: "club" | "announcement" | "approval";
-	state: string;
+	kind: "myPage" | "registration" | "approval";
+	state: "first" | "second" | "third";
 }) => {
 	const offset = useRef(new Animated.Value(-vs(9))).current;
 	useEffect(() => {
-		if (kind !== "announcement" || state !== "third") return;
+		if (kind !== "registration" || state !== "third") return;
 		const loop = Animated.loop(
 			Animated.sequence([
 				Animated.timing(offset, {
@@ -209,114 +212,151 @@ const State = ({
 		loop.start();
 		return () => loop.stop();
 	}, [kind, offset, state]);
-	if (kind === "approval") return <Preview kind="approval" state={state} />;
-	return <Preview kind={kind} state={state} offset={offset} />;
+	return <GuideScene kind={kind} state={state} offset={offset} />;
 };
-const Preview = ({
+type SceneKind = "myPage" | "registration" | "management" | "approval";
+
+const GuideScene = ({
 	kind,
-	state = "first",
+	state,
 	offset,
 }: {
-	kind: "club" | "announcement" | "manage" | "approval";
-	state?: string;
+	kind: SceneKind;
+	state: "first" | "second" | "third";
 	offset?: Animated.Value;
 }) => (
-	<View
-		style={[
-			styles.preview,
-			kind === "club" ? styles.clubSurface : styles.whiteSurface,
-		]}
-	>
-		<Phone>
-			<Animated.View
-				style={
-					kind === "announcement" && state === "third"
-						? { transform: [{ translateY: offset ?? 0 }] }
-						: undefined
-				}
-			>
-				<Text style={styles.phoneTitle}>
-					{kind === "club"
-						? "마이페이지"
-						: kind === "approval"
-							? "동아리 등록"
-							: "동아리 관리"}
-				</Text>
-				{kind === "approval" ? (
-					<View style={[styles.approval, state === "third" && styles.selected]}>
-						<Icon
-							name={state === "first" ? "assignment" : "verified"}
-							size={ms(34)}
-							color={Colors.POINTCOLOR}
-						/>
-						<Text style={styles.name}>
-							{state === "first" ? "운영진 권한 요청" : "승인 대기 중"}
-						</Text>
-						<Text style={styles.sub}>
-							{state === "third"
-								? "최대 일주일 정도 소요될 수 있어요"
-								: "운영진 확인 후 알려드릴게요"}
-						</Text>
-					</View>
-				) : (
-					<>
-						<View style={styles.avatar} />
-						<Text style={styles.name}>
-							{kind === "club" ? "김올클" : "올클 동아리"}
-						</Text>
-						<Text style={styles.sub}>
-							{kind === "club" ? "공과대학 컴퓨터공학부" : "공고 관리"}
-						</Text>
-						<View style={[styles.focus, state === "second" && styles.selected]}>
-							<Text style={styles.focusText}>
-								{kind === "club"
-									? "동아리 운영진이신가요?"
-									: kind === "manage"
-										? "이전 공고 더보기"
-										: "새 공고 작성하기"}
-							</Text>
-							<Icon
-								name={
-									kind === "club"
-										? "chevron-right"
-										: kind === "manage"
-											? "expand-more"
-											: "edit"
-								}
-								size={ms(12)}
-								color={Colors.POINTCOLOR}
-							/>
-						</View>
-						{(kind === "announcement" && state !== "first") ||
-						(kind === "club" && state === "third") ? (
-							<Fields />
-						) : null}
-					</>
-				)}
-			</Animated.View>
-		</Phone>
+	<View style={[styles.preview, kind === "myPage" && styles.clubSurface]}>
+		<GuideDevice>
+			{kind === "myPage" && <GuideMyPage state={state} />}
+			{kind === "registration" && (
+				<GuideRegistration state={state} offset={offset} />
+			)}
+			{kind === "management" && <GuideManagement />}
+			{kind === "approval" && <GuideApproval state={state} />}
+		</GuideDevice>
 	</View>
 );
-const Fields = () => (
-	<View style={styles.fields}>
-		{["모집 공고 제목", "모집 기간", "모집 대상", "상세 내용", "문의 방법"].map(
-			(label) => (
-				<View key={label}>
-					<Text style={styles.fieldLabel}>{label}</Text>
-					<View style={styles.input} />
-				</View>
-			),
-		)}
-	</View>
-);
-const Phone = ({ children }: { children: React.ReactNode }) => (
-	<View style={styles.phone}>
-		<View style={styles.status}>
+
+const GuideDevice = ({ children }: { children: React.ReactNode }) => (
+	<View style={styles.device}>
+		<View style={styles.statusBar}>
 			<Text style={styles.time}>9:41</Text>
 			<View style={styles.island} />
-			<View style={styles.signal} />
+			<View style={styles.statusIcons}>
+				<Icon name="signal-cellular-alt" size={ms(8)} color="#202020" />
+				<Icon name="wifi" size={ms(8)} color="#202020" />
+				<Icon name="battery-full" size={ms(9)} color="#202020" />
+			</View>
 		</View>
-		<View style={styles.phoneBody}>{children}</View>
+		<View style={styles.deviceBody}>{children}</View>
+	</View>
+);
+
+const GuideMyPage = ({ state }: { state: "first" | "second" | "third" }) => (
+	<View>
+		<Text style={styles.screenHeading}>마이페이지</Text>
+		<View style={styles.profileRow}>
+			<View style={styles.avatar} />
+			<View>
+				<Text style={styles.profileName}>김올클</Text>
+				<Text style={styles.profileSub}>공과대학 컴퓨터공학부</Text>
+			</View>
+		</View>
+		<View style={styles.miniCardWrap}>
+			<ManagerRegistrationCard />
+		</View>
+		{state !== "first" && <View style={styles.guideDim} />}
+		{state === "third" && <View style={styles.guideFocus} />}
+	</View>
+);
+
+const GuideRegistration = ({
+	state,
+	offset,
+}: {
+	state: "first" | "second" | "third";
+	offset?: Animated.Value;
+}) => (
+	<Animated.View
+		style={
+			state === "third"
+				? { transform: [{ translateY: offset ?? 0 }] }
+				: undefined
+		}
+	>
+		<Text style={styles.screenHeading}>공고 등록</Text>
+		<Text style={styles.screenTitle}>새로운 공고를 등록해 주세요</Text>
+		<View style={styles.formFields}>
+			{["공고 제목", "모집 기간", "모집 대상", "상세 내용", "문의 방법"].map(
+				(label, index) => (
+					<View key={label}>
+						<Text style={styles.formLabel}>{label}</Text>
+						<TextField
+							height={24}
+							editable={false}
+							placeholder={index === 0 ? "공고 제목을 입력해 주세요" : "입력"}
+							style={styles.formInput}
+						/>
+					</View>
+				),
+			)}
+		</View>
+		{state !== "first" && <View style={styles.registrationFocus} />}
+	</Animated.View>
+);
+
+const GuideManagement = () => (
+	<View>
+		<Text style={styles.screenHeading}>동아리 관리</Text>
+		<Text style={styles.managementLabel}>공고 관리</Text>
+		<NewAnnouncementAction />
+		<View style={styles.announcementRow}>
+			<Text style={styles.announcementText}>2026년 하반기 신입 부원 모집</Text>
+			<Icon name="edit" size={ms(11)} color="#C1C1C1" />
+		</View>
+		<View style={[styles.announcementRow, styles.previousRow]}>
+			<Text style={styles.previousText}>이전 공고 더보기</Text>
+			<Icon name="expand-more" size={ms(13)} color={Colors.POINTCOLOR} />
+		</View>
+	</View>
+);
+
+const GuideApproval = ({ state }: { state: "first" | "second" | "third" }) => (
+	<View>
+		<Text style={styles.screenHeading}>동아리 등록</Text>
+		<Text style={styles.screenTitle}>운영진 기본 정보를{`\n`}입력해주세요</Text>
+		<View style={styles.approvalForm}>
+			<Text style={styles.formLabel}>이름</Text>
+			<TextField
+				height={24}
+				editable={false}
+				placeholder="홍길동"
+				style={styles.formInput}
+			/>
+			<Text style={styles.formLabel}>전화번호</Text>
+			<TextField
+				height={24}
+				editable={false}
+				placeholder="010-1234-5678"
+				style={styles.formInput}
+			/>
+		</View>
+		<View
+			style={[
+				styles.approvalNotice,
+				state === "third" && styles.noticeSelected,
+			]}
+		>
+			<Icon
+				name={state === "first" ? "assignment" : "schedule"}
+				size={ms(15)}
+				color={Colors.POINTCOLOR}
+			/>
+			<View style={styles.noticeCopy}>
+				<Text style={styles.noticeTitle}>승인 대기 중</Text>
+				<Text style={styles.noticeSub}>최대 일주일 정도 소요될 수 있어요</Text>
+			</View>
+		</View>
 	</View>
 );
 export default ManagementGuideModal;
@@ -389,10 +429,10 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "flex-end",
 		borderRadius: ms(10),
+		backgroundColor: "#FCFBFF",
 	},
 	clubSurface: { backgroundColor: "#E2D1FF" },
-	whiteSurface: { backgroundColor: "#FCFBFF" },
-	phone: {
+	device: {
 		width: s(178),
 		height: vs(181),
 		overflow: "hidden",
@@ -403,7 +443,7 @@ const styles = StyleSheet.create({
 		borderTopRightRadius: ms(20),
 		backgroundColor: Colors.BACKGROUND_MAIN,
 	},
-	status: {
+	statusBar: {
 		height: vs(14),
 		paddingHorizontal: s(8),
 		flexDirection: "row",
@@ -418,53 +458,60 @@ const styles = StyleSheet.create({
 		borderRadius: 4,
 		backgroundColor: Colors.BODYTEXT_MAIN,
 	},
-	signal: {
-		width: s(12),
-		height: vs(5),
-		borderRadius: 2,
-		backgroundColor: Colors.BODYTEXT_MAIN,
+	statusIcons: {
+		flexDirection: "row",
+		alignItems: "center",
+		gap: s(2),
 	},
-	phoneBody: {
+	deviceBody: {
 		flex: 1,
 		padding: s(10),
 		backgroundColor: Colors.BACKGROUND_MAIN,
 	},
-	phoneTitle: {
+	screenHeading: {
 		fontSize: ms(8),
 		fontWeight: "600",
 		color: Colors.BODYTEXT_SUB,
 	},
-	avatar: {
-		width: ms(22),
-		height: ms(22),
+	profileRow: {
 		marginTop: vs(10),
-		borderRadius: ms(5),
+		flexDirection: "row",
+		alignItems: "center",
+		gap: s(6),
+	},
+	avatar: {
+		width: ms(24),
+		height: ms(24),
+		borderRadius: ms(12),
 		backgroundColor: "#D9D9D9",
 	},
-	name: {
-		marginTop: vs(5),
+	profileName: {
 		fontSize: ms(8),
 		fontWeight: "700",
 		color: Colors.BODYTEXT_MAIN,
-		textAlign: "center",
 	},
-	sub: {
-		marginTop: vs(3),
+	profileSub: {
+		marginTop: vs(2),
 		fontSize: ms(6),
 		color: Colors.BODYTEXT_SUB,
-		textAlign: "center",
 	},
-	focus: {
-		minHeight: vs(29),
-		marginTop: vs(14),
-		padding: s(7),
-		borderRadius: ms(6),
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		backgroundColor: Colors.WHITE,
+	miniCardWrap: {
+		marginTop: vs(12),
+		width: s(227),
+		transform: [{ scale: 0.65 }],
+		transformOrigin: "top left",
 	},
-	selected: {
+	guideDim: {
+		...StyleSheet.absoluteFillObject,
+		backgroundColor: "rgba(242,240,245,0.5)",
+	},
+	guideFocus: {
+		position: "absolute",
+		top: vs(48),
+		left: -s(1),
+		width: s(158),
+		height: vs(52),
+		borderRadius: ms(8),
 		borderWidth: 1,
 		borderColor: Colors.POINTCOLOR,
 		shadowColor: Colors.POINTCOLOR,
@@ -472,25 +519,69 @@ const styles = StyleSheet.create({
 		shadowRadius: ms(8),
 		elevation: 2,
 	},
-	focusText: {
-		fontSize: ms(6),
-		fontWeight: "600",
+	screenTitle: {
+		marginTop: vs(14),
+		fontSize: ms(11),
+		lineHeight: ms(15),
+		fontWeight: "700",
 		color: Colors.BODYTEXT_MAIN,
 	},
-	fields: { marginTop: vs(15), gap: vs(8) },
-	fieldLabel: { fontSize: ms(6), color: Colors.BODYTEXT_SUB },
-	input: {
-		height: vs(20),
-		marginTop: vs(3),
-		borderWidth: 1,
-		borderColor: Colors.BODYTEXT_DISABLED,
-		borderRadius: ms(4),
+	formFields: { marginTop: vs(12), gap: vs(7) },
+	formLabel: {
+		fontSize: ms(6),
+		color: Colors.BODYTEXT_SUB,
 	},
-	approval: {
-		marginTop: vs(35),
-		paddingVertical: vs(18),
-		borderRadius: ms(9),
+	formInput: {
+		marginTop: vs(2),
+		paddingHorizontal: s(7),
+		fontSize: ms(6),
+		borderRadius: ms(5),
+	},
+	registrationFocus: {
+		position: "absolute",
+		top: vs(46),
+		left: -s(2),
+		width: s(158),
+		height: vs(38),
+		borderWidth: 1,
+		borderRadius: ms(7),
+		borderColor: Colors.POINTCOLOR,
+	},
+	managementLabel: {
+		marginTop: vs(13),
+		marginBottom: vs(5),
+		fontSize: ms(7),
+		color: Colors.BODYTEXT_SUB,
+	},
+	announcementRow: {
+		minHeight: vs(27),
+		marginTop: vs(6),
+		paddingHorizontal: s(8),
+		borderRadius: ms(7),
+		backgroundColor: Colors.WHITE,
+		flexDirection: "row",
 		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	announcementText: { fontSize: ms(6), color: Colors.BODYTEXT_SUB },
+	previousRow: { backgroundColor: "#F3F0F5" },
+	previousText: { fontSize: ms(6), color: Colors.POINTCOLOR },
+	approvalForm: { marginTop: vs(10), gap: vs(4) },
+	approvalNotice: {
+		marginTop: vs(12),
+		padding: s(8),
+		borderRadius: ms(8),
+		flexDirection: "row",
+		alignItems: "center",
+		gap: s(6),
 		backgroundColor: Colors.WHITE,
 	},
+	noticeSelected: { borderWidth: 1, borderColor: Colors.POINTCOLOR },
+	noticeCopy: { flexShrink: 1 },
+	noticeTitle: {
+		fontSize: ms(7),
+		fontWeight: "700",
+		color: Colors.BODYTEXT_MAIN,
+	},
+	noticeSub: { marginTop: vs(2), fontSize: ms(5), color: Colors.BODYTEXT_SUB },
 });
