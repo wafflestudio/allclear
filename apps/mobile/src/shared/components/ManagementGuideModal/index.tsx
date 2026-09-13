@@ -10,9 +10,6 @@ import {
 	View,
 } from "react-native";
 import Icon from "react-native-vector-icons/MaterialIcons";
-import { NewAnnouncementAction } from "@/features/club/components/NewAnnouncementAction";
-import { ManagerRegistrationCard } from "@/features/mypage/components/ManagerRegistrationCard";
-import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import { ms, s, vs } from "@/shared/utils/scale";
@@ -226,20 +223,18 @@ const GuideScene = ({
 	offset?: Animated.Value;
 }) => (
 	<View style={[styles.preview, kind === "myPage" && styles.clubSurface]}>
-		<GuideDevice>
-			{kind === "myPage" && <GuideMyPage state={state} />}
-			{kind === "registration" && (
-				<GuideRegistration state={state} offset={offset} />
-			)}
-			{kind === "management" && <GuideManagement />}
-			{kind === "approval" && <GuideApproval state={state} />}
-		</GuideDevice>
+		{kind === "myPage" ? <FigmaMyPage state={state} /> : null}
+		{kind === "registration" ? (
+			<FigmaRegistration state={state} scrollOffset={offset} />
+		) : null}
+		{kind === "management" ? <FigmaManagement /> : null}
+		{kind === "approval" ? <FigmaApproval state={state} /> : null}
 	</View>
 );
 
-const GuideDevice = ({ children }: { children: React.ReactNode }) => (
-	<View style={styles.device}>
-		<View style={styles.statusBar}>
+const PhoneChrome = ({ children }: { children: React.ReactNode }) => (
+	<View style={styles.phoneChrome}>
+		<View style={styles.phoneStatus}>
 			<Text style={styles.time}>9:41</Text>
 			<View style={styles.island} />
 			<View style={styles.statusIcons}>
@@ -248,116 +243,245 @@ const GuideDevice = ({ children }: { children: React.ReactNode }) => (
 				<Icon name="battery-full" size={ms(9)} color="#202020" />
 			</View>
 		</View>
-		<View style={styles.deviceBody}>{children}</View>
+		<View style={styles.phoneBody}>{children}</View>
 	</View>
 );
 
-const GuideMyPage = ({ state }: { state: "first" | "second" | "third" }) => (
-	<View>
-		<Text style={styles.screenHeading}>마이페이지</Text>
-		<View style={styles.profileRow}>
-			<View style={styles.avatar} />
-			<View>
+const FigmaMyPage = ({ state }: { state: "first" | "second" | "third" }) => {
+	if (state === "third") {
+		return (
+			<PhoneChrome>
+				<View style={styles.navigationLine}>
+					<Icon name="chevron-left" size={ms(13)} color="#757474" />
+					<Text style={styles.navigationTitle}>동아리 관리</Text>
+				</View>
+				<View style={styles.clubHero} />
+				<Text style={styles.clubName}>와플스튜디오</Text>
+				<Text style={styles.clubDescription}>컴퓨터공학부</Text>
+				<View style={styles.outlineAction}>
+					<Text style={styles.outlineActionText}>동아리 신규등록 요청하기</Text>
+				</View>
+				<Text style={styles.smallSectionTitle}>공고 관리</Text>
+				<View style={styles.emptyRow} />
+			</PhoneChrome>
+		);
+	}
+	return (
+		<PhoneChrome>
+			<View style={styles.profileCard}>
+				<View style={styles.profileBadge}>
+					<Text style={styles.profileBadgeText}>올</Text>
+				</View>
 				<Text style={styles.profileName}>김올클</Text>
 				<Text style={styles.profileSub}>공과대학 컴퓨터공학부</Text>
+				<Icon
+					name="edit"
+					size={ms(8)}
+					color={Colors.POINTCOLOR}
+					style={styles.profileEdit}
+				/>
 			</View>
-		</View>
-		<View style={styles.miniCardWrap}>
-			<ManagerRegistrationCard />
-		</View>
-		{state !== "first" && <View style={styles.guideDim} />}
-		{state === "third" && <View style={styles.guideFocus} />}
-	</View>
-);
+			<View style={styles.managerPrompt}>
+				<Text style={styles.managerPromptTitle}>동아리 운영진이신가요?</Text>
+				<Text style={styles.managerPromptSub}>동아리 등록하기</Text>
+				<Icon
+					name="chevron-right"
+					size={ms(12)}
+					color={Colors.POINTCOLOR}
+					style={styles.managerChevron}
+				/>
+			</View>
+			<View style={styles.emptyManagerRow}>
+				<Text style={styles.emptyManagerText}>계정연결 요청하기</Text>
+			</View>
+			{state === "second" && (
+				<View style={styles.callout}>
+					<Text style={styles.managerPromptTitle}>동아리 운영진이신가요?</Text>
+					<Text style={styles.managerPromptSub}>동아리 등록하기</Text>
+					<Icon
+						name="chevron-right"
+						size={ms(12)}
+						color={Colors.POINTCOLOR}
+						style={styles.managerChevron}
+					/>
+				</View>
+			)}
+		</PhoneChrome>
+	);
+};
 
-const GuideRegistration = ({
+const WidePhone = ({
+	children,
+	offset = 0,
+}: {
+	children: React.ReactNode;
+	offset?: number;
+}) => <View style={[styles.widePhone, { top: vs(offset) }]}>{children}</View>;
+
+const FigmaRegistration = ({
 	state,
-	offset,
+	scrollOffset,
 }: {
 	state: "first" | "second" | "third";
-	offset?: Animated.Value;
-}) => (
-	<Animated.View
-		style={
-			state === "third"
-				? { transform: [{ translateY: offset ?? 0 }] }
-				: undefined
-		}
-	>
-		<Text style={styles.screenHeading}>공고 등록</Text>
-		<Text style={styles.screenTitle}>새로운 공고를 등록해 주세요</Text>
-		<View style={styles.formFields}>
-			{["공고 제목", "모집 기간", "모집 대상", "상세 내용", "문의 방법"].map(
-				(label, index) => (
-					<View key={label}>
-						<Text style={styles.formLabel}>{label}</Text>
-						<TextField
-							height={24}
-							editable={false}
-							placeholder={index === 0 ? "공고 제목을 입력해 주세요" : "입력"}
-							style={styles.formInput}
-						/>
+	scrollOffset?: Animated.Value;
+}) => {
+	if (state === "third") {
+		return (
+			<WidePhone offset={-26}>
+				<Animated.View
+					style={{ transform: [{ translateY: scrollOffset ?? 0 }] }}
+				>
+					<RecruitmentStart />
+					<View style={styles.timelineGap} />
+					<RecruitmentEligibility />
+					<View style={styles.timelineGap} />
+					<RecruitmentFinish />
+				</Animated.View>
+			</WidePhone>
+		);
+	}
+	const panel =
+		state === "first" ? <RecruitmentStart /> : <RecruitmentEligibility />;
+	return <WidePhone offset={state === "first" ? -26 : -640}>{panel}</WidePhone>;
+};
+
+const GuideInput = ({ label, wide }: { label: string; wide?: boolean }) => (
+	<View style={[styles.guideInput, wide && styles.guideInputWide]}>
+		<Text style={styles.guideInputText}>{label}</Text>
+	</View>
+);
+const RecruitmentStart = () => (
+	<View style={styles.formScreen}>
+		<Text style={styles.formScreenTitle}>모집 공고를 작성해주세요</Text>
+		<View style={styles.primaryChip}>
+			<Text style={styles.primaryChipText}>이전 공고 불러오기</Text>
+		</View>
+		<Text style={styles.formScreenLabel}>*공고 제목</Text>
+		<GuideInput label="텍스트를 입력하세요" wide />
+		<Text style={styles.helperPurple}>공고 제목은 필수 입력 정보예요</Text>
+		<Text style={styles.formScreenLabel}>*모집 기간</Text>
+		<View style={styles.dateRow}>
+			<GuideInput label="시작일" />
+			<GuideInput label="마감일" />
+		</View>
+	</View>
+);
+const RecruitmentEligibility = () => (
+	<View style={styles.formScreen}>
+		<Text style={styles.formScreenLabel}>*지원 자격</Text>
+		<View style={styles.choiceRow}>
+			<View style={styles.choiceSelected}>
+				<Text style={styles.choiceSelectedText}>제한 없음</Text>
+			</View>
+			<View style={styles.choice}>
+				<Text style={styles.choiceText}>제한 있음</Text>
+			</View>
+		</View>
+		<GuideInput label="지원 자격에 대해 설명해주세요" wide />
+		<Text style={styles.helperPurple}>지원 자격은 필수 입력 정보예요</Text>
+		<Text style={styles.formScreenLabel}>*모집 인원</Text>
+		<View style={styles.choiceRow}>
+			<View style={styles.choice}>
+				<Text style={styles.choiceText}>제한 없음</Text>
+			</View>
+			<View style={styles.choiceSelected}>
+				<Text style={styles.choiceSelectedText}>정원 있음</Text>
+			</View>
+		</View>
+	</View>
+);
+const RecruitmentFinish = () => (
+	<View style={styles.formScreen}>
+		<Text style={styles.formScreenLabel}>기존 공고</Text>
+		<GuideInput label="기존에 작성된 공고를 불러와주세요" wide />
+		<Text style={styles.formScreenLabel}>공고 이미지</Text>
+		<View style={styles.imageRow}>
+			<View style={styles.imageThumb}>
+				<Icon name="local-fire-department" size={ms(22)} color="#7A3D1E" />
+			</View>
+			<View style={styles.imageSelected}>
+				<Text style={styles.primaryChipText}>삭제</Text>
+			</View>
+			<View style={styles.imageThumb}>
+				<Icon name="add" size={ms(22)} color="#BCBCBC" />
+			</View>
+		</View>
+		<View style={styles.footerRow}>
+			<View style={styles.footerButton}>
+				<Text style={styles.choiceText}>이전</Text>
+			</View>
+			<View style={styles.footerPrimary}>
+				<Text style={styles.primaryChipText}>완료</Text>
+			</View>
+		</View>
+	</View>
+);
+const FigmaManagement = () => (
+	<WidePhone offset={-174}>
+		<View style={styles.managementScreen}>
+			<Text style={styles.managementHeading}>공고 관리</Text>
+			<View style={styles.managementCreate}>
+				<Text style={styles.managementCreateText}>새 공고 작성하기</Text>
+				<Icon name="edit" size={ms(11)} color={Colors.POINTCOLOR} />
+			</View>
+			{["2026년 2월 공고", "2025년 7월 공고", "2025년 2월 공고"].map(
+				(title, index) => (
+					<View
+						style={[styles.managementRow, index === 0 && styles.currentRow]}
+						key={title}
+					>
+						<Text style={styles.managementRowText}>
+							{index === 0 ? "현재 공고   " : ""}
+							{title}
+						</Text>
+						<Icon name="edit" size={ms(9)} color="#C1C1C1" />
 					</View>
 				),
 			)}
-		</View>
-		{state !== "first" && <View style={styles.registrationFocus} />}
-	</Animated.View>
-);
-
-const GuideManagement = () => (
-	<View>
-		<Text style={styles.screenHeading}>동아리 관리</Text>
-		<Text style={styles.managementLabel}>공고 관리</Text>
-		<NewAnnouncementAction />
-		<View style={styles.announcementRow}>
-			<Text style={styles.announcementText}>2026년 하반기 신입 부원 모집</Text>
-			<Icon name="edit" size={ms(11)} color="#C1C1C1" />
-		</View>
-		<View style={[styles.announcementRow, styles.previousRow]}>
-			<Text style={styles.previousText}>이전 공고 더보기</Text>
-			<Icon name="expand-more" size={ms(13)} color={Colors.POINTCOLOR} />
-		</View>
-	</View>
-);
-
-const GuideApproval = ({ state }: { state: "first" | "second" | "third" }) => (
-	<View>
-		<Text style={styles.screenHeading}>동아리 등록</Text>
-		<Text style={styles.screenTitle}>운영진 기본 정보를{`\n`}입력해주세요</Text>
-		<View style={styles.approvalForm}>
-			<Text style={styles.formLabel}>이름</Text>
-			<TextField
-				height={24}
-				editable={false}
-				placeholder="홍길동"
-				style={styles.formInput}
-			/>
-			<Text style={styles.formLabel}>전화번호</Text>
-			<TextField
-				height={24}
-				editable={false}
-				placeholder="010-1234-5678"
-				style={styles.formInput}
-			/>
-		</View>
-		<View
-			style={[
-				styles.approvalNotice,
-				state === "third" && styles.noticeSelected,
-			]}
-		>
-			<Icon
-				name={state === "first" ? "assignment" : "schedule"}
-				size={ms(15)}
-				color={Colors.POINTCOLOR}
-			/>
-			<View style={styles.noticeCopy}>
-				<Text style={styles.noticeTitle}>승인 대기 중</Text>
-				<Text style={styles.noticeSub}>최대 일주일 정도 소요될 수 있어요</Text>
+			<View style={styles.managementMore}>
+				<Text style={styles.managementCreateText}>이전 공고 더보기</Text>
+				<Icon name="expand-more" size={ms(12)} color="#BCBCBC" />
 			</View>
 		</View>
-	</View>
+	</WidePhone>
+);
+const FigmaApproval = ({ state }: { state: "first" | "second" | "third" }) => (
+	<WidePhone offset={-138}>
+		<View style={styles.approvalScreen}>
+			<View style={styles.approvalPrompt}>
+				<Text style={styles.managerPromptTitle}>동아리 운영진이신가요?</Text>
+				<Text style={styles.managerPromptSub}>동아리 등록하기</Text>
+				<Icon
+					name="chevron-right"
+					size={ms(12)}
+					color={Colors.POINTCOLOR}
+					style={styles.managerChevron}
+				/>
+			</View>
+			<View style={styles.approvalClubCard}>
+				<View style={styles.clubLogo} />
+				<View>
+					<Text style={styles.approvalClubName}>와플스튜디오</Text>
+					<Text style={styles.approvalClubSub}>
+						컴퓨터공학부{`\n`}웹/앱 개발 동아리
+					</Text>
+				</View>
+			</View>
+			<View style={styles.approvalButtons}>
+				<View style={styles.approvalButton}>
+					<Text style={styles.choiceText}>운영진 권한 승인 대기</Text>
+				</View>
+				<View style={styles.approvalButton}>
+					<Text style={styles.choiceText}>
+						{state === "third" ? "승인 소요기간" : "동아리 관리 승인 대기"}
+					</Text>
+				</View>
+			</View>
+			<View style={styles.approvalEmpty}>
+				<Text style={styles.emptyManagerText}>계정연결 요청하기</Text>
+			</View>
+		</View>
+	</WidePhone>
 );
 export default ManagementGuideModal;
 const styles = StyleSheet.create({
@@ -584,4 +708,341 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_MAIN,
 	},
 	noticeSub: { marginTop: vs(2), fontSize: ms(5), color: Colors.BODYTEXT_SUB },
+	phoneChrome: {
+		width: s(178),
+		height: vs(181),
+		overflow: "hidden",
+		borderWidth: ms(3),
+		borderBottomWidth: 0,
+		borderColor: "#686868",
+		borderTopLeftRadius: ms(20),
+		borderTopRightRadius: ms(20),
+		backgroundColor: "#F3F0F5",
+	},
+	phoneStatus: {
+		height: vs(14),
+		paddingHorizontal: s(8),
+		flexDirection: "row",
+		justifyContent: "space-between",
+		alignItems: "center",
+		backgroundColor: "#F2F0F5",
+	},
+	phoneBody: { flex: 1, padding: s(10), backgroundColor: "#F3F0F5" },
+	navigationLine: {
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		height: vs(14),
+	},
+	navigationTitle: {
+		fontSize: ms(7),
+		color: Colors.BODYTEXT_MAIN,
+		fontWeight: "600",
+	},
+	clubHero: {
+		height: vs(33),
+		marginTop: vs(5),
+		borderRadius: ms(4),
+		backgroundColor: "#DDD9D3",
+	},
+	clubName: {
+		marginTop: vs(6),
+		fontSize: ms(8),
+		fontWeight: "700",
+		color: Colors.BODYTEXT_MAIN,
+	},
+	clubDescription: {
+		marginTop: vs(2),
+		fontSize: ms(5),
+		color: Colors.BODYTEXT_SUB,
+	},
+	outlineAction: {
+		height: vs(14),
+		marginTop: vs(6),
+		borderWidth: 1,
+		borderRadius: ms(3),
+		borderColor: Colors.POINTCOLOR,
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	outlineActionText: { fontSize: ms(5), color: Colors.POINTCOLOR },
+	smallSectionTitle: {
+		marginTop: vs(8),
+		fontSize: ms(5),
+		color: Colors.BODYTEXT_SUB,
+	},
+	emptyRow: {
+		height: vs(26),
+		marginTop: vs(3),
+		borderRadius: ms(4),
+		backgroundColor: Colors.WHITE,
+	},
+	profileCard: {
+		height: vs(58),
+		padding: s(8),
+		borderRadius: ms(5),
+		backgroundColor: Colors.WHITE,
+		position: "relative",
+	},
+	profileBadge: {
+		width: ms(13),
+		height: ms(13),
+		borderRadius: ms(4),
+		backgroundColor: "#E7E1D8",
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	profileBadgeText: { fontSize: ms(6), fontWeight: "700", color: "#8E8679" },
+	profileEdit: { position: "absolute", top: vs(8), right: s(8) },
+	managerPrompt: {
+		height: vs(31),
+		marginTop: vs(6),
+		paddingHorizontal: s(8),
+		paddingVertical: vs(6),
+		borderRadius: ms(5),
+		backgroundColor: Colors.WHITE,
+		position: "relative",
+	},
+	managerPromptTitle: {
+		fontSize: ms(6),
+		color: Colors.POINTCOLOR,
+		fontWeight: "600",
+	},
+	managerPromptSub: { marginTop: vs(2), fontSize: ms(5), color: "#BFA4FF" },
+	managerChevron: { position: "absolute", right: s(7), top: vs(10) },
+	emptyManagerRow: {
+		height: vs(23),
+		marginTop: vs(6),
+		paddingHorizontal: s(8),
+		borderRadius: ms(5),
+		backgroundColor: Colors.WHITE,
+		justifyContent: "center",
+	},
+	emptyManagerText: { fontSize: ms(5), color: Colors.BODYTEXT_SUB },
+	callout: {
+		position: "absolute",
+		left: -s(24),
+		top: vs(48),
+		width: s(227),
+		height: vs(49),
+		paddingHorizontal: s(12),
+		paddingVertical: vs(11),
+		borderRadius: ms(8),
+		backgroundColor: Colors.WHITE,
+		shadowColor: "#391A79",
+		shadowOpacity: 0.2,
+		shadowRadius: ms(10),
+		elevation: 4,
+	},
+	widePhone: {
+		position: "absolute",
+		left: s(20),
+		width: s(227),
+		height: vs(490),
+		overflow: "hidden",
+		borderWidth: ms(3),
+		borderColor: "#686868",
+		borderRadius: ms(1),
+		backgroundColor: "#FCFBFF",
+	},
+	formScreen: {
+		paddingHorizontal: s(28),
+		paddingTop: vs(34),
+		minHeight: vs(420),
+		backgroundColor: "#FCFBFF",
+	},
+	timelineGap: { height: vs(280), backgroundColor: "#FCFBFF" },
+	formScreenTitle: { fontSize: ms(14), fontWeight: "700", color: "#686868" },
+	primaryChip: {
+		alignSelf: "flex-start",
+		marginTop: vs(11),
+		paddingHorizontal: s(8),
+		paddingVertical: vs(5),
+		borderRadius: ms(4),
+		backgroundColor: Colors.POINTCOLOR,
+	},
+	primaryChipText: { fontSize: ms(6), color: Colors.WHITE, fontWeight: "600" },
+	formScreenLabel: {
+		marginTop: vs(13),
+		fontSize: ms(9),
+		color: "#686868",
+		fontWeight: "600",
+	},
+	guideInput: {
+		height: vs(32),
+		minWidth: s(76),
+		marginTop: vs(5),
+		paddingHorizontal: s(8),
+		borderWidth: 1,
+		borderColor: "#D7D3DC",
+		borderRadius: ms(4),
+		justifyContent: "center",
+	},
+	guideInputWide: { width: "100%" },
+	guideInputText: { fontSize: ms(6), color: "#BCBCBC" },
+	helperPurple: { marginTop: vs(5), fontSize: ms(6), color: Colors.POINTCOLOR },
+	dateRow: { flexDirection: "row", gap: s(6) },
+	choiceRow: { flexDirection: "row", gap: s(7), marginTop: vs(5) },
+	choice: {
+		flex: 1,
+		height: vs(30),
+		borderWidth: 1,
+		borderColor: "#D7D3DC",
+		borderRadius: ms(4),
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	choiceSelected: {
+		flex: 1,
+		height: vs(30),
+		borderRadius: ms(4),
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: Colors.POINTCOLOR,
+	},
+	choiceText: { fontSize: ms(6), color: "#BCBCBC" },
+	choiceSelectedText: {
+		fontSize: ms(6),
+		color: Colors.WHITE,
+		fontWeight: "600",
+	},
+	imageRow: { flexDirection: "row", gap: s(7), marginTop: vs(7) },
+	imageThumb: {
+		width: s(55),
+		height: vs(55),
+		borderWidth: 1,
+		borderColor: "#D7D3DC",
+		borderRadius: ms(4),
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	imageSelected: {
+		width: s(55),
+		height: vs(55),
+		borderRadius: ms(4),
+		alignItems: "center",
+		justifyContent: "center",
+		backgroundColor: "#BCBCBC",
+	},
+	footerRow: { flexDirection: "row", gap: s(7), marginTop: vs(16) },
+	footerButton: {
+		flex: 1,
+		height: vs(27),
+		borderWidth: 1,
+		borderColor: "#D7D3DC",
+		borderRadius: ms(4),
+		justifyContent: "center",
+		alignItems: "center",
+	},
+	footerPrimary: {
+		flex: 1,
+		height: vs(27),
+		borderRadius: ms(4),
+		justifyContent: "center",
+		alignItems: "center",
+		backgroundColor: Colors.POINTCOLOR,
+	},
+	managementScreen: {
+		paddingHorizontal: s(30),
+		paddingTop: vs(181),
+		minHeight: vs(490),
+		backgroundColor: "#FCFBFF",
+	},
+	managementHeading: {
+		marginBottom: vs(12),
+		fontSize: ms(7),
+		color: "#757474",
+	},
+	managementCreate: {
+		height: vs(23),
+		paddingHorizontal: s(10),
+		borderWidth: 1,
+		borderColor: Colors.POINTCOLOR,
+		borderRadius: ms(5),
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	managementCreateText: { fontSize: ms(6), color: Colors.POINTCOLOR },
+	managementRow: {
+		height: vs(23),
+		marginTop: vs(5),
+		paddingHorizontal: s(10),
+		borderRadius: ms(5),
+		backgroundColor: Colors.WHITE,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	currentRow: { backgroundColor: "#F3F0F5" },
+	managementRowText: { fontSize: ms(6), color: "#757474" },
+	managementMore: {
+		height: vs(23),
+		marginTop: vs(5),
+		paddingHorizontal: s(10),
+		borderRadius: ms(5),
+		backgroundColor: "#F3F0F5",
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "space-between",
+	},
+	approvalScreen: {
+		paddingHorizontal: s(28),
+		paddingTop: vs(154),
+		minHeight: vs(489),
+		backgroundColor: "#FCFBFF",
+	},
+	approvalPrompt: {
+		height: vs(36),
+		paddingHorizontal: s(10),
+		paddingVertical: vs(8),
+		borderRadius: ms(5),
+		backgroundColor: Colors.WHITE,
+		position: "relative",
+	},
+	approvalClubCard: {
+		marginTop: vs(10),
+		padding: s(10),
+		height: vs(62),
+		borderRadius: ms(7),
+		backgroundColor: Colors.WHITE,
+		flexDirection: "row",
+		alignItems: "center",
+		gap: s(8),
+	},
+	clubLogo: {
+		width: ms(38),
+		height: ms(38),
+		borderRadius: ms(5),
+		backgroundColor: "#D9D9D9",
+	},
+	approvalClubName: {
+		fontSize: ms(8),
+		fontWeight: "700",
+		color: Colors.BODYTEXT_MAIN,
+	},
+	approvalClubSub: {
+		marginTop: vs(3),
+		fontSize: ms(5),
+		color: Colors.BODYTEXT_SUB,
+		lineHeight: ms(7),
+	},
+	approvalButtons: { flexDirection: "row", gap: s(6), marginTop: vs(7) },
+	approvalButton: {
+		flex: 1,
+		height: vs(20),
+		borderWidth: 1,
+		borderColor: "#D7D3DC",
+		borderRadius: ms(4),
+		alignItems: "center",
+		justifyContent: "center",
+	},
+	approvalEmpty: {
+		height: vs(25),
+		marginTop: vs(10),
+		paddingHorizontal: s(8),
+		borderRadius: ms(5),
+		backgroundColor: Colors.WHITE,
+		justifyContent: "center",
+	},
 });
