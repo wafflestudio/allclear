@@ -27,6 +27,7 @@ import {
 	getUserNotificationContent,
 } from "@/features/mypage/utils/userNotification";
 import AlertModal from "@/shared/components/AlertModal";
+import ManagementGuideModal, { type GuideType } from "@/shared/components/ManagementGuideModal";
 import EditPencilButton from "@/shared/components/EditPencilButton";
 import { Colors } from "@/shared/constants/colors";
 import { LOGIN_TOKEN } from "@/shared/constants/localStorage";
@@ -58,6 +59,8 @@ const MyPageScreen = () => {
 
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false);
+	const [guideType, setGuideType] = useState<GuideType | null>(null);
+	const [guideClub, setGuideClub] = useState<Club | null>(null);
 	const [statusBlurEnabled, setStatusBlurEnabled] = useState(true);
 	const [cancelRequestClub, setCancelRequestClub] =
 		useState<ManagedClubListItem | null>(null);
@@ -152,15 +155,18 @@ const MyPageScreen = () => {
 	};
 
 	const handleRegisterAnnouncement = (club: Club) => {
-		setStatusBlurEnabled(false);
-		navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, {
-			clubId: club.uuid,
-		});
+		setGuideClub(club); setGuideType("announcementRegistration");
 	};
 
 	const handleManageClub = (club: Club) => {
-		setStatusBlurEnabled(false);
-		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid });
+		setGuideClub(club); setGuideType("announcementManagement");
+	};
+
+	const startGuide = () => {
+		if (guideType === "clubRegistration") { setGuideType(null); openManageClub(); return; }
+		if (guideType === "announcementRegistration" && guideClub) navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, { clubId: guideClub.uuid });
+		if (guideType === "announcementManagement" && guideClub) navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: guideClub.uuid });
+		setGuideType(null); setGuideClub(null);
 	};
 
 	const cancelRequestMutation = useMutation({
@@ -384,7 +390,7 @@ const MyPageScreen = () => {
 						styles.managerCard,
 						pressed && styles.pressed,
 					]}
-					onPress={openManageClub}
+					onPress={() => setGuideType("clubRegistration")}
 				>
 					<View style={styles.managerRow}>
 						<View>
@@ -508,6 +514,7 @@ const MyPageScreen = () => {
 				}}
 				hasCancel
 			/>
+			<ManagementGuideModal visible={guideType !== null} type={guideType ?? "clubRegistration"} onStart={startGuide} onSkip={() => { setGuideType(null); setGuideClub(null); }} />
 			<AlertModal
 				visible={leaveModalVisible}
 				onClose={() => setLeaveModalVisible(false)}

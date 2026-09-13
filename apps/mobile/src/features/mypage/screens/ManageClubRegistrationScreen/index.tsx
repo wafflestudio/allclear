@@ -15,6 +15,7 @@ import type { Club } from "@/entities/club";
 import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import AlertModal from "@/shared/components/AlertModal";
+import ManagementGuideModal from "@/shared/components/ManagementGuideModal";
 import FlowScreenFooter from "@/shared/components/FlowScreenFooter";
 import FlowScreenLayout from "@/shared/components/FlowScreenLayout";
 import TextField from "@/shared/components/TextField";
@@ -83,6 +84,7 @@ const ManageClubRegistrationScreen = () => {
 	] = useState(false);
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+	const [isApprovalGuideVisible, setIsApprovalGuideVisible] = useState(false);
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
 	const { data: manageClubs = [] } = useQuery({
@@ -312,7 +314,8 @@ const ManageClubRegistrationScreen = () => {
 				phone: adminForm.phone,
 				studentId: adminForm.studentId,
 			});
-			setIsSuccessModalVisible(true);
+			if (isEditMode || isResubmission) setIsSuccessModalVisible(true);
+			else setIsApprovalGuideVisible(true);
 		} catch {
 			setIsErrorModalVisible(true);
 		} finally {
@@ -352,6 +355,7 @@ const ManageClubRegistrationScreen = () => {
 
 	const handleSuccessConfirm = () => {
 		setIsSuccessModalVisible(false);
+		setIsApprovalGuideVisible(false);
 		setFormStep("form");
 		setAdminForm({
 			name: user?.name ?? "",
@@ -380,6 +384,7 @@ const ManageClubRegistrationScreen = () => {
 
 	const renderResultModals = () => (
 		<>
+			<ManagementGuideModal visible={isApprovalGuideVisible} type="approvalTime" onStart={handleSuccessConfirm} onSkip={handleSuccessConfirm} />
 			<AlertModal
 				visible={isSuccessModalVisible}
 				onClose={() => setIsSuccessModalVisible(false)}
