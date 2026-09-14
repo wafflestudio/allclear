@@ -2,6 +2,7 @@ import { BlurView } from "@react-native-community/blur";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	Animated,
+	Image,
 	Modal,
 	ScrollView,
 	StyleSheet,
@@ -9,7 +10,6 @@ import {
 	TouchableOpacity,
 	View,
 } from "react-native";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import { ms, s, vs } from "@/shared/utils/scale";
@@ -49,6 +49,18 @@ const pages = [
 	},
 ] as const;
 const width = s(292);
+const page1Profile =
+	require("@/assets/images/admin-guide/page1-profile.png") as number;
+const page1Callout =
+	require("@/assets/images/admin-guide/page1-callout.png") as number;
+const page1Club =
+	require("@/assets/images/admin-guide/page1-club.png") as number;
+const page2Registration =
+	require("@/assets/images/admin-guide/page2-registration.png") as number;
+const page3Management =
+	require("@/assets/images/admin-guide/page3-management.png") as number;
+const page4Approval =
+	require("@/assets/images/admin-guide/page4-approval.png") as number;
 
 const ManagementGuideModal = ({ visible, type, onStart, onSkip }: Props) => {
 	const entrance = useRef(new Animated.Value(0)).current;
@@ -228,95 +240,30 @@ const GuideScene = ({
 			<FigmaRegistration state={state} scrollOffset={offset} />
 		) : null}
 		{kind === "management" ? <FigmaManagement /> : null}
-		{kind === "approval" ? <FigmaApproval state={state} /> : null}
-	</View>
-);
-
-const PhoneChrome = ({ children }: { children: React.ReactNode }) => (
-	<View style={styles.phoneChrome}>
-		<View style={styles.phoneStatus}>
-			<Text style={styles.time}>9:41</Text>
-			<View style={styles.island} />
-			<View style={styles.statusIcons}>
-				<Icon name="signal-cellular-alt" size={ms(8)} color="#202020" />
-				<Icon name="wifi" size={ms(8)} color="#202020" />
-				<Icon name="battery-full" size={ms(9)} color="#202020" />
-			</View>
-		</View>
-		<View style={styles.phoneBody}>{children}</View>
+		{kind === "approval" ? <FigmaApproval /> : null}
 	</View>
 );
 
 const FigmaMyPage = ({ state }: { state: "first" | "second" | "third" }) => {
-	if (state === "third") {
-		return (
-			<PhoneChrome>
-				<View style={styles.navigationLine}>
-					<Icon name="chevron-left" size={ms(13)} color="#757474" />
-					<Text style={styles.navigationTitle}>동아리 관리</Text>
-				</View>
-				<View style={styles.clubHero} />
-				<Text style={styles.clubName}>와플스튜디오</Text>
-				<Text style={styles.clubDescription}>컴퓨터공학부</Text>
-				<View style={styles.outlineAction}>
-					<Text style={styles.outlineActionText}>동아리 신규등록 요청하기</Text>
-				</View>
-				<Text style={styles.smallSectionTitle}>공고 관리</Text>
-				<View style={styles.emptyRow} />
-			</PhoneChrome>
-		);
-	}
 	return (
-		<PhoneChrome>
-			<View style={styles.profileCard}>
-				<View style={styles.profileBadge}>
-					<Text style={styles.profileBadgeText}>올</Text>
-				</View>
-				<Text style={styles.profileName}>김올클</Text>
-				<Text style={styles.profileSub}>공과대학 컴퓨터공학부</Text>
-				<Icon
-					name="edit"
-					size={ms(8)}
-					color={Colors.POINTCOLOR}
-					style={styles.profileEdit}
+		<>
+			<View style={styles.narrowAssetFrame}>
+				<Image
+					source={state === "third" ? page1Club : page1Profile}
+					style={styles.narrowAsset}
+					resizeMode="stretch"
 				/>
-			</View>
-			<View style={styles.managerPrompt}>
-				<Text style={styles.managerPromptTitle}>동아리 운영진이신가요?</Text>
-				<Text style={styles.managerPromptSub}>동아리 등록하기</Text>
-				<Icon
-					name="chevron-right"
-					size={ms(12)}
-					color={Colors.POINTCOLOR}
-					style={styles.managerChevron}
-				/>
-			</View>
-			<View style={styles.emptyManagerRow}>
-				<Text style={styles.emptyManagerText}>계정연결 요청하기</Text>
 			</View>
 			{state === "second" && (
-				<View style={styles.callout}>
-					<Text style={styles.managerPromptTitle}>동아리 운영진이신가요?</Text>
-					<Text style={styles.managerPromptSub}>동아리 등록하기</Text>
-					<Icon
-						name="chevron-right"
-						size={ms(12)}
-						color={Colors.POINTCOLOR}
-						style={styles.managerChevron}
-					/>
-				</View>
+				<Image
+					source={page1Callout}
+					style={styles.calloutAsset}
+					resizeMode="stretch"
+				/>
 			)}
-		</PhoneChrome>
+		</>
 	);
 };
-
-const WidePhone = ({
-	children,
-	offset = 0,
-}: {
-	children: React.ReactNode;
-	offset?: number;
-}) => <View style={[styles.widePhone, { top: vs(offset) }]}>{children}</View>;
 
 const FigmaRegistration = ({
 	state,
@@ -324,164 +271,43 @@ const FigmaRegistration = ({
 }: {
 	state: "first" | "second" | "third";
 	scrollOffset?: Animated.Value;
-}) => {
-	if (state === "third") {
-		return (
-			<WidePhone offset={-26}>
-				<Animated.View
-					style={{ transform: [{ translateY: scrollOffset ?? 0 }] }}
-				>
-					<RecruitmentStart />
-					<View style={styles.timelineGap} />
-					<RecruitmentEligibility />
-					<View style={styles.timelineGap} />
-					<RecruitmentFinish />
-				</Animated.View>
-			</WidePhone>
-		);
-	}
-	const panel =
-		state === "first" ? <RecruitmentStart /> : <RecruitmentEligibility />;
-	return <WidePhone offset={state === "first" ? -26 : -640}>{panel}</WidePhone>;
-};
+}) => (
+	<View
+		style={[
+			styles.tallAssetFrame,
+			{ top: vs(state === "second" ? -640 : -26) },
+		]}
+	>
+		<Animated.Image
+			source={page2Registration}
+			style={[
+				styles.registrationAsset,
+				state === "third" && {
+					transform: [{ translateY: scrollOffset ?? 0 }],
+				},
+			]}
+			resizeMode="stretch"
+		/>
+	</View>
+);
 
-const GuideInput = ({ label, wide }: { label: string; wide?: boolean }) => (
-	<View style={[styles.guideInput, wide && styles.guideInputWide]}>
-		<Text style={styles.guideInputText}>{label}</Text>
-	</View>
-);
-const RecruitmentStart = () => (
-	<View style={styles.formScreen}>
-		<Text style={styles.formScreenTitle}>모집 공고를 작성해주세요</Text>
-		<View style={styles.primaryChip}>
-			<Text style={styles.primaryChipText}>이전 공고 불러오기</Text>
-		</View>
-		<Text style={styles.formScreenLabel}>*공고 제목</Text>
-		<GuideInput label="텍스트를 입력하세요" wide />
-		<Text style={styles.helperPurple}>공고 제목은 필수 입력 정보예요</Text>
-		<Text style={styles.formScreenLabel}>*모집 기간</Text>
-		<View style={styles.dateRow}>
-			<GuideInput label="시작일" />
-			<GuideInput label="마감일" />
-		</View>
-	</View>
-);
-const RecruitmentEligibility = () => (
-	<View style={styles.formScreen}>
-		<Text style={styles.formScreenLabel}>*지원 자격</Text>
-		<View style={styles.choiceRow}>
-			<View style={styles.choiceSelected}>
-				<Text style={styles.choiceSelectedText}>제한 없음</Text>
-			</View>
-			<View style={styles.choice}>
-				<Text style={styles.choiceText}>제한 있음</Text>
-			</View>
-		</View>
-		<GuideInput label="지원 자격에 대해 설명해주세요" wide />
-		<Text style={styles.helperPurple}>지원 자격은 필수 입력 정보예요</Text>
-		<Text style={styles.formScreenLabel}>*모집 인원</Text>
-		<View style={styles.choiceRow}>
-			<View style={styles.choice}>
-				<Text style={styles.choiceText}>제한 없음</Text>
-			</View>
-			<View style={styles.choiceSelected}>
-				<Text style={styles.choiceSelectedText}>정원 있음</Text>
-			</View>
-		</View>
-	</View>
-);
-const RecruitmentFinish = () => (
-	<View style={styles.formScreen}>
-		<Text style={styles.formScreenLabel}>기존 공고</Text>
-		<GuideInput label="기존에 작성된 공고를 불러와주세요" wide />
-		<Text style={styles.formScreenLabel}>공고 이미지</Text>
-		<View style={styles.imageRow}>
-			<View style={styles.imageThumb}>
-				<Icon name="local-fire-department" size={ms(22)} color="#7A3D1E" />
-			</View>
-			<View style={styles.imageSelected}>
-				<Text style={styles.primaryChipText}>삭제</Text>
-			</View>
-			<View style={styles.imageThumb}>
-				<Icon name="add" size={ms(22)} color="#BCBCBC" />
-			</View>
-		</View>
-		<View style={styles.footerRow}>
-			<View style={styles.footerButton}>
-				<Text style={styles.choiceText}>이전</Text>
-			</View>
-			<View style={styles.footerPrimary}>
-				<Text style={styles.primaryChipText}>완료</Text>
-			</View>
-		</View>
-	</View>
-);
 const FigmaManagement = () => (
-	<WidePhone offset={-174}>
-		<View style={styles.managementScreen}>
-			<Text style={styles.managementHeading}>공고 관리</Text>
-			<View style={styles.managementCreate}>
-				<Text style={styles.managementCreateText}>새 공고 작성하기</Text>
-				<Icon name="edit" size={ms(11)} color={Colors.POINTCOLOR} />
-			</View>
-			{["2026년 2월 공고", "2025년 7월 공고", "2025년 2월 공고"].map(
-				(title, index) => (
-					<View
-						style={[styles.managementRow, index === 0 && styles.currentRow]}
-						key={title}
-					>
-						<Text style={styles.managementRowText}>
-							{index === 0 ? "현재 공고   " : ""}
-							{title}
-						</Text>
-						<Icon name="edit" size={ms(9)} color="#C1C1C1" />
-					</View>
-				),
-			)}
-			<View style={styles.managementMore}>
-				<Text style={styles.managementCreateText}>이전 공고 더보기</Text>
-				<Icon name="expand-more" size={ms(12)} color="#BCBCBC" />
-			</View>
-		</View>
-	</WidePhone>
+	<View style={[styles.wideAssetFrame, { top: vs(-174) }]}>
+		<Image
+			source={page3Management}
+			style={styles.wideAsset}
+			resizeMode="stretch"
+		/>
+	</View>
 );
-const FigmaApproval = ({ state }: { state: "first" | "second" | "third" }) => (
-	<WidePhone offset={-138}>
-		<View style={styles.approvalScreen}>
-			<View style={styles.approvalPrompt}>
-				<Text style={styles.managerPromptTitle}>동아리 운영진이신가요?</Text>
-				<Text style={styles.managerPromptSub}>동아리 등록하기</Text>
-				<Icon
-					name="chevron-right"
-					size={ms(12)}
-					color={Colors.POINTCOLOR}
-					style={styles.managerChevron}
-				/>
-			</View>
-			<View style={styles.approvalClubCard}>
-				<View style={styles.clubLogo} />
-				<View>
-					<Text style={styles.approvalClubName}>와플스튜디오</Text>
-					<Text style={styles.approvalClubSub}>
-						컴퓨터공학부{`\n`}웹/앱 개발 동아리
-					</Text>
-				</View>
-			</View>
-			<View style={styles.approvalButtons}>
-				<View style={styles.approvalButton}>
-					<Text style={styles.choiceText}>운영진 권한 승인 대기</Text>
-				</View>
-				<View style={styles.approvalButton}>
-					<Text style={styles.choiceText}>
-						{state === "third" ? "승인 소요기간" : "동아리 관리 승인 대기"}
-					</Text>
-				</View>
-			</View>
-			<View style={styles.approvalEmpty}>
-				<Text style={styles.emptyManagerText}>계정연결 요청하기</Text>
-			</View>
-		</View>
-	</WidePhone>
+const FigmaApproval = () => (
+	<View style={[styles.wideAssetFrame, { top: vs(-138) }]}>
+		<Image
+			source={page4Approval}
+			style={styles.wideAsset}
+			resizeMode="stretch"
+		/>
+	</View>
 );
 export default ManagementGuideModal;
 const styles = StyleSheet.create({
@@ -1045,4 +871,45 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 		justifyContent: "center",
 	},
+	narrowAssetFrame: {
+		position: "absolute",
+		left: s(44),
+		top: vs(33),
+		width: s(178),
+		height: vs(181),
+		overflow: "hidden",
+		borderWidth: ms(3),
+		borderBottomWidth: 0,
+		borderColor: "#686868",
+		borderTopLeftRadius: ms(20),
+		borderTopRightRadius: ms(20),
+	},
+	narrowAsset: { width: s(178), height: vs(386) },
+	calloutAsset: {
+		position: "absolute",
+		left: s(20),
+		top: vs(127),
+		width: s(227),
+		height: vs(49),
+	},
+	tallAssetFrame: {
+		position: "absolute",
+		left: s(20),
+		width: s(227),
+		height: vs(1404),
+		overflow: "hidden",
+		borderWidth: ms(3),
+		borderColor: "#686868",
+	},
+	registrationAsset: { width: s(227), height: vs(1404) },
+	wideAssetFrame: {
+		position: "absolute",
+		left: s(20),
+		width: s(227),
+		height: vs(490),
+		overflow: "hidden",
+		borderWidth: ms(3),
+		borderColor: "#686868",
+	},
+	wideAsset: { width: s(227), height: vs(490) },
 });
