@@ -29,7 +29,6 @@ const useEntrySplashAnimatedStyles = ({
 	nativeSplashLeft,
 	nativeSplashTop,
 	scaleX,
-	scaleY,
 	screenOpacity,
 }: Params) => {
 	const visualProgress = useDerivedValue(
