@@ -17,10 +17,21 @@ const forceUpdateGate = readFileSync(
 	resolve(mobileRoot, "src/shared/components/ForceUpdateGate.tsx"),
 	"utf8",
 );
+const entrySplashScreen = readFileSync(
+	resolve(mobileRoot, "src/shared/components/EntrySplashScreen.tsx"),
+	"utf8",
+);
 
 describe("native splash startup", () => {
-	it("does not block iOS launch with the legacy native splash loop", () => {
-		expect(appDelegate).not.toContain("[RNSplashScreen show]");
+	it("keeps the iOS launch screen visible until the JS clone is ready", () => {
+		expect(appDelegate).toContain("[RNSplashScreen show]");
+		expect(entrySplashScreen).toContain(
+			"onLayout={() => setSplashCloneLaidOut(true)}",
+		);
+		expect(entrySplashScreen).toContain(
+			"onLoadEnd={() => setSplashCloneLoaded(true)}",
+		);
+		expect(entrySplashScreen).toContain("SplashScreen.hide()");
 	});
 
 	it("does not cover the Android React entry flow with a legacy splash dialog", () => {

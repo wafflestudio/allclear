@@ -38,12 +38,17 @@ const useEntrySplashAnimatedStyles = ({
 
 	const taglineLayoutStyle = useMemo(
 		() => ({
-			fontFamily: "Pretendard-Bold",
-			fontSize: 18 * scaleX,
-			lineHeight: 30 * scaleX,
-			letterSpacing: -0.36 * scaleX,
+			// SplashImage에 rasterized 된 문구와 동일한 iOS 시스템 폰트 값을
+			// 사용한다. 첫 프레임의 native → JS handoff에서는 화면 폭에 따라
+			// 글자를 다시 scale하지 않아야 픽셀이 움직이지 않는다.
+			fontFamily: "Apple SD Gothic Neo",
+			fontWeight: "700" as const,
+			fontSize: 18,
+			lineHeight: 30,
+			letterSpacing: -0.02 * 18,
+			textAlignVertical: "top" as const,
 		}),
-		[scaleX],
+		[],
 	);
 
 	const screenStyle = useAnimatedStyle(() => ({
