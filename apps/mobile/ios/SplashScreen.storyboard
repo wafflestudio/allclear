@@ -18,7 +18,7 @@
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                         <subviews>
                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="center" horizontalHuggingPriority="251" verticalHuggingPriority="251" misplaced="YES" image="SplashImage" translatesAutoresizingMaskIntoConstraints="NO" id="glH-OM-kQ1">
-                                <rect key="frame" x="34" y="86" width="360" height="780"/>
+                                <rect key="frame" x="19" y="41" width="390" height="844"/>
                             </imageView>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="fcr-hH-sr1"/>
@@ -35,7 +35,7 @@
         </scene>
     </scenes>
     <resources>
-        <image name="SplashImage" width="360" height="780"/>
+        <image name="SplashImage" width="390" height="844"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>

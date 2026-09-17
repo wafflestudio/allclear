@@ -57,8 +57,14 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		isAuthenticated,
 		guestEntryRequested,
 	});
-	const { contentTop, contentBottom, scaleX, scaleY } =
-		useEntrySplashViewport();
+	const {
+		contentTop,
+		contentBottom,
+		nativeSplashLeft,
+		nativeSplashTop,
+		scaleX,
+		scaleY,
+	} = useEntrySplashViewport();
 	const contentStyle = useMemo(
 		() => ({
 			top: contentTop,
@@ -77,8 +83,11 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		visualProgress,
 		wordmarkStyle,
 	} = useEntrySplashAnimatedStyles({
+		contentTop,
 		introProgress,
 		loginProgress,
+		nativeSplashLeft,
+		nativeSplashTop,
 		scaleX,
 		scaleY,
 		screenOpacity,
@@ -224,6 +233,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 					onAppleButtonPress={onAppleButtonPress}
 					onGuestEntryPress={handleGuestEntryPress}
 					onKakaoButtonPress={onKakaoButtonPress}
+					nativeSplashContentTop={nativeSplashTop - contentTop}
 					scaleX={scaleX}
 					scaleY={scaleY}
 					visualProgress={visualProgress}
