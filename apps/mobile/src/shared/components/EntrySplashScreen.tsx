@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { StatusBar, StyleSheet, View } from "react-native";
+import { Image, Platform, StatusBar, StyleSheet, View } from "react-native";
 import Animated, {
 	Easing,
 	runOnJS,
@@ -9,6 +9,7 @@ import Animated, {
 	withSequence,
 	withTiming,
 } from "react-native-reanimated";
+import SplashScreen from "react-native-splash-screen";
 import EntryLoginActions from "@/shared/components/EntryLoginActions";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
@@ -33,6 +34,8 @@ const transitionWordmarkSource =
 	require("@/assets/images/brand/entry-wordmark-transition.png") as number;
 const wordmarkSource =
 	require("@/assets/images/brand/entry-wordmark.png") as number;
+const splashCloneSource =
+	require("@/assets/images/brand/entry-splash.png") as number;
 
 type Props = {
 	active: boolean;
@@ -49,6 +52,11 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	const [loginReady, setLoginReady] = useState(false);
 	const [guestEntryRequested, setGuestEntryRequested] = useState(false);
 	const [finished, setFinished] = useState(false);
+	const [splashCloneLaidOut, setSplashCloneLaidOut] = useState(false);
+	const [splashCloneLoaded, setSplashCloneLoaded] = useState(false);
+	const [nativeSplashHidden, setNativeSplashHidden] = useState(
+		Platform.OS !== "ios",
+	);
 	const { isLoading, onAppleButtonPress, onKakaoButtonPress } =
 		useLoginActions();
 	const isAuthenticated = Boolean(user);
@@ -57,8 +65,14 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		isAuthenticated,
 		guestEntryRequested,
 	});
-	const { contentTop, contentBottom, scaleX, scaleY } =
-		useEntrySplashViewport();
+	const {
+		contentTop,
+		contentBottom,
+		nativeSplashLeft,
+		nativeSplashTop,
+		scaleX,
+		scaleY,
+	} = useEntrySplashViewport();
 	const contentStyle = useMemo(
 		() => ({
 			top: contentTop,
@@ -77,8 +91,11 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		visualProgress,
 		wordmarkStyle,
 	} = useEntrySplashAnimatedStyles({
+		contentTop,
 		introProgress,
 		loginProgress,
+		nativeSplashLeft,
+		nativeSplashTop,
 		scaleX,
 		scaleY,
 		screenOpacity,
@@ -98,7 +115,28 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	}, [onComplete]);
 
 	useEffect(() => {
-		if (!active) return;
+		if (
+			!active ||
+			Platform.OS !== "ios" ||
+			!splashCloneLaidOut ||
+			!splashCloneLoaded
+		) {
+			return;
+		}
+
+		// 동일한 JS 이미지가 layout과 decode까지 끝난 뒤에만 native launch
+		// screen을 숨긴다. 시간값이 아니라 실제 clone의 준비 상태를 기준으로
+		// native → JS handoff를 수행한다.
+		const animationFrame = requestAnimationFrame(() => {
+			SplashScreen.hide();
+			setNativeSplashHidden(true);
+		});
+
+		return () => cancelAnimationFrame(animationFrame);
+	}, [active, splashCloneLaidOut, splashCloneLoaded]);
+
+	useEffect(() => {
+		if (!active || !nativeSplashHidden) return;
 
 		if (reduceMotion) {
 			introProgress.value = 2;
@@ -128,7 +166,13 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 				),
 			),
 		);
-	}, [active, introProgress, markBrandRevealComplete, reduceMotion]);
+	}, [
+		active,
+		introProgress,
+		markBrandRevealComplete,
+		nativeSplashHidden,
+		reduceMotion,
+	]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Login-state transitions intentionally re-evaluate the entry flow.
 	useEffect(() => {
@@ -224,11 +268,25 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 					onAppleButtonPress={onAppleButtonPress}
 					onGuestEntryPress={handleGuestEntryPress}
 					onKakaoButtonPress={onKakaoButtonPress}
+					nativeSplashContentTop={nativeSplashTop - contentTop}
 					scaleX={scaleX}
 					scaleY={scaleY}
 					visualProgress={visualProgress}
 				/>
 			</View>
+			{Platform.OS === "ios" && !nativeSplashHidden && (
+				<View
+					onLayout={() => setSplashCloneLaidOut(true)}
+					style={styles.splashClone}
+				>
+					<Image
+						onLoadEnd={() => setSplashCloneLoaded(true)}
+						resizeMode="center"
+						source={splashCloneSource}
+						style={styles.splashCloneImage}
+					/>
+				</View>
+			)}
 		</Animated.View>
 	);
 };
@@ -249,6 +307,17 @@ const styles = StyleSheet.create({
 	brandAsset: {
 		position: "absolute",
 		resizeMode: "contain",
+	},
+	splashClone: {
+		...StyleSheet.absoluteFillObject,
+		alignItems: "center",
+		backgroundColor: Colors.WHITE,
+		justifyContent: "center",
+		zIndex: 1,
+	},
+	splashCloneImage: {
+		height: 844,
+		width: 390,
 	},
 	tagline: {
 		position: "absolute",
