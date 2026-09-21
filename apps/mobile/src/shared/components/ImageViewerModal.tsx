@@ -8,7 +8,7 @@ import {
 	View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import ZoomableImage from "@/shared/components/ZoomableImage";
 import { Colors } from "@/shared/constants/colors";
@@ -59,67 +59,80 @@ const ImageViewerModal = ({
 			navigationBarTranslucent
 			onRequestClose={onClose}
 		>
-			<StatusBar barStyle="light-content" backgroundColor={Colors.BLACK} />
-			<GestureHandlerRootView style={styles.modalRoot}>
-				<SafeAreaView style={styles.safeArea}>
-					<View style={styles.header}>
-						<View style={styles.headerSpacer} />
-						<Text style={styles.counter}>
-							{currentIndex + 1} / {imageUrls.length}
-						</Text>
-						<Pressable
-							accessibilityRole="button"
-							accessibilityLabel="사진 닫기"
-							style={({ pressed }) => [
-								styles.iconButton,
-								pressed && styles.buttonPressed,
-							]}
-							onPress={onClose}
-						>
-							<Icon name="close" size={ms(28)} color={Colors.WHITE} />
-						</Pressable>
-					</View>
-
-					<View style={styles.viewer}>
-						<ZoomableImage
-							key={`${imageUrls[currentIndex]}-${currentIndex}`}
-							url={imageUrls[currentIndex]}
-							accessibilityLabel={`${imageUrls.length}장 중 ${currentIndex + 1}번째 사진`}
-						/>
-					</View>
-
-					{imageUrls.length > 1 && (
-						<View style={styles.controls}>
+			<SafeAreaProvider>
+				<StatusBar barStyle="light-content" backgroundColor={Colors.BLACK} />
+				<GestureHandlerRootView style={styles.modalRoot}>
+					<SafeAreaView
+						edges={["top", "bottom", "left", "right"]}
+						style={styles.safeArea}
+					>
+						<View style={styles.header}>
+							<View style={styles.headerSpacer} />
+							<Text style={styles.counter}>
+								{currentIndex + 1} / {imageUrls.length}
+							</Text>
 							<Pressable
 								accessibilityRole="button"
-								accessibilityLabel="이전 사진"
-								disabled={!hasPrevious}
+								accessibilityLabel="사진 닫기"
 								style={({ pressed }) => [
-									styles.navigationButton,
-									!hasPrevious && styles.buttonDisabled,
+									styles.iconButton,
 									pressed && styles.buttonPressed,
 								]}
-								onPress={() => move(-1)}
+								onPress={onClose}
 							>
-								<Icon name="chevron-left" size={ms(32)} color={Colors.WHITE} />
-							</Pressable>
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel="다음 사진"
-								disabled={!hasNext}
-								style={({ pressed }) => [
-									styles.navigationButton,
-									!hasNext && styles.buttonDisabled,
-									pressed && styles.buttonPressed,
-								]}
-								onPress={() => move(1)}
-							>
-								<Icon name="chevron-right" size={ms(32)} color={Colors.WHITE} />
+								<Icon name="close" size={ms(28)} color={Colors.WHITE} />
 							</Pressable>
 						</View>
-					)}
-				</SafeAreaView>
-			</GestureHandlerRootView>
+
+						<View style={styles.viewer}>
+							<ZoomableImage
+								key={`${imageUrls[currentIndex]}-${currentIndex}`}
+								url={imageUrls[currentIndex]}
+								accessibilityLabel={`${imageUrls.length}장 중 ${currentIndex + 1}번째 사진`}
+							/>
+						</View>
+
+						{imageUrls.length > 1 && (
+							<View style={styles.controls}>
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel="이전 사진"
+									disabled={!hasPrevious}
+									style={({ pressed }) => [
+										styles.navigationButton,
+										!hasPrevious && styles.buttonDisabled,
+										pressed && styles.buttonPressed,
+									]}
+									onPress={() => move(-1)}
+								>
+									<Icon
+										name="chevron-left"
+										size={ms(32)}
+										color={Colors.WHITE}
+									/>
+								</Pressable>
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel="다음 사진"
+									disabled={!hasNext}
+									style={({ pressed }) => [
+										styles.navigationButton,
+										!hasNext && styles.buttonDisabled,
+										pressed && styles.buttonPressed,
+									]}
+									onPress={() => move(1)}
+								>
+									<Icon
+										name="chevron-right"
+										size={ms(32)}
+										color={Colors.WHITE}
+									/>
+								</Pressable>
+							</View>
+						)}
+					</SafeAreaView>
+				</GestureHandlerRootView>
+			</SafeAreaProvider>
 		</Modal>
 	);
 };
