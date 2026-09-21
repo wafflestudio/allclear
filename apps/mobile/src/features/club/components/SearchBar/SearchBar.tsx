@@ -54,18 +54,20 @@ const SearchBar = ({
 				source={require("@/assets/icons/search-icon.png")}
 				style={styles.icon}
 			/>
-			<TextInput
-				style={styles.input}
-				value={value}
-				onChangeText={handleChangeText}
-				placeholder={placeholder}
-				placeholderTextColor={Colors.BODYTEXT_DISABLED}
-				onSubmitEditing={handleSubmit}
-				returnKeyType="search"
-				maxLength={MAX_LENGTH}
-				autoCapitalize="none"
-				autoCorrect={false}
-			/>
+			<View style={styles.inputWrapper}>
+				<TextInput
+					style={styles.input}
+					value={value}
+					onChangeText={handleChangeText}
+					placeholder={placeholder}
+					placeholderTextColor={Colors.BODYTEXT_DISABLED}
+					onSubmitEditing={handleSubmit}
+					returnKeyType="search"
+					maxLength={MAX_LENGTH}
+					autoCapitalize="none"
+					autoCorrect={false}
+				/>
+			</View>
 			{value.length > 0 && (
 				<View style={styles.trailing}>
 					<Text>
@@ -112,11 +114,17 @@ const styles = StyleSheet.create({
 		resizeMode: "contain",
 	},
 	input: {
-		flex: 1,
-		marginLeft: s(10),
+		height: vs(22),
 		...typography.bodyMMedium13px,
 		color: Colors.BODYTEXT_MAIN,
-		padding: 0,
+		paddingHorizontal: 0,
+		paddingVertical: 0,
+	},
+	inputWrapper: {
+		alignSelf: "stretch",
+		flex: 1,
+		justifyContent: "center",
+		marginLeft: s(10),
 	},
 	counterCurrent: {
 		...typography.bodyMMedium,

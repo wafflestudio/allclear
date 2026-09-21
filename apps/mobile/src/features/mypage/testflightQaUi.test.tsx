@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import {
 	Keyboard,
-	Platform,
 	StyleSheet,
 	type TextInputProps,
 	type TextStyle,
@@ -24,6 +23,7 @@ jest.mock("react", () => {
 				updateUser: jest.fn(),
 			},
 		}),
+		useRef: () => ({ current: null }),
 		useState: (initialValue: unknown) => [initialValue, jest.fn()],
 	};
 });
@@ -183,18 +183,21 @@ describe("TestFlight QA UI regressions", () => {
 		expect(submitButton.props.accessibilityState).toEqual({ disabled: true });
 	});
 
-	it("optically centers single-line text on iOS", () => {
+	it("keeps entered single-line text vertically centered", () => {
 		type TextFieldComponent = (
 			props: TextInputProps & { height?: number },
 		) => ReactElement<{
+			children: ReactElement<{ style: TextStyle }>;
 			style: TextStyle;
 		}>;
 		const textFieldComponent = (
 			TextField as unknown as { type: TextFieldComponent }
 		).type;
-		const input = textFieldComponent({ value: "홍길동", height: 54 });
+		const field = textFieldComponent({ value: "홍길동", height: 54 });
+		const input = field.props.children as ReactElement<{ style: TextStyle }>;
 		const flattenedStyle = StyleSheet.flatten(input.props.style);
 
-		expect(flattenedStyle.paddingBottom).toBe(Platform.OS === "ios" ? 2 : 0);
+		expect(flattenedStyle.paddingVertical).toBe(0);
+		expect(flattenedStyle.lineHeight).toBeUndefined();
 	});
 });
