@@ -1,4 +1,4 @@
-import { z } from 'src/lib/schemas/zod'
+import { z } from 'server/http/schemas/zod'
 import { TermsSchema } from './common'
 
 export const AgreeTermsSchema = z

@@ -1,5 +1,5 @@
+import type { CollegeMajor } from 'server/domain/model/CollegeMajor'
 import type { AdminTab, AffiliationFilter, ClubStatus, StatusFilter } from 'src/admin/types'
-import type { ClubCollegeMajor } from 'src/entities/club'
 
 export const ADMIN_AUTH_TOKEN_KEY = 'allclear:admin-auth-token'
 export const ADMIN_PAGE_SIZE = 20
@@ -56,5 +56,5 @@ export const buildQuery = (params: Record<string, string | number | undefined>) 
   return queryString ? `?${queryString}` : ''
 }
 
-export const formatCollegeMajorLabel = (collegeMajor: ClubCollegeMajor) =>
+export const formatCollegeMajorLabel = (collegeMajor: CollegeMajor) =>
   collegeMajor.major ?? collegeMajor.college ?? ''

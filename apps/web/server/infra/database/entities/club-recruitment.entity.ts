@@ -1,4 +1,4 @@
-import { formatYearMonth } from 'src/common/utils/formatYearMonth'
+import { formatYearMonth } from 'server/domain/club/recruitment-year-month'
 import {
   BeforeInsert,
   BeforeUpdate,

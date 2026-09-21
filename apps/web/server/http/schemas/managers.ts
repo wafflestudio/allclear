@@ -2,9 +2,9 @@ import {
   CLUB_AFFILIATION_TYPES,
   CLUB_CATEGORIES,
   CLUB_RECRUIT_TYPES,
-} from 'src/fixtures/club-options'
-import { ClubSchema } from 'src/lib/schemas/common'
-import { z } from 'src/lib/schemas/zod'
+} from 'server/domain/constants/club-options'
+import { ClubSchema } from 'server/http/schemas/common'
+import { z } from 'server/http/schemas/zod'
 
 const ClubRecruitTypeInputSchema = z
   .union([z.enum([...CLUB_RECRUIT_TYPES, '매 학기', '매 년'] as const), z.literal('')])

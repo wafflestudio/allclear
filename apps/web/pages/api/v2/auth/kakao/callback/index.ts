@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken'
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ENV } from 'server/ENV'
+import { KakaoCallbackQuerySchema } from 'server/http/schemas/auth'
 import { Provider } from 'server/provider'
 import { AuthService } from 'server/service/auth.service'
 import { getSafeErrorName } from 'server/util/safe-error'
-import { KakaoCallbackQuerySchema } from 'src/lib/schemas/auth'
 import type { ZodIssue } from 'zod'
 import { z } from 'zod'
 

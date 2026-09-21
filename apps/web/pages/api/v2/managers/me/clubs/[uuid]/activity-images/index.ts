@@ -7,11 +7,11 @@ import {
   UserNotFoundError,
 } from 'server/domain/error'
 import { ENV } from 'server/ENV'
+import { ClubUuidParamsSchema } from 'server/http/schemas/clubs'
 import { uploadClubImageStream } from 'server/infra/client/s3'
 import { Provider } from 'server/provider'
 import { ClubAccessService } from 'server/service/club-access.service'
 import { UserService } from 'server/service/user.service'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
 

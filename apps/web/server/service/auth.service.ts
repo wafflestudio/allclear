@@ -1,5 +1,6 @@
 import axios from 'axios'
 import * as qs from 'qs'
+import { UserRole } from 'server/domain/constants/user-role.enum'
 import type { Repository } from 'typeorm'
 import { UserNotFoundError } from '../domain/error'
 import type { User } from '../domain/model/User'
@@ -11,7 +12,6 @@ import {
   ServiceUserEntity,
   UserEntity,
 } from '../infra/database/entities'
-import { UserRole } from '../infra/database/entities/user-role.enum'
 import { InjectRepository, Service } from '../provider'
 import { getSafeErrorName } from '../util/safe-error'
 

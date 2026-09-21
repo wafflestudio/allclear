@@ -1,4 +1,4 @@
-import { registry } from 'src/lib/openapi/swagger'
+import { registry } from 'server/http/openapi/swagger'
 import {
   AdminClubDetailResponseSchema,
   AdminClubHistoriesQuerySchema,
@@ -20,22 +20,22 @@ import {
   AdminUserRoleUpdateParamsSchema,
   AdminUserRoleUpdateResponseSchema,
   AdminUserRoleUpdateSchema,
-} from 'src/lib/schemas/admin'
+} from 'server/http/schemas/admin'
 import {
   AnnouncementsResponseSchema,
   DismissAnnouncementsSchema,
-} from 'src/lib/schemas/announcements'
+} from 'server/http/schemas/announcements'
 import {
   AppVersionCheckResponseSchema,
   AppVersionCheckSchema,
   AppVersionPolicyResponseSchema,
   AppVersionPolicyUpdateSchema,
-} from 'src/lib/schemas/app-versions'
+} from 'server/http/schemas/app-versions'
 import {
   AppleLoginCallbackPayloadSchema,
   KakaoCallbackQuerySchema,
   KakaoNativeCallbackPayloadSchema,
-} from 'src/lib/schemas/auth'
+} from 'server/http/schemas/auth'
 import {
   ClubRecruitmentParamsSchema,
   ClubRecruitmentSchema,
@@ -46,7 +46,7 @@ import {
   RecruitmentIdParamsSchema,
   UpdateClubRecruitmentSchema,
   UpdateRecruitmentResponseSchema,
-} from 'src/lib/schemas/club-recruitments'
+} from 'server/http/schemas/club-recruitments'
 import {
   ClubCategoriesResponseSchema,
   ClubListByCategoryQuerySchema,
@@ -60,7 +60,7 @@ import {
   MyReviewSchema,
   ReviewKeywordCategoriesResponseSchema,
   UpdateClubReviewSchema,
-} from 'src/lib/schemas/clubs'
+} from 'server/http/schemas/clubs'
 import {
   ClubDetailSchema,
   HealthCheckSchema,
@@ -69,13 +69,13 @@ import {
   TokenResponseSchema,
   UserSchema,
   ValidationIssueSchema,
-} from 'src/lib/schemas/common'
+} from 'server/http/schemas/common'
 import {
   ManagerTransferAcceptanceResponseSchema,
   ManagerTransferInvitationCreateResponseSchema,
   ManagerTransferInvitationResponseSchema,
   ManagerTransferTokenParamsSchema,
-} from 'src/lib/schemas/manager-transfer'
+} from 'server/http/schemas/manager-transfer'
 import {
   ClubActivityImageUploadResponseSchema,
   ClubImageUploadSchema,
@@ -89,14 +89,14 @@ import {
   ManagedClubPatchSchema,
   ManagedClubsResponseSchema,
   ManagerClubParamsSchema,
-} from 'src/lib/schemas/managers'
-import { AgreeTermsSchema, TermsResponseSchema } from 'src/lib/schemas/terms'
+} from 'server/http/schemas/managers'
+import { AgreeTermsSchema, TermsResponseSchema } from 'server/http/schemas/terms'
 import {
   TestGuestRecentSearchDebugQuerySchema,
   TestGuestRecentSearchDebugResponseSchema,
   TestLoginResponseSchema,
   TestLoginSchema,
-} from 'src/lib/schemas/test'
+} from 'server/http/schemas/test'
 import {
   CollegeMajorsQuerySchema,
   CollegeMajorsResponseSchema,
@@ -109,8 +109,8 @@ import {
   UserNotificationsResponseSchema,
   UserProfileResponseSchema,
   UserVoiceSchema,
-} from 'src/lib/schemas/users'
-import { z } from 'src/lib/schemas/zod'
+} from 'server/http/schemas/users'
+import { z } from 'server/http/schemas/zod'
 
 const ErrorMessageSchema = z.string()
 const NoContentResponse = { description: '성공적으로 처리되었습니다.' }

@@ -100,6 +100,51 @@
 					"semicolons": "asNeeded"
 				}
 			}
+		},
+		{
+			"includes": ["apps/web/server/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": ["src/**", "**/src/**"],
+										"message": "server는 src를 import할 수 없습니다. 서버가 소유하는 타입과 상수는 server/domain에, HTTP 계약은 server/http/schemas에 두세요."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": ["apps/web/src/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"patterns": [
+									{
+										"group": [
+											"server/provider",
+											"server/{service,provider,infra}/**",
+											"**/server/provider",
+											"**/server/{service,provider,infra}/**"
+										],
+										"message": "src는 server/service, server/provider, server/infra를 직접 import할 수 없습니다. 서버 호출은 pages/api를 거치고, 타입은 server/domain과 server/http/schemas에서 import type으로 가져오세요."
+									}
+								]
+							}
+						}
+					}
+				}
+			}
 		}
 	]
 }

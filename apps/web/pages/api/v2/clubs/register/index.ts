@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { BadRequestError, UserNotFoundError } from 'server/domain/error'
+import { ClubRegisterRequestSchema, type ClubRegisterResponse } from 'server/http/schemas/managers'
 import { Provider } from 'server/provider'
 import { ClubService } from 'server/service/club.service'
 import { UserService } from 'server/service/user.service'
-import { ClubRegisterRequestSchema, type ClubRegisterResponse } from 'src/lib/schemas/managers'
 import { type ZodIssue, z } from 'zod'
 
 type ClubRegisterFailedResponse = {

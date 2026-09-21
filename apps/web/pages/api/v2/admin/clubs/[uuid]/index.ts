@@ -1,10 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ForbiddenError, NotFoundError } from 'server/domain/error'
+import type { AdminClubDetailResponse } from 'server/http/schemas/admin'
+import { ClubUuidParamsSchema } from 'server/http/schemas/clubs'
 import { Provider } from 'server/provider'
 import { AdminClubService } from 'server/service/admin-club.service'
 import { UserService } from 'server/service/user.service'
-import type { AdminClubDetailResponse } from 'src/lib/schemas/admin'
-import { ClubUuidParamsSchema } from 'src/lib/schemas/clubs'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

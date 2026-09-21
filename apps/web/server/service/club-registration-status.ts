@@ -1,4 +1,4 @@
-import type { ClubStatus } from 'src/common/constants/club-status'
+import type { ClubStatus } from 'server/domain/constants/club-status'
 
 type ClubResubmissionStatusPatch = {
   status?: ClubStatus

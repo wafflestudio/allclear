@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ForbiddenError } from 'server/domain/error'
+import { AdminClubsQuerySchema, type AdminClubsResponse } from 'server/http/schemas/admin'
 import { Provider } from 'server/provider'
 import { AdminClubService } from 'server/service/admin-club.service'
 import { UserService } from 'server/service/user.service'
-import { AdminClubsQuerySchema, type AdminClubsResponse } from 'src/lib/schemas/admin'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

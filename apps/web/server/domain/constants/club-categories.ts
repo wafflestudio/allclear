@@ -1,4 +1,4 @@
-import type { ClubCategory } from '../../server/domain/model/ClubCategory'
+import type { ClubCategory } from '../model/ClubCategory'
 
 export const CATEGORIES: ClubCategory[] = [
   {

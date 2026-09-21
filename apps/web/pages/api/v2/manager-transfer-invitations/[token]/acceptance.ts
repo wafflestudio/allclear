@@ -1,13 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { ConflictError, NotFoundError, UserNotFoundError } from 'server/domain/error'
+import {
+  type ManagerTransferAcceptanceResponse,
+  ManagerTransferTokenParamsSchema,
+} from 'server/http/schemas/manager-transfer'
 import { Provider } from 'server/provider'
 import { ClubManagerTransferService } from 'server/service/club-manager-transfer.service'
 import { UserService } from 'server/service/user.service'
 import { getSafeDatabaseErrorContext } from 'server/util/safe-error'
-import {
-  type ManagerTransferAcceptanceResponse,
-  ManagerTransferTokenParamsSchema,
-} from 'src/lib/schemas/manager-transfer'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(
