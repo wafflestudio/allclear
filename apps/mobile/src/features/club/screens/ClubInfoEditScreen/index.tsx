@@ -260,14 +260,15 @@ SuccessModal.displayName = "SuccessModal";
 
 type ClubCategorySectionProps = {
 	category: ClubInfoEditFormData["category"];
+	isMissing: boolean;
 	onChange: (category: ClubInfoEditFormData["category"]) => void;
 };
 
 const ClubCategorySection = memo(
-	({ category, onChange }: ClubCategorySectionProps) => {
+	({ category, isMissing, onChange }: ClubCategorySectionProps) => {
 		return (
 			<View style={styles.fieldWrapper}>
-				<Text style={styles.label}>카테고리</Text>
+				<Text style={styles.label}>*카테고리</Text>
 				<View style={styles.categoryGrid}>
 					{CLUB_CATEGORIES.map((categoryOption) => {
 						const isSelected = category === categoryOption;
@@ -292,6 +293,9 @@ const ClubCategorySection = memo(
 						);
 					})}
 				</View>
+				{isMissing && (
+					<Text style={styles.requiredHint}>카테고리는 필수 입력 정보예요</Text>
+				)}
 			</View>
 		);
 	},
@@ -301,14 +305,15 @@ ClubCategorySection.displayName = "ClubCategorySection";
 
 type ClubRecruitTypeSectionProps = {
 	recruitType: string;
+	isMissing: boolean;
 	onChange: (recruitType: string) => void;
 };
 
 const ClubRecruitTypeSection = memo(
-	({ recruitType, onChange }: ClubRecruitTypeSectionProps) => {
+	({ recruitType, isMissing, onChange }: ClubRecruitTypeSectionProps) => {
 		return (
 			<View style={styles.fieldWrapper}>
-				<Text style={styles.fieldLabel}>모집 형태</Text>
+				<Text style={styles.fieldLabel}>*모집 형태</Text>
 				<View style={styles.buttonGroup}>
 					{CLUB_RECRUIT_TYPES.map((recruitTypeOption) => {
 						const isSelected = recruitType === recruitTypeOption;
@@ -333,6 +338,11 @@ const ClubRecruitTypeSection = memo(
 						);
 					})}
 				</View>
+				{isMissing && (
+					<Text style={styles.requiredHint}>
+						모집 형태는 필수 입력 정보예요
+					</Text>
+				)}
 			</View>
 		);
 	},
@@ -497,6 +507,11 @@ type ClubBasicInfoSectionProps = {
 	department: string;
 	shortIntro: string;
 	showDepartmentDropdown: boolean;
+	isImageMissing: boolean;
+	isNameMissing: boolean;
+	isBasicInfoMissing: boolean;
+	isDepartmentMissing: boolean;
+	isShortIntroMissing: boolean;
 	onSelectImage: () => void;
 	onClubNameChange: (value: string) => void;
 	onToggleDepartmentDropdown: () => void;
@@ -510,6 +525,11 @@ const ClubBasicInfoSection = memo(
 		department,
 		shortIntro,
 		showDepartmentDropdown,
+		isImageMissing,
+		isNameMissing,
+		isBasicInfoMissing,
+		isDepartmentMissing,
+		isShortIntroMissing,
 		onSelectImage,
 		onClubNameChange,
 		onToggleDepartmentDropdown,
@@ -517,11 +537,17 @@ const ClubBasicInfoSection = memo(
 	}: ClubBasicInfoSectionProps) => (
 		<>
 			<View style={styles.fieldWrapper}>
-				<Text style={styles.label}>동아리 대표 이미지</Text>
+				<Text style={styles.label}>*동아리 대표 이미지</Text>
 				<Text style={styles.helperDescription}>
 					4X4 정방형 이미지를 권장드려요
 				</Text>
-				<Pressable style={styles.imageUploadBox} onPress={onSelectImage}>
+				<Pressable
+					style={[
+						styles.imageUploadBox,
+						isImageMissing && styles.imageUploadBoxError,
+					]}
+					onPress={onSelectImage}
+				>
 					{clubImage ? (
 						<Image source={{ uri: clubImage }} style={styles.uploadedImage} />
 					) : (
@@ -531,25 +557,40 @@ const ClubBasicInfoSection = memo(
 				<Pressable style={styles.imageChangeButton} onPress={onSelectImage}>
 					<Text style={styles.imageChangeText}>이미지 변경</Text>
 				</Pressable>
+				{isImageMissing && (
+					<Text style={styles.requiredHint}>
+						대표 이미지는 필수 입력 정보예요
+					</Text>
+				)}
 			</View>
 
 			<View style={styles.fieldWrapper}>
-				<Text style={styles.label}>동아리명</Text>
+				<Text style={styles.label}>*동아리명</Text>
 				<TextField
+					height={54}
+					style={styles.textFieldInput}
 					value={clubName}
 					placeholder="와플스튜디오"
 					onChangeText={onClubNameChange}
 					maxLength={30}
+					border={
+						isNameMissing ? { color: Colors.BUTTON_DESTRUCTIVE } : undefined
+					}
 				/>
+				{isNameMissing && (
+					<Text style={styles.requiredHint}>동아리명은 필수 입력 정보예요</Text>
+				)}
 			</View>
 
 			<View style={styles.fieldWrapper}>
-				<Text style={styles.label}>한줄소개</Text>
+				<Text style={styles.label}>*한줄소개</Text>
 				<View style={styles.affiliationRow}>
 					<Pressable
 						style={[
 							styles.dropdown,
+							!!department.trim() && styles.dropdownFilled,
 							showDepartmentDropdown && styles.dropdownActive,
+							isDepartmentMissing && styles.dropdownError,
 						]}
 						onPress={onToggleDepartmentDropdown}
 					>
@@ -566,11 +607,23 @@ const ClubBasicInfoSection = memo(
 				</View>
 
 				<TextField
+					height={54}
+					style={styles.textFieldInput}
 					placeholder="웹/앱 개발 동아리, 경영전략학회"
 					value={shortIntro}
 					onChangeText={onShortIntroChange}
 					maxLength={100}
+					border={
+						isShortIntroMissing
+							? { color: Colors.BUTTON_DESTRUCTIVE }
+							: undefined
+					}
 				/>
+				{isBasicInfoMissing && (
+					<Text style={styles.requiredHint}>
+						동아리 한줄소개는 필수 입력 정보예요
+					</Text>
+				)}
 			</View>
 		</>
 	),
@@ -580,23 +633,28 @@ ClubBasicInfoSection.displayName = "ClubBasicInfoSection";
 
 type ClubDescriptionSectionProps = {
 	description: string;
+	isMissing: boolean;
 	onChange: (value: string) => void;
 };
 
 const ClubDescriptionSection = memo(
-	({ description, onChange }: ClubDescriptionSectionProps) => (
+	({ description, isMissing, onChange }: ClubDescriptionSectionProps) => (
 		<View style={styles.fieldWrapper}>
-			<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
-			<TextInput
-				style={styles.descriptionInput}
+			<Text style={styles.fieldLabel}>*동아리 추가 설명</Text>
+			<TextField
+				height={54}
+				style={styles.textFieldInput}
 				placeholder="동아리에 대해 자세히 설명해주세요"
-				placeholderTextColor={Colors.BODYTEXT_DISABLED}
 				value={description}
 				onChangeText={onChange}
 				maxLength={500}
-				multiline
-				textAlignVertical="top"
+				border={isMissing ? { color: Colors.BUTTON_DESTRUCTIVE } : undefined}
 			/>
+			{isMissing && (
+				<Text style={styles.requiredHint}>
+					동아리 추가 설명은 필수 입력 정보예요
+				</Text>
+			)}
 		</View>
 	),
 );
@@ -912,15 +970,24 @@ const ClubInfoEditScreen = () => {
 			JSON.stringify(initialComparable?.snsUrls) ||
 		areValidSnsUrls(formData.clubSNSUrls);
 
+	const isImageMissing = !formData.clubImage;
+	const isNameMissing = !formData.clubName.trim();
+	const isDepartmentMissing = !formData.department.trim();
+	const isShortIntroMissing = !formData.shortIntro.trim();
+	const isBasicInfoMissing = isDepartmentMissing || isShortIntroMissing;
+	const isCategoryMissing = !formData.category;
+	const isRecruitTypeMissing = !formData.recruitType.trim();
+	const isSnsMissing = !isSNSComplete;
+	const isDescriptionMissing = !formData.clubDescription.trim();
+
 	const isComplete =
-		!!formData.clubImage &&
-		!!formData.clubName.trim() &&
-		!!formData.category &&
-		!!formData.department.trim() &&
-		!!formData.shortIntro.trim() &&
-		!!formData.recruitType.trim() &&
+		!isImageMissing &&
+		!isNameMissing &&
+		!isCategoryMissing &&
+		!isBasicInfoMissing &&
+		!isRecruitTypeMissing &&
 		isSNSComplete &&
-		!!formData.clubDescription.trim() &&
+		!isDescriptionMissing &&
 		(minActivityPeriodMode === "none" ||
 			!!formData.minActivityPeriodInput.trim());
 
@@ -1061,6 +1128,11 @@ const ClubInfoEditScreen = () => {
 							department={formData.department}
 							shortIntro={formData.shortIntro}
 							showDepartmentDropdown={showDepartmentDropdown}
+							isImageMissing={isImageMissing}
+							isNameMissing={isNameMissing}
+							isBasicInfoMissing={isBasicInfoMissing}
+							isDepartmentMissing={isDepartmentMissing}
+							isShortIntroMissing={isShortIntroMissing}
 							onSelectImage={handleSelectImage}
 							onClubNameChange={handleClubNameChange}
 							onToggleDepartmentDropdown={handleToggleDepartmentDropdown}
@@ -1069,11 +1141,13 @@ const ClubInfoEditScreen = () => {
 
 						<ClubCategorySection
 							category={formData.category}
+							isMissing={isCategoryMissing}
 							onChange={handleCategoryChange}
 						/>
 
 						<ClubRecruitTypeSection
 							recruitType={formData.recruitType}
+							isMissing={isRecruitTypeMissing}
 							onChange={handleRecruitTypeChange}
 						/>
 
@@ -1095,16 +1169,20 @@ const ClubInfoEditScreen = () => {
 						<ClubSnsInputList
 							urls={formData.clubSNSUrls}
 							onChange={handleSnsUrlsChange}
+							required
+							isMissing={isSnsMissing}
+							missingText="동아리 SNS URL은 필수 입력 정보예요"
+						/>
+
+						<ClubDescriptionSection
+							description={formData.clubDescription}
+							isMissing={isDescriptionMissing}
+							onChange={handleDescriptionChange}
 						/>
 
 						<ClubActivityImagePicker
 							images={formData.activityImages}
 							onChange={handleActivityImagesChange}
-						/>
-
-						<ClubDescriptionSection
-							description={formData.clubDescription}
-							onChange={handleDescriptionChange}
 						/>
 					</View>
 
@@ -1196,14 +1274,24 @@ const styles = StyleSheet.create({
 	label: {
 		...typography.headerXLSemibold,
 		color: Colors.BODYTEXT_SUB,
+		paddingLeft: s(5),
 	},
 	fieldLabel: {
 		...typography.headerXLSemibold,
 		color: Colors.BODYTEXT_SUB,
+		paddingLeft: s(5),
 	},
 	helperDescription: {
 		...typography.bodySRegular,
 		color: Colors.BODYTEXT_SUB,
+		paddingLeft: s(5),
+	},
+	requiredHint: {
+		...typography.bodyMRegular,
+		color: Colors.POINTCOLOR,
+	},
+	textFieldInput: {
+		paddingHorizontal: s(15),
 	},
 	imageUploadBox: {
 		width: s(150),
@@ -1216,6 +1304,9 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.WHITE,
 		marginTop: vs(4),
 		overflow: "hidden",
+	},
+	imageUploadBoxError: {
+		borderColor: Colors.BUTTON_DESTRUCTIVE,
 	},
 	uploadedImage: {
 		width: "100%",
@@ -1251,8 +1342,14 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		backgroundColor: Colors.WHITE,
 	},
+	dropdownFilled: {
+		borderColor: Colors.BODYTEXT_SUB,
+	},
 	dropdownActive: {
 		borderColor: Colors.BUTTON_SELECTED,
+	},
+	dropdownError: {
+		borderColor: Colors.BUTTON_DESTRUCTIVE,
 	},
 	dropdownText: {
 		...typography.bodyMRegular,
@@ -1411,17 +1508,6 @@ const styles = StyleSheet.create({
 		color: Colors.BODYTEXT_MAIN,
 		paddingHorizontal: s(16),
 		paddingVertical: vs(8),
-		borderWidth: 1,
-		borderColor: Colors.BODYTEXT_DISABLED,
-		borderRadius: 8,
-		backgroundColor: Colors.WHITE,
-	},
-	descriptionInput: {
-		minHeight: vs(60),
-		...typography.bodyMRegular,
-		color: Colors.BODYTEXT_MAIN,
-		paddingHorizontal: s(16),
-		paddingVertical: vs(12),
 		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
 		borderRadius: 8,
