@@ -102,7 +102,7 @@
 			}
 		},
 		{
-			"includes": ["apps/web/server/**"],
+			"includes": ["apps/web/server/**", "apps/web/middleware.ts"],
 			"linter": {
 				"rules": {
 					"style": {
