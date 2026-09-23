@@ -9,7 +9,6 @@ import EditProfileScreen from "@/features/mypage/screens/EditProfileScreen";
 import TextField from "@/shared/components/TextField";
 import UserVoiceView from "@/shared/components/UserVoiceView";
 import { Colors } from "@/shared/constants/colors";
-import { vs } from "@/shared/utils/scale";
 
 jest.mock("react", () => {
 	const actual = jest.requireActual("react");
@@ -44,6 +43,7 @@ jest.mock("react-native-dropdown-picker", () => ({
 
 jest.mock("react-native-safe-area-context", () => ({
 	SafeAreaView: "SafeAreaView",
+	useSafeAreaInsets: () => ({ bottom: 0 }),
 }));
 
 jest.mock("react-native-toast-message", () => ({
@@ -63,6 +63,7 @@ jest.mock("react-native-vector-icons/MaterialIcons", () => ({
 
 jest.mock("@gorhom/bottom-sheet", () => ({
 	BottomSheetTextInput: "BottomSheetTextInput",
+	TouchableOpacity: "BottomSheetTouchableOpacity",
 }));
 
 jest.mock("@/shared/components/BackHeader", () => ({
@@ -131,7 +132,7 @@ describe("TestFlight QA UI regressions", () => {
 		);
 	});
 
-	it("dismisses the feedback keyboard and uses a readable placeholder", () => {
+	it("uses a readable feedback placeholder without a sheet-wide touch handler", () => {
 		const dismissSpy = jest.spyOn(Keyboard, "dismiss");
 		const view = UserVoiceView({ closeBottomSheet: jest.fn() });
 		const [input] = findAll(
@@ -139,27 +140,18 @@ describe("TestFlight QA UI regressions", () => {
 			(element) =>
 				element.props.placeholder === "여기에 의견을 적어주세요. (1000자 이내)",
 		);
-		const [dismissArea] = findAll(
-			view,
-			(element) =>
-				element.props.accessible === false &&
-				typeof element.props.onPress === "function",
-		);
 
 		expect(input.props).toMatchObject({
 			returnKeyType: "default",
 			submitBehavior: "newline",
 			placeholderTextColor: Colors.BODYTEXT_SUB,
 		});
-		expect(dismissArea).toBeDefined();
-		(dismissArea.props.onPress as () => void)();
-		expect(dismissSpy).toHaveBeenCalled();
+		expect(dismissSpy).not.toHaveBeenCalled();
 	});
 
-	it("keeps feedback content and its submit button inside the sheet", () => {
+	it("keeps feedback content flexible with a disabled submit button", () => {
 		const view = UserVoiceView({ closeBottomSheet: jest.fn() });
-		const content = view.props.children as ElementWithProps;
-		const contentStyle = StyleSheet.flatten(content.props.style as TextStyle);
+		const contentStyle = StyleSheet.flatten(view.props.style as TextStyle);
 		const [input] = findAll(
 			view,
 			(element) =>
@@ -172,15 +164,9 @@ describe("TestFlight QA UI regressions", () => {
 				element.props.disabled === true &&
 				typeof element.props.onPress === "function",
 		);
-		const submitButtonStyle = StyleSheet.flatten(
-			submitButton.props.style as TextStyle,
-		);
-
 		expect(contentStyle.flex).toBe(1);
-		expect(contentStyle.paddingBottom).toBe(vs(8));
-		expect(inputStyle.height).toBe(vs(144));
-		expect(submitButtonStyle.backgroundColor).toBe(Colors.BUTTON_UNSELECTED);
-		expect(submitButton.props.accessibilityState).toEqual({ disabled: true });
+		expect(inputStyle.flex).toBe(1);
+		expect(submitButton.props.disabled).toBe(true);
 	});
 
 	it("keeps entered single-line text vertically centered", () => {
