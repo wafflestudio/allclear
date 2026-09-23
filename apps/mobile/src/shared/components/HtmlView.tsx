@@ -45,6 +45,24 @@ const TAG_STYLES: Record<string, MixedStyleDeclaration> = {
 	},
 };
 
+const BLOCK_TAG_PATTERN = "h[1-6]|p|div|li|blockquote";
+
+const normalizeHtml = (html: string) =>
+	html
+		.replace(
+			new RegExp(
+				`</(${BLOCK_TAG_PATTERN})>\\s+<(${BLOCK_TAG_PATTERN})(?=[\\s>])`,
+				"gi",
+			),
+			"</$1><$2",
+		)
+		.replace(
+			new RegExp(`<(${BLOCK_TAG_PATTERN})([^>]*)>\\s*\\n\\s*`, "gi"),
+			"<$1$2>",
+		)
+		.replace(new RegExp(`\\s*\\n\\s*</(${BLOCK_TAG_PATTERN})>`, "gi"), "</$1>")
+		.replace(/<br \/>\n/g, "\n");
+
 const HtmlView = ({ html, contentWidth, baseStyle, ...props }: Props) => {
 	const [measuredWidth, setMeasuredWidth] = useState(0);
 	const onLayout = useCallback((e: LayoutChangeEvent) => {
@@ -59,7 +77,7 @@ const HtmlView = ({ html, contentWidth, baseStyle, ...props }: Props) => {
 					{...props}
 					contentWidth={resolvedWidth}
 					baseStyle={{ ...BASE_STYLE, ...baseStyle }}
-					source={{ html: html.replace(/<br \/>\n/g, "\n") }}
+					source={{ html: normalizeHtml(html) }}
 					tagsStyles={TAG_STYLES}
 				/>
 			)}
