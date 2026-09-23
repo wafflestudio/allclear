@@ -6,6 +6,7 @@ import RenderHtml, {
 } from "react-native-render-html";
 import { Colors } from "../constants/colors";
 import { typography } from "../constants/typography";
+import { vs } from "../utils/scale";
 
 type Props = Partial<RenderHTMLProps> & {
 	html: string;
@@ -18,7 +19,24 @@ const BASE_STYLE: MixedStyleDeclaration = {
 	...(typography.bodySRegular as MixedStyleDeclaration),
 };
 
-const TAG_STYLES = {
+const TAG_STYLES: Record<string, MixedStyleDeclaration> = {
+	h1: {
+		...(typography.headerXXL as MixedStyleDeclaration),
+		marginTop: 0,
+		marginBottom: vs(16),
+	},
+	h2: {
+		...(typography.headerXL as MixedStyleDeclaration),
+		lineHeight: vs(28),
+		marginTop: vs(24),
+		marginBottom: vs(12),
+	},
+	h3: {
+		...(typography.headerL as MixedStyleDeclaration),
+		lineHeight: vs(24),
+		marginTop: vs(20),
+		marginBottom: vs(8),
+	},
 	p: {
 		marginTop: 0,
 		marginBottom: 0,
