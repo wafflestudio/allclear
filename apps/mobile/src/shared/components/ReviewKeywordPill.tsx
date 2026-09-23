@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
-import { ms, s } from "@/shared/utils/scale";
+import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
 	keyword: { iconUri: string; title: string };
@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
 	},
 	icon: {
 		fontSize: ms(8.5),
+		lineHeight: vs(14),
 		marginRight: s(4),
 	},
 	title: {
