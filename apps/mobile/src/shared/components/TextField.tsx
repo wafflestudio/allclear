@@ -3,11 +3,12 @@ import {
 	Pressable,
 	type StyleProp,
 	StyleSheet,
-	TextInput,
+	type TextInput,
 	type TextInputProps,
 	type TextStyle,
 	type ViewStyle,
 } from "react-native";
+import { AppTextInput } from "@/shared/components/AppText";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 
@@ -78,7 +79,7 @@ const TextField = ({
 			style={containerStyle}
 			onPress={() => inputRef.current?.focus()}
 		>
-			<TextInput
+			<AppTextInput
 				ref={inputRef}
 				style={inputStyle}
 				value={value}

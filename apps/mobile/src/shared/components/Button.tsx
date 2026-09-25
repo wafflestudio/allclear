@@ -2,10 +2,10 @@ import {
 	Pressable,
 	type StyleProp,
 	StyleSheet,
-	Text,
 	type TextStyle,
 	type ViewStyle,
 } from "react-native";
+import { AppText } from "@/shared/components/AppText";
 import { Colors } from "@/shared/constants/colors";
 
 export type ButtonVariant = "primary" | "outline" | "destructive";
@@ -60,7 +60,9 @@ export const Button = ({
 			disabled={disabled}
 		>
 			{({ pressed }) => (
-				<Text style={[labelStyle, pressed && pressedStyle.text]}>{label}</Text>
+				<AppText style={[labelStyle, pressed && pressedStyle.text]}>
+					{label}
+				</AppText>
 			)}
 		</Pressable>
 	);
