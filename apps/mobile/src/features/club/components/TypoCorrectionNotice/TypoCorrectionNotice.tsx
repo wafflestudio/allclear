@@ -3,6 +3,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import { ms, s, vs } from "@/shared/utils/scale";
+import YellowGreenMark from "./YellowGreenMark";
 
 type Props = {
 	correctedQuery: string;
@@ -13,9 +14,7 @@ const TypoCorrectionNotice = ({ correctedQuery, onClose }: Props) => {
 	return (
 		<View style={styles.container}>
 			<View style={styles.messageGroup}>
-				<View style={styles.iconCircle}>
-					<Icon name="auto-fix" size={ms(18)} color={Colors.POINTCOLOR} />
-				</View>
+				<YellowGreenMark size={ms(34)} />
 				<View>
 					<Text style={styles.message}>올클이 오타를 감지했어요!</Text>
 					<Text style={styles.message}>
@@ -49,14 +48,6 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		gap: s(8),
 		flex: 1,
-	},
-	iconCircle: {
-		width: ms(34),
-		height: ms(34),
-		borderRadius: ms(17),
-		alignItems: "center",
-		justifyContent: "center",
-		backgroundColor: Colors.WHITE,
 	},
 	message: {
 		...typography.bodySMedium,
