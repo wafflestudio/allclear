@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	Keyboard,
+	KeyboardAvoidingView,
+	Platform,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -41,6 +44,8 @@ export const ClubDetailsScreen = ({
 	isLoading = false,
 	progress,
 }: Props) => {
+	const scrollViewRef = useRef<ScrollView>(null);
+	const isDescriptionFocusedRef = useRef(false);
 	const [minActivityPeriodMode, setMinActivityPeriodMode] =
 		useState<MinActivityPeriodMode>(
 			formData.minActivityPeriodInput ? "number" : "none",
@@ -76,6 +81,30 @@ export const ClubDetailsScreen = ({
 		onFormDataChange({ minActivityPeriodInput: next.value });
 	};
 
+	const scrollToDescription = useCallback(() => {
+		requestAnimationFrame(() => {
+			scrollViewRef.current?.scrollToEnd({ animated: true });
+		});
+	}, []);
+
+	useEffect(() => {
+		const keyboardEvent =
+			Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+		const keyboardSubscription = Keyboard.addListener(
+			keyboardEvent,
+			(event) => {
+				if (isDescriptionFocusedRef.current) {
+					if (Platform.OS === "ios") {
+						Keyboard.scheduleLayoutAnimation(event);
+					}
+					scrollToDescription();
+				}
+			},
+		);
+
+		return () => keyboardSubscription.remove();
+	}, [scrollToDescription]);
+
 	const isComplete =
 		formData.recruitType.trim() &&
 		areValidSnsUrls(formData.clubSNSUrls) &&
@@ -85,222 +114,249 @@ export const ClubDetailsScreen = ({
 
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
-			<ScrollView contentContainerStyle={styles.content}>
-				<View style={styles.header}>
-					<Text style={styles.title}>
-						<Text style={styles.clubName}>{formData.clubName}</Text>
-						<Text>의</Text>
-						{"\n"}
-						<Text>세부정보를 입력해주세요</Text>
-					</Text>
-					<Text style={styles.subtitle}>
-						관리하기 탭에서 언제든 수정할 수 있어요
-					</Text>
-				</View>
-
-				<View style={styles.form}>
-					{/* Recruitment Type */}
-					<View style={styles.fieldWrapper}>
-						<Text style={styles.fieldLabel}>모집 형태</Text>
-						<View style={styles.buttonGroup}>
-							{CLUB_RECRUIT_TYPES.map((type) => (
-								<Pressable
-									key={type}
-									style={[
-										styles.typeButton,
-										formData.recruitType === type && styles.typeButtonSelected,
-									]}
-									onPress={() => onFormDataChange({ recruitType: type })}
-								>
-									<Text
-										style={[
-											styles.typeButtonText,
-											formData.recruitType === type &&
-												styles.typeButtonTextSelected,
-										]}
-									>
-										{type}
-									</Text>
-								</Pressable>
-							))}
-						</View>
-						<Text style={styles.validationText}>모집 형태를 선택해주세요</Text>
+			<KeyboardAvoidingView
+				style={styles.keyboardAvoidingView}
+				behavior={Platform.OS === "ios" ? "padding" : "height"}
+			>
+				<ScrollView
+					ref={scrollViewRef}
+					style={styles.scrollView}
+					contentContainerStyle={styles.content}
+					keyboardShouldPersistTaps="handled"
+					keyboardDismissMode={
+						Platform.OS === "ios" ? "interactive" : "on-drag"
+					}
+				>
+					<View style={styles.header}>
+						<Text style={styles.title}>
+							<Text style={styles.clubName}>{formData.clubName}</Text>
+							<Text>의</Text>
+							{"\n"}
+							<Text>세부정보를 입력해주세요</Text>
+						</Text>
+						<Text style={styles.subtitle}>
+							관리하기 탭에서 언제든 수정할 수 있어요
+						</Text>
 					</View>
 
-					{/* Activity Period */}
-					<View style={styles.fieldWrapper}>
-						<Text style={styles.fieldLabel}>(최소) 활동 기간</Text>
-						<View style={styles.periodRow}>
-							<View style={styles.modeButtons}>
-								<Pressable
-									style={[
-										styles.typeButton,
-										minActivityPeriodMode === "none" &&
-											styles.typeButtonSelected,
-									]}
-									onPress={() => handleMinActivityPeriodModeChange("none")}
-								>
-									<Text
+					<View style={styles.form}>
+						{/* Recruitment Type */}
+						<View style={styles.fieldWrapper}>
+							<Text style={styles.fieldLabel}>모집 형태</Text>
+							<View style={styles.buttonGroup}>
+								{CLUB_RECRUIT_TYPES.map((type) => (
+									<Pressable
+										key={type}
 										style={[
-											styles.typeButtonText,
-											minActivityPeriodMode === "none" &&
-												styles.typeButtonTextSelected,
+											styles.typeButton,
+											formData.recruitType === type &&
+												styles.typeButtonSelected,
 										]}
+										onPress={() => onFormDataChange({ recruitType: type })}
 									>
-										없음
-									</Text>
-								</Pressable>
-								<Pressable
-									style={[
-										styles.typeButton,
-										minActivityPeriodMode === "number" &&
-											styles.typeButtonSelected,
-									]}
-									onPress={() => handleMinActivityPeriodModeChange("number")}
-								>
-									<Text
-										style={[
-											styles.typeButtonText,
-											minActivityPeriodMode === "number" &&
-												styles.typeButtonTextSelected,
-										]}
-									>
-										있음
-									</Text>
-								</Pressable>
+										<Text
+											style={[
+												styles.typeButtonText,
+												formData.recruitType === type &&
+													styles.typeButtonTextSelected,
+											]}
+										>
+											{type}
+										</Text>
+									</Pressable>
+								))}
 							</View>
+							<Text style={styles.validationText}>
+								모집 형태를 선택해주세요
+							</Text>
+						</View>
 
-							<View style={styles.periodStepper}>
-								<Text style={styles.semesterValue}>
-									{minActivityPeriodSemesters}학기
-								</Text>
-								<View style={styles.stepperPill}>
+						{/* Activity Period */}
+						<View style={styles.fieldWrapper}>
+							<Text style={styles.fieldLabel}>(최소) 활동 기간</Text>
+							<View style={styles.periodRow}>
+								<View style={styles.modeButtons}>
 									<Pressable
-										style={styles.stepperButton}
-										onPress={decrementMinActivityPeriod}
+										style={[
+											styles.typeButton,
+											minActivityPeriodMode === "none" &&
+												styles.typeButtonSelected,
+										]}
+										onPress={() => handleMinActivityPeriodModeChange("none")}
 									>
-										<MaterialIcons
-											name="remove"
-											size={18}
-											color={Colors.BODYTEXT_SUB}
-										/>
+										<Text
+											style={[
+												styles.typeButtonText,
+												minActivityPeriodMode === "none" &&
+													styles.typeButtonTextSelected,
+											]}
+										>
+											없음
+										</Text>
 									</Pressable>
-									<View style={styles.stepperDivider} />
 									<Pressable
-										style={styles.stepperButton}
-										onPress={incrementMinActivityPeriod}
+										style={[
+											styles.typeButton,
+											minActivityPeriodMode === "number" &&
+												styles.typeButtonSelected,
+										]}
+										onPress={() => handleMinActivityPeriodModeChange("number")}
 									>
-										<MaterialIcons
-											name="add"
-											size={18}
-											color={Colors.BODYTEXT_SUB}
-										/>
+										<Text
+											style={[
+												styles.typeButtonText,
+												minActivityPeriodMode === "number" &&
+													styles.typeButtonTextSelected,
+											]}
+										>
+											있음
+										</Text>
 									</Pressable>
+								</View>
+
+								<View style={styles.periodStepper}>
+									<Text style={styles.semesterValue}>
+										{minActivityPeriodSemesters}학기
+									</Text>
+									<View style={styles.stepperPill}>
+										<Pressable
+											style={styles.stepperButton}
+											onPress={decrementMinActivityPeriod}
+										>
+											<MaterialIcons
+												name="remove"
+												size={18}
+												color={Colors.BODYTEXT_SUB}
+											/>
+										</Pressable>
+										<View style={styles.stepperDivider} />
+										<Pressable
+											style={styles.stepperButton}
+											onPress={incrementMinActivityPeriod}
+										>
+											<MaterialIcons
+												name="add"
+												size={18}
+												color={Colors.BODYTEXT_SUB}
+											/>
+										</Pressable>
+									</View>
 								</View>
 							</View>
 						</View>
-					</View>
 
-					{/* Dongbang */}
-					<View style={styles.fieldWrapper}>
-						<Text style={styles.fieldLabel}>동방 보유 여부</Text>
-						<View style={styles.buttonGroup}>
-							<Pressable
-								style={[
-									styles.typeButton,
-									formData.hasDongbang && styles.typeButtonSelected,
-								]}
-								onPress={() => setHasDongbang(true)}
-							>
-								<Text
+						{/* Dongbang */}
+						<View style={styles.fieldWrapper}>
+							<Text style={styles.fieldLabel}>동방 보유 여부</Text>
+							<View style={styles.buttonGroup}>
+								<Pressable
 									style={[
-										styles.typeButtonText,
-										formData.hasDongbang && styles.typeButtonTextSelected,
+										styles.typeButton,
+										formData.hasDongbang && styles.typeButtonSelected,
 									]}
+									onPress={() => setHasDongbang(true)}
 								>
-									보유
-								</Text>
-							</Pressable>
-							<Pressable
-								style={[
-									styles.typeButton,
-									!formData.hasDongbang && styles.typeButtonSelected,
-								]}
-								onPress={() => setHasDongbang(false)}
-							>
-								<Text
+									<Text
+										style={[
+											styles.typeButtonText,
+											formData.hasDongbang && styles.typeButtonTextSelected,
+										]}
+									>
+										보유
+									</Text>
+								</Pressable>
+								<Pressable
 									style={[
-										styles.typeButtonText,
-										!formData.hasDongbang && styles.typeButtonTextSelected,
+										styles.typeButton,
+										!formData.hasDongbang && styles.typeButtonSelected,
 									]}
+									onPress={() => setHasDongbang(false)}
 								>
-									미보유
-								</Text>
-							</Pressable>
+									<Text
+										style={[
+											styles.typeButtonText,
+											!formData.hasDongbang && styles.typeButtonTextSelected,
+										]}
+									>
+										미보유
+									</Text>
+								</Pressable>
+							</View>
+
+							{formData.hasDongbang && (
+								<View style={styles.iconInputRow}>
+									<MaterialIcons
+										name="location-on"
+										size={20}
+										color={Colors.BODYTEXT_DISABLED}
+									/>
+									<TextInput
+										style={styles.iconInput}
+										placeholder="활동 장소를 입력하세요"
+										placeholderTextColor={Colors.BODYTEXT_DISABLED}
+										value={formData.dongbangLocation}
+										onChangeText={(text) =>
+											onFormDataChange({ dongbangLocation: text })
+										}
+										maxLength={100}
+									/>
+								</View>
+							)}
+							<Text style={styles.validationText}>
+								동방 보유 여부를 알려주세요
+							</Text>
 						</View>
 
-						{formData.hasDongbang && (
-							<View style={styles.iconInputRow}>
-								<MaterialIcons
-									name="location-on"
-									size={20}
-									color={Colors.BODYTEXT_DISABLED}
-								/>
-								<TextInput
-									style={styles.iconInput}
-									placeholder="활동 장소를 입력하세요"
-									placeholderTextColor={Colors.BODYTEXT_DISABLED}
-									value={formData.dongbangLocation}
-									onChangeText={(text) =>
-										onFormDataChange({ dongbangLocation: text })
-									}
-									maxLength={100}
-								/>
-							</View>
-						)}
-						<Text style={styles.validationText}>
-							동방 보유 여부를 알려주세요
-						</Text>
-					</View>
-
-					<ClubSnsInputList
-						urls={formData.clubSNSUrls}
-						onChange={(clubSNSUrls) => onFormDataChange({ clubSNSUrls })}
-					/>
-
-					<ClubActivityImagePicker
-						images={formData.activityImages}
-						onChange={(activityImages) => onFormDataChange({ activityImages })}
-					/>
-
-					{/* Description */}
-					<View style={styles.fieldWrapper}>
-						<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
-						<TextInput
-							style={styles.descriptionInput}
-							placeholder="동아리에 대해 자세히 설명해주세요"
-							placeholderTextColor={Colors.BODYTEXT_DISABLED}
-							value={formData.clubDescription}
-							onChangeText={(text) =>
-								onFormDataChange({ clubDescription: text })
-							}
-							maxLength={500}
-							multiline
-							textAlignVertical="top"
+						<ClubSnsInputList
+							urls={formData.clubSNSUrls}
+							onChange={(clubSNSUrls) => onFormDataChange({ clubSNSUrls })}
 						/>
-						<Text style={styles.validationText}>
-							동아리 추가 설명은 필수 입력 정보예요.
-						</Text>
-					</View>
-				</View>
-			</ScrollView>
 
-			<FormNavigationButtons
-				onPrevious={onPrevious}
-				onNext={onComplete}
-				isNextDisabled={!isComplete || isLoading}
-				progress={progress}
-			/>
+						<ClubActivityImagePicker
+							images={formData.activityImages}
+							onChange={(activityImages) =>
+								onFormDataChange({ activityImages })
+							}
+						/>
+
+						{/* Description */}
+						<View style={styles.fieldWrapper}>
+							<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
+							<TextInput
+								style={styles.descriptionInput}
+								placeholder="동아리에 대해 자세히 설명해주세요"
+								placeholderTextColor={Colors.BODYTEXT_DISABLED}
+								value={formData.clubDescription}
+								onChangeText={(text) =>
+									onFormDataChange({ clubDescription: text })
+								}
+								maxLength={500}
+								multiline
+								textAlignVertical="top"
+								onFocus={() => {
+									isDescriptionFocusedRef.current = true;
+									if (Keyboard.isVisible()) {
+										scrollToDescription();
+									}
+								}}
+								onBlur={() => {
+									isDescriptionFocusedRef.current = false;
+								}}
+							/>
+							<Text style={styles.validationText}>
+								동아리 추가 설명은 필수 입력 정보예요.
+							</Text>
+						</View>
+					</View>
+				</ScrollView>
+
+				<FormNavigationButtons
+					onPrevious={onPrevious}
+					onNext={onComplete}
+					isNextDisabled={!isComplete || isLoading}
+					progress={progress}
+				/>
+			</KeyboardAvoidingView>
 		</SafeAreaView>
 	);
 };
@@ -309,6 +365,12 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		backgroundColor: Colors.WHITE,
+	},
+	keyboardAvoidingView: {
+		flex: 1,
+	},
+	scrollView: {
+		flex: 1,
 	},
 	content: {
 		padding: s(20),
