@@ -11,8 +11,10 @@ import Animated, {
 	withTiming,
 } from "react-native-reanimated";
 
-const yellowSymbolSource = require("@/assets/icons/green.png") as number;
-const greenCheckSource = require("@/assets/icons/yellow.png") as number;
+const yellowSymbolSource =
+	require("@/assets/icons/typo-correction-spark.png") as number;
+const greenCheckSource =
+	require("@/assets/icons/typo-correction-check-badge.png") as number;
 
 type YellowGreenMarkProps = {
 	size?: number;
