@@ -106,6 +106,7 @@ const styles = StyleSheet.create({
 	},
 	input: {
 		alignSelf: "stretch",
+		height: "100%",
 		fontFamily: typography.textInputMedium.fontFamily,
 		fontSize: typography.textInputMedium.fontSize,
 		includeFontPadding: false,
