@@ -182,6 +182,7 @@ const SearchScreen = ({ navigation }: Props) => {
 						value={inputValue}
 						onChangeText={setInputValue}
 						onSubmit={handleSubmitQuery}
+						placeholder="동아리의 키워드 혹은 소속 학과로 검색해보세요"
 					/>
 				</View>
 				{hasSubmittedQuery ? (

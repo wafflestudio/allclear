@@ -16,17 +16,16 @@ type Props = {
 	value?: string;
 	onChangeText?: (text: string) => void;
 	onSubmit?: (query: string) => void;
-	placeholder?: string;
+	placeholder: string;
 };
 
-const DEFAULT_PLACEHOLDER = "동아리의 키워드 혹은 소속 학과로 검색해보세요";
 const MAX_LENGTH = 20;
 
 const SearchBar = ({
 	value: controlledValue,
 	onChangeText,
 	onSubmit,
-	placeholder = DEFAULT_PLACEHOLDER,
+	placeholder,
 }: Props) => {
 	const [internalValue, setInternalValue] = useState("");
 	const isControlled = controlledValue !== undefined;
