@@ -6,17 +6,15 @@ import {
 	ScrollView,
 	StyleSheet,
 	Text,
-	TextInput,
 	TouchableOpacity,
 	View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Club } from "@/entities/club";
+import SearchBar from "@/features/club/components/SearchBar/SearchBar";
 import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import AlertModal from "@/shared/components/AlertModal";
-import FlowScreenFooter from "@/shared/components/FlowScreenFooter";
-import FlowScreenLayout from "@/shared/components/FlowScreenLayout";
 import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
@@ -533,112 +531,105 @@ const ManageClubRegistrationScreen = () => {
 	);
 
 	const renderClubSearch = () => (
-		<FlowScreenLayout
-			footer={
-				<FlowScreenFooter
-					backLabel="이전"
-					onBack={handleBack}
-					rightSlot={<View style={styles.footerSpacer} />}
-				/>
-			}
-		>
-			<Text style={styles.title}>
-				운영진 권한을 요청할{"\n"}동아리를 선택해주세요
-			</Text>
+		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
+			<ScrollView contentContainerStyle={styles.formContent}>
+				<Text style={[styles.formTitle, styles.searchTitle]}>
+					운영진 권한을 요청할{"\n"}동아리를 선택해주세요
+				</Text>
 
-			<View style={styles.searchInputContainer}>
-				<TextInput
-					style={styles.searchInput}
-					placeholder="동아리명을 입력해주세요"
-					placeholderTextColor={Colors.BODYTEXT_DISABLED}
+				<SearchBar
 					value={clubSearchQuery}
 					onChangeText={setClubSearchQuery}
+					placeholder="동아리명을 입력해주세요"
 				/>
-			</View>
 
-			{searchResults.length > 0 && (
-				<View style={styles.searchResultsContainer}>
-					{searchResults.map((club) => (
-						<TouchableOpacity
-							key={club.uuid}
-							style={[
-								styles.clubResultItem,
-								selectedClubId === club.uuid && styles.clubResultItemSelected,
-							]}
-							onPress={() => handleClubSelect(club.uuid)}
-						>
-							{club.imageUri ? (
-								<Image
-									source={{ uri: club.imageUri }}
-									style={styles.clubIconPlaceholder}
-								/>
-							) : (
-								<View style={styles.clubIconPlaceholder} />
-							)}
-							<View style={styles.clubInfo}>
-								<Text style={styles.clubName} numberOfLines={1}>
-									{club.name}
-								</Text>
-								<Text style={styles.clubDescription} numberOfLines={2}>
-									{getClubSummaryWithAffiliation(club)}
-								</Text>
-							</View>
+				{searchResults.length > 0 && (
+					<View style={styles.searchResultsContainer}>
+						{searchResults.map((club) => (
 							<TouchableOpacity
+								key={club.uuid}
 								style={[
-									styles.clubAddButton,
-									selectedClubId === club.uuid && styles.clubAddButtonSelected,
-									isSubmittingRequest && styles.clubAddButtonDisabled,
+									styles.clubResultItem,
+									selectedClubId === club.uuid && styles.clubResultItemSelected,
 								]}
-								onPress={() => handleClubAddPress(club)}
-								disabled={isSubmittingRequest}
+								onPress={() => handleClubSelect(club.uuid)}
 							>
-								<Text
+								{club.imageUri ? (
+									<Image
+										source={{ uri: club.imageUri }}
+										style={styles.clubIconPlaceholder}
+									/>
+								) : (
+									<View style={styles.clubIconPlaceholder} />
+								)}
+								<View style={styles.clubInfo}>
+									<Text style={styles.clubName} numberOfLines={1}>
+										{club.name}
+									</Text>
+									<Text style={styles.clubDescription} numberOfLines={2}>
+										{getClubSummaryWithAffiliation(club)}
+									</Text>
+								</View>
+								<TouchableOpacity
 									style={[
-										styles.clubAddButtonText,
+										styles.clubAddButton,
 										selectedClubId === club.uuid &&
-											styles.clubAddButtonTextSelected,
-										isSubmittingRequest && styles.clubAddButtonTextDisabled,
+											styles.clubAddButtonSelected,
+										isSubmittingRequest && styles.clubAddButtonDisabled,
 									]}
+									onPress={() => handleClubAddPress(club)}
+									disabled={isSubmittingRequest}
 								>
-									+
-								</Text>
+									<Text
+										style={[
+											styles.clubAddButtonText,
+											selectedClubId === club.uuid &&
+												styles.clubAddButtonTextSelected,
+											isSubmittingRequest && styles.clubAddButtonTextDisabled,
+										]}
+									>
+										+
+									</Text>
+								</TouchableOpacity>
 							</TouchableOpacity>
-						</TouchableOpacity>
-					))}
-				</View>
-			)}
+						))}
+					</View>
+				)}
 
-			<AlertModal
-				visible={isExistingManagerModalVisible}
-				onClose={() => setIsExistingManagerModalVisible(false)}
-				title="이미 등록된 운영진이 있어요"
-				description="동아리당 한 명의 운영진만 등록할 수 있어요"
-				buttonLabel="확인"
-				onButtonPress={() => setIsExistingManagerModalVisible(false)}
-				dismissOnBackdropPress
-			/>
-			<AlertModal
-				visible={isPendingManagerRequestModalVisible}
-				onClose={() => setIsPendingManagerRequestModalVisible(false)}
-				title="이미 운영진 등록을 신청했어요"
-				description="신청이 승인될 때까지 기다려주세요"
-				buttonLabel="확인"
-				onButtonPress={() => setIsPendingManagerRequestModalVisible(false)}
-				dismissOnBackdropPress
-			/>
-			<AlertModal
-				visible={clubPendingRequest !== null}
-				onClose={() => setClubPendingRequest(null)}
-				title="운영진 권한을 요청하시겠습니까?"
-				description="실제 동아리 운영진 확인 후 권한이 부여됩니다."
-				buttonLabel="요청"
-				onButtonPress={handleClubRequestConfirm}
-				hasCancel
-				cancelLabel="취소"
-				dismissOnBackdropPress
-			/>
-			{renderResultModals()}
-		</FlowScreenLayout>
+				<AlertModal
+					visible={isExistingManagerModalVisible}
+					onClose={() => setIsExistingManagerModalVisible(false)}
+					title="이미 등록된 운영진이 있어요"
+					description="동아리당 한 명의 운영진만 등록할 수 있어요"
+					buttonLabel="확인"
+					onButtonPress={() => setIsExistingManagerModalVisible(false)}
+					dismissOnBackdropPress
+				/>
+				<AlertModal
+					visible={isPendingManagerRequestModalVisible}
+					onClose={() => setIsPendingManagerRequestModalVisible(false)}
+					title="이미 운영진 등록을 신청했어요"
+					description="신청이 승인될 때까지 기다려주세요"
+					buttonLabel="확인"
+					onButtonPress={() => setIsPendingManagerRequestModalVisible(false)}
+					dismissOnBackdropPress
+				/>
+				<AlertModal
+					visible={clubPendingRequest !== null}
+					onClose={() => setClubPendingRequest(null)}
+					title="운영진 권한을 요청하시겠습니까?"
+					description="실제 동아리 운영진 확인 후 권한이 부여됩니다."
+					buttonLabel="요청"
+					onButtonPress={handleClubRequestConfirm}
+					hasCancel
+					cancelLabel="취소"
+					dismissOnBackdropPress
+				/>
+				{renderResultModals()}
+			</ScrollView>
+
+			<FormNavigationButtons onPrevious={handleBack} showNext={false} />
+		</SafeAreaView>
 	);
 
 	return formStep === "form" ? renderForm() : renderClubSearch();
@@ -657,6 +648,9 @@ const styles = StyleSheet.create({
 		paddingBottom: vs(20),
 	},
 	formHeader: {
+		marginBottom: vs(35),
+	},
+	searchTitle: {
 		marginBottom: vs(35),
 	},
 	formTitle: {
@@ -685,21 +679,6 @@ const styles = StyleSheet.create({
 	},
 	formInput: {
 		paddingHorizontal: s(15),
-	},
-	searchInputContainer: {
-		backgroundColor: Colors.BACKGROUND_SUB,
-		borderRadius: 10,
-		paddingHorizontal: 20,
-		paddingVertical: 16,
-		height: 49,
-		justifyContent: "center",
-	},
-	searchInput: {
-		flex: 1,
-		padding: 0,
-		fontSize: 14,
-		fontWeight: "500",
-		color: Colors.BODYTEXT_MAIN,
 	},
 	searchResultsContainer: {
 		marginTop: 20,

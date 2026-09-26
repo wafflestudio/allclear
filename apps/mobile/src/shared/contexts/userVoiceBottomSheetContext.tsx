@@ -1,8 +1,10 @@
 import {
 	BottomSheetBackdrop,
 	type BottomSheetBackdropProps,
+	BottomSheetFooter,
+	type BottomSheetFooterProps,
 	BottomSheetModal,
-	BottomSheetView,
+	BottomSheetScrollView,
 } from "@gorhom/bottom-sheet";
 import type React from "react";
 import {
@@ -11,9 +13,23 @@ import {
 	useContext,
 	useEffect,
 	useRef,
+	useState,
 } from "react";
-import { BackHandler, Platform, StyleSheet } from "react-native";
-import UserVoiceView from "@/shared/components/UserVoiceView";
+import {
+	BackHandler,
+	Keyboard,
+	Platform,
+	StyleSheet,
+	View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
+import {
+	UserVoiceSubmitButton,
+	default as UserVoiceView,
+} from "@/shared/components/UserVoiceView";
+import { serviceContext } from "@/shared/contexts/serviceContext";
+import { s } from "@/shared/utils/scale";
 
 const UserVoiceBottomSheetContext = createContext<{
 	openBottomSheet: () => void;
@@ -33,6 +49,10 @@ type Props = {
 export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 	const bottomSheetModalRef = useRef<BottomSheetModal>(null);
 	const isBottomSheetOpenRef = useRef(false);
+	const [input, setInput] = useState("");
+	const { bottom: bottomSafeArea } = useSafeAreaInsets();
+	const { userService } = useContext(serviceContext);
+	const canSubmit = input.trim().length > 0;
 
 	const renderBackdrop = useCallback(
 		(props: BottomSheetBackdropProps) => (
@@ -55,6 +75,45 @@ export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 		isBottomSheetOpenRef.current = false;
 		bottomSheetModalRef.current?.close();
 	}, []);
+
+	const handleSubmit = useCallback(async () => {
+		if (!canSubmit) return;
+
+		try {
+			Keyboard.dismiss();
+			closeBottomSheet();
+			await userService.createUserVoice({ content: input });
+
+			setTimeout(() => {
+				Toast.show({
+					type: "info",
+					text1: "의견이 전송되었어요!",
+					position: "bottom",
+					visibilityTime: 2000,
+				});
+			}, 1000);
+
+			setInput("");
+		} catch {
+			Toast.show({
+				type: "info",
+				text1: "이런! 문제가 생겼어요!",
+				position: "bottom",
+				visibilityTime: 2000,
+			});
+		}
+	}, [canSubmit, closeBottomSheet, input, userService]);
+
+	const renderFooter = useCallback(
+		(props: BottomSheetFooterProps) => (
+			<BottomSheetFooter {...props} bottomInset={0}>
+				<View style={[styles.footer, { paddingBottom: bottomSafeArea }]}>
+					<UserVoiceSubmitButton disabled={!canSubmit} onPress={handleSubmit} />
+				</View>
+			</BottomSheetFooter>
+		),
+		[bottomSafeArea, canSubmit, handleSubmit],
+	);
 
 	useEffect(() => {
 		const subscription = BackHandler.addEventListener(
@@ -84,6 +143,7 @@ export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 				ref={bottomSheetModalRef}
 				index={0}
 				snapPoints={[Platform.OS === "ios" ? 440 : 420]}
+				bottomInset={0}
 				enableDynamicSizing={false}
 				enablePanDownToClose
 				enableBlurKeyboardOnGesture
@@ -92,10 +152,21 @@ export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 					isBottomSheetOpenRef.current = false;
 				}}
 				backdropComponent={renderBackdrop}
+				footerComponent={renderFooter}
 			>
-				<BottomSheetView style={styles.content}>
-					<UserVoiceView closeBottomSheet={closeBottomSheet} />
-				</BottomSheetView>
+				<BottomSheetScrollView
+					style={styles.content}
+					contentContainerStyle={styles.scrollContent}
+					scrollEnabled={false}
+					enableFooterMarginAdjustment
+				>
+					<UserVoiceView
+						closeBottomSheet={closeBottomSheet}
+						value={input}
+						onChangeText={setInput}
+						hideSubmitButton
+					/>
+				</BottomSheetScrollView>
 			</BottomSheetModal>
 		</UserVoiceBottomSheetContext.Provider>
 	);
@@ -104,5 +175,11 @@ export const UserVoiceBottomSheetProvider = ({ children }: Props) => {
 const styles = StyleSheet.create({
 	content: {
 		flex: 1,
+	},
+	scrollContent: {
+		flexGrow: 1,
+	},
+	footer: {
+		paddingHorizontal: s(24),
 	},
 });

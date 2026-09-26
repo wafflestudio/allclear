@@ -102,7 +102,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 
 		if (reduceMotion) {
 			introProgress.value = 2;
-			setBrandRevealComplete(true);
+			markBrandRevealComplete();
 			return;
 		}
 

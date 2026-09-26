@@ -11,6 +11,7 @@ type Props = {
 	previousLabel?: string;
 	isLastStep?: boolean;
 	isNextDisabled?: boolean;
+	showNext?: boolean;
 	/** Step completion ratio (0–1) used to fill the progress bar. */
 	progress?: number;
 };
@@ -22,6 +23,7 @@ export const FormNavigationButtons = ({
 	previousLabel = "이전",
 	isLastStep = false,
 	isNextDisabled = false,
+	showNext = true,
 	progress = 0,
 }: Props) => {
 	const insets = useSafeAreaInsets();
@@ -45,19 +47,23 @@ export const FormNavigationButtons = ({
 					</Pressable>
 				)}
 
-				<Pressable
-					style={({ pressed }) => [
-						styles.nextButton,
-						isNextDisabled && styles.nextButtonDisabled,
-						pressed && !isNextDisabled && styles.nextButtonPressed,
-					]}
-					onPress={onNext}
-					disabled={isNextDisabled}
-				>
-					<Text style={styles.nextButtonText}>
-						{isLastStep ? "완료" : nextLabel}
-					</Text>
-				</Pressable>
+				{showNext ? (
+					<Pressable
+						style={({ pressed }) => [
+							styles.nextButton,
+							isNextDisabled && styles.nextButtonDisabled,
+							pressed && !isNextDisabled && styles.nextButtonPressed,
+						]}
+						onPress={onNext}
+						disabled={isNextDisabled}
+					>
+						<Text style={styles.nextButtonText}>
+							{isLastStep ? "완료" : nextLabel}
+						</Text>
+					</Pressable>
+				) : (
+					<View style={styles.nextButtonSpacer} />
+				)}
 			</View>
 		</View>
 	);
@@ -93,8 +99,8 @@ const styles = StyleSheet.create({
 	},
 	nextButton: {
 		minWidth: s(110),
+		height: vs(44),
 		paddingHorizontal: s(40),
-		paddingVertical: vs(12),
 		borderRadius: 8,
 		backgroundColor: Colors.BUTTON_SELECTED,
 		alignItems: "center",
@@ -109,5 +115,9 @@ const styles = StyleSheet.create({
 	nextButtonText: {
 		...typography.headerL,
 		color: Colors.TEXT_BUTTON_SELECTED,
+	},
+	nextButtonSpacer: {
+		width: s(110),
+		height: vs(44),
 	},
 });

@@ -30,7 +30,7 @@ describe("native splash startup", () => {
 
 	it("shows and activates the React entry screen immediately on both platforms", () => {
 		expect(forceUpdateGate).toMatch(
-			/!entryComplete && \([\s\S]*<EntrySplashScreen active/,
+			/!entryComplete && \([\s\S]*<EntrySplashScreen\s+active/,
 		);
 	});
 });
