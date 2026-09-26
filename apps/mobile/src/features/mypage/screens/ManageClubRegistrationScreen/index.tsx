@@ -690,12 +690,11 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.BACKGROUND_SUB,
 		borderRadius: 10,
 		paddingHorizontal: 20,
-		paddingVertical: 16,
 		height: 49,
-		justifyContent: "center",
 	},
 	searchInput: {
 		flex: 1,
+		height: "100%",
 		padding: 0,
 		fontSize: 14,
 		fontWeight: "500",
