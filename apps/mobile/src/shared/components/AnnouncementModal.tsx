@@ -25,6 +25,7 @@ type Props = {
 	description: string;
 	onHide: () => void;
 	onClose: () => void;
+	onDismiss: () => void;
 };
 
 const AnnouncementModal = ({
@@ -34,6 +35,7 @@ const AnnouncementModal = ({
 	description,
 	onHide,
 	onClose,
+	onDismiss,
 }: Props) => {
 	const { height: windowHeight } = useWindowDimensions();
 	const insets = useSafeAreaInsets();
@@ -66,6 +68,7 @@ const AnnouncementModal = ({
 			transparent
 			animationType="fade"
 			onRequestClose={onClose}
+			onDismiss={onDismiss}
 		>
 			<View style={styles.overlay}>
 				<Pressable style={styles.backdrop} onPress={handleDismiss}>
