@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { StatusBar, StyleSheet, View } from "react-native";
+import {
+	NativeModules,
+	Platform,
+	StatusBar,
+	StyleSheet,
+	View,
+} from "react-native";
 import Animated, {
 	Easing,
 	runOnJS,
@@ -16,6 +22,7 @@ import { useProfile } from "@/shared/contexts/profileContext";
 import useEntrySplashAnimatedStyles from "@/shared/hooks/useEntrySplashAnimatedStyles";
 import useEntrySplashViewport from "@/shared/hooks/useEntrySplashViewport";
 import useLoginActions from "@/shared/hooks/useLoginActions";
+import { isAndroidEntrySplashReady } from "@/shared/utils/androidEntrySplash";
 import {
 	ENTRY_SPLASH_HOLD_MS,
 	ENTRY_SPLASH_TRANSITION_MS,
@@ -49,6 +56,17 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	const [loginReady, setLoginReady] = useState(false);
 	const [guestEntryRequested, setGuestEntryRequested] = useState(false);
 	const [finished, setFinished] = useState(false);
+	const [laidOut, setLaidOut] = useState(false);
+	const [settledAssets, setSettledAssets] = useState<string[]>([]);
+	const [nativeSplashReleased, setNativeSplashReleased] = useState(
+		Platform.OS !== "android",
+	);
+	const handleAssetSettled = useCallback((asset: string) => {
+		setSettledAssets((assets) =>
+			assets.includes(asset) ? assets : [...assets, asset],
+		);
+	}, []);
+	const androidReady = isAndroidEntrySplashReady(laidOut, settledAssets);
 	const { isLoading, onAppleButtonPress, onKakaoButtonPress } =
 		useLoginActions();
 	const isAuthenticated = Boolean(user);
@@ -57,7 +75,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		isAuthenticated,
 		guestEntryRequested,
 	});
-	const { contentTop, contentBottom, scaleX, scaleY } =
+	const { contentTop, contentBottom, scaleX, scaleY, androidSymbolOrigin } =
 		useEntrySplashViewport();
 	const contentStyle = useMemo(
 		() => ({
@@ -77,6 +95,8 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		visualProgress,
 		wordmarkStyle,
 	} = useEntrySplashAnimatedStyles({
+		androidSymbolOrigin:
+			Platform.OS === "android" ? androidSymbolOrigin : undefined,
 		introProgress,
 		loginProgress,
 		scaleX,
@@ -98,7 +118,22 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	}, [onComplete]);
 
 	useEffect(() => {
-		if (!active) return;
+		if (
+			Platform.OS !== "android" ||
+			!active ||
+			!androidReady ||
+			nativeSplashReleased
+		)
+			return;
+		const frame = requestAnimationFrame(() => {
+			NativeModules.EntrySplash?.ready();
+			setNativeSplashReleased(true);
+		});
+		return () => cancelAnimationFrame(frame);
+	}, [active, androidReady, nativeSplashReleased]);
+
+	useEffect(() => {
+		if (!active || !nativeSplashReleased) return;
 
 		if (reduceMotion) {
 			introProgress.value = 2;
@@ -128,7 +163,13 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 				),
 			),
 		);
-	}, [active, introProgress, markBrandRevealComplete, reduceMotion]);
+	}, [
+		active,
+		introProgress,
+		markBrandRevealComplete,
+		nativeSplashReleased,
+		reduceMotion,
+	]);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Login-state transitions intentionally re-evaluate the entry flow.
 	useEffect(() => {
@@ -193,7 +234,10 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	]);
 
 	return (
-		<Animated.View style={[styles.screen, screenStyle]}>
+		<Animated.View
+			style={[styles.screen, screenStyle]}
+			onLayout={() => setLaidOut(true)}
+		>
 			<StatusBar barStyle="dark-content" backgroundColor={Colors.WHITE} />
 			<View style={[styles.content, contentStyle]}>
 				<Animated.Text
@@ -203,18 +247,22 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 				</Animated.Text>
 				<Animated.Image
 					source={symbolSource}
+					onLoadEnd={() => handleAssetSettled("symbol")}
 					style={[styles.brandAsset, symbolStyle]}
 				/>
 				<Animated.Image
 					source={smallWordmarkSource}
+					onLoadEnd={() => handleAssetSettled("smallWordmark")}
 					style={[styles.brandAsset, smallWordmarkStyle]}
 				/>
 				<Animated.Image
 					source={transitionWordmarkSource}
+					onLoadEnd={() => handleAssetSettled("transitionWordmark")}
 					style={[styles.brandAsset, transitionWordmarkStyle]}
 				/>
 				<Animated.Image
 					source={wordmarkSource}
+					onLoadEnd={() => handleAssetSettled("wordmark")}
 					style={[styles.brandAsset, wordmarkStyle]}
 				/>
 

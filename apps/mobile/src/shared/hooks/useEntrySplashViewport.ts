@@ -3,6 +3,7 @@ import {
 	useSafeAreaFrame,
 	useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { getAndroidEntrySplashOrigin } from "@/shared/utils/androidEntrySplash";
 import {
 	type EntrySplashLayoutMetrics,
 	getEntrySplashViewport,
@@ -26,7 +27,14 @@ const useEntrySplashViewport = () => {
 
 	initialMetricsRef.current = layoutMetrics;
 
-	return getEntrySplashViewport(layoutMetrics);
+	return {
+		...getEntrySplashViewport(layoutMetrics),
+		androidSymbolOrigin: getAndroidEntrySplashOrigin(
+			layoutMetrics.width,
+			layoutMetrics.height,
+			layoutMetrics.topInset,
+		),
+	};
 };
 
 export default useEntrySplashViewport;
