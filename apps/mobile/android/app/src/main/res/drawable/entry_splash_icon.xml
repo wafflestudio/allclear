@@ -1,0 +1,7 @@
+<!-- Android scales this drawable into a 288dp system icon canvas.
+     Fractional insets preserve an 81dp symbol through its intermediate rasterization. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetLeft="35.9375%" android:insetRight="35.9375%"
+    android:insetTop="35.9375%" android:insetBottom="35.9375%">
+    <bitmap android:src="@drawable/entry_splash_symbol" android:gravity="fill" />
+</inset>

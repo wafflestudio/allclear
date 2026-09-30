@@ -12,6 +12,7 @@ import {
 } from "@/shared/utils/entrySplash";
 
 type Params = {
+	androidSymbolOrigin?: { left: number; top: number };
 	introProgress: SharedValue<number>;
 	loginProgress: SharedValue<number>;
 	scaleX: number;
@@ -20,6 +21,7 @@ type Params = {
 };
 
 const useEntrySplashAnimatedStyles = ({
+	androidSymbolOrigin,
 	introProgress,
 	loginProgress,
 	scaleX,
@@ -48,29 +50,47 @@ const useEntrySplashAnimatedStyles = ({
 		const designLeft = interpolate(
 			visualProgress.value,
 			[0, 1, 2, 3],
-			[160.556, 111.03, 79, 78.59],
+			[
+				androidSymbolOrigin
+					? (androidSymbolOrigin.left + ENTRY_SPLASH_SYMBOL_SIZE / 2) / scaleX -
+						80.906 / 2
+					: 160.556,
+				111.03,
+				79,
+				78.59,
+			],
 			Extrapolation.CLAMP,
 		);
 		const designTop = interpolate(
 			visualProgress.value,
 			[0, 1, 2, 3],
-			[396.561, 396.56, 396.56, 337.56],
+			[
+				androidSymbolOrigin
+					? (androidSymbolOrigin.top + ENTRY_SPLASH_SYMBOL_SIZE / 2) / scaleY -
+						80.906 / 2
+					: 396.561,
+				396.56,
+				396.56,
+				337.56,
+			],
 			Extrapolation.CLAMP,
 		);
 
+		const left = getCenteredScaledAssetOrigin({
+			designOrigin: designLeft,
+			designSize: 80.906,
+			renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+			scale: scaleX,
+		});
+		const top = getCenteredScaledAssetOrigin({
+			designOrigin: designTop,
+			designSize: 80.906,
+			renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
+			scale: scaleY,
+		});
 		return {
-			left: getCenteredScaledAssetOrigin({
-				designOrigin: designLeft,
-				designSize: 80.906,
-				renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
-				scale: scaleX,
-			}),
-			top: getCenteredScaledAssetOrigin({
-				designOrigin: designTop,
-				designSize: 80.906,
-				renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
-				scale: scaleY,
-			}),
+			left,
+			top,
 			width: ENTRY_SPLASH_SYMBOL_SIZE,
 			height: ENTRY_SPLASH_SYMBOL_SIZE,
 		};
