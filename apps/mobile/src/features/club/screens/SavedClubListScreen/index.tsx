@@ -48,8 +48,14 @@ const SavedClubListScreen = () => {
 				<ClubList
 					clubs={savedClubs?.clubs}
 					openDetailPage={openDetailPage}
-					emptyPlaceholder="저장한 동아리가 없어요"
+					emptyPlaceholder={
+						"저장한 동아리가 아직 없어요..\n올클에서 더 탐색해보세요!"
+					}
 					isLoading={isLoading}
+					emptyAction={{
+						label: "탐색하러 가기",
+						onPress: () => navigation.navigate("탐색"),
+					}}
 				/>
 			</SafeAreaView>
 		</WithViewEventLog>
