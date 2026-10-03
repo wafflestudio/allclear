@@ -40,6 +40,9 @@ jobs:
       - name: Setup Node environment
         uses: ./.github/actions/setup-node-env
 
+      - name: Generate Prisma client
+        run: pnpm --filter allclear-web prisma:generate
+
       - name: Lint, typecheck, and test
         run: pnpm verify
 
@@ -52,6 +55,9 @@ jobs:
 
       - name: Setup Node environment
         uses: ./.github/actions/setup-node-env
+
+      - name: Generate Prisma client
+        run: pnpm --filter allclear-web prisma:generate
 
       - name: Build web
         run: pnpm --filter allclear-web build

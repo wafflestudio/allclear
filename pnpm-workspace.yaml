@@ -11,11 +11,13 @@ overrides:
   react-dom: 18.2.0
 
 allowBuilds:
+  '@prisma/engines': true
   '@scarf/scarf': false
   '@tree-sitter-grammars/tree-sitter-yaml': true
   core-js-pure: false
   dooboolab-welcome: false
   esbuild: true
+  prisma: true
   protobufjs: true
   react-native-elements: false
   sharp: true
