@@ -41,7 +41,7 @@ const ClubCard = ({ club, category, onPress }: Props) => {
 					<Text numberOfLines={1} ellipsizeMode="tail" style={styles.title}>
 						{club.name}
 					</Text>
-					<Text numberOfLines={2} style={styles.description}>
+					<Text numberOfLines={1} style={styles.description}>
 						{getClubSummaryWithAffiliation(club)}
 					</Text>
 				</View>
@@ -134,9 +134,12 @@ const styles = StyleSheet.create({
 	contentWrapper: {
 		flex: 1,
 		flexDirection: "column",
+		gap: ms(10),
+		justifyContent: "center",
+		paddingVertical: vs(7.5),
 	},
 	textGroup: {
-		flex: 1,
+		flex: 0,
 	},
 	title: {
 		...typography.headerL,
@@ -147,6 +150,7 @@ const styles = StyleSheet.create({
 	description: {
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_SUB,
+		width: s(232),
 	},
 	reviewView: {
 		flexDirection: "row",
@@ -159,8 +163,8 @@ const styles = StyleSheet.create({
 		top: 0,
 	},
 	heartIcon: {
-		width: ms(20),
-		height: ms(20),
+		width: ms(18),
+		height: ms(18),
 	},
 });
 

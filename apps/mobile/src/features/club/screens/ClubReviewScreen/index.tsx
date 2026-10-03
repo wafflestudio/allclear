@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
 	},
 	keywordIcon: {
 		...typography.bodySRegular,
-		lineHeight: vs(12),
+		lineHeight: vs(16),
 		marginRight: s(2),
 	},
 	keywordTitle: {

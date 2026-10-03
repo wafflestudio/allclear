@@ -69,11 +69,11 @@ export function TabNavigator() {
 
 	const defaultTabBarStyle = {
 		// 라벨 밑 ~ 하단바 끝까지의 여백을 16px 늘림 (height/paddingBottom 동시 +16)
-		height: vs(70) + vs(16) + bottomInset,
+		height: vs(70) + vs(26) + bottomInset,
 		backgroundColor: Colors.BACKGROUND_SUB,
 		borderTopWidth: 0, // iOS 그림자 제거
 		elevation: 0, // Android 그림자 제거
-		paddingBottom: vs(10) + vs(16) + bottomInset,
+		paddingBottom: vs(10) + vs(26) + bottomInset,
 	};
 
 	// 웹뷰처럼 전체 화면으로 떠야 하는 nested 화면에서는 하단 탭바를 숨긴다.
