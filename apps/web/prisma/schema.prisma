@@ -1,8 +1,393 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../server/infra/database/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../server/infra/database/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model account {
+  id            String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  type          String    @db.VarChar(20)
+  username      String    @db.VarChar(64)
+  social_info   Json?     @db.Json
+  last_login_at DateTime? @db.Timestamp(6)
+  created_at    DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at    DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at    DateTime? @db.Timestamp(6)
+  auth_token    String?   @db.VarChar(200)
+
+  @@index([type, username], map: "ix_account_type_username")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model account_user {
+  account_id String   @db.Uuid
+  user_id    String   @db.Uuid
+  created_at DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+
+  @@id([account_id, user_id])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model allclear_user {
+  id               String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  user_id          String    @db.Uuid
+  admission_class  Int?      @db.SmallInt
+  created_at       DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at       DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at       DateTime? @db.Timestamp(6)
+  college_major_id Int?
+
+  @@index([user_id], map: "ix_allclear_user_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model announcement {
+  id                   Int                    @id @default(autoincrement())
+  uuid                 String                 @unique(map: "ux_announcement_uuid") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                String                 @db.VarChar(255)
+  content              String
+  start_at             DateTime               @db.Timestamp(6)
+  end_at               DateTime?              @db.Timestamp(6)
+  created_at           DateTime               @default(now()) @db.Timestamp(6)
+  updated_at           DateTime               @default(now()) @db.Timestamp(6)
+  active               Boolean                @default(false)
+  announcement_dismiss announcement_dismiss[]
+}
+
+model announcement_dismiss {
+  id              Int          @id @default(autoincrement())
+  announcement_id Int
+  user_id         String       @db.Uuid
+  dismissed_at    DateTime     @default(now()) @db.Timestamp(6)
+  announcement    announcement @relation(fields: [announcement_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_announcement_dismiss_announcement")
+  user            user         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_announcement_dismiss_user")
+
+  @@unique([announcement_id, user_id], map: "ux_announcement_dismiss_announcement_user")
+  @@index([user_id], map: "ix_announcement_dismiss_user_id")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model app_version_policy {
+  client_type           String   @id @db.VarChar(16)
+  min_supported_version String   @db.VarChar(32)
+  created_at            DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at            DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model club {
+  id                   BigInt    @default(autoincrement())
+  name                 String    @db.VarChar
+  description          String    @default("") @db.VarChar
+  type                 String    @default("") @db.VarChar
+  category             String    @default("") @db.VarChar
+  article              String?   @default("") @db.VarChar
+  article_uploaded_at  DateTime? @db.Timestamptz(6)
+  created_at           DateTime  @default(now()) @db.Timestamptz(6)
+  has_dongbang         Boolean   @default(false)
+  recruit_type         String?   @default("") @db.VarChar
+  introduction         String?   @default("") @db.VarChar
+  uuid                 String    @id @unique(map: "ux_club_uuid") @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  updated_at           DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at           DateTime? @db.Timestamp(6)
+  image_uri            String    @default("") @db.VarChar(300)
+  affiliation_type     String    @default("") @db.VarChar
+  college_major_id     Int?
+  approved_at          DateTime? @db.Timestamp(6)
+  status               String    @default("PENDING") @db.VarChar
+  reject_reason        String?   @db.VarChar
+  short_description    String    @default("") @db.VarChar
+  dongbang_location    String?   @default("") @db.VarChar
+  min_activity_period  Int       @default(0)
+  active_member_count  Int       @default(0)
+  sns                  String    @default("") @db.VarChar
+  is_official_verified Boolean   @default(false)
+  verified_at          DateTime? @db.Timestamp(6)
+  founded_at           DateTime? @db.Date
+  sns_urls             Json      @default("[]")
+  activity_image_urls  Json      @default("[]")
+
+  @@index([affiliation_type], map: "idx_club_search_affiliation_type", where: raw("(deleted_at IS NULL)"))
+  @@index([has_dongbang], map: "idx_club_search_has_dongbang", where: raw("(deleted_at IS NULL)"))
+  @@index([is_official_verified], map: "idx_club_search_is_official_verified", where: raw("(deleted_at IS NULL)"))
+  @@index([min_activity_period], map: "idx_club_search_min_activity_period", where: raw("(deleted_at IS NULL)"))
+  @@index([recruit_type], map: "idx_club_search_recruit_type", where: raw("(deleted_at IS NULL)"))
+  @@index([category], map: "ix_club_category")
+}
+
+model club_history {
+  id              BigInt   @id @default(autoincrement())
+  club_id         String   @db.Uuid
+  service_user_id String   @db.Uuid
+  before_data     Json     @default("{}")
+  after_data      Json     @default("{}")
+  changed_fields  Json     @default("[]")
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([club_id], map: "idx_club_history_club_id")
+  @@index([created_at(sort: Desc)], map: "idx_club_history_created_at")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model club_manager {
+  id              Int       @id @default(autoincrement())
+  club_id         String    @unique(map: "uq_club_manager_active_club", where: raw("(deleted_at IS NULL)")) @db.Uuid
+  service_user_id String    @db.Uuid
+  created_at      DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at      DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at      DateTime? @db.Timestamp(6)
+  name            String    @default("") @db.VarChar
+  phone           String    @default("") @db.VarChar
+  student_id      String    @default("") @db.VarChar
+
+  @@index([service_user_id, created_at(sort: Desc)], map: "idx_club_manager_service_user_created", where: raw("(deleted_at IS NULL)"))
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model club_manager_request {
+  id              BigInt   @id @default(autoincrement())
+  club_id         String   @db.Uuid
+  service_user_id String   @db.Uuid
+  name            String   @db.VarChar
+  phone           String   @db.VarChar
+  student_id      String   @db.VarChar
+  status          String   @default("PENDING") @db.VarChar
+  reject_reason   String?  @db.VarChar
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([service_user_id, status, created_at(sort: Desc)], map: "idx_club_manager_request_service_user_status_created")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model club_manager_transfer_invitation {
+  id                          BigInt    @id @default(autoincrement())
+  club_id                     String    @unique(map: "uq_club_manager_transfer_active_club", where: raw("((revoked_at IS NULL) AND (accepted_at IS NULL))")) @db.Uuid
+  sender_service_user_id      String    @db.Uuid
+  token_hash                  String    @unique(map: "uq_club_manager_transfer_token_hash") @db.Char(64)
+  expires_at                  DateTime  @db.Timestamptz(6)
+  revoked_at                  DateTime? @db.Timestamptz(6)
+  accepted_by_service_user_id String?   @db.Uuid
+  accepted_at                 DateTime? @db.Timestamptz(6)
+  created_at                  DateTime  @default(now()) @db.Timestamptz(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model club_recruitment {
+  id                     BigInt    @id @default(autoincrement())
+  club_id                String    @db.Uuid
+  title                  String    @default("") @db.VarChar
+  deadline               DateTime  @db.Timestamptz(6)
+  is_mandatory           Boolean   @default(false)
+  has_regular_meeting    Boolean   @default(false)
+  activity_location_type String    @default("미정") @db.VarChar
+  activity_location_text String    @default("") @db.VarChar
+  has_eligibility        Boolean   @default(false)
+  eligibility_text       String    @default("") @db.VarChar
+  has_capacity_limit     Boolean   @default(false)
+  capacity_limit_text    String    @default("") @db.VarChar
+  has_membership_fee     Boolean   @default(false)
+  membership_fee_text    String    @default("") @db.VarChar
+  application_url        String    @default("") @db.VarChar
+  application_process    String    @default("") @db.VarChar
+  full_recruitment_text  String?   @db.VarChar
+  image_urls             Json?     @default("[]")
+  year_month             String    @db.VarChar
+  created_at             DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime  @default(now()) @db.Timestamptz(6)
+  deleted_at             DateTime? @db.Timestamptz(6)
+
+  @@unique([club_id, year_month], map: "idx_unique_club_month_active", where: raw("(deleted_at IS NULL)"))
+  @@index([club_id, updated_at(sort: Desc)], map: "idx_club_recruitment_club_updated", where: raw("(deleted_at IS NULL)"))
+  @@index([club_id, deadline], map: "idx_recruitment_active_by_club_deadline", where: raw("(deleted_at IS NULL)"))
+  @@index([club_id], map: "idx_recruitment_club_id")
+  @@index([deadline], map: "idx_recruitment_deadline")
+  @@index([club_id, year_month(sort: Desc), created_at(sort: Desc)], map: "idx_recruitment_latest_by_club", where: raw("(deleted_at IS NULL)"))
+  @@index([club_id, has_membership_fee], map: "idx_recruitment_membership_fee_by_club", where: raw("(deleted_at IS NULL)"))
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model club_review_keyword {
+  id          String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  category_id BigInt
+  sort_order  Int       @db.SmallInt
+  title       String    @db.VarChar(64)
+  icon_uri    String    @default("") @db.VarChar(128)
+  created_at  DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at  DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at  DateTime? @db.Timestamp(6)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model club_review_keyword_category {
+  id         BigInt    @id @default(autoincrement())
+  sort_order Int       @db.SmallInt
+  title      String    @db.VarChar(64)
+  created_at DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model club_verification_request {
+  id            BigInt   @id @default(autoincrement())
+  club_id       String   @unique(map: "uq_club_verification_request_club") @db.Uuid
+  status        String   @default("PENDING") @db.VarChar
+  reject_reason String?  @db.VarChar
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  attempt_no    Int      @db.SmallInt
+  term_key      String   @db.VarChar(6)
+
+  @@index([term_key, status, created_at(sort: Desc), id(sort: Desc)], map: "idx_club_verification_request_term_status_requested")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model college_major {
+  id         Int       @id @default(autoincrement())
+  college    String?   @db.VarChar(50)
+  major      String?   @db.VarChar(100)
+  created_at DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at DateTime? @db.Timestamp(6)
+}
+
+model old_club_manager {
+  id              Int       @id @default(autoincrement())
+  club_id         String    @db.Uuid
+  service_user_id String    @db.Uuid
+  created_at      DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at      DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at      DateTime? @db.Timestamp(6)
+  name            String    @default("") @db.VarChar
+  phone           String    @default("") @db.VarChar
+  student_id      String    @default("") @db.VarChar
+
+  @@unique([club_id, service_user_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model regular_meeting {
+  id                  BigInt    @id @default(autoincrement())
+  club_recruitment_id BigInt
+  day_of_week         String    @default("월요일") @db.VarChar
+  start_time          DateTime? @db.Time(6)
+  end_time            DateTime? @db.Time(6)
+}
+
+model terms {
+  id              Int               @id @default(autoincrement())
+  uuid            String            @unique(map: "ux_terms_uuid") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title           String            @db.VarChar(255)
+  content_url     String            @db.VarChar(255)
+  version         String            @db.VarChar(32)
+  is_mandatory    Boolean           @default(true)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  active          Boolean           @default(false)
+  terms_key       String            @unique(map: "unique_active_terms_per_key", where: raw("(active = true)")) @db.VarChar(64)
+  terms_agreement terms_agreement[]
+
+  @@unique([terms_key, version], map: "ux_terms_key_version")
+}
+
+model terms_agreement {
+  id        Int      @id @default(autoincrement())
+  user_id   String   @db.Uuid
+  terms_id  Int
+  agreed_at DateTime @default(now()) @db.Timestamp(6)
+  terms     terms    @relation(fields: [terms_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_terms_agreement_terms")
+  user      user     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_terms_agreement_user")
+
+  @@unique([user_id, terms_id], map: "ux_terms_agreement_user_terms")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user {
+  id                   String                 @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  nickname             String                 @default("") @db.VarChar(32)
+  name                 String                 @default("") @db.VarChar(32)
+  phone                String                 @default("") @db.VarChar(32)
+  email                String                 @default("") @db.VarChar(80)
+  role                 String                 @default("") @db.VarChar(32)
+  created_at           DateTime               @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at           DateTime               @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at           DateTime?              @db.Timestamp(6)
+  announcement_dismiss announcement_dismiss[]
+  terms_agreement      terms_agreement[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_activity_log {
+  id          BigInt   @id @default(autoincrement())
+  type        String   @db.VarChar
+  user_device String   @default("") @db.VarChar
+  user_ip     String   @default("") @db.VarChar
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  params      String?  @db.VarChar
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_club_review {
+  id                 Int      @id @default(autoincrement())
+  club_id            String   @db.Uuid
+  service_user_id    String   @db.Uuid
+  review_keyword_ids String[] @default([]) @db.Uuid
+  created_at         DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at         DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+
+  @@unique([club_id, service_user_id], map: "ux_user_club_review_clubid_serviceuserid")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model user_notification {
+  id              BigInt    @id @default(autoincrement())
+  service_user_id String    @db.Uuid
+  type            String    @db.VarChar
+  club_id         String?   @db.Uuid
+  source_type     String    @db.VarChar
+  source_id       String    @db.VarChar
+  read_at         DateTime? @db.Timestamptz(6)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  metadata        Json?
+
+  @@index([service_user_id, created_at(sort: Desc)], map: "idx_user_notification_service_user_created")
+  @@index([service_user_id, created_at(sort: Desc)], map: "idx_user_notification_service_user_unread_created", where: raw("(read_at IS NULL)"))
+}
+
+model user_recent_search {
+  id              BigInt   @id @default(autoincrement())
+  service_user_id String   @db.Uuid
+  query           String
+  created_at      DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at      DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+
+  @@unique([service_user_id, query], map: "ux_user_recent_search_service_user_query")
+  @@index([service_user_id, updated_at(sort: Desc)], map: "ix_user_recent_search_service_user_updated_at")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_saved_club {
+  id              Int      @id @default(autoincrement())
+  service_user_id String   @db.Uuid
+  club_id         String   @db.Uuid
+  created_at      DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at      DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+
+  @@unique([service_user_id, club_id], map: "ux_user_saved_club_serviceuserid_clubid")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_voice {
+  id              BigInt   @id @default(autoincrement())
+  service_user_id String   @db.Uuid
+  content         String
+  created_at      DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  updated_at      DateTime @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
 }
