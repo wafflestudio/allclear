@@ -23,6 +23,7 @@ type Props = {
 	onAppleButtonPress: () => void;
 	onGuestEntryPress: () => void;
 	onKakaoButtonPress: () => void;
+	nativeSplashContentTop: number;
 	scaleX: number;
 	scaleY: number;
 	visualProgress: SharedValue<number>;
@@ -34,6 +35,7 @@ const EntryLoginActions = ({
 	onAppleButtonPress,
 	onGuestEntryPress,
 	onKakaoButtonPress,
+	nativeSplashContentTop,
 	scaleX,
 	scaleY,
 	visualProgress,
@@ -41,7 +43,7 @@ const EntryLoginActions = ({
 	const layoutStyles = useMemo(
 		() => ({
 			actions: {
-				top: 468.44 * scaleY,
+				top: nativeSplashContentTop + 468.44,
 				left: 53.5 * scaleX,
 				width: 295 * scaleX,
 				gap: 12 * scaleY,
@@ -57,12 +59,12 @@ const EntryLoginActions = ({
 				height: 16 * scaleX,
 			},
 			guestAction: {
-				top: 812 * scaleY,
+				top: nativeSplashContentTop + 812,
 				left: 53.5 * scaleX,
 				width: 295 * scaleX,
 			},
 		}),
-		[scaleX, scaleY],
+		[nativeSplashContentTop, scaleX, scaleY],
 	);
 
 	const animatedStyle = useAnimatedStyle(() => ({
