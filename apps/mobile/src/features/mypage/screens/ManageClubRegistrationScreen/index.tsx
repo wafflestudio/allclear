@@ -15,9 +15,9 @@ import type { Club } from "@/entities/club";
 import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import AlertModal from "@/shared/components/AlertModal";
-import ManagementGuideModal from "@/shared/components/ManagementGuideModal";
 import FlowScreenFooter from "@/shared/components/FlowScreenFooter";
 import FlowScreenLayout from "@/shared/components/FlowScreenLayout";
+import ManagementGuideModal from "@/shared/components/ManagementGuideModal";
 import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
@@ -384,7 +384,12 @@ const ManageClubRegistrationScreen = () => {
 
 	const renderResultModals = () => (
 		<>
-			<ManagementGuideModal visible={isApprovalGuideVisible} type="approvalTime" onStart={handleSuccessConfirm} onSkip={handleSuccessConfirm} />
+			<ManagementGuideModal
+				visible={isApprovalGuideVisible}
+				type="approvalTime"
+				onStart={handleSuccessConfirm}
+				onSkip={handleSuccessConfirm}
+			/>
 			<AlertModal
 				visible={isSuccessModalVisible}
 				onClose={() => setIsSuccessModalVisible(false)}
