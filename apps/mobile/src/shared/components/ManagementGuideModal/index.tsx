@@ -68,13 +68,25 @@ const PAGE_WIDTH = s(292);
 const PREVIEW_WIDTH = s(266);
 const PREVIEW_HEIGHT = vs(214);
 const STATE_INTERVAL_MS = 2500;
-const REGISTRATION_ANIMATION_INTERVAL_MS = 6000;
+const REGISTRATION_START_DELAY_MS = 600;
+const REGISTRATION_SCROLL_STEP_MS = 2000;
+const REGISTRATION_END_HOLD_MS = 2000;
+const REGISTRATION_ANIMATION_INTERVAL_MS =
+	REGISTRATION_START_DELAY_MS +
+	REGISTRATION_SCROLL_STEP_MS * 2 +
+	REGISTRATION_END_HOLD_MS;
 const REGISTRATION_IMAGE_HEIGHT = vs((226 * 4096) / 660);
 const REGISTRATION_SECOND_OFFSET = -vs(640 - 26);
 const REGISTRATION_THIRD_OFFSET = -vs(1167 - 26);
 
 const page1Profile =
 	require("@/assets/images/admin-guide/page1-profile.png") as number;
+const page1StatusCellular =
+	require("@/assets/images/admin-guide/page1-status-cellular.png") as number;
+const page1StatusWifi =
+	require("@/assets/images/admin-guide/page1-status-wifi.png") as number;
+const page1StatusBattery =
+	require("@/assets/images/admin-guide/page1-status-battery.png") as number;
 const page1Callout =
 	require("@/assets/images/admin-guide/page1-callout.png") as number;
 const page1Club =
@@ -322,32 +334,33 @@ const AutoStates = ({
 	}, [active, kind, reduceMotion, stateIndex, states.length]);
 
 	return (
-		<ScrollView
-			ref={scrollView}
-			horizontal
-			pagingEnabled
-			pointerEvents="none"
-			scrollEnabled={false}
-			showsHorizontalScrollIndicator={false}
-			style={styles.stateCarousel}
-			onMomentumScrollEnd={(event) => {
-				const scrollIndex = Math.round(
-					event.nativeEvent.contentOffset.x / PREVIEW_WIDTH,
-				);
-				if (scrollIndex === states.length) {
-					scrollView.current?.scrollTo({ x: 0, animated: false });
-				}
-			}}
-		>
-			{loopStates.map((item, index) => (
-				<GuideScene
-					key={item.key}
-					active={active && index < states.length && index === stateIndex}
-					kind={kind}
-					state={item.state}
-				/>
-			))}
-		</ScrollView>
+		<View pointerEvents="none" style={styles.stateCarouselMask}>
+			<ScrollView
+				ref={scrollView}
+				horizontal
+				pagingEnabled
+				scrollEnabled={false}
+				showsHorizontalScrollIndicator={false}
+				style={styles.stateCarousel}
+				onMomentumScrollEnd={(event) => {
+					const scrollIndex = Math.round(
+						event.nativeEvent.contentOffset.x / PREVIEW_WIDTH,
+					);
+					if (scrollIndex === states.length) {
+						scrollView.current?.scrollTo({ x: 0, animated: false });
+					}
+				}}
+			>
+				{loopStates.map((item, index) => (
+					<GuideScene
+						key={item.key}
+						active={active && index < states.length && index === stateIndex}
+						kind={kind}
+						state={item.state}
+					/>
+				))}
+			</ScrollView>
+		</View>
 	);
 };
 
@@ -370,30 +383,24 @@ const GuideScene = ({
 		if (!active || reduceMotion || kind !== "registration" || state !== "third")
 			return;
 
-		const loop = Animated.loop(
-			Animated.sequence([
-				Animated.timing(registrationOffset, {
-					toValue: REGISTRATION_SECOND_OFFSET,
-					duration: 2000,
-					easing: Easing.linear,
-					useNativeDriver: true,
-				}),
-				Animated.timing(registrationOffset, {
-					toValue: REGISTRATION_THIRD_OFFSET,
-					duration: 2000,
-					easing: Easing.linear,
-					useNativeDriver: true,
-				}),
-				Animated.delay(2000),
-				Animated.timing(registrationOffset, {
-					toValue: 0,
-					duration: 0,
-					useNativeDriver: true,
-				}),
-			]),
-		);
-		loop.start();
-		return () => loop.stop();
+		const animation = Animated.sequence([
+			Animated.delay(REGISTRATION_START_DELAY_MS),
+			Animated.timing(registrationOffset, {
+				toValue: REGISTRATION_SECOND_OFFSET,
+				duration: REGISTRATION_SCROLL_STEP_MS,
+				easing: Easing.linear,
+				useNativeDriver: true,
+			}),
+			Animated.timing(registrationOffset, {
+				toValue: REGISTRATION_THIRD_OFFSET,
+				duration: REGISTRATION_SCROLL_STEP_MS,
+				easing: Easing.linear,
+				useNativeDriver: true,
+			}),
+			Animated.delay(REGISTRATION_END_HOLD_MS),
+		]);
+		animation.start();
+		return () => animation.stop();
 	}, [active, kind, reduceMotion, registrationOffset, state]);
 
 	return (
@@ -407,6 +414,34 @@ const GuideScene = ({
 		</View>
 	);
 };
+
+const FigmaStatusBar = () => (
+	<View style={styles.profileStatusBar}>
+		<View style={styles.statusTimeSlot}>
+			<Text allowFontScaling={false} style={styles.statusTime}>
+				9:41
+			</Text>
+		</View>
+		<View style={styles.dynamicIslandSpacer} />
+		<View style={styles.statusLevels}>
+			<Image
+				source={page1StatusCellular}
+				style={styles.statusCellular}
+				resizeMode="contain"
+			/>
+			<Image
+				source={page1StatusWifi}
+				style={styles.statusWifi}
+				resizeMode="contain"
+			/>
+			<Image
+				source={page1StatusBattery}
+				style={styles.statusBattery}
+				resizeMode="contain"
+			/>
+		</View>
+	</View>
+);
 
 const FigmaMyPage = ({ state }: { state: SceneState }) => (
 	<LinearGradient
@@ -423,9 +458,7 @@ const FigmaMyPage = ({ state }: { state: SceneState }) => (
 			/>
 			{state !== "third" ? (
 				<>
-					<View style={styles.statusTimeMask}>
-						<Text style={styles.statusTime}>9:41</Text>
-					</View>
+					<FigmaStatusBar />
 					<View style={styles.profileTextMask} />
 					<Text style={styles.profileNameOverlay}>김올클</Text>
 					<Text style={styles.profileMajorOverlay}>공과대학 컴퓨터공학부</Text>
@@ -590,10 +623,17 @@ const styles = StyleSheet.create({
 		borderRadius: ms(5),
 		backgroundColor: Colors.BACKGROUND_SUB,
 	},
-	stateCarousel: {
+	stateCarouselMask: {
 		width: PREVIEW_WIDTH,
 		height: PREVIEW_HEIGHT,
 		marginTop: vs(20),
+		overflow: "hidden",
+		borderRadius: ms(10),
+		backgroundColor: "#FCFBFF",
+	},
+	stateCarousel: {
+		width: PREVIEW_WIDTH,
+		height: PREVIEW_HEIGHT,
 	},
 	preview: {
 		width: PREVIEW_WIDTH,
@@ -628,21 +668,58 @@ const styles = StyleSheet.create({
 		borderTopLeftRadius: ms(20),
 		borderTopRightRadius: ms(20),
 	},
-	statusTimeMask: {
+	profileStatusBar: {
 		position: "absolute",
-		left: s(3),
-		top: vs(9),
-		width: s(61),
-		height: vs(12),
+		left: 0,
+		top: vs(10),
+		width: s(178),
+		height: vs(11),
+		flexDirection: "row",
+		alignItems: "center",
+		backgroundColor: "#F2F0F5",
+		borderTopLeftRadius: ms(20),
+		borderTopRightRadius: ms(20),
+	},
+	statusTimeSlot: {
+		minWidth: 0,
+		flex: 1,
 		alignItems: "center",
 		justifyContent: "center",
-		backgroundColor: "#F2F0F5",
+		paddingLeft: s(7.303),
+		paddingRight: s(2.738),
 	},
 	statusTime: {
-		fontFamily: "Pretendard-SemiBold",
-		fontSize: ms(7.76),
-		lineHeight: vs(10),
+		fontSize: ms(7.759),
+		fontWeight: "600",
+		lineHeight: vs(10.041),
 		color: Colors.BLACK,
+		includeFontPadding: false,
+	},
+	dynamicIslandSpacer: {
+		width: s(56.595),
+		height: vs(4.564),
+	},
+	statusLevels: {
+		minWidth: 0,
+		flex: 1,
+		flexDirection: "row",
+		alignItems: "center",
+		justifyContent: "center",
+		gap: s(3.195),
+		paddingLeft: s(2.738),
+		paddingRight: s(7.303),
+	},
+	statusCellular: {
+		width: s(8.763),
+		height: vs(5.58),
+	},
+	statusWifi: {
+		width: s(7.824),
+		height: vs(5.627),
+	},
+	statusBattery: {
+		width: s(12.473),
+		height: vs(5.933),
 	},
 	profileTextMask: {
 		position: "absolute",
