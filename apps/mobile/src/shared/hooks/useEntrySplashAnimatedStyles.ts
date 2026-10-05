@@ -11,7 +11,8 @@ import {
 	getCenteredScaledAssetOrigin,
 } from "@/shared/utils/entrySplash";
 
-type Params = {
+export type EntrySplashAnimatedStyleParams = {
+	androidSymbolOrigin?: { left: number; top: number };
 	contentTop: number;
 	introProgress: SharedValue<number>;
 	loginProgress: SharedValue<number>;
@@ -30,7 +31,7 @@ const useEntrySplashAnimatedStyles = ({
 	nativeSplashTop,
 	scaleX,
 	screenOpacity,
-}: Params) => {
+}: EntrySplashAnimatedStyleParams) => {
 	const visualProgress = useDerivedValue(
 		() => introProgress.value + loginProgress.value,
 	);

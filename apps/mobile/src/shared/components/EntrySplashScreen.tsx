@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Image, Platform, StatusBar, StyleSheet, View } from "react-native";
+import {
+	Image,
+	NativeModules,
+	Platform,
+	StatusBar,
+	StyleSheet,
+	View,
+} from "react-native";
 import Animated, {
 	Easing,
 	runOnJS,
@@ -17,6 +24,7 @@ import { useProfile } from "@/shared/contexts/profileContext";
 import useEntrySplashAnimatedStyles from "@/shared/hooks/useEntrySplashAnimatedStyles";
 import useEntrySplashViewport from "@/shared/hooks/useEntrySplashViewport";
 import useLoginActions from "@/shared/hooks/useLoginActions";
+import { isAndroidEntrySplashReady } from "@/shared/utils/androidEntrySplash";
 import {
 	ENTRY_SPLASH_HOLD_MS,
 	ENTRY_SPLASH_TRANSITION_MS,
@@ -54,9 +62,18 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	const [finished, setFinished] = useState(false);
 	const [splashCloneLaidOut, setSplashCloneLaidOut] = useState(false);
 	const [splashCloneLoaded, setSplashCloneLoaded] = useState(false);
-	const [nativeSplashHidden, setNativeSplashHidden] = useState(
-		Platform.OS !== "ios",
-	);
+	const [laidOut, setLaidOut] = useState(false);
+	const [settledAssets, setSettledAssets] = useState<string[]>([]);
+	const [nativeSplashReleased, setNativeSplashReleased] = useState(false);
+	const handleAssetSettled = useCallback((asset: string) => {
+		setSettledAssets((assets) =>
+			assets.includes(asset) ? assets : [...assets, asset],
+		);
+	}, []);
+	const handoffReady =
+		Platform.OS === "ios"
+			? splashCloneLaidOut && splashCloneLoaded
+			: isAndroidEntrySplashReady(laidOut, settledAssets);
 	const { isLoading, onAppleButtonPress, onKakaoButtonPress } =
 		useLoginActions();
 	const isAuthenticated = Boolean(user);
@@ -70,6 +87,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		contentBottom,
 		nativeSplashLeft,
 		nativeSplashTop,
+		androidSymbolOrigin,
 		scaleX,
 		scaleY,
 	} = useEntrySplashViewport();
@@ -91,6 +109,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		visualProgress,
 		wordmarkStyle,
 	} = useEntrySplashAnimatedStyles({
+		androidSymbolOrigin,
 		contentTop,
 		introProgress,
 		loginProgress,
@@ -115,28 +134,22 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	}, [onComplete]);
 
 	useEffect(() => {
-		if (
-			!active ||
-			Platform.OS !== "ios" ||
-			!splashCloneLaidOut ||
-			!splashCloneLoaded
-		) {
-			return;
-		}
+		if (!active || !handoffReady || nativeSplashReleased) return;
 
-		// 동일한 JS 이미지가 layout과 decode까지 끝난 뒤에만 native launch
-		// screen을 숨긴다. 시간값이 아니라 실제 clone의 준비 상태를 기준으로
-		// native → JS handoff를 수행한다.
-		const animationFrame = requestAnimationFrame(() => {
-			SplashScreen.hide();
-			setNativeSplashHidden(true);
+		// Release only this platform's native splash once its JS frame is ready.
+		const frame = requestAnimationFrame(() => {
+			if (Platform.OS === "ios") {
+				SplashScreen.hide();
+			} else {
+				NativeModules.EntrySplash?.ready();
+			}
+			setNativeSplashReleased(true);
 		});
-
-		return () => cancelAnimationFrame(animationFrame);
-	}, [active, splashCloneLaidOut, splashCloneLoaded]);
+		return () => cancelAnimationFrame(frame);
+	}, [active, handoffReady, nativeSplashReleased]);
 
 	useEffect(() => {
-		if (!active || !nativeSplashHidden) return;
+		if (!active || !nativeSplashReleased) return;
 
 		if (reduceMotion) {
 			introProgress.value = 2;
@@ -170,7 +183,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		active,
 		introProgress,
 		markBrandRevealComplete,
-		nativeSplashHidden,
+		nativeSplashReleased,
 		reduceMotion,
 	]);
 
@@ -237,7 +250,10 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	]);
 
 	return (
-		<Animated.View style={[styles.screen, screenStyle]}>
+		<Animated.View
+			style={[styles.screen, screenStyle]}
+			onLayout={() => setLaidOut(true)}
+		>
 			<StatusBar barStyle="dark-content" backgroundColor={Colors.WHITE} />
 			<View style={[styles.content, contentStyle]}>
 				<Animated.Text
@@ -247,18 +263,22 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 				</Animated.Text>
 				<Animated.Image
 					source={symbolSource}
+					onLoadEnd={() => handleAssetSettled("symbol")}
 					style={[styles.brandAsset, symbolStyle]}
 				/>
 				<Animated.Image
 					source={smallWordmarkSource}
+					onLoadEnd={() => handleAssetSettled("smallWordmark")}
 					style={[styles.brandAsset, smallWordmarkStyle]}
 				/>
 				<Animated.Image
 					source={transitionWordmarkSource}
+					onLoadEnd={() => handleAssetSettled("transitionWordmark")}
 					style={[styles.brandAsset, transitionWordmarkStyle]}
 				/>
 				<Animated.Image
 					source={wordmarkSource}
+					onLoadEnd={() => handleAssetSettled("wordmark")}
 					style={[styles.brandAsset, wordmarkStyle]}
 				/>
 
@@ -274,7 +294,7 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 					visualProgress={visualProgress}
 				/>
 			</View>
-			{Platform.OS === "ios" && !nativeSplashHidden && (
+			{Platform.OS === "ios" && !nativeSplashReleased && (
 				<View
 					onLayout={() => setSplashCloneLaidOut(true)}
 					style={styles.splashClone}
