@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+	FlatList,
+	type LayoutChangeEvent,
 	Modal,
+	type NativeScrollEvent,
+	type NativeSyntheticEvent,
 	Pressable,
 	StatusBar,
 	StyleSheet,
@@ -8,7 +12,7 @@ import {
 	View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import ZoomableImage from "@/shared/components/ZoomableImage";
 import { Colors } from "@/shared/constants/colors";
@@ -35,19 +39,57 @@ const ImageViewerModal = ({
 	const [currentIndex, setCurrentIndex] = useState(() =>
 		clampImageIndex(initialIndex, imageUrls.length),
 	);
+	const [viewerWidth, setViewerWidth] = useState(0);
+	const [isImageZoomed, setIsImageZoomed] = useState(false);
+	const imageListRef = useRef<FlatList<string>>(null);
 
 	useEffect(() => {
-		if (visible)
+		if (visible) {
 			setCurrentIndex(clampImageIndex(initialIndex, imageUrls.length));
+			setIsImageZoomed(false);
+		}
 	}, [imageUrls.length, initialIndex, visible]);
+
+	useEffect(() => {
+		if (!visible || viewerWidth === 0) return;
+
+		imageListRef.current?.scrollToOffset({
+			offset: currentIndex * viewerWidth,
+			animated: false,
+		});
+	}, [currentIndex, viewerWidth, visible]);
 
 	if (imageUrls.length === 0) return null;
 
 	const hasPrevious = currentIndex > 0;
 	const hasNext = currentIndex < imageUrls.length - 1;
 	const move = (direction: -1 | 1) => {
-		setCurrentIndex((index) =>
-			getAdjacentImageIndex(index, direction, imageUrls.length),
+		const nextIndex = getAdjacentImageIndex(
+			currentIndex,
+			direction,
+			imageUrls.length,
+		);
+		if (nextIndex === currentIndex) return;
+
+		imageListRef.current?.scrollToOffset({
+			offset: nextIndex * viewerWidth,
+			animated: true,
+		});
+	};
+
+	const handleViewerLayout = (event: LayoutChangeEvent) => {
+		setViewerWidth(event.nativeEvent.layout.width);
+	};
+
+	const handlePageScrollEnd = (
+		event: NativeSyntheticEvent<NativeScrollEvent>,
+	) => {
+		if (viewerWidth === 0) return;
+		setCurrentIndex(
+			clampImageIndex(
+				Math.round(event.nativeEvent.contentOffset.x / viewerWidth),
+				imageUrls.length,
+			),
 		);
 	};
 
@@ -59,67 +101,104 @@ const ImageViewerModal = ({
 			navigationBarTranslucent
 			onRequestClose={onClose}
 		>
-			<StatusBar barStyle="light-content" backgroundColor={Colors.BLACK} />
-			<GestureHandlerRootView style={styles.modalRoot}>
-				<SafeAreaView style={styles.safeArea}>
-					<View style={styles.header}>
-						<View style={styles.headerSpacer} />
-						<Text style={styles.counter}>
-							{currentIndex + 1} / {imageUrls.length}
-						</Text>
-						<Pressable
-							accessibilityRole="button"
-							accessibilityLabel="사진 닫기"
-							style={({ pressed }) => [
-								styles.iconButton,
-								pressed && styles.buttonPressed,
-							]}
-							onPress={onClose}
-						>
-							<Icon name="close" size={ms(28)} color={Colors.WHITE} />
-						</Pressable>
-					</View>
-
-					<View style={styles.viewer}>
-						<ZoomableImage
-							key={`${imageUrls[currentIndex]}-${currentIndex}`}
-							url={imageUrls[currentIndex]}
-							accessibilityLabel={`${imageUrls.length}장 중 ${currentIndex + 1}번째 사진`}
-						/>
-					</View>
-
-					{imageUrls.length > 1 && (
-						<View style={styles.controls}>
+			<SafeAreaProvider>
+				<StatusBar barStyle="light-content" backgroundColor={Colors.BLACK} />
+				<GestureHandlerRootView style={styles.modalRoot}>
+					<SafeAreaView
+						edges={["top", "bottom", "left", "right"]}
+						style={styles.safeArea}
+					>
+						<View style={styles.header}>
+							<View style={styles.headerSpacer} />
+							<Text style={styles.counter}>
+								{currentIndex + 1} / {imageUrls.length}
+							</Text>
 							<Pressable
 								accessibilityRole="button"
-								accessibilityLabel="이전 사진"
-								disabled={!hasPrevious}
+								accessibilityLabel="사진 닫기"
 								style={({ pressed }) => [
-									styles.navigationButton,
-									!hasPrevious && styles.buttonDisabled,
+									styles.iconButton,
 									pressed && styles.buttonPressed,
 								]}
-								onPress={() => move(-1)}
+								onPress={onClose}
 							>
-								<Icon name="chevron-left" size={ms(32)} color={Colors.WHITE} />
-							</Pressable>
-							<Pressable
-								accessibilityRole="button"
-								accessibilityLabel="다음 사진"
-								disabled={!hasNext}
-								style={({ pressed }) => [
-									styles.navigationButton,
-									!hasNext && styles.buttonDisabled,
-									pressed && styles.buttonPressed,
-								]}
-								onPress={() => move(1)}
-							>
-								<Icon name="chevron-right" size={ms(32)} color={Colors.WHITE} />
+								<Icon name="close" size={ms(28)} color={Colors.WHITE} />
 							</Pressable>
 						</View>
-					)}
-				</SafeAreaView>
-			</GestureHandlerRootView>
+
+						<View style={styles.viewer} onLayout={handleViewerLayout}>
+							{viewerWidth > 0 && (
+								<FlatList
+									ref={imageListRef}
+									data={imageUrls}
+									horizontal
+									pagingEnabled
+									disableIntervalMomentum
+									scrollEnabled={!isImageZoomed}
+									showsHorizontalScrollIndicator={false}
+									bounces={false}
+									overScrollMode="never"
+									keyExtractor={(url, index) => `${url}-${index}`}
+									getItemLayout={(_data, index) => ({
+										length: viewerWidth,
+										offset: viewerWidth * index,
+										index,
+									})}
+									onMomentumScrollEnd={handlePageScrollEnd}
+									renderItem={({ item, index }) => (
+										<View style={[styles.page, { width: viewerWidth }]}>
+											<ZoomableImage
+												url={item}
+												accessibilityLabel={`${imageUrls.length}장 중 ${index + 1}번째 사진`}
+												onZoomChange={setIsImageZoomed}
+											/>
+										</View>
+									)}
+								/>
+							)}
+						</View>
+
+						{imageUrls.length > 1 && (
+							<View style={styles.controls}>
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel="이전 사진"
+									disabled={!hasPrevious}
+									style={({ pressed }) => [
+										styles.navigationButton,
+										!hasPrevious && styles.buttonDisabled,
+										pressed && styles.buttonPressed,
+									]}
+									onPress={() => move(-1)}
+								>
+									<Icon
+										name="chevron-left"
+										size={ms(32)}
+										color={Colors.WHITE}
+									/>
+								</Pressable>
+								<Pressable
+									accessibilityRole="button"
+									accessibilityLabel="다음 사진"
+									disabled={!hasNext}
+									style={({ pressed }) => [
+										styles.navigationButton,
+										!hasNext && styles.buttonDisabled,
+										pressed && styles.buttonPressed,
+									]}
+									onPress={() => move(1)}
+								>
+									<Icon
+										name="chevron-right"
+										size={ms(32)}
+										color={Colors.WHITE}
+									/>
+								</Pressable>
+							</View>
+						)}
+					</SafeAreaView>
+				</GestureHandlerRootView>
+			</SafeAreaProvider>
 		</Modal>
 	);
 };
@@ -158,6 +237,9 @@ const styles = StyleSheet.create({
 	viewer: {
 		flex: 1,
 		overflow: "hidden",
+	},
+	page: {
+		flex: 1,
 	},
 	controls: {
 		minHeight: vs(64),

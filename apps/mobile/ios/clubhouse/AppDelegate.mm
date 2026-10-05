@@ -4,6 +4,7 @@
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
 #import <RNKakaoLogins.h>
+#import <RNSplashScreen.h>
 #import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
 
 @implementation AppDelegate
@@ -16,6 +17,7 @@
   self.dependencyProvider = [RCTAppDependencyProvider new];
 
   BOOL result = [super application:application didFinishLaunchingWithOptions:launchOptions];
+  [RNSplashScreen show];
   return result;
 }
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+	Image,
 	NativeModules,
 	Platform,
 	StatusBar,
@@ -15,6 +16,7 @@ import Animated, {
 	withSequence,
 	withTiming,
 } from "react-native-reanimated";
+import SplashScreen from "react-native-splash-screen";
 import EntryLoginActions from "@/shared/components/EntryLoginActions";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
@@ -40,6 +42,8 @@ const transitionWordmarkSource =
 	require("@/assets/images/brand/entry-wordmark-transition.png") as number;
 const wordmarkSource =
 	require("@/assets/images/brand/entry-wordmark.png") as number;
+const splashCloneSource =
+	require("@/assets/images/brand/entry-splash.png") as number;
 
 type Props = {
 	active: boolean;
@@ -56,17 +60,20 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	const [loginReady, setLoginReady] = useState(false);
 	const [guestEntryRequested, setGuestEntryRequested] = useState(false);
 	const [finished, setFinished] = useState(false);
+	const [splashCloneLaidOut, setSplashCloneLaidOut] = useState(false);
+	const [splashCloneLoaded, setSplashCloneLoaded] = useState(false);
 	const [laidOut, setLaidOut] = useState(false);
 	const [settledAssets, setSettledAssets] = useState<string[]>([]);
-	const [nativeSplashReleased, setNativeSplashReleased] = useState(
-		Platform.OS !== "android",
-	);
+	const [nativeSplashReleased, setNativeSplashReleased] = useState(false);
 	const handleAssetSettled = useCallback((asset: string) => {
 		setSettledAssets((assets) =>
 			assets.includes(asset) ? assets : [...assets, asset],
 		);
 	}, []);
-	const androidReady = isAndroidEntrySplashReady(laidOut, settledAssets);
+	const handoffReady =
+		Platform.OS === "ios"
+			? splashCloneLaidOut && splashCloneLoaded
+			: isAndroidEntrySplashReady(laidOut, settledAssets);
 	const { isLoading, onAppleButtonPress, onKakaoButtonPress } =
 		useLoginActions();
 	const isAuthenticated = Boolean(user);
@@ -75,8 +82,15 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		isAuthenticated,
 		guestEntryRequested,
 	});
-	const { contentTop, contentBottom, scaleX, scaleY, androidSymbolOrigin } =
-		useEntrySplashViewport();
+	const {
+		contentTop,
+		contentBottom,
+		nativeSplashLeft,
+		nativeSplashTop,
+		androidSymbolOrigin,
+		scaleX,
+		scaleY,
+	} = useEntrySplashViewport();
 	const contentStyle = useMemo(
 		() => ({
 			top: contentTop,
@@ -95,10 +109,12 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 		visualProgress,
 		wordmarkStyle,
 	} = useEntrySplashAnimatedStyles({
-		androidSymbolOrigin:
-			Platform.OS === "android" ? androidSymbolOrigin : undefined,
+		androidSymbolOrigin,
+		contentTop,
 		introProgress,
 		loginProgress,
+		nativeSplashLeft,
+		nativeSplashTop,
 		scaleX,
 		scaleY,
 		screenOpacity,
@@ -118,26 +134,26 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 	}, [onComplete]);
 
 	useEffect(() => {
-		if (
-			Platform.OS !== "android" ||
-			!active ||
-			!androidReady ||
-			nativeSplashReleased
-		)
-			return;
+		if (!active || !handoffReady || nativeSplashReleased) return;
+
+		// Release only this platform's native splash once its JS frame is ready.
 		const frame = requestAnimationFrame(() => {
-			NativeModules.EntrySplash?.ready();
+			if (Platform.OS === "ios") {
+				SplashScreen.hide();
+			} else {
+				NativeModules.EntrySplash?.ready();
+			}
 			setNativeSplashReleased(true);
 		});
 		return () => cancelAnimationFrame(frame);
-	}, [active, androidReady, nativeSplashReleased]);
+	}, [active, handoffReady, nativeSplashReleased]);
 
 	useEffect(() => {
 		if (!active || !nativeSplashReleased) return;
 
 		if (reduceMotion) {
 			introProgress.value = 2;
-			setBrandRevealComplete(true);
+			markBrandRevealComplete();
 			return;
 		}
 
@@ -272,11 +288,25 @@ const EntrySplashScreen = ({ active, onComplete }: Props) => {
 					onAppleButtonPress={onAppleButtonPress}
 					onGuestEntryPress={handleGuestEntryPress}
 					onKakaoButtonPress={onKakaoButtonPress}
+					nativeSplashContentTop={nativeSplashTop - contentTop}
 					scaleX={scaleX}
 					scaleY={scaleY}
 					visualProgress={visualProgress}
 				/>
 			</View>
+			{Platform.OS === "ios" && !nativeSplashReleased && (
+				<View
+					onLayout={() => setSplashCloneLaidOut(true)}
+					style={styles.splashClone}
+				>
+					<Image
+						onLoadEnd={() => setSplashCloneLoaded(true)}
+						resizeMode="center"
+						source={splashCloneSource}
+						style={styles.splashCloneImage}
+					/>
+				</View>
+			)}
 		</Animated.View>
 	);
 };
@@ -297,6 +327,17 @@ const styles = StyleSheet.create({
 	brandAsset: {
 		position: "absolute",
 		resizeMode: "contain",
+	},
+	splashClone: {
+		...StyleSheet.absoluteFillObject,
+		alignItems: "center",
+		backgroundColor: Colors.WHITE,
+		justifyContent: "center",
+		zIndex: 1,
+	},
+	splashCloneImage: {
+		height: 844,
+		width: 390,
 	},
 	tagline: {
 		position: "absolute",

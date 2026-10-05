@@ -34,11 +34,13 @@ const ForceUpdateGate = ({ children, onEntryComplete }: Props) => {
 	}, []);
 
 	const isUpdateCheckReady = state.status === "ready";
-	const showInitializationScreen = shouldShowAppInitializationLoading({
-		delayElapsed: initializationDelayElapsed,
-		isProfileLoading,
-		isUpdateCheckReady,
-	});
+	const showInitializationScreen =
+		entryComplete &&
+		shouldShowAppInitializationLoading({
+			delayElapsed: initializationDelayElapsed,
+			isProfileLoading,
+			isUpdateCheckReady,
+		});
 
 	const handleOpenStore = useCallback((storeUrl: string) => {
 		Linking.openURL(storeUrl).catch(() => {});
