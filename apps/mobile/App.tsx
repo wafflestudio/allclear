@@ -34,6 +34,7 @@ import { getTermRepository } from "@/repositories/term";
 import { getUserRepository } from "@/repositories/user";
 import AppModalManager from "@/shared/components/AppModalManager";
 import ForceUpdateGate from "@/shared/components/ForceUpdateGate";
+import ManagementGuideModal from "@/shared/components/ManagementGuideModal";
 import { Colors } from "@/shared/constants/colors";
 import {
 	type RootStackParamList,
@@ -167,7 +168,12 @@ function App(): React.JSX.Element {
 	const [pendingEntryIntent, setPendingEntryIntent] =
 		useState<PendingEntryIntent>(null);
 	const [isNavigationReady, setNavigationReady] = useState(false);
+	const [isAdminGuideVisible, setAdminGuideVisible] = useState(true);
 	const handleEntryComplete = useCallback(() => setEntryFlowComplete(true), []);
+	const handleCloseAdminGuide = useCallback(
+		() => setAdminGuideVisible(false),
+		[],
+	);
 	const handlePendingEntryIntent = useCallback(
 		(intent: NonNullable<PendingEntryIntent>) => {
 			setPendingEntryIntent((currentIntent) =>
@@ -285,6 +291,12 @@ function App(): React.JSX.Element {
 														onConsume={handleConsumePendingEntryIntent}
 													/>
 													<AppModalManager />
+													<ManagementGuideModal
+														visible={entryFlowComplete && isAdminGuideVisible}
+														type="clubRegistration"
+														onStart={handleCloseAdminGuide}
+														onSkip={handleCloseAdminGuide}
+													/>
 												</ForceUpdateGate>
 											</ManageClubBottomSheetProvider>
 										</UserVoiceBottomSheetProvider>
