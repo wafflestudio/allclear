@@ -501,6 +501,7 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 		justifyContent: "space-between",
 		marginBottom: vs(6),
+		gap: s(10),
 	},
 	cardTitleRow: {
 		flexDirection: "row",

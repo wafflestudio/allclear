@@ -100,25 +100,17 @@ const SearchScreen = ({ navigation }: Props) => {
 		setIsFilterOverlayVisible(false);
 	}, [resetRandomRecommendations]);
 
-	const resetToInitialState = useCallback(() => {
-		navigation.reset({
-			index: 0,
-			routes: [{ name: SCREEN_TYPE.SEARCH }],
-		});
-		resetSearchState();
-	}, [navigation, resetSearchState]);
-
 	useEffect(() => {
 		const parent = navigation.getParent();
 		if (!parent) return undefined;
 		// biome-ignore lint/suspicious/noExplicitAny: Parent navigator event typing is unavailable through this nested navigator type.
 		const unsubscribe = (parent as any).addListener("tabPress", () => {
 			if (navigation.isFocused()) {
-				resetToInitialState();
+				resetSearchState();
 			}
 		});
 		return unsubscribe;
-	}, [navigation, resetToInitialState]);
+	}, [navigation, resetSearchState]);
 
 	useFocusEffect(
 		useCallback(() => {
@@ -183,13 +175,14 @@ const SearchScreen = ({ navigation }: Props) => {
 		<WithViewEventLog params={{ screen_name: "search_screen" }}>
 			<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 				<View style={styles.headerContainer}>
-					<Pressable onPress={resetToInitialState}>
+					<Pressable onPress={resetSearchState}>
 						<Text style={styles.headerText}>어떤 동아리를 찾아볼까요?</Text>
 					</Pressable>
 					<SearchBar
 						value={inputValue}
 						onChangeText={setInputValue}
 						onSubmit={handleSubmitQuery}
+						placeholder="동아리의 키워드 혹은 소속 학과로 검색해보세요"
 					/>
 				</View>
 				{hasSubmittedQuery ? (
@@ -374,6 +367,7 @@ const styles = StyleSheet.create({
 		position: "relative",
 	},
 	placeholderContainer: {
+		flex: 1,
 		paddingHorizontal: s(20),
 		paddingTop: vs(14),
 		gap: vs(30),

@@ -1,13 +1,6 @@
-import { BottomSheetTextInput } from "@gorhom/bottom-sheet";
+import { BottomSheetTextInput, TouchableOpacity } from "@gorhom/bottom-sheet";
 import React, { useContext } from "react";
-import {
-	Keyboard,
-	StyleSheet,
-	Text,
-	TouchableOpacity,
-	TouchableWithoutFeedback,
-	View,
-} from "react-native";
+import { Keyboard, StyleSheet, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
@@ -16,11 +9,41 @@ import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
 	closeBottomSheet: () => void;
+	value?: string;
+	onChangeText?: (value: string) => void;
+	hideSubmitButton?: boolean;
 };
 
-const UserVoiceView = ({ closeBottomSheet }: Props) => {
-	const [input, setInput] = React.useState("");
+type SubmitButtonProps = {
+	disabled: boolean;
+	onPress: () => void;
+};
+
+export const UserVoiceSubmitButton = ({
+	disabled,
+	onPress,
+}: SubmitButtonProps) => (
+	<TouchableOpacity
+		disabled={disabled}
+		accessibilityState={{ disabled }}
+		onPress={onPress}
+		style={[styles.button, disabled && styles.buttonDisabled]}
+	>
+		<Text style={styles.buttonText}>의견 보내기</Text>
+	</TouchableOpacity>
+);
+
+const UserVoiceView = ({
+	closeBottomSheet,
+	value,
+	onChangeText,
+	hideSubmitButton = false,
+}: Props) => {
+	const [localInput, setLocalInput] = React.useState("");
+	const [inputMaxHeight, setInputMaxHeight] = React.useState<number>();
 	const { userService } = useContext(serviceContext);
+	const input = value ?? localInput;
+	const setInput = onChangeText ?? setLocalInput;
 	const canSubmit = input.trim().length > 0;
 
 	const handleSubmit = async () => {
@@ -52,46 +75,43 @@ const UserVoiceView = ({ closeBottomSheet }: Props) => {
 	};
 
 	return (
-		<TouchableWithoutFeedback accessible={false} onPress={Keyboard.dismiss}>
-			<View style={styles.mainWrapper}>
-				<View style={styles.titleWrapper}>
-					<View>
-						<Text style={[styles.title, styles.bold]}>
-							여러분의 의견이 필요해요!
-						</Text>
-						<Text style={styles.title}>
-							올클에 건의사항이 있다면 자유롭게 알려주세요😊
-						</Text>
-					</View>
-				</View>
+		<View style={styles.mainWrapper}>
+			<View style={styles.titleWrapper}>
 				<View>
-					<View style={styles.inputWrapper}>
-						<BottomSheetTextInput
-							value={input}
-							onChangeText={setInput}
-							multiline
-							numberOfLines={4}
-							maxLength={1000}
-							returnKeyType="default"
-							submitBehavior="newline"
-							style={styles.input}
-							placeholder="여기에 의견을 적어주세요. (1000자 이내)"
-							placeholderTextColor={Colors.BODYTEXT_SUB}
-						/>
-					</View>
-				</View>
-				<View style={styles.buttonWrapper}>
-					<TouchableOpacity
-						disabled={!canSubmit}
-						accessibilityState={{ disabled: !canSubmit }}
-						onPress={handleSubmit}
-						style={[styles.button, !canSubmit && styles.buttonDisabled]}
-					>
-						<Text style={styles.buttonText}>의견 보내기</Text>
-					</TouchableOpacity>
+					<Text style={[styles.title, styles.bold]}>
+						여러분의 의견이 필요해요!
+					</Text>
+					<Text style={styles.title}>
+						올클에 건의사항이 있다면 자유롭게 알려주세요😊
+					</Text>
 				</View>
 			</View>
-		</TouchableWithoutFeedback>
+			<View
+				style={styles.inputWrapper}
+				onLayout={({ nativeEvent }) => {
+					if (!input) {
+						setInputMaxHeight(nativeEvent.layout.height);
+					}
+				}}
+			>
+				<BottomSheetTextInput
+					value={input}
+					onChangeText={setInput}
+					multiline
+					scrollEnabled
+					numberOfLines={4}
+					maxLength={1000}
+					returnKeyType="default"
+					submitBehavior="newline"
+					style={[styles.input, { maxHeight: inputMaxHeight }]}
+					placeholder="여기에 의견을 적어주세요. (1000자 이내)"
+					placeholderTextColor={Colors.BODYTEXT_SUB}
+				/>
+				{!hideSubmitButton && (
+					<UserVoiceSubmitButton disabled={!canSubmit} onPress={handleSubmit} />
+				)}
+			</View>
+		</View>
 	);
 };
 
@@ -99,19 +119,18 @@ export default UserVoiceView;
 
 const styles = StyleSheet.create({
 	mainWrapper: {
+		minHeight: 0,
+		display: "flex",
+		flexDirection: "column",
+		padding: vs(24),
+		gap: vs(16),
 		flex: 1,
-		paddingTop: vs(24),
-		paddingBottom: vs(8),
-		paddingHorizontal: s(24),
-		backgroundColor: Colors.WHITE,
 	},
 
 	titleWrapper: {
 		display: "flex",
-		flex: 0,
 		justifyContent: "center",
 		alignItems: "center",
-		marginBottom: vs(24),
 	},
 
 	title: {
@@ -123,11 +142,17 @@ const styles = StyleSheet.create({
 		...typography.headerL,
 	},
 
-	inputWrapper: {},
+	inputWrapper: {
+		flex: 1,
+		minHeight: 0,
+		display: "flex",
+		flexDirection: "column",
+		gap: vs(16),
+	},
 
 	input: {
-		height: vs(144),
-		backgroundColor: Colors.WHITE,
+		flex: 1,
+		minHeight: 0,
 		paddingHorizontal: s(16),
 		paddingVertical: vs(8),
 		borderRadius: ms(12),

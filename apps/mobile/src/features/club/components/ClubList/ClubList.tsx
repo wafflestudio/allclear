@@ -1,5 +1,6 @@
 import {
 	Image,
+	Pressable,
 	StyleSheet,
 	Text,
 	useWindowDimensions,
@@ -19,6 +20,10 @@ type Props = {
 	category?: Category["name"];
 	openDetailPage: (club: Club) => void;
 	emptyPlaceholder: string;
+	emptyAction?: {
+		label: string;
+		onPress: () => void;
+	};
 	isLoading?: boolean;
 };
 
@@ -27,6 +32,7 @@ const ClubList = ({
 	category,
 	openDetailPage,
 	emptyPlaceholder,
+	emptyAction,
 	isLoading,
 }: Props) => {
 	const { width } = useWindowDimensions();
@@ -42,6 +48,17 @@ const ClubList = ({
 					style={styles.emptyImage}
 				/>
 				<Text style={styles.emptyText}>{normalizedEmptyPlaceholder}</Text>
+				{emptyAction ? (
+					<Pressable
+						style={({ pressed }) => [
+							styles.emptyActionButton,
+							pressed && styles.emptyActionButtonPressed,
+						]}
+						onPress={emptyAction.onPress}
+					>
+						<Text style={styles.emptyActionText}>{emptyAction.label}</Text>
+					</Pressable>
+				) : null}
 			</View>
 		);
 	}
@@ -84,6 +101,20 @@ const styles = StyleSheet.create({
 		textAlign: "center",
 		marginTop: vs(20),
 		color: Colors.BODYTEXT_MAIN,
+	},
+	emptyActionButton: {
+		marginTop: vs(32),
+		paddingHorizontal: s(20),
+		paddingVertical: vs(15),
+		borderRadius: s(20),
+		backgroundColor: Colors.BUTTON_SELECTED,
+	},
+	emptyActionButtonPressed: {
+		backgroundColor: Colors.BUTTON_PUSH,
+	},
+	emptyActionText: {
+		...typography.bodyMSemibold,
+		color: Colors.TEXT_BUTTON_SELECTED,
 	},
 	list: {
 		flex: 1,

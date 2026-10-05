@@ -1,11 +1,11 @@
-import type { ClubDecisionStatus, ClubStatus } from 'src/common/constants/club-status'
+import type { ClubDecisionStatus, ClubStatus } from 'server/domain/constants/club-status'
 import type {
   AdminClubDetailResponse,
   AdminClubHistoriesResponse,
   AdminClubManagerRequestsResponse,
   AdminClubsResponse,
   AdminClubVerificationRequestsResponse,
-} from 'src/lib/schemas/admin'
+} from 'server/http/schemas/admin'
 
 export type { ClubDecisionStatus as DecisionStatus, ClubStatus }
 
