@@ -26,6 +26,7 @@ const clubManagementSnuLogo =
 	require("@/assets/images/club-management-snu-logo.png") as number;
 
 import ManagerTransferSection from "@/features/club/components/ManagerTransferSection";
+import { NewAnnouncementAction } from "@/features/club/components/NewAnnouncementAction";
 import OfficialVerificationRequestButton from "@/features/club/components/OfficialVerificationRequestButton";
 import VerificationMark from "@/features/club/components/VerificationMark";
 import { getOfficialVerificationRequestErrorContent } from "@/features/club/utils/officialVerificationRequest";
@@ -276,18 +277,13 @@ const ClubManagementScreen = () => {
 
 					<View style={styles.listContainer}>
 						{/* 새 공고 작성하기 버튼 */}
-						<TouchableOpacity
-							style={styles.newAnnouncementRow}
-							activeOpacity={0.6}
+						<NewAnnouncementAction
 							onPress={() =>
 								navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, {
 									clubId,
 								})
 							}
-						>
-							<Text style={styles.newAnnouncementText}>새 공고 작성하기</Text>
-							<Icon name="edit" size={ms(16)} color={Colors.POINTCOLOR} />
-						</TouchableOpacity>
+						/>
 
 						{/* 공고 목록 */}
 						{isRecruitmentsLoading ? (
@@ -808,28 +804,6 @@ const styles = StyleSheet.create({
 	// ── 리스트 컨테이너
 	listContainer: {
 		gap: vs(10),
-	},
-
-	// ── 새 공고 작성하기
-	newAnnouncementRow: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-		paddingVertical: vs(10),
-		paddingHorizontal: s(15),
-		borderRadius: ms(12),
-		minHeight: vs(34),
-		backgroundColor: "#FFFFFF",
-		borderWidth: 1,
-		borderColor: Colors.POINTCOLOR,
-	},
-	newAnnouncementText: {
-		fontFamily: "Pretendard",
-		fontWeight: "500",
-		fontSize: ms(12),
-		lineHeight: ms(14),
-		letterSpacing: -0.02 * 12,
-		color: Colors.POINTCOLOR,
 	},
 
 	// ── 공고 행 공통
