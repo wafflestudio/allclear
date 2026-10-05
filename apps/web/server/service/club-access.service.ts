@@ -1,4 +1,4 @@
-import { PUBLIC_CLUB_STATUS } from 'src/common/constants/club-status'
+import { PUBLIC_CLUB_STATUS } from 'server/domain/constants/club-status'
 import { IsNull, type Repository } from 'typeorm'
 import { ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity } from '../infra/database/entities'

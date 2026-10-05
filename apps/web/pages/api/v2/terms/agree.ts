@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { BadRequestError, UserNotFoundError } from 'server/domain/error'
+import { AgreeTermsSchema } from 'server/http/schemas/terms'
 import { Provider } from 'server/provider'
 import { TermsService } from 'server/service/terms.service'
 import { UserService } from 'server/service/user.service'
-import { AgreeTermsSchema } from 'src/lib/schemas/terms'
 import { type ZodIssue, z } from 'zod'
 
 export default async function handler(

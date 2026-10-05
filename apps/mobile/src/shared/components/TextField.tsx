@@ -1,11 +1,14 @@
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import {
-	Platform,
+	Pressable,
+	type StyleProp,
 	StyleSheet,
-	TextInput,
+	type TextInput,
 	type TextInputProps,
 	type TextStyle,
+	type ViewStyle,
 } from "react-native";
+import { AppTextInput } from "@/shared/components/AppText";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 
@@ -46,6 +49,7 @@ const TextField = ({
 	...rest
 }: Props) => {
 	const [isFocused, setIsFocused] = useState(false);
+	const inputRef = useRef<TextInput>(null);
 
 	const isActive = isFocused || (value?.length ?? 0) > 0;
 	const activeColor = isActive ? COLORS.gray500 : COLORS.gray300;
@@ -55,46 +59,59 @@ const TextField = ({
 		onChangeText?.(text, isValid);
 	};
 
-	const containerStyle: TextStyle[] = [
-		styles.base,
-		{ minHeight: height },
+	const containerStyle: ViewStyle[] = [
+		styles.container,
+		{ height },
 		{ borderWidth: border?.width ?? 1 },
 		{ borderColor: border?.color ?? activeColor },
 		width !== undefined ? { width } : { flex: 1 },
 	];
 
-	const inputStyle: TextStyle[] = [styles.text, { color: activeColor }];
+	const inputStyle: StyleProp<TextStyle> = [
+		styles.input,
+		{ color: activeColor },
+		style,
+	];
 
 	return (
-		<TextInput
-			style={[containerStyle, inputStyle, style]}
-			value={value}
-			onChangeText={handleChangeText}
-			onFocus={(e) => {
-				setIsFocused(true);
-				onFocus?.(e);
-			}}
-			onBlur={(e) => {
-				setIsFocused(false);
-				onBlur?.(e);
-			}}
-			placeholderTextColor={placeholderTextColor ?? COLORS.gray300}
-			{...rest}
-		/>
+		<Pressable
+			accessible={false}
+			style={containerStyle}
+			onPress={() => inputRef.current?.focus()}
+		>
+			<AppTextInput
+				ref={inputRef}
+				style={inputStyle}
+				value={value}
+				onChangeText={handleChangeText}
+				onFocus={(e) => {
+					setIsFocused(true);
+					onFocus?.(e);
+				}}
+				onBlur={(e) => {
+					setIsFocused(false);
+					onBlur?.(e);
+				}}
+				placeholderTextColor={placeholderTextColor ?? COLORS.gray300}
+				{...rest}
+			/>
+		</Pressable>
 	);
 };
 
 const styles = StyleSheet.create({
-	base: {
+	container: {
 		borderRadius: 8,
-		paddingTop: 0,
-		paddingBottom: Platform.OS === "ios" ? 2 : 0,
-		paddingHorizontal: 20,
-		textAlignVertical: "center",
+		justifyContent: "center",
 	},
-	text: {
-		...typography.textInputMedium,
+	input: {
+		alignSelf: "stretch",
+		height: "100%",
+		fontFamily: typography.textInputMedium.fontFamily,
+		fontSize: typography.textInputMedium.fontSize,
 		includeFontPadding: false,
+		paddingHorizontal: 20,
+		paddingVertical: 0,
 	},
 });
 

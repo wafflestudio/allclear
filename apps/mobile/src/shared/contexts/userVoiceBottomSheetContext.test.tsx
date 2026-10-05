@@ -7,21 +7,34 @@ jest.mock("react", () => {
 	return {
 		...actual,
 		useCallback: (callback: unknown) => callback,
+		useContext: () => ({ userService: { createUserVoice: jest.fn() } }),
 		useEffect: jest.fn(),
 		useRef: () => ({ current: null }),
+		useState: (value: unknown) => [value, jest.fn()],
 	};
 });
 
 jest.mock("@gorhom/bottom-sheet", () => ({
 	BottomSheetBackdrop: "BottomSheetBackdrop",
+	BottomSheetFooter: "BottomSheetFooter",
 	BottomSheetModal: "BottomSheetModal",
-	BottomSheetView: "BottomSheetView",
+	BottomSheetScrollView: "BottomSheetScrollView",
 	BottomSheetTextInput: "BottomSheetTextInput",
 }));
 
 jest.mock("@/shared/components/UserVoiceView", () => ({
 	__esModule: true,
+	UserVoiceSubmitButton: "UserVoiceSubmitButton",
 	default: "UserVoiceView",
+}));
+
+jest.mock("react-native-toast-message", () => ({
+	__esModule: true,
+	default: { show: jest.fn() },
+}));
+
+jest.mock("react-native-safe-area-context", () => ({
+	useSafeAreaInsets: () => ({ bottom: 0 }),
 }));
 
 type ElementWithProps = ReactElement<Record<string, unknown>>;
@@ -58,6 +71,7 @@ describe("UserVoiceBottomSheetProvider", () => {
 			enableBlurKeyboardOnGesture: true,
 			keyboardBlurBehavior: "restore",
 			snapPoints: [Platform.OS === "ios" ? 440 : 420],
+			bottomInset: 0,
 		});
 	});
 });

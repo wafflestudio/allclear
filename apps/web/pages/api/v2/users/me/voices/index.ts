@@ -1,9 +1,9 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { UserNotFoundError } from 'server/domain/error'
+import { UserVoiceSchema } from 'server/http/schemas/users'
 import { Provider } from 'server/provider'
 import { DiscordService } from 'server/service/discord.service'
 import { UserService } from 'server/service/user.service'
-import { UserVoiceSchema } from 'src/lib/schemas/users'
 import { z } from 'zod'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

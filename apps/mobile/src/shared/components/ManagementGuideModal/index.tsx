@@ -67,17 +67,15 @@ const pages: readonly GuidePage[] = [
 const PAGE_WIDTH = s(292);
 const PREVIEW_WIDTH = s(266);
 const PREVIEW_HEIGHT = vs(214);
-const STATE_INTERVAL_MS = 2500;
-const REGISTRATION_START_DELAY_MS = 600;
-const REGISTRATION_SCROLL_STEP_MS = 2000;
-const REGISTRATION_END_HOLD_MS = 2000;
-const REGISTRATION_ANIMATION_INTERVAL_MS =
-	REGISTRATION_START_DELAY_MS +
-	REGISTRATION_SCROLL_STEP_MS * 2 +
-	REGISTRATION_END_HOLD_MS;
+const PROTOTYPE_TIMEOUT_MS = 800;
+const PROFILE_SECOND_TIMEOUT_MS = 500;
+const STATE_OVERLAY_TRANSITION_MS = 300;
+const APPROVAL_OVERLAY_TRANSITION_MS = 500;
+const REGISTRATION_SCROLL_STEP_MS = 300;
 const REGISTRATION_IMAGE_HEIGHT = vs((226 * 4096) / 660);
 const REGISTRATION_SECOND_OFFSET = -vs(640 - 26);
 const REGISTRATION_THIRD_OFFSET = -vs(1167 - 26);
+const FIGMA_EASE_OUT = Easing.bezier(0, 0, 0.58, 1);
 
 const page1Profile =
 	require("@/assets/images/admin-guide/page1-profile.png") as number;
@@ -297,69 +295,102 @@ const AutoStates = ({
 	kind: Exclude<SceneKind, "management">;
 }) => {
 	const reduceMotion = useReducedMotion();
-	const scrollView = useRef<ScrollView>(null);
+	const transitionProgress = useRef(new Animated.Value(0)).current;
 	const [stateIndex, setStateIndex] = useState(0);
+	const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
 	const states: readonly SceneState[] =
 		kind === "approval" ? ["first", "second"] : ["first", "second", "third"];
-	const loopStates = [
-		...states.map((state) => ({ key: state, state })),
-		{ key: "first-clone", state: states[0] ?? "first" },
-	] as const;
 
 	useEffect(() => {
 		if (!active) {
 			setStateIndex(0);
-			scrollView.current?.scrollTo({ x: 0, animated: false });
+			setIncomingIndex(null);
+			transitionProgress.setValue(0);
 			return;
 		}
 
-		if (reduceMotion) return;
+		if (reduceMotion) {
+			setIncomingIndex(null);
+			transitionProgress.setValue(0);
+			return;
+		}
 
-		const interval =
-			kind === "registration" && stateIndex === states.length - 1
-				? REGISTRATION_ANIMATION_INTERVAL_MS
-				: STATE_INTERVAL_MS;
+		if (stateIndex === states.length - 1) return;
+
+		const holdDuration =
+			kind === "myPage" && stateIndex === 1
+				? PROFILE_SECOND_TIMEOUT_MS
+				: PROTOTYPE_TIMEOUT_MS;
+		const transitionDuration =
+			kind === "approval"
+				? APPROVAL_OVERLAY_TRANSITION_MS
+				: STATE_OVERLAY_TRANSITION_MS;
+		let frame: number | undefined;
+		let animation: Animated.CompositeAnimation | undefined;
 		const timer = setTimeout(() => {
-			const nextIndex = (stateIndex + 1) % states.length;
-			const nextScrollIndex =
-				stateIndex === states.length - 1 ? states.length : nextIndex;
-			scrollView.current?.scrollTo({
-				x: nextScrollIndex * PREVIEW_WIDTH,
-				animated: true,
-			});
-			setStateIndex(nextIndex);
-		}, interval);
+			const nextIndex = stateIndex + 1;
+			transitionProgress.setValue(0);
+			setIncomingIndex(nextIndex);
+			frame = requestAnimationFrame(() => {
+				animation = Animated.timing(transitionProgress, {
+					toValue: 1,
+					duration: transitionDuration,
+					easing: FIGMA_EASE_OUT,
+					useNativeDriver: true,
+				});
+				animation.start(({ finished }) => {
+					if (!finished) return;
 
-		return () => clearTimeout(timer);
-	}, [active, kind, reduceMotion, stateIndex, states.length]);
+					transitionProgress.setValue(1);
+					setStateIndex(nextIndex);
+				});
+			});
+		}, holdDuration);
+
+		return () => {
+			clearTimeout(timer);
+			if (frame !== undefined) cancelAnimationFrame(frame);
+			animation?.stop();
+		};
+	}, [
+		active,
+		kind,
+		reduceMotion,
+		stateIndex,
+		states.length,
+		transitionProgress,
+	]);
+
+	useEffect(() => {
+		if (!active || incomingIndex === null || incomingIndex !== stateIndex)
+			return;
+
+		const frame = requestAnimationFrame(() => {
+			setIncomingIndex(null);
+			transitionProgress.setValue(0);
+		});
+
+		return () => cancelAnimationFrame(frame);
+	}, [active, incomingIndex, stateIndex, transitionProgress]);
 
 	return (
-		<View pointerEvents="none" style={styles.stateCarouselMask}>
-			<ScrollView
-				ref={scrollView}
-				horizontal
-				pagingEnabled
-				scrollEnabled={false}
-				showsHorizontalScrollIndicator={false}
-				style={styles.stateCarousel}
-				onMomentumScrollEnd={(event) => {
-					const scrollIndex = Math.round(
-						event.nativeEvent.contentOffset.x / PREVIEW_WIDTH,
-					);
-					if (scrollIndex === states.length) {
-						scrollView.current?.scrollTo({ x: 0, animated: false });
-					}
-				}}
-			>
-				{loopStates.map((item, index) => (
+		<View pointerEvents="none" style={styles.stateOverlayMask}>
+			<GuideScene
+				active={active}
+				kind={kind}
+				state={states[stateIndex] ?? "first"}
+			/>
+			{incomingIndex !== null ? (
+				<Animated.View
+					style={[styles.incomingScene, { opacity: transitionProgress }]}
+				>
 					<GuideScene
-						key={item.key}
-						active={active && index < states.length && index === stateIndex}
+						active={false}
 						kind={kind}
-						state={item.state}
+						state={states[incomingIndex] ?? "first"}
 					/>
-				))}
-			</ScrollView>
+				</Animated.View>
+			) : null}
 		</View>
 	);
 };
@@ -384,20 +415,20 @@ const GuideScene = ({
 			return;
 
 		const animation = Animated.sequence([
-			Animated.delay(REGISTRATION_START_DELAY_MS),
+			Animated.delay(PROTOTYPE_TIMEOUT_MS),
 			Animated.timing(registrationOffset, {
 				toValue: REGISTRATION_SECOND_OFFSET,
 				duration: REGISTRATION_SCROLL_STEP_MS,
-				easing: Easing.linear,
+				easing: FIGMA_EASE_OUT,
 				useNativeDriver: true,
 			}),
+			Animated.delay(PROTOTYPE_TIMEOUT_MS),
 			Animated.timing(registrationOffset, {
 				toValue: REGISTRATION_THIRD_OFFSET,
 				duration: REGISTRATION_SCROLL_STEP_MS,
-				easing: Easing.linear,
+				easing: FIGMA_EASE_OUT,
 				useNativeDriver: true,
 			}),
-			Animated.delay(REGISTRATION_END_HOLD_MS),
 		]);
 		animation.start();
 		return () => animation.stop();
@@ -623,7 +654,7 @@ const styles = StyleSheet.create({
 		borderRadius: ms(5),
 		backgroundColor: Colors.BACKGROUND_SUB,
 	},
-	stateCarouselMask: {
+	stateOverlayMask: {
 		width: PREVIEW_WIDTH,
 		height: PREVIEW_HEIGHT,
 		marginTop: vs(20),
@@ -631,9 +662,8 @@ const styles = StyleSheet.create({
 		borderRadius: ms(10),
 		backgroundColor: "#FCFBFF",
 	},
-	stateCarousel: {
-		width: PREVIEW_WIDTH,
-		height: PREVIEW_HEIGHT,
+	incomingScene: {
+		...StyleSheet.absoluteFillObject,
 	},
 	preview: {
 		width: PREVIEW_WIDTH,
