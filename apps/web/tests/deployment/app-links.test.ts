@@ -79,6 +79,34 @@ describe('android app links', () => {
     )
   })
 
+  it('registers the Play App Signing certificate without removing the production upload certificate', () => {
+    const association = JSON.parse(
+      readFileSync(join(process.cwd(), 'public/.well-known/assetlinks.json'), 'utf8'),
+    ) as Array<{
+      relation: string[]
+      target: {
+        namespace: string
+        package_name: string
+        sha256_cert_fingerprints: string[]
+      }
+    }>
+    const productionFingerprints = association
+      .filter(
+        ({ relation, target }) =>
+          relation.includes('delegate_permission/common.handle_all_urls') &&
+          target.namespace === 'android_app' &&
+          target.package_name === 'com.padocorp.clubhouse.applicationId',
+      )
+      .flatMap(({ target }) => target.sha256_cert_fingerprints)
+
+    expect(productionFingerprints).toContain(
+      'CD:5C:33:04:1C:93:E3:93:EB:99:3D:D0:5E:C6:27:5C:80:78:98:E1:C4:7B:EF:67:78:E4:76:5C:7D:CB:A2:E2',
+    )
+    expect(productionFingerprints).toContain(
+      'DB:7E:93:61:22:AC:D2:FA:B8:6F:46:08:97:54:97:A1:B7:83:95:EB:7E:E5:E4:80:EE:62:93:59:C4:4A:DF:D1',
+    )
+  })
+
   it('fails the Android dev build when the restored keystore is not registered', () => {
     const workflow = readFileSync(
       join(process.cwd(), '../../.github/workflows/android-dev-internal.yml'),
