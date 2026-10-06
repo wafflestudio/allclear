@@ -1,8 +1,11 @@
 import type { Club } from "@/entities/club";
 import type {
+	AcceptManagerTransferInvitationResponse,
 	ClubManagerRequestDetail,
 	ClubRepository,
 	ClubRequestTarget,
+	CreateManagerTransferInvitationRequest,
+	CreateManagerTransferInvitationResponse,
 	CreateSavedClubRequest,
 	GetClubRequest,
 	GetManagedClubDetailRequest,
@@ -17,6 +20,8 @@ import type {
 	ListSavedClubsResponse,
 	ManagedClubDetail,
 	ManagedClubRequestTarget,
+	ManagerTransferInvitation,
+	ManagerTransferInvitationRequest,
 	RegisterClubRequest,
 	RegisterClubResponse,
 	RemoveSavedClubRequest,
@@ -57,6 +62,15 @@ export type ClubService = {
 	getManagedClubManager: (
 		req: ManagedClubRequestTarget,
 	) => Promise<ClubManagerRequestDetail>;
+	createManagerTransferInvitation: (
+		req: CreateManagerTransferInvitationRequest,
+	) => Promise<CreateManagerTransferInvitationResponse>;
+	getManagerTransferInvitation: (
+		req: ManagerTransferInvitationRequest,
+	) => Promise<ManagerTransferInvitation>;
+	acceptManagerTransferInvitation: (
+		req: ManagerTransferInvitationRequest,
+	) => Promise<AcceptManagerTransferInvitationResponse>;
 	requestOfficialVerification: (
 		req: RequestOfficialVerificationRequest,
 	) => Promise<RequestOfficialVerificationResponse>;
@@ -96,6 +110,12 @@ export const getClubService = ({ repositories }: Deps): ClubService => ({
 	updateClubManagerRequest: (req) =>
 		repositories[0].updateClubManagerRequest(req),
 	getManagedClubManager: (req) => repositories[0].getManagedClubManager(req),
+	createManagerTransferInvitation: (req) =>
+		repositories[0].createManagerTransferInvitation(req),
+	getManagerTransferInvitation: (req) =>
+		repositories[0].getManagerTransferInvitation(req),
+	acceptManagerTransferInvitation: (req) =>
+		repositories[0].acceptManagerTransferInvitation(req),
 	requestOfficialVerification: (req) =>
 		repositories[0].requestOfficialVerification(req),
 	cancelClubManagerRequest: (req) =>

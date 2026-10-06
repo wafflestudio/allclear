@@ -3,8 +3,8 @@
 #import <Firebase.h>
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTLinkingManager.h>
-#import "RNSplashScreen.h"
 #import <RNKakaoLogins.h>
+#import <RNSplashScreen.h>
 #import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
 
 @implementation AppDelegate

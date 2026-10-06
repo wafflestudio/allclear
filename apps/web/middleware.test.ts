@@ -32,6 +32,12 @@ describe('authentication middleware routes', () => {
     expect(config.matcher).toContain('/api/v2/managers/me/clubs/:uuid/manager')
   })
 
+  it('authenticates every manager transfer API', () => {
+    expect(config.matcher).toContain('/api/v2/managers/me/clubs/:uuid/manager-transfer-invitations')
+    expect(config.matcher).toContain('/api/v2/manager-transfer-invitations/:token')
+    expect(config.matcher).toContain('/api/v2/manager-transfer-invitations/:token/acceptance')
+  })
+
   it.each(['GET', 'PATCH'])(
     'passes authenticated %s requests to the club registration manager API',
     async (method) => {

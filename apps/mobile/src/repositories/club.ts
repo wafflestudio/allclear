@@ -20,6 +20,7 @@ export type ClubSearchMinActivityPeriod = "0" | "1" | "2" | "3_plus";
 
 export type SearchClubsRequest = {
 	query: string;
+	record_recent_search?: ClubSearchBooleanString;
 	affiliation_type?: ClubSearchAffiliationType;
 	is_recruiting?: ClubSearchBooleanString;
 	recruit_type?: ClubSearchRecruitType;
@@ -122,6 +123,58 @@ export type ClubManagerRequestDetail = {
 	name: string;
 	phone: string;
 	studentId: string;
+};
+
+export type CreateManagerTransferInvitationRequest = {
+	clubId: Club["uuid"];
+};
+
+export type CreateManagerTransferInvitationResponse = {
+	transferUrl: string;
+	expiresAt: string;
+};
+
+export type ManagerTransferInvitationRequest = {
+	token: string;
+};
+
+export type ManagerTransferInvitation = {
+	clubId: Club["uuid"];
+	clubName: Club["name"];
+	expiresAt: string;
+};
+
+export type AcceptManagerTransferInvitationResponse = Pick<
+	ManagerTransferInvitation,
+	"clubId" | "clubName"
+>;
+
+type ManagerTransferInvitationCreateApiResponse = {
+	success: true;
+	message: string;
+	data: {
+		transfer_url: string;
+		expires_at: string;
+	};
+};
+
+type ManagerTransferInvitationApiResponse = {
+	success: true;
+	message: string;
+	data: {
+		club_uuid: Club["uuid"];
+		club_name: Club["name"];
+		expires_at: string;
+	};
+};
+
+type ManagerTransferAcceptanceApiResponse = {
+	success: true;
+	message: string;
+	data: {
+		club_uuid: Club["uuid"];
+		club_name: Club["name"];
+	};
 };
 
 type ClubManagerRequestDetailResponse = {
@@ -279,6 +332,15 @@ export type ClubRepository = {
 	getManagedClubManager: (
 		req: ManagedClubRequestTarget,
 	) => Promise<ClubManagerRequestDetail>;
+	createManagerTransferInvitation: (
+		req: CreateManagerTransferInvitationRequest,
+	) => Promise<CreateManagerTransferInvitationResponse>;
+	getManagerTransferInvitation: (
+		req: ManagerTransferInvitationRequest,
+	) => Promise<ManagerTransferInvitation>;
+	acceptManagerTransferInvitation: (
+		req: ManagerTransferInvitationRequest,
+	) => Promise<AcceptManagerTransferInvitationResponse>;
 	requestOfficialVerification: (
 		req: RequestOfficialVerificationRequest,
 	) => Promise<RequestOfficialVerificationResponse>;
@@ -305,6 +367,9 @@ export const getClubRepository = (): ClubRepository => ({
 	searchClubs: async (req, signal) => {
 		const searchParams = new URLSearchParams();
 		searchParams.append("query", req.query.toLowerCase().trim());
+		if (req.record_recent_search !== undefined) {
+			searchParams.append("record_recent_search", req.record_recent_search);
+		}
 		if (req.affiliation_type && req.affiliation_type !== "전체") {
 			searchParams.append("affiliation_type", req.affiliation_type);
 		}
@@ -416,6 +481,40 @@ export const getClubRepository = (): ClubRepository => ({
 			name: response.name,
 			phone: response.phone,
 			studentId: response.student_id,
+		};
+	},
+	createManagerTransferInvitation: async (req) => {
+		const response =
+			await apiConnector.post<ManagerTransferInvitationCreateApiResponse>(
+				`/v2/managers/me/clubs/${req.clubId}/manager-transfer-invitations`,
+			);
+
+		return {
+			transferUrl: response.data.transfer_url,
+			expiresAt: response.data.expires_at,
+		};
+	},
+	getManagerTransferInvitation: async (req) => {
+		const response =
+			await apiConnector.get<ManagerTransferInvitationApiResponse>(
+				`/v2/manager-transfer-invitations/${encodeURIComponent(req.token)}`,
+			);
+
+		return {
+			clubId: response.data.club_uuid,
+			clubName: response.data.club_name,
+			expiresAt: response.data.expires_at,
+		};
+	},
+	acceptManagerTransferInvitation: async (req) => {
+		const response =
+			await apiConnector.put<ManagerTransferAcceptanceApiResponse>(
+				`/v2/manager-transfer-invitations/${encodeURIComponent(req.token)}/acceptance`,
+			);
+
+		return {
+			clubId: response.data.club_uuid,
+			clubName: response.data.club_name,
 		};
 	},
 	requestOfficialVerification: (req) =>

@@ -4,15 +4,15 @@
     "details": [
       {
         "appID": "K9883YB4VR.com.padocorp.clubhouse",
-        "paths": ["/club/*"]
+        "paths": ["/club/*", "/manager-transfer/*"]
       },
       {
         "appID": "K9883YB4VR.com.padocorp.clubhouse.staging",
-        "paths": ["/club/*"]
+        "paths": ["/club/*", "/manager-transfer/*"]
       },
       {
         "appID": "K9883YB4VR.com.padocorp.clubhouse.dev",
-        "paths": ["/club/*"]
+        "paths": ["/club/*", "/manager-transfer/*"]
       }
     ]
   }

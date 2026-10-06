@@ -131,18 +131,18 @@ const styles = StyleSheet.create({
 		height: 56,
 		paddingHorizontal: 20,
 		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: "transparent",
 		alignItems: "flex-start",
 		justifyContent: "center",
 		marginBottom: 10,
 	},
 	optionButtonUnselected: {
-		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
 		backgroundColor: Colors.WHITE,
 	},
 	optionButtonSelected: {
 		backgroundColor: Colors.TEXTBOX_SELECTED,
-		borderWidth: 0,
 	},
 	optionButtonText: {
 		...typography.bodyMMedium,

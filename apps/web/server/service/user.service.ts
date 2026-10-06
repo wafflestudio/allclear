@@ -1,5 +1,6 @@
+import { UserRole } from 'server/domain/constants/user-role.enum'
 import { IsNull, Not, type Repository } from 'typeorm'
-import type { UpdateProfileDto } from '../../src/lib/schemas/users'
+import type { UpdateProfileDto } from '../../server/http/schemas/users'
 import { ForbiddenError, UserNotFoundError } from '../domain/error'
 import type { CollegeMajor } from '../domain/model/CollegeMajor'
 import type { User } from '../domain/model/User'
@@ -14,7 +15,6 @@ import {
   UserVoiceEntity,
 } from '../infra/database/entities'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
-import { UserRole } from '../infra/database/entities/user-role.enum'
 import { InjectRepository, Service } from '../provider'
 
 const RECENT_SEARCH_LIMIT = 8

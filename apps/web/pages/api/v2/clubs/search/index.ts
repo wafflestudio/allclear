@@ -39,8 +39,10 @@ export default async function handler(
       }
 
       let filters: SearchFilters
+      let recordRecentSearch: boolean
       try {
         filters = parseSearchFilters(req.query)
+        recordRecentSearch = parseOptionalBoolean(req.query.record_recent_search) ?? true
       } catch (err) {
         if (err instanceof InvalidSearchFilterError) {
           return res.status(400).send(err.message)
@@ -50,7 +52,9 @@ export default async function handler(
 
       const { clubs, correctedQuery, isTypoCorrected } =
         await searchService.searchWithTypoCorrection(query, { filters })
-      await saveRecentSearchBestEffort(auth, query)
+      if (recordRecentSearch) {
+        await saveRecentSearchBestEffort(auth, query)
+      }
       return res.status(200).json({
         clubs: clubs,
         totalSize: clubs.length,

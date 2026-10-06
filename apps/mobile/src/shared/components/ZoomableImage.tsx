@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Image, type LayoutChangeEvent, StyleSheet } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
+	runOnJS,
 	useAnimatedStyle,
 	useSharedValue,
 	withSpring,
@@ -11,11 +13,13 @@ import { clampImageScale, getPanTranslation } from "@/shared/utils/imageViewer";
 type Props = {
 	url: string;
 	accessibilityLabel: string;
+	onZoomChange?: (isZoomed: boolean) => void;
 };
 
 const DOUBLE_TAP_SCALE = 2;
 
-const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
+const ZoomableImage = ({ url, accessibilityLabel, onZoomChange }: Props) => {
+	const [isZoomed, setIsZoomed] = useState(false);
 	const viewportWidth = useSharedValue(0);
 	const viewportHeight = useSharedValue(0);
 	const scale = useSharedValue(1);
@@ -41,6 +45,8 @@ const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
 		translationY.value = withSpring(0);
 		savedTranslationX.value = 0;
 		savedTranslationY.value = 0;
+		runOnJS(setIsZoomed)(false);
+		if (onZoomChange) runOnJS(onZoomChange)(false);
 	};
 
 	const pinchGesture = Gesture.Pinch()
@@ -73,9 +79,12 @@ const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
 			translationY.value = clampedTranslation.y;
 			savedTranslationX.value = clampedTranslation.x;
 			savedTranslationY.value = clampedTranslation.y;
+			runOnJS(setIsZoomed)(true);
+			if (onZoomChange) runOnJS(onZoomChange)(true);
 		});
 
 	const panGesture = Gesture.Pan()
+		.enabled(isZoomed)
 		.averageTouches(true)
 		.onStart(() => {
 			panStartTranslationX.value = savedTranslationX.value;
@@ -124,6 +133,8 @@ const ZoomableImage = ({ url, accessibilityLabel }: Props) => {
 
 			scale.value = withTiming(DOUBLE_TAP_SCALE);
 			savedScale.value = DOUBLE_TAP_SCALE;
+			runOnJS(setIsZoomed)(true);
+			if (onZoomChange) runOnJS(onZoomChange)(true);
 		});
 
 	const gesture = Gesture.Race(

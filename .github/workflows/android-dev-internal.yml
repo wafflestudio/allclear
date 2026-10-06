@@ -51,6 +51,48 @@ jobs:
           printf '%s' "$ANDROID_DEBUG_KEYSTORE_BASE64" | base64 --decode > android/app/debug.keystore
           chmod 600 android/app/debug.keystore
 
+      - name: Verify Android App Link certificate
+        shell: bash
+        working-directory: apps/mobile
+        run: |
+          actual_fingerprint="$(
+            keytool -exportcert \
+              -alias androiddebugkey \
+              -keystore android/app/debug.keystore \
+              -storepass android \
+              -rfc \
+              | openssl x509 -noout -fingerprint -sha256 \
+              | cut -d= -f2
+          )"
+          expected_fingerprints="$(
+            node -e '
+              const { readFileSync } = require("node:fs");
+              const associations = JSON.parse(
+                readFileSync("../web/public/.well-known/assetlinks.json", "utf8"),
+              );
+              const developmentFingerprints = associations
+                .filter(
+                  ({ relation, target }) =>
+                    relation.includes(
+                      "delegate_permission/common.handle_all_urls",
+                    ) &&
+                    target.namespace === "android_app" &&
+                    target.package_name ===
+                    "com.padocorp.clubhouse.applicationId.debug",
+                )
+                .flatMap(({ target }) => target.sha256_cert_fingerprints);
+              if (developmentFingerprints.length === 0) process.exit(1);
+              process.stdout.write(
+                [...new Set(developmentFingerprints)].join("\n"),
+              );
+            '
+          )"
+
+          if ! printf '%s\n' "$expected_fingerprints" | grep -Fxq "$actual_fingerprint"; then
+            echo "Restored Android certificate is not registered in assetlinks.json"
+            exit 1
+          fi
+
       - name: Build standalone dev APK
         working-directory: apps/mobile
         run: |

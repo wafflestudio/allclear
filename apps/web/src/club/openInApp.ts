@@ -1,19 +1,31 @@
-/**
- * 앱 딥링크(allclear://...)를 시도하고,
- * 일정 시간 안에 앱으로 전환되지 않으면 앱 다운로드 페이지로 폴백한다.
- */
-export function openAppDeepLink(deepPath = '') {
-  const fallback = setTimeout(() => {
-    window.location.href = '/download/app'
-  }, 1500)
+type OpenAppDeepLinkOptions = {
+  fallbackUrl?: string | null
+  fallbackDelayMs?: number
+}
 
-  // 앱으로 전환되어 페이지가 숨겨지면 폴백을 취소한다
+export const buildAppDeepLinkUrl = (deepPath = '') => `allclear://${deepPath.replace(/^\/+/, '')}`
+
+export function openAppDeepLink(
+  deepPath = '',
+  { fallbackUrl = '/download/app', fallbackDelayMs = 1500 }: OpenAppDeepLinkOptions = {},
+) {
+  const fallback = fallbackUrl
+    ? setTimeout(() => {
+        window.location.href = fallbackUrl
+      }, fallbackDelayMs)
+    : null
+
   const cancelOnHide = () => {
-    if (document.hidden) clearTimeout(fallback)
+    if (document.hidden && fallback) clearTimeout(fallback)
   }
-  document.addEventListener('visibilitychange', cancelOnHide, { once: true })
+  if (fallback) document.addEventListener('visibilitychange', cancelOnHide, { once: true })
 
-  window.location.href = `allclear://${deepPath}`
+  window.location.href = buildAppDeepLinkUrl(deepPath)
+
+  return () => {
+    if (fallback) clearTimeout(fallback)
+    document.removeEventListener('visibilitychange', cancelOnHide)
+  }
 }
 
 export function openClubInApp(uuid: string) {

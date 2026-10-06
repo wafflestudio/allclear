@@ -7,12 +7,25 @@ import {
 	getEntrySplashStages,
 	getEntrySplashViewport,
 	resolveEntrySplashLayoutMetrics,
+	shouldCompleteAppEntry,
 	shouldExitEntrySplash,
 	shouldShowAppInitializationLoading,
-	shouldShowGlobalAppModals,
 } from "@/shared/utils/entrySplash";
 
 describe("entry splash timeline", () => {
+	it("preserves Android's 402 x 874 layout after merging the iOS canvas fix", () => {
+		const viewport = getEntrySplashViewport(
+			{
+				width: 402,
+				height: 874,
+				topInset: 24,
+				bottomInset: 48,
+			},
+			"android",
+		);
+		expect(viewport.scaleX).toBe(1);
+		expect(viewport.scaleY).toBe(802 / 874);
+	});
 	it("keeps unauthenticated users on the fourth stage with login actions", () => {
 		expect(getEntrySplashStages(false)).toEqual([1, 2, 3, 4]);
 	});
@@ -28,15 +41,20 @@ describe("entry splash timeline", () => {
 
 	it("excludes the Android system bars from the entry layout viewport", () => {
 		expect(
-			getEntrySplashViewport({
-				width: 402,
-				height: 874,
-				topInset: 24,
-				bottomInset: 48,
-			}),
+			getEntrySplashViewport(
+				{
+					width: 402,
+					height: 874,
+					topInset: 24,
+					bottomInset: 48,
+				},
+				"android",
+			),
 		).toEqual({
 			contentTop: 24,
 			contentBottom: 48,
+			nativeSplashLeft: 6,
+			nativeSplashTop: 15,
 			scaleX: 1,
 			scaleY: 802 / 874,
 		});
@@ -44,8 +62,8 @@ describe("entry splash timeline", () => {
 
 	it("keeps the iOS entry layout inside the Dynamic Island and home indicator", () => {
 		const viewport = getEntrySplashViewport({
-			width: 402,
-			height: 874,
+			width: 390,
+			height: 844,
 			topInset: 59,
 			bottomInset: 34,
 		});
@@ -53,25 +71,41 @@ describe("entry splash timeline", () => {
 		expect(viewport).toEqual({
 			contentTop: 59,
 			contentBottom: 34,
+			nativeSplashLeft: 0,
+			nativeSplashTop: 0,
 			scaleX: 1,
-			scaleY: 781 / 874,
+			scaleY: 751 / 844,
 		});
 
 		const wordmarkBottom =
 			viewport.contentTop + (779 + 29.294) * viewport.scaleY;
-		expect(wordmarkBottom).toBeLessThanOrEqual(874 - viewport.contentBottom);
+		expect(wordmarkBottom).toBeLessThanOrEqual(844 - viewport.contentBottom);
+	});
+
+	it("centers the first JS frame using the same 390 x 844 canvas as iOS launch", () => {
+		expect(
+			getEntrySplashViewport({
+				width: 402,
+				height: 874,
+				topInset: 59,
+				bottomInset: 34,
+			}),
+		).toMatchObject({
+			nativeSplashLeft: 6,
+			nativeSplashTop: 15,
+		});
 	});
 
 	it("keeps the first native layout when Android system bar metrics update", () => {
 		const initialMetrics = {
-			width: 402,
-			height: 802,
+			width: 390,
+			height: 772,
 			topInset: 24,
 			bottomInset: 48,
 		};
 		const updatedMetrics = {
-			width: 402,
-			height: 874,
+			width: 390,
+			height: 844,
 			topInset: 24,
 			bottomInset: 48,
 		};
@@ -86,12 +120,12 @@ describe("entry splash timeline", () => {
 		expect(ENTRY_SPLASH_SYMBOL_SIZE).toBe(81);
 		expect(
 			getCenteredScaledAssetOrigin({
-				designOrigin: 160.556,
+				designOrigin: 160.56,
 				designSize: 80.906,
 				renderedSize: ENTRY_SPLASH_SYMBOL_SIZE,
-				scale: 360 / 402,
+				scale: 360 / 390,
 			}),
-		).toBeCloseTo(((160.556 + 80.906 / 2) * 360) / 402 - 81 / 2);
+		).toBeCloseTo(((160.56 + 80.906 / 2) * 360) / 390 - 81 / 2);
 	});
 
 	it("keeps unauthenticated users on the login screen until they choose guest entry", () => {
@@ -118,9 +152,21 @@ describe("entry splash timeline", () => {
 		).toBe(true);
 	});
 
-	it("shows global app modals only after the entry flow has completed", () => {
-		expect(shouldShowGlobalAppModals({ entryFlowComplete: false })).toBe(false);
-		expect(shouldShowGlobalAppModals({ entryFlowComplete: true })).toBe(true);
+	it("시작 화면이 끝나도 강제 업데이트 대상이면 앱 진입을 완료하지 않는다", () => {
+		expect(
+			shouldCompleteAppEntry({
+				entrySplashComplete: true,
+				isUpdateCheckReady: true,
+				updateRequired: true,
+			}),
+		).toBe(false);
+		expect(
+			shouldCompleteAppEntry({
+				entrySplashComplete: true,
+				isUpdateCheckReady: true,
+				updateRequired: false,
+			}),
+		).toBe(true);
 	});
 
 	it("waits two seconds before showing the app initialization screen", () => {
