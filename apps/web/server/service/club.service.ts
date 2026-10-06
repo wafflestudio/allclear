@@ -382,7 +382,8 @@ export class ClubService {
       status: PUBLIC_CLUB_STATUS,
       deletedAt: IsNull(),
     })
-    return club.map((it) => toClubDomain(it))
+    const clubReview = await this.getClubReviews(club.map((it) => it.uuid))
+    return club.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
   }
 
   async saveClubToMyCollection(serviceUserId: string, clubId: string) {

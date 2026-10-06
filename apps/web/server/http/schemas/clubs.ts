@@ -22,6 +22,10 @@ export const MinActivityPeriodFilterSchema = z.enum(['0', '1', '2', '3_plus'])
 export const ClubSearchQuerySchema = z
   .object({
     query: z.string(),
+    record_recent_search: z
+      .enum(['true', 'false'])
+      .optional()
+      .describe('최근 검색어 저장 여부. 생략 시 true, 운영진 등록 검색은 false.'),
     affiliation_type: z.enum(['전체', '중앙동아리', '학과/단과대동아리']).optional(),
     is_recruiting: z.string().optional(),
     recruit_type: z.enum(['정기', '상시']).optional(),

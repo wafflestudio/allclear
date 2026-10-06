@@ -157,6 +157,7 @@ const ManageClubRegistrationScreen = () => {
 			try {
 				const { clubs } = await clubService.searchClubs({
 					query: clubSearchQuery,
+					record_recent_search: "false",
 				});
 				setSearchResults(clubs);
 			} catch {
