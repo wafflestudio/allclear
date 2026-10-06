@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- These strings are resolved by name in RNCConfig and RNKakaoLogins. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@string/build_config_package,@string/kakao_app_key" />
