@@ -81,6 +81,7 @@ describe('SearchQueryService with Prisma', () => {
       image_uri: 'image',
       article: null,
       article_uploaded_at: null,
+      status: 'APPROVED',
       reject_reason: null,
     }
     prisma.college_major.findMany

@@ -1,12 +1,8 @@
 import { PUBLIC_CLUB_STATUS } from 'server/domain/constants/club-status'
 import type { ClubDomainSource } from 'server/domain/model/Club'
-import type { Prisma, club as PrismaClub } from 'server/infra/database/generated/prisma/client'
+import type { Prisma } from 'server/infra/database/generated/prisma/client'
 import { getPrismaClient } from 'server/infra/database/prisma'
-import {
-  toNullableDateString,
-  toNullableTimestampString,
-  toStringArray,
-} from 'server/infra/database/prisma-mapping'
+import { toClubDomainSource } from 'server/infra/database/prisma-club-mapping'
 import { Service } from 'server/provider'
 import type { SearchFilters } from './search.types'
 import { buildSearchFilter } from './search-filter'
@@ -65,7 +61,7 @@ export class SearchQueryService {
       : []
     const collegeMajorById = new Map(collegeMajors.map((major) => [major.id, major]))
     return uniqueClubs.map((club) =>
-      this.toDomainSource(
+      toClubDomainSource(
         club,
         club.college_major_id === null
           ? null
@@ -86,38 +82,5 @@ export class SearchQueryService {
       select: { id: true },
     })
     return collegeMajors.map((major) => major.id)
-  }
-
-  private toDomainSource(
-    club: PrismaClub,
-    collegeMajor: ClubDomainSource['collegeMajor'],
-  ): ClubDomainSource {
-    return {
-      uuid: club.uuid,
-      name: club.name,
-      description: club.description,
-      shortDescription: club.short_description,
-      introduction: club.introduction,
-      type: club.type,
-      category: club.category,
-      affiliationType: club.affiliation_type,
-      collegeMajorId: club.college_major_id,
-      collegeMajor,
-      recruitType: club.recruit_type,
-      isOfficialVerified: club.is_official_verified,
-      verifiedAt: toNullableTimestampString(club.verified_at),
-      hasDongbang: club.has_dongbang,
-      dongbangLocation: club.dongbang_location,
-      minActivityPeriod: club.min_activity_period,
-      activeMemberCount: club.active_member_count,
-      foundedAt: toNullableDateString(club.founded_at),
-      snsUrls: toStringArray(club.sns_urls),
-      activityImageUrls: toStringArray(club.activity_image_urls),
-      imageUri: club.image_uri,
-      article: club.article,
-      articleUploadedAt: toNullableTimestampString(club.article_uploaded_at),
-      status: PUBLIC_CLUB_STATUS,
-      rejectReason: club.reject_reason,
-    }
   }
 }
