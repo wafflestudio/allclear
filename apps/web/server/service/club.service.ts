@@ -11,6 +11,7 @@ import { getOfficialVerificationTermKey } from 'server/domain/constants/official
 import {
   type Club,
   type ClubDetail,
+  type ClubDomainSource,
   type ManagedClubDetail,
   type ManagedClubListItem,
   type ReviewKeyword,
@@ -43,7 +44,9 @@ import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
-import { UserSavedClubEntity } from '../infra/database/entities/user-saved-club.entity'
+import type { club as PrismaClub } from '../infra/database/generated/prisma/client'
+import { getPrismaClient } from '../infra/database/prisma'
+import { toClubDomainSource } from '../infra/database/prisma-club-mapping'
 import { Inject, InjectRepository, Service } from '../provider'
 import { sortEachRandom } from '../util/club-sort'
 import { ClubAccessService } from './club-access.service'
@@ -84,8 +87,6 @@ export class ClubService {
   private readonly clubReviewKeywordRepository: Repository<ClubReviewKeywordEntity>
   @InjectRepository(UserClubReviewEntity)
   private readonly userClubReviewRepository: Repository<UserClubReviewEntity>
-  @InjectRepository(UserSavedClubEntity)
-  private readonly userSavedClubRepository: Repository<UserSavedClubEntity>
   @InjectRepository(ClubManagerEntity)
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
   @InjectRepository(ClubManagerRequestEntity)
@@ -182,12 +183,13 @@ export class ClubService {
         params: JSON.stringify({ category }),
       })
       .catch(console.error)
-    const entities = await this.clubRepository.findBy({
-      category,
-      status: PUBLIC_CLUB_STATUS,
-      deletedAt: IsNull(),
+    const rows = await getPrismaClient().club.findMany({
+      where: { category, status: PUBLIC_CLUB_STATUS, deleted_at: null },
     })
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
+    const [entities, clubReview] = await Promise.all([
+      this.toPrismaClubSources(rows),
+      this.getClubReviews(rows.map((it) => it.uuid)),
+    ])
     const clubs = entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
     return sortEachRandom(clubs)
   }
@@ -364,65 +366,104 @@ export class ClubService {
   }
 
   async findClubsReviewedByMe(serviceUserId: string): Promise<Club[]> {
-    const clubReviews = await this.userClubReviewRepository.findBy({ serviceUserId })
-    const clubIds = Array.from(new Set(clubReviews.map((it) => it.clubId)))
-    const club = await this.clubRepository.findBy({
-      uuid: In(clubIds),
-      status: PUBLIC_CLUB_STATUS,
-      deletedAt: IsNull(),
+    const reviews = await getPrismaClient().user_club_review.findMany({
+      where: { service_user_id: serviceUserId },
+      select: { club_id: true },
     })
-    return club.map((it) => toClubDomain(it))
+    return this.findPublicClubsByIds(reviews.map((it) => it.club_id))
   }
 
   async findMySavedClubs(serviceUserId: string): Promise<Club[]> {
-    const savedClubs = await this.userSavedClubRepository.findBy({ serviceUserId })
-    const clubIds = Array.from(new Set(savedClubs.map((it) => it.clubId)))
-    const club = await this.clubRepository.findBy({
-      uuid: In(clubIds),
-      status: PUBLIC_CLUB_STATUS,
-      deletedAt: IsNull(),
+    const saved = await getPrismaClient().user_saved_club.findMany({
+      where: { service_user_id: serviceUserId },
+      select: { club_id: true },
     })
-    return club.map((it) => toClubDomain(it))
+    return this.findPublicClubsByIds(saved.map((it) => it.club_id))
   }
 
   async saveClubToMyCollection(serviceUserId: string, clubId: string) {
     await this.clubAccessService.getPublicClub(clubId)
-    await this.userSavedClubRepository.insert({ serviceUserId, clubId })
+    await getPrismaClient().user_saved_club.create({
+      data: { service_user_id: serviceUserId, club_id: clubId },
+    })
   }
 
   async unsaveClubFromMyCollection(serviceUserId: string, clubId: string) {
-    await this.userSavedClubRepository.delete({ serviceUserId, clubId })
+    await getPrismaClient().user_saved_club.deleteMany({
+      where: { service_user_id: serviceUserId, club_id: clubId },
+    })
   }
 
   async findLatestUploaded(topN = 20): Promise<Club[]> {
-    const entities = await this.clubRepository.find({
-      where: {
-        status: PUBLIC_CLUB_STATUS,
-        deletedAt: IsNull(),
-      },
-      order: {
-        articleUploadedAt: {
-          direction: 'DESC',
-          nulls: 'LAST',
-        },
-      },
+    const rows = await getPrismaClient().club.findMany({
+      where: { status: PUBLIC_CLUB_STATUS, deleted_at: null },
+      orderBy: { article_uploaded_at: { sort: 'desc', nulls: 'last' } },
       take: topN,
     })
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
+    const [entities, clubReview] = await Promise.all([
+      this.toPrismaClubSources(rows),
+      this.getClubReviews(rows.map((it) => it.uuid)),
+    ])
     return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
   }
 
   async findRandomRecommendations(limit = 10): Promise<Club[]> {
-    const entities = await this.clubRepository
-      .createQueryBuilder('club')
-      .where('club.status = :status', { status: PUBLIC_CLUB_STATUS })
-      .andWhere('club.deleted_at IS NULL')
-      .orderBy('RANDOM()')
-      .take(limit)
-      .getMany()
-
-    const clubReview = await this.getClubReviews(entities.map((it) => it.uuid))
+    const prisma = getPrismaClient()
+    const randomIds = await prisma.$queryRaw<Array<{ uuid: string }>>`
+      SELECT uuid FROM club
+      WHERE status = ${PUBLIC_CLUB_STATUS} AND deleted_at IS NULL
+      ORDER BY RANDOM()
+      LIMIT ${limit}
+    `
+    if (randomIds.length === 0) {
+      return []
+    }
+    const rows = await prisma.club.findMany({
+      where: {
+        uuid: { in: randomIds.map((it) => it.uuid) },
+        status: PUBLIC_CLUB_STATUS,
+        deleted_at: null,
+      },
+    })
+    const rowById = new Map(rows.map((row) => [row.uuid, row]))
+    const orderedRows = randomIds
+      .map((it) => rowById.get(it.uuid))
+      .filter((row): row is PrismaClub => !!row)
+    const [entities, clubReview] = await Promise.all([
+      this.toPrismaClubSources(orderedRows),
+      this.getClubReviews(orderedRows.map((it) => it.uuid)),
+    ])
     return entities.map((it) => toClubDomain(it, clubReview.get(it.uuid)))
+  }
+
+  private async findPublicClubsByIds(clubIds: string[]): Promise<Club[]> {
+    const uniqueIds = Array.from(new Set(clubIds))
+    if (uniqueIds.length === 0) {
+      return []
+    }
+    const rows = await getPrismaClient().club.findMany({
+      where: { uuid: { in: uniqueIds }, status: PUBLIC_CLUB_STATUS, deleted_at: null },
+    })
+    return (await this.toPrismaClubSources(rows)).map((it) => toClubDomain(it))
+  }
+
+  private async toPrismaClubSources(rows: PrismaClub[]): Promise<ClubDomainSource[]> {
+    const majorIds = Array.from(
+      new Set(rows.map((row) => row.college_major_id).filter((id): id is number => id !== null)),
+    )
+    const majors = majorIds.length
+      ? await getPrismaClient().college_major.findMany({
+          where: { id: { in: majorIds }, deleted_at: null },
+          select: { id: true, college: true, major: true },
+        })
+      : []
+    const majorById = new Map(majors.map((major) => [major.id, major]))
+    return rows.map((row) =>
+      toClubDomainSource(
+        row,
+        row.college_major_id === null ? null : (majorById.get(row.college_major_id) ?? null),
+      ),
+    )
   }
 
   async registerClub(serviceUserId: string, body: ClubRegisterRequest): Promise<Club> {
