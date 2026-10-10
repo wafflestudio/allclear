@@ -1,156 +1,164 @@
 import { UserRole } from 'server/domain/constants/user-role.enum'
-import { IsNull, Not, type Repository } from 'typeorm'
 import type { UpdateProfileDto } from '../../server/http/schemas/users'
 import { ForbiddenError, UserNotFoundError } from '../domain/error'
 import type { CollegeMajor } from '../domain/model/CollegeMajor'
 import type { User } from '../domain/model/User'
-import {
-  AccountEntity,
-  AccountUserEntity,
-  ServiceUserEntity,
-  UserActivityLogEntity,
-  UserActivityLogType,
-  UserEntity,
-  UserRecentSearchEntity,
-  UserVoiceEntity,
-} from '../infra/database/entities'
-import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
-import { InjectRepository, Service } from '../provider'
+import { UserActivityLogType } from '../infra/database/entities'
+import { getPrismaClient } from '../infra/database/prisma'
+import { toTimestampString } from '../infra/database/prisma-mapping'
+import { Service } from '../provider'
 
 const RECENT_SEARCH_LIMIT = 8
 
+type UserRecentSearch = {
+  query: string
+  updatedAt: string
+}
+
 @Service
 export class UserService {
-  @InjectRepository(AccountEntity)
-  private readonly accountRepository: Repository<AccountEntity>
-  @InjectRepository(AccountUserEntity)
-  private readonly accountUserRepository: Repository<AccountUserEntity>
-  @InjectRepository(UserEntity)
-  private readonly userRepository: Repository<UserEntity>
-  @InjectRepository(ServiceUserEntity)
-  private readonly serviceUserRepository: Repository<ServiceUserEntity>
-  @InjectRepository(UserVoiceEntity)
-  private readonly userVoiceRepository: Repository<UserVoiceEntity>
-  @InjectRepository(UserActivityLogEntity)
-  private readonly userActivityLogRepository: Repository<UserActivityLogEntity>
-  @InjectRepository(CollegeMajorEntity)
-  private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
-  @InjectRepository(UserRecentSearchEntity)
-  private readonly userRecentSearchRepository: Repository<UserRecentSearchEntity>
-
   public async getUserByAccountId(accountId: string): Promise<User> {
     if (!accountId) {
-      throw new UserNotFoundError(`User not found`)
+      throw new UserNotFoundError('User not found')
     }
-    const account = await this.accountRepository.findOneBy({
-      id: accountId,
+
+    const prisma = getPrismaClient()
+    const account = await prisma.account.findFirst({
+      where: { id: accountId, deleted_at: null },
     })
     if (!account) {
-      throw new UserNotFoundError(`Account not found`)
+      throw new UserNotFoundError('Account not found')
     }
-    const accountUser = await this.accountUserRepository.findOne({
-      where: {
-        accountId,
-      },
-      relations: ['user', 'user.serviceUser', 'user.serviceUser.collegeMajor'],
+
+    const accountUser = await prisma.account_user.findFirst({
+      where: { account_id: accountId },
     })
     if (!accountUser) {
-      throw new UserNotFoundError(`AccountUser not found`)
+      throw new UserNotFoundError('AccountUser not found')
     }
-    if (!accountUser.user?.serviceUser) {
-      // 유저가 회원탈퇴를 한 경우 account는 남아있고 해당 서비스의 user만 soft delete 되어있다
+
+    const [user, serviceUser] = await Promise.all([
+      prisma.user.findFirst({ where: { id: accountUser.user_id, deleted_at: null } }),
+      prisma.allclear_user.findFirst({
+        where: { user_id: accountUser.user_id, deleted_at: null },
+      }),
+    ])
+    if (!user || !serviceUser) {
+      // 탈퇴 후 계정과 연결 정보가 남아 있어도 활성 사용자로 취급하지 않는다.
       console.error(`User not found for account ${accountId}`)
-      throw new UserNotFoundError(`User not found`)
+      throw new UserNotFoundError('User not found')
     }
+
+    const collegeMajor =
+      serviceUser.college_major_id == null
+        ? null
+        : await prisma.college_major.findFirst({
+            where: { id: serviceUser.college_major_id, deleted_at: null },
+          })
+
     return {
-      id: accountUser.user.id,
-      serviceUserId: accountUser.user.serviceUser.id,
-      nickname: accountUser.user.nickname,
-      name: accountUser.user.name,
-      phone: accountUser.user.phone,
-      email: accountUser.user.email,
-      collegeMajor: accountUser.user.serviceUser.collegeMajor
-        ? {
-            id: accountUser.user.serviceUser.collegeMajor.id,
-            college: accountUser.user.serviceUser.collegeMajor.college,
-            major: accountUser.user.serviceUser.collegeMajor.major,
-          }
+      id: user.id,
+      serviceUserId: serviceUser.id,
+      nickname: user.nickname,
+      name: user.name,
+      phone: user.phone,
+      email: user.email,
+      collegeMajor: collegeMajor
+        ? { id: collegeMajor.id, college: collegeMajor.college, major: collegeMajor.major }
         : null,
-      admissionClass: accountUser.user.serviceUser.admissionClass,
+      admissionClass: serviceUser.admission_class,
     }
   }
 
   public async updateUserRole(userId: string, role: UserRole): Promise<void> {
-    const user = await this.userRepository.findOneBy({ id: userId })
+    const prisma = getPrismaClient()
+    const user = await prisma.user.findFirst({ where: { id: userId, deleted_at: null } })
     if (!user) {
-      throw new UserNotFoundError(`User not found`)
+      throw new UserNotFoundError('User not found')
     }
-    await this.userRepository.update(userId, { role })
+    await prisma.user.updateMany({
+      where: { id: userId, deleted_at: null },
+      data: { role, updated_at: new Date() },
+    })
   }
 
   public async assertAdminRole(accountId: string): Promise<void> {
-    const accountUser = await this.accountUserRepository.findOne({
-      where: { accountId },
-      relations: ['user'],
+    const prisma = getPrismaClient()
+    const accountUser = await prisma.account_user.findFirst({
+      where: { account_id: accountId },
     })
-    if (accountUser?.user?.role !== UserRole.ADMIN) {
+    const user = accountUser
+      ? await prisma.user.findFirst({
+          where: { id: accountUser.user_id, deleted_at: null },
+        })
+      : null
+    if (user?.role !== UserRole.ADMIN) {
       throw new ForbiddenError('admin role required')
     }
   }
 
-  async updateProfile(user: User, updateProfileDto: UpdateProfileDto) {
-    await this.userRepository.update(user.id, {
-      nickname: updateProfileDto.nickname,
-      name: updateProfileDto.name,
-      email: updateProfileDto.email,
-    })
-    await this.serviceUserRepository.update(user.serviceUserId, {
-      collegeMajorId: updateProfileDto.collegeMajorId,
-      admissionClass: updateProfileDto.admissionClass,
+  async updateProfile(user: User, updateProfileDto: UpdateProfileDto): Promise<void> {
+    const prisma = getPrismaClient()
+    const now = new Date()
+    await prisma.$transaction([
+      prisma.user.updateMany({
+        where: { id: user.id },
+        data: {
+          nickname: updateProfileDto.nickname,
+          name: updateProfileDto.name,
+          email: updateProfileDto.email,
+          updated_at: now,
+        },
+      }),
+      prisma.allclear_user.updateMany({
+        where: { id: user.serviceUserId },
+        data: {
+          college_major_id: updateProfileDto.collegeMajorId,
+          admission_class: updateProfileDto.admissionClass,
+          updated_at: now,
+        },
+      }),
+    ])
+  }
+
+  async throwUserVoice(serviceUserId: string, content: string): Promise<void> {
+    await getPrismaClient().user_voice.create({
+      data: { service_user_id: serviceUserId, content },
     })
   }
 
-  async throwUserVoice(serviceUserId: string, content: string) {
-    await this.userVoiceRepository.insert({
-      serviceUserId,
-      content,
-    })
-  }
-
-  async markLogin(userId: string, token: string | null) {
-    const accountUser = await this.accountUserRepository.findOneBy({
-      userId,
-    })
+  async markLogin(userId: string, token: string | null): Promise<void> {
+    const prisma = getPrismaClient()
+    const accountUser = await prisma.account_user.findFirst({ where: { user_id: userId } })
     if (!accountUser) {
       return
     }
-    await this.accountRepository.update(accountUser.accountId, {
-      lastLoginAt: new Date().toISOString(),
-      authToken: token,
+    const now = new Date()
+    await prisma.account.updateMany({
+      where: { id: accountUser.account_id },
+      data: { last_login_at: now, auth_token: token, updated_at: now },
     })
   }
 
-  async logVisitAppDownloadPage(userDevice: string, userIp = '', params = '') {
-    await this.userActivityLogRepository.insert({
-      type: UserActivityLogType.OPEN_APP_DOWNLOAD_PAGE,
-      userDevice,
-      params,
-      userIp,
+  async logVisitAppDownloadPage(userDevice: string, userIp = '', params = ''): Promise<void> {
+    await getPrismaClient().user_activity_log.create({
+      data: {
+        type: UserActivityLogType.OPEN_APP_DOWNLOAD_PAGE,
+        user_device: userDevice,
+        user_ip: userIp,
+        params,
+      },
     })
   }
 
   async getCollegeMajors(options: { includeNullMajor?: boolean } = {}): Promise<CollegeMajor[]> {
     const { includeNullMajor = false } = options
-    const entities = await this.collegeMajorRepository.find({
-      where: includeNullMajor
-        ? undefined
-        : {
-            major: Not(IsNull()),
-          },
-      order: {
-        college: 'ASC',
-        id: 'ASC',
+    const entities = await getPrismaClient().college_major.findMany({
+      where: {
+        deleted_at: null,
+        ...(includeNullMajor ? {} : { major: { not: null } }),
       },
+      orderBy: [{ college: 'asc' }, { id: 'asc' }],
     })
     return entities.map((entity) => ({
       id: entity.id,
@@ -159,24 +167,28 @@ export class UserService {
     }))
   }
 
-  async serviceUserShouldExist(serviceUserId: string) {
-    const resource = await this.serviceUserRepository.findOneBy({
-      id: serviceUserId,
+  async serviceUserShouldExist(serviceUserId: string): Promise<void> {
+    const resource = await getPrismaClient().allclear_user.findFirst({
+      where: { id: serviceUserId, deleted_at: null },
     })
     if (!resource) {
-      throw new UserNotFoundError(`User not found`)
+      throw new UserNotFoundError('User not found')
     }
   }
 
   async findRecentSearches(
     serviceUserId: string,
     limit: number = RECENT_SEARCH_LIMIT,
-  ): Promise<UserRecentSearchEntity[]> {
-    return this.userRecentSearchRepository.find({
-      where: { serviceUserId },
-      order: { updatedAt: 'DESC' },
+  ): Promise<UserRecentSearch[]> {
+    const searches = await getPrismaClient().user_recent_search.findMany({
+      where: { service_user_id: serviceUserId },
+      orderBy: { updated_at: 'desc' },
       take: limit,
     })
+    return searches.map((search) => ({
+      query: search.query,
+      updatedAt: toTimestampString(search.updated_at),
+    }))
   }
 
   async saveRecentSearch(
@@ -185,30 +197,32 @@ export class UserService {
     limit: number = RECENT_SEARCH_LIMIT,
   ): Promise<void> {
     const normalizedQuery = query.trim()
-    const manager = this.userRecentSearchRepository.manager
+    await getPrismaClient().$transaction(async (tx) => {
+      await tx.user_recent_search.upsert({
+        where: {
+          service_user_id_query: { service_user_id: serviceUserId, query: normalizedQuery },
+        },
+        create: { service_user_id: serviceUserId, query: normalizedQuery },
+        update: { updated_at: new Date() },
+      })
 
-    await manager.query(
-      `INSERT INTO user_recent_search (service_user_id, query)
-       VALUES ($1, $2)
-       ON CONFLICT (service_user_id, query)
-       DO UPDATE SET updated_at = CURRENT_TIMESTAMP(6)`,
-      [serviceUserId, normalizedQuery],
-    )
-
-    await manager.query(
-      `DELETE FROM user_recent_search
-       WHERE service_user_id = $1
-         AND id NOT IN (
-           SELECT id FROM user_recent_search
-           WHERE service_user_id = $1
-           ORDER BY updated_at DESC
-           LIMIT $2
-         )`,
-      [serviceUserId, limit],
-    )
+      const obsoleteSearches = await tx.user_recent_search.findMany({
+        where: { service_user_id: serviceUserId },
+        orderBy: { updated_at: 'desc' },
+        skip: limit,
+        select: { id: true },
+      })
+      if (obsoleteSearches.length > 0) {
+        await tx.user_recent_search.deleteMany({
+          where: { id: { in: obsoleteSearches.map((search) => search.id) } },
+        })
+      }
+    })
   }
 
   async deleteRecentSearches(serviceUserId: string): Promise<void> {
-    await this.userRecentSearchRepository.delete({ serviceUserId })
+    await getPrismaClient().user_recent_search.deleteMany({
+      where: { service_user_id: serviceUserId },
+    })
   }
 }
