@@ -42,7 +42,6 @@ import { ClubManagerEntity } from '../infra/database/entities/club-manager.entit
 import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
-import { CollegeMajorEntity } from '../infra/database/entities/college-major.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import type { club as PrismaClub } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
@@ -93,8 +92,6 @@ export class ClubService {
   private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
   @InjectRepository(ClubVerificationRequestEntity)
   private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
-  @InjectRepository(CollegeMajorEntity)
-  private readonly collegeMajorRepository: Repository<CollegeMajorEntity>
   @InjectRepository(ClubHistoryEntity)
   private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
   @InjectRepository(ClubRecruitmentEntity)
@@ -468,34 +465,52 @@ export class ClubService {
 
   async registerClub(serviceUserId: string, body: ClubRegisterRequest): Promise<Club> {
     const { club_data: club, manager_data: managerData } = body
-    const clubPatch = await this.buildClubPatchFromClubData(club)
+    if (club.type === '교외') {
+      throw new BadRequestError('현재 교외 동아리는 등록 신청이 불가능합니다.')
+    }
+    const affiliation = await this.resolveClubAffiliation(club.affiliation)
 
-    return this.clubRepository.manager.transaction(async (manager) => {
-      const clubRepository = manager.getRepository(ClubEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-
-      const entity = clubRepository.create({
-        ...clubPatch,
-        status: PENDING_CLUB_STATUS,
-        approvedAt: null,
-        rejectReason: '',
+    return getPrismaClient().$transaction(async (tx) => {
+      const created = await tx.club.create({
+        data: {
+          name: club.name,
+          type: club.type,
+          image_uri: club.image_uri ?? '',
+          category: club.category,
+          affiliation_type: affiliation.affiliationType,
+          college_major_id: affiliation.collegeMajorId,
+          short_description: club.short_description,
+          recruit_type: normalizeClubRecruitType(club.recruit_type),
+          min_activity_period: club.min_activity_period,
+          has_dongbang: club.has_dongbang,
+          dongbang_location: club.dongbang_location ?? '',
+          sns_urls: club.sns_urls,
+          introduction: club.introduction,
+          activity_image_urls: club.activity_image_urls,
+          status: PENDING_CLUB_STATUS,
+          approved_at: null,
+          reject_reason: '',
+        },
+      })
+      await tx.club_manager.create({
+        data: {
+          club_id: created.uuid,
+          service_user_id: serviceUserId,
+          name: managerData.name,
+          phone: managerData.phone,
+          student_id: managerData.student_id,
+        },
       })
 
-      const created = await clubRepository.save(entity)
-      await clubManagerRepository.insert({
-        clubId: created.uuid,
-        serviceUserId,
-        name: managerData.name,
-        phone: managerData.phone,
-        studentId: managerData.student_id,
-      })
+      const collegeMajor =
+        created.college_major_id === null
+          ? null
+          : await tx.college_major.findFirst({
+              where: { id: created.college_major_id, deleted_at: null },
+              select: { id: true, college: true, major: true },
+            })
 
-      const savedClub = await clubRepository.findOneByOrFail({
-        uuid: created.uuid,
-        deletedAt: IsNull(),
-      })
-
-      return toClubDomain(savedClub)
+      return toClubDomain(toClubDomainSource(created, collegeMajor))
     })
   }
 
@@ -572,10 +587,9 @@ export class ClubService {
       }
     }
 
-    const major = await this.collegeMajorRepository.findOne({
-      where: {
-        major: affiliation,
-      },
+    const major = await getPrismaClient().college_major.findFirst({
+      where: { major: affiliation, deleted_at: null },
+      select: { id: true },
     })
     if (major) {
       return {
@@ -584,11 +598,9 @@ export class ClubService {
       }
     }
 
-    const college = await this.collegeMajorRepository.findOne({
-      where: {
-        college: affiliation,
-        major: IsNull(),
-      },
+    const college = await getPrismaClient().college_major.findFirst({
+      where: { college: affiliation, major: null, deleted_at: null },
+      select: { id: true },
     })
     if (college) {
       return {
