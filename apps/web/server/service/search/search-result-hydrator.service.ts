@@ -1,7 +1,7 @@
 import { toClubDomain } from 'server/domain/model/Club'
-import { type ClubEntity, ClubManagerEntity } from 'server/infra/database/entities'
-import { Inject, InjectRepository, Service } from 'server/provider'
-import { In, type Repository } from 'typeorm'
+import type { ClubEntity } from 'server/infra/database/entities'
+import { getPrismaClient } from 'server/infra/database/prisma'
+import { Inject, Service } from 'server/provider'
 import { ClubService } from '../club.service'
 import type { SearchClub } from './search.types'
 
@@ -9,9 +9,6 @@ import type { SearchClub } from './search.types'
 export class SearchResultHydratorService {
   @Inject(ClubService)
   private readonly clubService: ClubService
-
-  @InjectRepository(ClubManagerEntity)
-  private readonly clubManagerRepository: Repository<ClubManagerEntity>
 
   async toClubs(entities: ClubEntity[]): Promise<SearchClub[]> {
     const uniqueEntities = this.dedupe(entities)
@@ -21,12 +18,12 @@ export class SearchResultHydratorService {
     const clubIds = uniqueEntities.map((it) => it.uuid)
     const [reviews, managers] = await Promise.all([
       this.clubService.getClubReviews(clubIds),
-      this.clubManagerRepository.find({
-        select: { clubId: true },
-        where: { clubId: In(clubIds) },
+      getPrismaClient().club_manager.findMany({
+        select: { club_id: true },
+        where: { club_id: { in: clubIds }, deleted_at: null },
       }),
     ])
-    const managedClubIds = new Set(managers.map((it) => it.clubId))
+    const managedClubIds = new Set(managers.map((it) => it.club_id))
 
     return uniqueEntities.map((it) => ({
       ...toClubDomain(it, reviews.get(it.uuid)),
