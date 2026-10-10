@@ -47,6 +47,7 @@ import type { Prisma, club as PrismaClub } from '../infra/database/generated/pri
 import { getPrismaClient } from '../infra/database/prisma'
 import { toClubDomainSource } from '../infra/database/prisma-club-mapping'
 import {
+  toDatabaseIdString,
   toNullableDateString,
   toNullableTimestampString,
   toStringArray,
@@ -963,65 +964,67 @@ export class ClubService {
   ): Promise<void> {
     await this.clubAccessService.getExistingClub(clubUuid)
 
-    await this.clubManagerRequestRepository.manager.transaction(async (manager) => {
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const existingManager = await clubManagerRepository.findOneBy({
-        clubId: clubUuid,
+    await getPrismaClient().$transaction(async (tx) => {
+      const existingManager = await tx.club_manager.findFirst({
+        where: { club_id: clubUuid, deleted_at: null },
+        select: { id: true },
       })
       if (existingManager) {
         throw new ConflictError('club already has a manager')
       }
 
-      const pendingRequest = await managerRequestRepository.findOneBy({
-        clubId: clubUuid,
-        serviceUserId,
-        status: PENDING_CLUB_STATUS,
+      const pendingRequest = await tx.club_manager_request.findFirst({
+        where: {
+          club_id: clubUuid,
+          service_user_id: serviceUserId,
+          status: PENDING_CLUB_STATUS,
+        },
+        select: { id: true },
       })
       if (pendingRequest) {
         throw new ConflictError('pending manager request already exists')
       }
 
-      const rejectedRequest = await managerRequestRepository.findOne({
+      const rejectedRequest = await tx.club_manager_request.findFirst({
         where: {
-          clubId: clubUuid,
-          serviceUserId,
+          club_id: clubUuid,
+          service_user_id: serviceUserId,
           status: REJECTED_CLUB_STATUS,
         },
-        order: {
-          createdAt: 'DESC',
-          id: 'DESC',
-        },
+        orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+        select: { id: true },
       })
 
       if (rejectedRequest) {
-        await managerRequestRepository.update(
-          { id: rejectedRequest.id },
-          {
+        await tx.club_manager_request.update({
+          where: { id: rejectedRequest.id },
+          data: {
             status: PENDING_CLUB_STATUS,
-            rejectReason: '',
+            reject_reason: '',
             name: request.name,
             phone: request.phone,
-            studentId: request.student_id,
-            createdAt: new Date().toISOString(),
+            student_id: request.student_id,
+            created_at: new Date(),
           },
-        )
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB_MANAGER_REQUEST',
-          sourceId: rejectedRequest.id,
-          type: 'MANAGER_REQUEST_REJECTED',
+        })
+        await tx.user_notification.deleteMany({
+          where: {
+            source_type: 'CLUB_MANAGER_REQUEST',
+            source_id: toDatabaseIdString(rejectedRequest.id),
+            type: 'MANAGER_REQUEST_REJECTED',
+          },
         })
         return
       }
 
-      await managerRequestRepository.insert({
-        serviceUserId,
-        clubId: clubUuid,
-        name: request.name,
-        phone: request.phone,
-        studentId: request.student_id,
+      await tx.club_manager_request.create({
+        data: {
+          service_user_id: serviceUserId,
+          club_id: clubUuid,
+          name: request.name,
+          phone: request.phone,
+          student_id: request.student_id,
+        },
       })
     })
   }
@@ -1030,30 +1033,27 @@ export class ClubService {
     clubUuid: string,
     serviceUserId: string,
   ): Promise<ClubManagerRequestResponse> {
-    const pendingRequest = await this.clubManagerRequestRepository.findOne({
+    const prisma = getPrismaClient()
+    const pendingRequest = await prisma.club_manager_request.findFirst({
       where: {
-        clubId: clubUuid,
-        serviceUserId,
+        club_id: clubUuid,
+        service_user_id: serviceUserId,
         status: PENDING_CLUB_STATUS,
       },
-      order: {
-        createdAt: 'DESC',
-        id: 'DESC',
-      },
+      orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+      select: { name: true, phone: true, student_id: true },
     })
 
     const managerRequest =
       pendingRequest ??
-      (await this.clubManagerRequestRepository.findOne({
+      (await prisma.club_manager_request.findFirst({
         where: {
-          clubId: clubUuid,
-          serviceUserId,
+          club_id: clubUuid,
+          service_user_id: serviceUserId,
           status: REJECTED_CLUB_STATUS,
         },
-        order: {
-          createdAt: 'DESC',
-          id: 'DESC',
-        },
+        orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+        select: { name: true, phone: true, student_id: true },
       }))
 
     if (!managerRequest) {
@@ -1063,32 +1063,34 @@ export class ClubService {
     return {
       name: managerRequest.name,
       phone: managerRequest.phone,
-      student_id: managerRequest.studentId,
+      student_id: managerRequest.student_id,
     }
   }
 
   async deleteClubManagerRequest(clubUuid: string, serviceUserId: string): Promise<void> {
-    await this.clubManagerRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const requests = await managerRequestRepository.findBy({
-        clubId: clubUuid,
-        serviceUserId,
-        status: In([PENDING_CLUB_STATUS, REJECTED_CLUB_STATUS]),
+    await getPrismaClient().$transaction(async (tx) => {
+      const requests = await tx.club_manager_request.findMany({
+        where: {
+          club_id: clubUuid,
+          service_user_id: serviceUserId,
+          status: { in: [PENDING_CLUB_STATUS, REJECTED_CLUB_STATUS] },
+        },
+        select: { id: true },
       })
       if (requests.length === 0) {
         throw new NotFoundError('cancellable manager request not found')
       }
 
       const requestIds = requests.map((request) => request.id)
-      await userNotificationRepository.delete({
-        sourceType: 'CLUB_MANAGER_REQUEST',
-        sourceId: In(requestIds),
-        type: 'MANAGER_REQUEST_REJECTED',
+      await tx.user_notification.deleteMany({
+        where: {
+          source_type: 'CLUB_MANAGER_REQUEST',
+          source_id: { in: requestIds.map(toDatabaseIdString) },
+          type: 'MANAGER_REQUEST_REJECTED',
+        },
       })
-      await managerRequestRepository.delete({
-        id: In(requestIds),
+      await tx.club_manager_request.deleteMany({
+        where: { id: { in: requestIds } },
       })
     })
   }
@@ -1098,54 +1100,52 @@ export class ClubService {
     serviceUserId: string,
     request: ClubManagerRequestPatch,
   ): Promise<void> {
-    await this.clubManagerRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-      const targetStatus = request.resubmit ? REJECTED_CLUB_STATUS : PENDING_CLUB_STATUS
-      const managerRequest = await managerRequestRepository.findOne({
-        where: {
-          clubId: clubUuid,
-          serviceUserId,
-          status: targetStatus,
-        },
-        order: {
-          createdAt: 'DESC',
-          id: 'DESC',
-        },
-        lock: {
-          mode: 'pessimistic_write',
-        },
-      })
-      if (!managerRequest) {
-        throw new NotFoundError(
-          request.resubmit
-            ? 'rejected manager request not found'
-            : 'pending manager request not found',
-        )
-      }
+    await getPrismaClient().$transaction(
+      async (tx) => {
+        const targetStatus = request.resubmit ? REJECTED_CLUB_STATUS : PENDING_CLUB_STATUS
+        const managerRequests = await tx.$queryRaw<Array<{ id: bigint }>>`
+        SELECT id FROM club_manager_request
+        WHERE club_id = ${clubUuid}::uuid
+          AND service_user_id = ${serviceUserId}::uuid
+          AND status = ${targetStatus}
+        ORDER BY created_at DESC, id DESC
+        LIMIT 1 FOR UPDATE
+      `
+        const managerRequest = managerRequests[0]
+        if (!managerRequest) {
+          throw new NotFoundError(
+            request.resubmit
+              ? 'rejected manager request not found'
+              : 'pending manager request not found',
+          )
+        }
 
-      await managerRequestRepository.update(
-        { id: managerRequest.id },
-        {
-          ...(request.name !== undefined && { name: request.name }),
-          ...(request.phone !== undefined && { phone: request.phone }),
-          ...(request.student_id !== undefined && { studentId: request.student_id }),
-          ...(request.resubmit && {
-            status: PENDING_CLUB_STATUS,
-            rejectReason: '',
-            createdAt: new Date().toISOString(),
-          }),
-        },
-      )
-
-      if (request.resubmit) {
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB_MANAGER_REQUEST',
-          sourceId: managerRequest.id,
-          type: 'MANAGER_REQUEST_REJECTED',
+        await tx.club_manager_request.update({
+          where: { id: managerRequest.id },
+          data: {
+            ...(request.name !== undefined && { name: request.name }),
+            ...(request.phone !== undefined && { phone: request.phone }),
+            ...(request.student_id !== undefined && { student_id: request.student_id }),
+            ...(request.resubmit && {
+              status: PENDING_CLUB_STATUS,
+              reject_reason: '',
+              created_at: new Date(),
+            }),
+          },
         })
-      }
-    })
+
+        if (request.resubmit) {
+          await tx.user_notification.deleteMany({
+            where: {
+              source_type: 'CLUB_MANAGER_REQUEST',
+              source_id: toDatabaseIdString(managerRequest.id),
+              type: 'MANAGER_REQUEST_REJECTED',
+            },
+          })
+        }
+      },
+      { timeout: 30_000 },
+    )
   }
 
   async registerClubManager(serviceUserId: string, clubUuid: string) {
