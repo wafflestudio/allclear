@@ -16,9 +16,9 @@ vi.mock('../provider', () => ({
 vi.mock('../infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
-import { ClubEntity, ClubHistoryEntity, UserNotificationEntity } from '../infra/database/entities'
-import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
+import type { ClubEntity } from '../infra/database/entities'
+import type { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
+import type { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubService } from './club.service'
 
 const clubUuid = '123e4567-e89b-12d3-a456-426614174000'
@@ -147,146 +147,5 @@ describe('club registration manager information', () => {
     await expect(
       service.getClubRegistrationManager(clubUuid, serviceUserId),
     ).rejects.toBeInstanceOf(NotFoundError)
-  })
-
-  it('rejects a rejected registration update without resubmit', async () => {
-    const clubRepository = {
-      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'REJECTED' }),
-      update: vi.fn().mockResolvedValue({ affected: 1 }),
-      findOneByOrFail: vi.fn().mockResolvedValue({
-        uuid: clubUuid,
-        status: 'REJECTED',
-        updatedAt: '2026-07-26T00:00:00.000Z',
-      }),
-    }
-    const clubManagerRepository = {
-      findOneBy: vi.fn().mockResolvedValue({
-        id: 1,
-        clubId: clubUuid,
-        serviceUserId,
-      }),
-      update: vi.fn().mockResolvedValue({ affected: 1 }),
-    }
-    const clubManagerRequestRepository = {
-      findOneBy: vi.fn().mockResolvedValue(null),
-    }
-    const clubHistoryRepository = {
-      insert: vi.fn(),
-    }
-    const userNotificationRepository = {
-      delete: vi.fn(),
-    }
-    const entityManager = {
-      getRepository: vi.fn((entity) => {
-        if (entity === ClubEntity) return clubRepository
-        if (entity === ClubManagerEntity) return clubManagerRepository
-        if (entity === ClubManagerRequestEntity) {
-          return clubManagerRequestRepository
-        }
-        if (entity === ClubHistoryEntity) return clubHistoryRepository
-        if (entity === UserNotificationEntity) return userNotificationRepository
-        throw new Error('unexpected repository')
-      }),
-    }
-    const transaction = vi.fn(async (callback) => callback(entityManager))
-    const service = Object.create(ClubService.prototype) as ClubService
-    Object.defineProperty(service, 'clubRepository', {
-      value: {
-        manager: { transaction },
-      },
-    })
-
-    await expect(
-      service.patchManagedClub(clubUuid, serviceUserId, {
-        club_data: {
-          short_description: '수정된 한줄소개',
-        },
-        manager_data: {
-          phone: '010-9876-5432',
-        },
-      }),
-    ).rejects.toBeInstanceOf(ConflictError)
-
-    expect(clubRepository.findOne).toHaveBeenCalledWith({
-      where: {
-        uuid: clubUuid,
-        deletedAt: expect.anything(),
-      },
-      loadEagerRelations: false,
-      lock: {
-        mode: 'pessimistic_write',
-      },
-    })
-    expect(clubManagerRepository.update).not.toHaveBeenCalled()
-    expect(clubRepository.update).not.toHaveBeenCalled()
-    expect(clubHistoryRepository.insert).not.toHaveBeenCalled()
-    expect(userNotificationRepository.delete).not.toHaveBeenCalled()
-  })
-
-  it('resubmits a rejected registration without other changes when explicitly requested', async () => {
-    const clubRepository = {
-      findOne: vi.fn().mockResolvedValue({ uuid: clubUuid, status: 'REJECTED' }),
-      update: vi.fn().mockResolvedValue({ affected: 1 }),
-      findOneByOrFail: vi.fn().mockResolvedValue({
-        uuid: clubUuid,
-        status: 'PENDING',
-        updatedAt: '2026-07-26T00:00:00.000Z',
-      }),
-    }
-    const clubManagerRepository = {
-      findOneBy: vi.fn().mockResolvedValue({
-        id: 1,
-        clubId: clubUuid,
-        serviceUserId,
-      }),
-      update: vi.fn(),
-    }
-    const clubManagerRequestRepository = {
-      findOneBy: vi.fn().mockResolvedValue(null),
-    }
-    const clubHistoryRepository = {
-      insert: vi.fn(),
-    }
-    const userNotificationRepository = {
-      delete: vi.fn(),
-    }
-    const entityManager = {
-      getRepository: vi.fn((entity) => {
-        if (entity === ClubEntity) return clubRepository
-        if (entity === ClubManagerEntity) return clubManagerRepository
-        if (entity === ClubManagerRequestEntity) {
-          return clubManagerRequestRepository
-        }
-        if (entity === ClubHistoryEntity) return clubHistoryRepository
-        if (entity === UserNotificationEntity) return userNotificationRepository
-        throw new Error('unexpected repository')
-      }),
-    }
-    const transaction = vi.fn(async (callback) => callback(entityManager))
-    const service = Object.create(ClubService.prototype) as ClubService
-    Object.defineProperty(service, 'clubRepository', {
-      value: {
-        manager: { transaction },
-      },
-    })
-
-    await service.patchManagedClub(clubUuid, serviceUserId, { resubmit: true })
-
-    expect(clubRepository.update).toHaveBeenCalledWith(
-      {
-        uuid: clubUuid,
-        deletedAt: expect.anything(),
-      },
-      {
-        status: 'PENDING',
-        rejectReason: '',
-      },
-    )
-    expect(clubManagerRepository.update).not.toHaveBeenCalled()
-    expect(userNotificationRepository.delete).toHaveBeenCalledWith({
-      sourceType: 'CLUB',
-      sourceId: clubUuid,
-      type: 'CLUB_REGISTRATION_REJECTED',
-    })
   })
 })

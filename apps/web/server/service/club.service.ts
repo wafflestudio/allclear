@@ -43,13 +43,18 @@ import { ClubManagerRequestEntity } from '../infra/database/entities/club-manage
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
-import type { club as PrismaClub } from '../infra/database/generated/prisma/client'
+import type { Prisma, club as PrismaClub } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
 import { toClubDomainSource } from '../infra/database/prisma-club-mapping'
+import {
+  toNullableDateString,
+  toNullableTimestampString,
+  toStringArray,
+  toTimestampString,
+} from '../infra/database/prisma-mapping'
 import { Inject, InjectRepository, Service } from '../provider'
 import { sortEachRandom } from '../util/club-sort'
 import { ClubAccessService } from './club-access.service'
-import { getClubResubmissionStatusPatch } from './club-registration-status'
 
 type ClubUuid = string
 type ReviewKeywordId = string
@@ -57,23 +62,6 @@ type ManagedClubListEntityItem = {
   club: ClubEntity
   managementStatus: ManagedClubListItem['managementStatus']
   managerRequestId?: number
-}
-
-const CLUB_ENTITY_FIELD_TO_COLUMN: Record<string, string> = {
-  name: 'name',
-  type: 'type',
-  imageUri: 'image_uri',
-  category: 'category',
-  shortDescription: 'short_description',
-  recruitType: 'recruit_type',
-  minActivityPeriod: 'min_activity_period',
-  hasDongbang: 'has_dongbang',
-  dongbangLocation: 'dongbang_location',
-  affiliationType: 'affiliation_type',
-  collegeMajorId: 'college_major_id',
-  snsUrls: 'sns_urls',
-  activityImageUrls: 'activity_image_urls',
-  introduction: 'introduction',
 }
 
 @Service
@@ -727,116 +715,118 @@ export class ClubService {
       throw new BadRequestError('수정할 필드가 없습니다.')
     }
 
-    return this.clubRepository.manager.transaction(async (manager) => {
-      const clubRepository = manager.getRepository(ClubEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const clubManagerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
-      const clubHistoryRepository = manager.getRepository(ClubHistoryEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const club = await clubRepository.findOne({
-        where: {
-          uuid: clubUuid,
-          deletedAt: IsNull(),
-        },
-        loadEagerRelations: false,
-        lock: {
-          mode: 'pessimistic_write',
-        },
-      })
-      if (!club) {
-        throw new NotFoundError('club not found')
-      }
-
-      const clubManager = await clubManagerRepository.findOneBy({
-        clubId: clubUuid,
-        serviceUserId,
-      })
-      if (!clubManager) {
-        throw new ForbiddenError('club manager permission required')
-      }
-
-      if (body.manager_data || body.resubmit) {
-        const managerRequest = await clubManagerRequestRepository.findOneBy({
-          clubId: clubUuid,
-          serviceUserId,
-        })
-        if (managerRequest) {
-          throw new ForbiddenError('manager request is not a club registration')
+    return getPrismaClient().$transaction(
+      async (tx) => {
+        const lockedClubs = await tx.$queryRaw<Array<{ uuid: string }>>`
+        SELECT uuid FROM club
+        WHERE uuid = ${clubUuid}::uuid AND deleted_at IS NULL
+        FOR UPDATE
+      `
+        if (lockedClubs.length === 0) {
+          throw new NotFoundError('club not found')
         }
-      }
-
-      if (body.resubmit && club.status !== REJECTED_CLUB_STATUS) {
-        throw new ConflictError('only rejected club registrations can be resubmitted')
-      }
-      if (club.status === REJECTED_CLUB_STATUS && !body.resubmit) {
-        throw new ConflictError('rejected club registration requires resubmit')
-      }
-
-      if (body.manager_data) {
-        this.assertEditableClubRegistrationStatus(club.status)
-
-        await clubManagerRepository.update(
-          { id: clubManager.id },
-          {
-            ...(body.manager_data.name !== undefined && { name: body.manager_data.name }),
-            ...(body.manager_data.phone !== undefined && { phone: body.manager_data.phone }),
-            ...(body.manager_data.student_id !== undefined && {
-              studentId: body.manager_data.student_id,
-            }),
-          },
-        )
-      }
-
-      const statusPatch = body.resubmit ? getClubResubmissionStatusPatch(club.status) : {}
-      const patchWithStatus = {
-        ...clubPatch,
-        ...statusPatch,
-      }
-      const shouldRecordHistory = club.status === PUBLIC_CLUB_STATUS
-      const beforeData = shouldRecordHistory ? this.toClubHistoryData(club) : null
-      if (Object.keys(patchWithStatus).length > 0) {
-        await clubRepository.update(
-          {
-            uuid: clubUuid,
-            deletedAt: IsNull(),
-          },
-          patchWithStatus,
-        )
-      }
-
-      if (body.resubmit && club.status === REJECTED_CLUB_STATUS) {
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB',
-          sourceId: clubUuid,
-          type: 'CLUB_REGISTRATION_REJECTED',
+        const club = await tx.club.findFirst({
+          where: { uuid: clubUuid, deleted_at: null },
         })
-      }
+        if (!club) {
+          throw new NotFoundError('club not found')
+        }
 
-      const updatedClub = await clubRepository.findOneByOrFail({
-        uuid: clubUuid,
-        deletedAt: IsNull(),
-      })
-      if (shouldRecordHistory && beforeData) {
-        const afterData = this.toClubHistoryData(updatedClub)
-        const changedFields = Object.keys(patchWithStatus)
-          .map((key) => CLUB_ENTITY_FIELD_TO_COLUMN[key] ?? key)
-          .filter((key) => beforeData[key] !== afterData[key])
-
-        await clubHistoryRepository.insert({
-          clubId: clubUuid,
-          serviceUserId,
-          beforeData: beforeData as any,
-          afterData: afterData as any,
-          changedFields,
+        const clubManager = await tx.club_manager.findFirst({
+          where: { club_id: clubUuid, service_user_id: serviceUserId, deleted_at: null },
+          select: { id: true },
         })
-      }
+        if (!clubManager) {
+          throw new ForbiddenError('club manager permission required')
+        }
 
-      return {
-        clubUuid,
-        updatedAt: updatedClub.updatedAt,
-      }
-    })
+        if (body.manager_data || body.resubmit) {
+          const managerRequest = await tx.club_manager_request.findFirst({
+            where: { club_id: clubUuid, service_user_id: serviceUserId },
+            select: { id: true },
+          })
+          if (managerRequest) {
+            throw new ForbiddenError('manager request is not a club registration')
+          }
+        }
+
+        if (body.resubmit && club.status !== REJECTED_CLUB_STATUS) {
+          throw new ConflictError('only rejected club registrations can be resubmitted')
+        }
+        if (club.status === REJECTED_CLUB_STATUS && !body.resubmit) {
+          throw new ConflictError('rejected club registration requires resubmit')
+        }
+
+        if (body.manager_data) {
+          this.assertEditableClubRegistrationStatus(club.status)
+
+          await tx.club_manager.update({
+            where: { id: clubManager.id },
+            data: {
+              ...(body.manager_data.name !== undefined && { name: body.manager_data.name }),
+              ...(body.manager_data.phone !== undefined && { phone: body.manager_data.phone }),
+              ...(body.manager_data.student_id !== undefined && {
+                student_id: body.manager_data.student_id,
+              }),
+              updated_at: new Date(),
+            },
+          })
+        }
+
+        const statusPatch = body.resubmit ? { status: PENDING_CLUB_STATUS, reject_reason: '' } : {}
+        const patchWithStatus = {
+          ...clubPatch,
+          ...statusPatch,
+        }
+        const shouldRecordHistory = club.status === PUBLIC_CLUB_STATUS
+        const beforeData = shouldRecordHistory ? this.toClubHistoryData(club) : null
+        if (Object.keys(patchWithStatus).length > 0) {
+          await tx.club.update({
+            where: { uuid: clubUuid },
+            data: { ...patchWithStatus, updated_at: new Date() },
+          })
+        }
+
+        if (body.resubmit && club.status === REJECTED_CLUB_STATUS) {
+          await tx.user_notification.deleteMany({
+            where: {
+              source_type: 'CLUB',
+              source_id: clubUuid,
+              type: 'CLUB_REGISTRATION_REJECTED',
+            },
+          })
+        }
+
+        const updatedClub = await tx.club.findFirst({
+          where: { uuid: clubUuid, deleted_at: null },
+        })
+        if (!updatedClub) {
+          throw new NotFoundError('club not found')
+        }
+        if (shouldRecordHistory && beforeData) {
+          const afterData = this.toClubHistoryData(updatedClub)
+          const changedFields = Object.keys(patchWithStatus).filter(
+            (key) => beforeData[key] !== afterData[key],
+          )
+
+          await tx.club_history.create({
+            data: {
+              club_id: clubUuid,
+              service_user_id: serviceUserId,
+              before_data: beforeData,
+              after_data: afterData,
+              changed_fields: changedFields,
+            },
+          })
+        }
+
+        return {
+          clubUuid,
+          updatedAt: toTimestampString(updatedClub.updated_at),
+        }
+      },
+      { timeout: 30_000 },
+    )
   }
 
   async deleteManagedClub(clubUuid: string, serviceUserId: string): Promise<void> {
@@ -880,8 +870,10 @@ export class ClubService {
     })
   }
 
-  private async buildClubPatchFromClubData(body: Partial<ClubData>): Promise<Partial<ClubEntity>> {
-    const patch: Partial<ClubEntity> = {}
+  private async buildClubPatchFromClubData(
+    body: Partial<ClubData>,
+  ): Promise<Prisma.clubUncheckedUpdateInput> {
+    const patch: Prisma.clubUncheckedUpdateInput = {}
 
     if (body.name !== undefined) {
       patch.name = body.name
@@ -893,74 +885,74 @@ export class ClubService {
       patch.type = body.type
     }
     if (body.image_uri !== undefined) {
-      patch.imageUri = body.image_uri
+      patch.image_uri = body.image_uri
     }
     if (body.category !== undefined) {
       patch.category = body.category
     }
     if (body.affiliation !== undefined) {
       const affiliation = await this.resolveClubAffiliation(body.affiliation)
-      patch.affiliationType = affiliation.affiliationType
-      patch.collegeMajorId = affiliation.collegeMajorId
+      patch.affiliation_type = affiliation.affiliationType
+      patch.college_major_id = affiliation.collegeMajorId
     }
     if (body.short_description !== undefined) {
-      patch.shortDescription = body.short_description
+      patch.short_description = body.short_description
     }
     if (body.recruit_type !== undefined) {
-      patch.recruitType = normalizeClubRecruitType(body.recruit_type)
+      patch.recruit_type = normalizeClubRecruitType(body.recruit_type)
     }
     if (body.min_activity_period !== undefined) {
-      patch.minActivityPeriod = body.min_activity_period
+      patch.min_activity_period = body.min_activity_period
     }
     if (body.has_dongbang !== undefined) {
-      patch.hasDongbang = body.has_dongbang
+      patch.has_dongbang = body.has_dongbang
     }
     if (body.dongbang_location !== undefined) {
-      patch.dongbangLocation = body.dongbang_location
+      patch.dongbang_location = body.dongbang_location
     }
     if (body.sns_urls !== undefined) {
-      patch.snsUrls = body.sns_urls
+      patch.sns_urls = body.sns_urls
     }
     if (body.introduction !== undefined) {
       patch.introduction = body.introduction
     }
     if (body.activity_image_urls !== undefined) {
-      patch.activityImageUrls = body.activity_image_urls
+      patch.activity_image_urls = body.activity_image_urls
     }
 
     return patch
   }
 
-  private toClubHistoryData(club: ClubEntity): Record<string, unknown> {
+  private toClubHistoryData(club: PrismaClub): Prisma.InputJsonObject {
     return {
       uuid: club.uuid,
       name: club.name,
       description: club.description,
-      short_description: club.shortDescription,
+      short_description: club.short_description,
       type: club.type,
       category: club.category,
-      affiliation_type: club.affiliationType,
-      college_major_id: club.collegeMajorId,
-      image_uri: club.imageUri,
+      affiliation_type: club.affiliation_type,
+      college_major_id: club.college_major_id,
+      image_uri: club.image_uri,
       article: club.article,
-      article_uploaded_at: club.articleUploadedAt,
-      has_dongbang: club.hasDongbang,
-      dongbang_location: club.dongbangLocation,
-      min_activity_period: club.minActivityPeriod,
-      active_member_count: club.activeMemberCount,
-      founded_at: club.foundedAt,
-      recruit_type: club.recruitType,
-      is_official_verified: club.isOfficialVerified,
-      verified_at: club.verifiedAt,
-      sns_urls: club.snsUrls,
-      activity_image_urls: club.activityImageUrls,
+      article_uploaded_at: toNullableTimestampString(club.article_uploaded_at),
+      has_dongbang: club.has_dongbang,
+      dongbang_location: club.dongbang_location,
+      min_activity_period: club.min_activity_period,
+      active_member_count: club.active_member_count,
+      founded_at: toNullableDateString(club.founded_at),
+      recruit_type: club.recruit_type,
+      is_official_verified: club.is_official_verified,
+      verified_at: toNullableTimestampString(club.verified_at),
+      sns_urls: toStringArray(club.sns_urls),
+      activity_image_urls: toStringArray(club.activity_image_urls),
       introduction: club.introduction,
-      created_at: club.createdAt,
-      updated_at: club.updatedAt,
-      deleted_at: club.deletedAt,
-      approved_at: club.approvedAt,
+      created_at: toTimestampString(club.created_at),
+      updated_at: toTimestampString(club.updated_at),
+      deleted_at: toNullableTimestampString(club.deleted_at),
+      approved_at: toNullableTimestampString(club.approved_at),
       status: club.status,
-      reject_reason: club.rejectReason,
+      reject_reason: club.reject_reason,
     }
   }
 
