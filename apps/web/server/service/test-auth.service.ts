@@ -1,15 +1,9 @@
 import jwt from 'jsonwebtoken'
 import { UserRole } from 'server/domain/constants/user-role.enum'
 import { ENV } from 'server/ENV'
-import {
-  AccountEntity,
-  AccountType,
-  AccountUserEntity,
-  ServiceUserEntity,
-  UserEntity,
-} from 'server/infra/database/entities'
-import { InjectRepository, Service } from 'server/provider'
-import type { Repository } from 'typeorm'
+import { AccountType } from 'server/infra/database/entities/account-type.enum'
+import { getPrismaClient } from 'server/infra/database/prisma'
+import { Service } from 'server/provider'
 
 const TEST_ACCOUNT_USERNAME_PREFIX = 'test:'
 
@@ -30,34 +24,26 @@ export type TestLoginResult = {
 
 @Service
 export class TestAuthService {
-  @InjectRepository(AccountEntity)
-  private readonly accountRepository: Repository<AccountEntity>
-  @InjectRepository(UserEntity)
-  private readonly userRepository: Repository<UserEntity>
-  @InjectRepository(AccountUserEntity)
-  private readonly accountUserRepository: Repository<AccountUserEntity>
-  @InjectRepository(ServiceUserEntity)
-  private readonly serviceUserRepository: Repository<ServiceUserEntity>
-
   async login(input: TestLoginInput): Promise<TestLoginResult> {
     const username = `${TEST_ACCOUNT_USERNAME_PREFIX}${input.username}`
     const account = await this.findOrCreateAccount(username, input)
-    const { user, serviceUser } = await this.findOrCreateUser(account.id, input)
+    const { userId, serviceUserId } = await this.findOrCreateUser(account.id, input)
     const token = jwt.sign({ sub: account.id }, ENV.JWT.SECRET_KEY, {
       algorithm: 'HS256',
       expiresIn: '1y',
     })
 
-    await this.accountRepository.update(account.id, {
-      lastLoginAt: new Date().toISOString(),
-      authToken: token,
+    const now = new Date()
+    await getPrismaClient().account.updateMany({
+      where: { id: account.id },
+      data: { last_login_at: now, auth_token: token, updated_at: now },
     })
 
     return {
       token,
       accountId: account.id,
-      userId: user.id,
-      serviceUserId: serviceUser.id,
+      userId,
+      serviceUserId,
       username,
     }
   }
@@ -65,26 +51,21 @@ export class TestAuthService {
   private async findOrCreateAccount(
     username: string,
     input: TestLoginInput,
-  ): Promise<AccountEntity> {
-    const account = await this.accountRepository.findOne({
-      where: {
-        type: AccountType.KAKAO,
-        username,
-      },
-      order: {
-        createdAt: 'ASC',
-      },
+  ): Promise<{ id: string }> {
+    const prisma = getPrismaClient()
+    const account = await prisma.account.findFirst({
+      where: { type: AccountType.KAKAO, username, deleted_at: null },
+      orderBy: { created_at: 'asc' },
     })
     if (account) {
       return account
     }
 
-    return this.accountRepository.save({
-      type: AccountType.KAKAO,
-      username,
-      socialInfo: {
-        provider: 'test',
-        username: input.username,
+    return prisma.account.create({
+      data: {
+        type: AccountType.KAKAO,
+        username,
+        social_info: { provider: 'test', username: input.username },
       },
     })
   }
@@ -92,42 +73,37 @@ export class TestAuthService {
   private async findOrCreateUser(
     accountId: string,
     input: TestLoginInput,
-  ): Promise<{ user: UserEntity; serviceUser: ServiceUserEntity }> {
-    const accountUser = await this.accountUserRepository.findOne({
-      where: {
-        accountId,
-      },
-      relations: ['user'],
+  ): Promise<{ userId: string; serviceUserId: string }> {
+    const prisma = getPrismaClient()
+    const accountUser = await prisma.account_user.findFirst({
+      where: { account_id: accountId },
     })
-    if (accountUser?.user) {
+    const existingUser = accountUser
+      ? await prisma.user.findFirst({ where: { id: accountUser.user_id, deleted_at: null } })
+      : null
+    if (existingUser) {
       const serviceUser =
-        accountUser.user.serviceUser ??
-        (await this.serviceUserRepository.findOneBy({
-          userId: accountUser.user.id,
-        })) ??
-        (await this.serviceUserRepository.save({
-          userId: accountUser.user.id,
-        }))
+        (await prisma.allclear_user.findFirst({
+          where: { user_id: existingUser.id, deleted_at: null },
+        })) ?? (await prisma.allclear_user.create({ data: { user_id: existingUser.id } }))
       return {
-        user: accountUser.user,
-        serviceUser,
+        userId: existingUser.id,
+        serviceUserId: serviceUser.id,
       }
     }
 
-    const user = await this.userRepository.save({
-      nickname: input.nickname ?? input.username,
-      name: input.name ?? input.nickname ?? input.username,
-      email: input.email ?? `${input.username}@test.all-clear.local`,
-      role: UserRole.USER,
+    return prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          nickname: input.nickname ?? input.username,
+          name: input.name ?? input.nickname ?? input.username,
+          email: input.email ?? `${input.username}@test.all-clear.local`,
+          role: UserRole.USER,
+        },
+      })
+      await tx.account_user.create({ data: { account_id: accountId, user_id: user.id } })
+      const serviceUser = await tx.allclear_user.create({ data: { user_id: user.id } })
+      return { userId: user.id, serviceUserId: serviceUser.id }
     })
-    await this.accountUserRepository.insert({ accountId, userId: user.id })
-    const serviceUser = await this.serviceUserRepository.save({
-      userId: user.id,
-    })
-
-    return {
-      user,
-      serviceUser,
-    }
   }
 }
