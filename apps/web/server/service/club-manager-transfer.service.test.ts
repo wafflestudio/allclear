@@ -2,18 +2,34 @@ import { createHash } from 'node:crypto'
 import { QueryFailedError } from 'typeorm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../provider', () => ({
-  InjectRepository: () => () => undefined,
-  Service: () => undefined,
-}))
+const { prisma, tx } = vi.hoisted(() => {
+  const tx = {
+    $queryRaw: vi.fn(),
+    club_manager: { update: vi.fn(), create: vi.fn() },
+    club_manager_transfer_invitation: {
+      findUnique: vi.fn(),
+      updateMany: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
+    club: { findFirst: vi.fn() },
+    user_notification: { create: vi.fn() },
+  }
+  return {
+    tx,
+    prisma: {
+      $transaction: vi.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
+      club_manager_transfer_invitation: { findUnique: vi.fn() },
+      club: { findFirst: vi.fn() },
+    },
+  }
+})
+
+vi.mock('../provider', () => ({ Service: () => undefined }))
+vi.mock('../infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
-import {
-  ClubEntity,
-  ClubManagerEntity,
-  ClubManagerTransferInvitationEntity,
-  UserNotificationEntity,
-} from '../infra/database/entities'
+import { Prisma } from '../infra/database/generated/prisma/client'
 import {
   ClubManagerTransferService,
   hashManagerTransferToken,
@@ -23,6 +39,8 @@ const clubUuid = '4dfcd19f-9f20-4128-8b4c-b76deab4b65d'
 const senderServiceUserId = 'beee3485-6f87-4db0-b69f-c300f7c47291'
 const recipientServiceUserId = 'f293f05e-7a0f-4da5-b028-aa8ba84c26a2'
 const rawToken = 'a'.repeat(43)
+const now = new Date('2026-08-24T00:00:00.000Z')
+const expiresAt = new Date('2026-08-27T00:00:00.000Z')
 
 const recipient = {
   id: 'e2b70f48-f52d-492a-a63e-ff38ac2df81c',
@@ -35,70 +53,31 @@ const recipient = {
   admissionClass: 23,
 }
 
-const createTestContext = () => {
-  const invitationRepository = {
-    create: vi.fn((value) => value),
-    findOne: vi.fn(),
-    findOneBy: vi.fn(),
-    insert: vi.fn(),
-    save: vi.fn(async (value) => ({ id: '10', ...value })),
-    update: vi.fn(),
-  }
-  const clubManagerRepository = {
-    findOne: vi.fn(),
-    insert: vi.fn(),
-    softDelete: vi.fn(),
-  }
-  const clubRepository = {
-    findOneBy: vi.fn(),
-  }
-  const notificationRepository = {
-    insert: vi.fn(),
-  }
-  const transactionManager = {
-    getRepository: vi.fn((entity) => {
-      if (entity === ClubManagerTransferInvitationEntity) return invitationRepository
-      if (entity === ClubManagerEntity) return clubManagerRepository
-      if (entity === ClubEntity) return clubRepository
-      if (entity === UserNotificationEntity) return notificationRepository
-      throw new Error(`unexpected repository: ${entity.name}`)
-    }),
-  }
-  const transaction = vi.fn(async (callback) => callback(transactionManager))
-  const service = Object.create(ClubManagerTransferService.prototype) as ClubManagerTransferService
-  Object.defineProperty(service, 'invitationRepository', {
-    value: { manager: { transaction }, findOneBy: invitationRepository.findOneBy },
-  })
-  Object.defineProperty(service, 'clubRepository', {
-    value: clubRepository,
-  })
+const invitation = (changes: Record<string, unknown> = {}) => ({
+  id: BigInt(10),
+  club_id: clubUuid,
+  sender_service_user_id: senderServiceUserId,
+  token_hash: hashManagerTransferToken(rawToken),
+  expires_at: expiresAt,
+  revoked_at: null,
+  accepted_by_service_user_id: null,
+  accepted_at: null,
+  created_at: now,
+  ...changes,
+})
 
-  return {
-    service,
-    transaction,
-    invitationRepository,
-    clubManagerRepository,
-    clubRepository,
-    notificationRepository,
-  }
-}
+beforeEach(() => {
+  vi.clearAllMocks()
+  vi.useFakeTimers()
+  vi.setSystemTime(now)
+  tx.$queryRaw.mockResolvedValue([{ id: 7 }])
+  tx.club_manager_transfer_invitation.findUnique.mockResolvedValue(invitation())
+  tx.club.findFirst.mockResolvedValue({ uuid: clubUuid, name: '와플스튜디오' })
+  prisma.club.findFirst.mockResolvedValue({ uuid: clubUuid, name: '와플스튜디오' })
+  prisma.club_manager_transfer_invitation.findUnique.mockResolvedValue(invitation())
+})
 
-const createUniqueViolation = (constraint: string): QueryFailedError =>
-  new QueryFailedError(
-    'INSERT INTO club_manager ...',
-    ['sensitive-value'],
-    Object.assign(new Error('unique violation'), {
-      code: '23505',
-      constraint,
-    }),
-  )
-
-describe('ClubManagerTransferService', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-08-24T00:00:00.000Z'))
-  })
-
+describe('ClubManagerTransferService with Prisma', () => {
   it('hashes transfer tokens without retaining the raw token', () => {
     expect(hashManagerTransferToken(rawToken)).toBe(
       createHash('sha256').update(rawToken).digest('hex'),
@@ -106,334 +85,221 @@ describe('ClubManagerTransferService', () => {
     expect(hashManagerTransferToken(rawToken)).not.toContain(rawToken)
   })
 
-  it('creates a 72-hour invitation and revokes the previous active invitation', async () => {
-    const { service, invitationRepository, clubManagerRepository } = createTestContext()
-    clubManagerRepository.findOne.mockResolvedValue({ id: 7 })
-
-    const result = await service.createInvitation(clubUuid, senderServiceUserId)
-
-    expect(invitationRepository.update).toHaveBeenCalledWith(
-      {
-        clubId: clubUuid,
-        revokedAt: expect.anything(),
-        acceptedAt: expect.anything(),
+  it('creates a 72-hour invitation after locking the sender manager', async () => {
+    const result = await new ClubManagerTransferService().createInvitation(
+      clubUuid,
+      senderServiceUserId,
+    )
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(1)
+    const [sql, lockedClubUuid, lockedSenderId] = tx.$queryRaw.mock.calls[0]
+    expect(sql.join('')).toContain('FROM club_manager')
+    expect(sql.join('')).toContain('FOR UPDATE')
+    expect([lockedClubUuid, lockedSenderId]).toEqual([clubUuid, senderServiceUserId])
+    expect(tx.club_manager_transfer_invitation.updateMany).toHaveBeenCalledWith({
+      where: { club_id: clubUuid, revoked_at: null, accepted_at: null },
+      data: { revoked_at: now },
+    })
+    expect(tx.club_manager_transfer_invitation.create).toHaveBeenCalledWith({
+      data: {
+        club_id: clubUuid,
+        sender_service_user_id: senderServiceUserId,
+        token_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+        expires_at: expiresAt,
       },
-      { revokedAt: '2026-08-24T00:00:00.000Z' },
-    )
-    expect(invitationRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
-        clubId: clubUuid,
-        senderServiceUserId,
-        tokenHash: expect.stringMatching(/^[a-f0-9]{64}$/),
-        expiresAt: '2026-08-27T00:00:00.000Z',
-      }),
-    )
+    })
     expect(result.transfer_url).toMatch(/\/manager-transfer\/[A-Za-z0-9_-]{43}$/)
     expect(result.expires_at).toBe('2026-08-27T00:00:00.000Z')
-    expect(invitationRepository.save.mock.calls[0][0].tokenHash).not.toBe(
+    expect(tx.club_manager_transfer_invitation.create.mock.calls[0][0].data.token_hash).not.toBe(
       result.transfer_url.split('/').at(-1),
     )
   })
 
   it('rejects invitation creation by a non-manager', async () => {
-    const { service, invitationRepository, clubManagerRepository } = createTestContext()
-    clubManagerRepository.findOne.mockResolvedValue(null)
-
-    await expect(service.createInvitation(clubUuid, senderServiceUserId)).rejects.toBeInstanceOf(
-      ForbiddenError,
-    )
-    expect(invitationRepository.save).not.toHaveBeenCalled()
+    tx.$queryRaw.mockResolvedValueOnce([])
+    await expect(
+      new ClubManagerTransferService().createInvitation(clubUuid, senderServiceUserId),
+    ).rejects.toBeInstanceOf(ForbiddenError)
+    expect(tx.club_manager_transfer_invitation.create).not.toHaveBeenCalled()
   })
 
   it('returns only an active invitation summary', async () => {
-    const { service, invitationRepository, clubRepository } = createTestContext()
-    invitationRepository.findOneBy.mockResolvedValue({
-      clubId: clubUuid,
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: null,
-      acceptedAt: null,
-    })
-    clubRepository.findOneBy.mockResolvedValue({ uuid: clubUuid, name: '와플스튜디오' })
-
-    await expect(service.getInvitation(rawToken)).resolves.toEqual({
+    await expect(new ClubManagerTransferService().getInvitation(rawToken)).resolves.toEqual({
       club_uuid: clubUuid,
       club_name: '와플스튜디오',
       expires_at: '2026-08-27T00:00:00.000Z',
     })
+    expect(prisma.club.findFirst).toHaveBeenCalledWith({
+      where: { uuid: clubUuid, deleted_at: null },
+      select: { uuid: true, name: true },
+    })
   })
 
   it.each([
-    { expiresAt: '2026-08-23T23:59:59.000Z', revokedAt: null, acceptedAt: null },
-    {
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: '2026-08-24T00:00:00.000Z',
-      acceptedAt: null,
-    },
-    {
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: null,
-      acceptedAt: '2026-08-24T00:00:00.000Z',
-    },
+    { expires_at: new Date('2026-08-23T23:59:59.000Z') },
+    { revoked_at: now },
+    { accepted_at: now },
   ])('hides expired, revoked, and accepted invitations', async (state) => {
-    const { service, invitationRepository, clubRepository } = createTestContext()
-    invitationRepository.findOneBy.mockResolvedValue({ clubId: clubUuid, ...state })
-
-    await expect(service.getInvitation(rawToken)).rejects.toBeInstanceOf(NotFoundError)
-    expect(clubRepository.findOneBy).not.toHaveBeenCalled()
+    prisma.club_manager_transfer_invitation.findUnique.mockResolvedValue(invitation(state))
+    await expect(new ClubManagerTransferService().getInvitation(rawToken)).rejects.toBeInstanceOf(
+      NotFoundError,
+    )
+    expect(prisma.club.findFirst).not.toHaveBeenCalled()
   })
 
   it('atomically replaces the manager and notifies the sender', async () => {
-    const {
-      service,
-      invitationRepository,
-      clubManagerRepository,
-      clubRepository,
-      notificationRepository,
-    } = createTestContext()
-    invitationRepository.findOne.mockResolvedValue({
-      id: '10',
-      clubId: clubUuid,
-      senderServiceUserId,
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: null,
-      acceptedByServiceUserId: null,
-      acceptedAt: null,
-    })
-    clubManagerRepository.findOne.mockResolvedValue({ id: 7 })
-    clubRepository.findOneBy.mockResolvedValue({ uuid: clubUuid, name: '와플스튜디오' })
-
-    await expect(service.acceptInvitation(rawToken, recipient)).resolves.toEqual({
-      club_uuid: clubUuid,
-      club_name: '와플스튜디오',
-    })
-
-    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(1, {
-      where: { tokenHash: hashManagerTransferToken(rawToken) },
-    })
-    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
-      where: { id: '10' },
-      lock: { mode: 'pessimistic_write' },
-    })
-    expect(clubManagerRepository.findOne.mock.invocationCallOrder[0]).toBeLessThan(
-      invitationRepository.findOne.mock.invocationCallOrder[1],
+    tx.$queryRaw.mockResolvedValueOnce([{ id: 7 }]).mockResolvedValueOnce([{ id: BigInt(10) }])
+    const result = await new ClubManagerTransferService().acceptInvitation(rawToken, recipient)
+    expect(result).toEqual({ club_uuid: clubUuid, club_name: '와플스튜디오' })
+    expect(tx.$queryRaw).toHaveBeenCalledTimes(2)
+    expect(tx.$queryRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.$queryRaw.mock.invocationCallOrder[1],
     )
-    expect(clubManagerRepository.softDelete).toHaveBeenCalledWith({ id: 7 })
-    expect(clubManagerRepository.insert).toHaveBeenCalledWith({
-      clubId: clubUuid,
-      serviceUserId: recipientServiceUserId,
-      name: '이수민',
-      phone: '010-1234-5678',
-      studentId: '23학번',
+    expect(tx.$queryRaw.mock.calls[1][0].join('')).toContain(
+      'FROM club_manager_transfer_invitation',
+    )
+    expect(tx.club_manager.update).toHaveBeenCalledWith({
+      where: { id: 7 },
+      data: { deleted_at: now, updated_at: now },
     })
-    expect(invitationRepository.update).toHaveBeenCalledWith(
-      { id: '10' },
-      {
-        acceptedByServiceUserId: recipientServiceUserId,
-        acceptedAt: '2026-08-24T00:00:00.000Z',
+    expect(tx.club_manager.create).toHaveBeenCalledWith({
+      data: {
+        club_id: clubUuid,
+        service_user_id: recipientServiceUserId,
+        name: '이수민',
+        phone: '010-1234-5678',
+        student_id: '23학번',
       },
-    )
-    expect(notificationRepository.insert).toHaveBeenCalledWith({
-      serviceUserId: senderServiceUserId,
-      type: 'MANAGER_TRANSFER_COMPLETED',
-      clubId: clubUuid,
-      sourceType: 'MANAGER_TRANSFER',
-      sourceId: '10',
-      metadata: { clubName: '와플스튜디오' },
     })
-    expect(clubManagerRepository.softDelete).toHaveBeenCalledTimes(1)
-    expect(clubManagerRepository.insert).toHaveBeenCalledTimes(1)
-    expect(notificationRepository.insert).toHaveBeenCalledTimes(1)
+    expect(tx.club_manager_transfer_invitation.update).toHaveBeenCalledWith({
+      where: { id: BigInt(10) },
+      data: { accepted_by_service_user_id: recipientServiceUserId, accepted_at: now },
+    })
+    expect(tx.user_notification.create).toHaveBeenCalledWith({
+      data: {
+        service_user_id: senderServiceUserId,
+        type: 'MANAGER_TRANSFER_COMPLETED',
+        club_id: clubUuid,
+        source_type: 'MANAGER_TRANSFER',
+        source_id: '10',
+        metadata: { clubName: '와플스튜디오' },
+      },
+    })
   })
 
   it.each(['uq_club_manager_active_club', 'club_manager_clubid_serviceuserid'])(
-    'maps the %s database conflict to a safe domain conflict',
+    'maps %s uniqueness conflicts to a safe domain error',
     async (constraint) => {
-      const { service, transaction } = createTestContext()
-      transaction.mockRejectedValue(createUniqueViolation(constraint))
-
-      await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
-        ConflictError,
+      prisma.$transaction.mockRejectedValueOnce(
+        new QueryFailedError(
+          'INSERT INTO club_manager ...',
+          [],
+          Object.assign(new Error('unique violation'), { code: '23505', constraint }),
+        ),
       )
+      await expect(
+        new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+      ).rejects.toBeInstanceOf(ConflictError)
     },
   )
 
-  it('does not hide unexpected database failures', async () => {
-    const { service, transaction } = createTestContext()
-    const databaseFailure = new QueryFailedError(
-      'INSERT INTO club_manager ...',
-      [],
-      Object.assign(new Error('foreign key violation'), {
-        code: '23503',
-        constraint: 'club_manager_club_id_fkey',
+  it('maps a Prisma unique conflict on the active manager index', async () => {
+    prisma.$transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '7.10.0',
+        meta: { target: 'uq_club_manager_active_club' },
       }),
     )
-    transaction.mockRejectedValue(databaseFailure)
-
-    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBe(databaseFailure)
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).rejects.toBeInstanceOf(ConflictError)
   })
 
-  it('rejects a self-transfer before mutating manager state', async () => {
-    const { service, invitationRepository, clubManagerRepository } = createTestContext()
-    invitationRepository.findOne.mockResolvedValue({
-      id: '10',
-      clubId: clubUuid,
-      senderServiceUserId: recipientServiceUserId,
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: null,
-      acceptedByServiceUserId: null,
-      acceptedAt: null,
-    })
-
-    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
-      ConflictError,
+  it('maps a Prisma field target for the manager uniqueness conflict', async () => {
+    prisma.$transaction.mockRejectedValueOnce(
+      new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '7.10.0',
+        meta: { target: ['club_id', 'service_user_id'] },
+      }),
     )
-    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
-    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).rejects.toBeInstanceOf(ConflictError)
+  })
+
+  it('preserves unexpected database failures', async () => {
+    const failure = new Error('database unavailable')
+    prisma.$transaction.mockRejectedValueOnce(failure)
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).rejects.toBe(failure)
+  })
+
+  it('rejects a self-transfer before changing the manager', async () => {
+    tx.club_manager_transfer_invitation.findUnique.mockResolvedValue(
+      invitation({ sender_service_user_id: recipientServiceUserId }),
+    )
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).rejects.toBeInstanceOf(ConflictError)
+    expect(tx.$queryRaw).not.toHaveBeenCalled()
+    expect(tx.club_manager.update).not.toHaveBeenCalled()
   })
 
   it('treats a repeated acceptance by the same recipient as idempotent', async () => {
-    const { service, invitationRepository, clubManagerRepository, clubRepository } =
-      createTestContext()
-    invitationRepository.findOne.mockResolvedValue({
-      id: '10',
-      clubId: clubUuid,
-      senderServiceUserId,
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: null,
-      acceptedByServiceUserId: recipientServiceUserId,
-      acceptedAt: '2026-08-24T00:00:00.000Z',
-    })
-    clubRepository.findOneBy.mockResolvedValue({ uuid: clubUuid, name: '와플스튜디오' })
-
-    await expect(service.acceptInvitation(rawToken, recipient)).resolves.toEqual({
+    tx.club_manager_transfer_invitation.findUnique.mockResolvedValue(
+      invitation({ accepted_at: now, accepted_by_service_user_id: recipientServiceUserId }),
+    )
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).resolves.toEqual({
       club_uuid: clubUuid,
       club_name: '와플스튜디오',
     })
-    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
-    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
+    expect(tx.$queryRaw).not.toHaveBeenCalled()
+    expect(tx.club_manager.create).not.toHaveBeenCalled()
   })
 
-  it('returns the first result when concurrent same-recipient acceptance already removed manager', async () => {
-    const { service, invitationRepository, clubManagerRepository, clubRepository } =
-      createTestContext()
-    invitationRepository.findOne
-      .mockResolvedValueOnce({
-        id: '10',
-        clubId: clubUuid,
-        senderServiceUserId,
-        expiresAt: '2026-08-27T00:00:00.000Z',
-        revokedAt: null,
-        acceptedByServiceUserId: null,
-        acceptedAt: null,
-      })
-      .mockResolvedValueOnce({
-        id: '10',
-        clubId: clubUuid,
-        senderServiceUserId,
-        expiresAt: '2026-08-27T00:00:00.000Z',
-        revokedAt: null,
-        acceptedByServiceUserId: recipientServiceUserId,
-        acceptedAt: '2026-08-24T00:00:00.000Z',
-      })
-    clubManagerRepository.findOne.mockResolvedValue(null)
-    clubRepository.findOneBy.mockResolvedValue({ uuid: clubUuid, name: '와플스튜디오' })
-
-    await expect(service.acceptInvitation(rawToken, recipient)).resolves.toEqual({
+  it('handles a concurrent repeat after the old manager row disappears', async () => {
+    tx.$queryRaw.mockResolvedValueOnce([])
+    tx.club_manager_transfer_invitation.findUnique
+      .mockResolvedValueOnce(invitation())
+      .mockResolvedValueOnce(
+        invitation({ accepted_at: now, accepted_by_service_user_id: recipientServiceUserId }),
+      )
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).resolves.toEqual({
       club_uuid: clubUuid,
       club_name: '와플스튜디오',
     })
-    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
-      where: { id: '10' },
-    })
-    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
-    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
+    expect(tx.club_manager.create).not.toHaveBeenCalled()
   })
 
-  it('hides a concurrently accepted invitation when another recipient removed the manager', async () => {
-    const { service, invitationRepository, clubManagerRepository, notificationRepository } =
-      createTestContext()
-    invitationRepository.findOne
-      .mockResolvedValueOnce({
-        id: '10',
-        clubId: clubUuid,
-        senderServiceUserId,
-        expiresAt: '2026-08-27T00:00:00.000Z',
-        revokedAt: null,
-        acceptedByServiceUserId: null,
-        acceptedAt: null,
-      })
-      .mockResolvedValueOnce({
-        id: '10',
-        clubId: clubUuid,
-        senderServiceUserId,
-        expiresAt: '2026-08-27T00:00:00.000Z',
-        revokedAt: null,
-        acceptedByServiceUserId: '04cc77e4-b65d-4df5-b4d6-3a52bdd49974',
-        acceptedAt: '2026-08-24T00:00:00.000Z',
-      })
-    clubManagerRepository.findOne.mockResolvedValue(null)
-
-    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
-      NotFoundError,
-    )
-    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
-      where: { id: '10' },
-    })
-    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
-    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
-    expect(notificationRepository.insert).not.toHaveBeenCalled()
+  it('hides a concurrent acceptance by a different recipient', async () => {
+    tx.$queryRaw.mockResolvedValueOnce([])
+    tx.club_manager_transfer_invitation.findUnique
+      .mockResolvedValueOnce(invitation())
+      .mockResolvedValueOnce(
+        invitation({ accepted_at: now, accepted_by_service_user_id: 'another-user' }),
+      )
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).rejects.toBeInstanceOf(NotFoundError)
+    expect(tx.club_manager.create).not.toHaveBeenCalled()
   })
 
-  it('hides a concurrently accepted invitation after acquiring the invitation lock', async () => {
-    const { service, invitationRepository, clubManagerRepository, notificationRepository } =
-      createTestContext()
-    invitationRepository.findOne
-      .mockResolvedValueOnce({
-        id: '10',
-        clubId: clubUuid,
-        senderServiceUserId,
-        expiresAt: '2026-08-27T00:00:00.000Z',
-        revokedAt: null,
-        acceptedByServiceUserId: null,
-        acceptedAt: null,
-      })
-      .mockResolvedValueOnce({
-        id: '10',
-        clubId: clubUuid,
-        senderServiceUserId,
-        expiresAt: '2026-08-27T00:00:00.000Z',
-        revokedAt: null,
-        acceptedByServiceUserId: '04cc77e4-b65d-4df5-b4d6-3a52bdd49974',
-        acceptedAt: '2026-08-24T00:00:00.000Z',
-      })
-    clubManagerRepository.findOne.mockResolvedValue({ id: 7 })
-
-    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
-      NotFoundError,
-    )
-    expect(invitationRepository.findOne).toHaveBeenNthCalledWith(2, {
-      where: { id: '10' },
-      lock: { mode: 'pessimistic_write' },
-    })
-    expect(clubManagerRepository.softDelete).not.toHaveBeenCalled()
-    expect(clubManagerRepository.insert).not.toHaveBeenCalled()
-    expect(notificationRepository.insert).not.toHaveBeenCalled()
-  })
-
-  it('hides an accepted invitation from a different recipient', async () => {
-    const { service, invitationRepository } = createTestContext()
-    invitationRepository.findOne.mockResolvedValue({
-      id: '10',
-      clubId: clubUuid,
-      senderServiceUserId,
-      expiresAt: '2026-08-27T00:00:00.000Z',
-      revokedAt: null,
-      acceptedByServiceUserId: '04cc77e4-b65d-4df5-b4d6-3a52bdd49974',
-      acceptedAt: '2026-08-24T00:00:00.000Z',
-    })
-
-    await expect(service.acceptInvitation(rawToken, recipient)).rejects.toBeInstanceOf(
-      NotFoundError,
-    )
+  it('hides a concurrent acceptance after locking the invitation', async () => {
+    tx.$queryRaw.mockResolvedValueOnce([{ id: 7 }]).mockResolvedValueOnce([{ id: BigInt(10) }])
+    tx.club_manager_transfer_invitation.findUnique
+      .mockResolvedValueOnce(invitation())
+      .mockResolvedValueOnce(
+        invitation({ accepted_at: now, accepted_by_service_user_id: 'another-user' }),
+      )
+    await expect(
+      new ClubManagerTransferService().acceptInvitation(rawToken, recipient),
+    ).rejects.toBeInstanceOf(NotFoundError)
+    expect(tx.club_manager.create).not.toHaveBeenCalled()
   })
 })

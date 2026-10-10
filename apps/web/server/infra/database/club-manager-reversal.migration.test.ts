@@ -1,13 +1,15 @@
 import 'reflect-metadata'
 import { randomUUID } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { DataSource, QueryFailedError } from 'typeorm'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
-vi.mock('../../provider', () => ({
-  InjectRepository: () => () => undefined,
-  Service: () => undefined,
+vi.mock('../../provider', () => ({ Service: () => undefined }))
+const { prismaHolder } = vi.hoisted(() => ({
+  prismaHolder: { client: null as PrismaClient | null },
 }))
+vi.mock('./prisma', () => ({ getPrismaClient: () => prismaHolder.client }))
 
 import { ConflictError } from '../../domain/error'
 import type { User } from '../../domain/model/User'
@@ -22,6 +24,7 @@ import {
   UserNotificationEntity,
 } from './entities'
 import { CollegeMajorEntity } from './entities/college-major.entity'
+import { PrismaClient } from './generated/prisma/client'
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL
 const describeWithPostgres = testDatabaseUrl ? describe : describe.skip
@@ -78,15 +81,10 @@ describeWithPostgres('club manager reversal migration (PostgreSQL)', () => {
       WHERE deleted_at IS NULL
     `)
 
-    transferService = Object.create(
-      ClubManagerTransferService.prototype,
-    ) as ClubManagerTransferService
-    Object.defineProperty(transferService, 'invitationRepository', {
-      value: testDataSource.getRepository(ClubManagerTransferInvitationEntity),
+    prismaHolder.client = new PrismaClient({
+      adapter: new PrismaPg({ connectionString: databaseUrl.toString() }),
     })
-    Object.defineProperty(transferService, 'clubRepository', {
-      value: testDataSource.getRepository(ClubEntity),
-    })
+    transferService = new ClubManagerTransferService()
 
     await testDataSource.getRepository(ClubEntity).insert({
       uuid: clubUuid,
@@ -102,6 +100,7 @@ describeWithPostgres('club manager reversal migration (PostgreSQL)', () => {
   }, 60_000)
 
   afterAll(async () => {
+    await prismaHolder.client?.$disconnect()
     if (testDataSource?.isInitialized) {
       await testDataSource.destroy()
     }
