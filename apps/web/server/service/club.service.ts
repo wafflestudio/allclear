@@ -518,52 +518,39 @@ export class ClubService {
     clubUuid: string,
     serviceUserId: string,
   ): Promise<ClubRegistrationManager> {
-    const club = await this.clubRepository.findOneBy({
-      uuid: clubUuid,
-      deletedAt: IsNull(),
+    const prisma = getPrismaClient()
+    const club = await prisma.club.findFirst({
+      where: { uuid: clubUuid, deleted_at: null },
+      select: { status: true },
     })
     if (!club) {
       throw new NotFoundError('club not found')
     }
 
-    const clubManager = await this.getOwnedRegistrationManager(
-      this.clubManagerRepository,
-      this.clubManagerRequestRepository,
-      clubUuid,
-      serviceUserId,
-    )
-    this.assertEditableClubRegistrationStatus(club.status)
-
-    return {
-      name: clubManager.name,
-      phone: clubManager.phone,
-      student_id: clubManager.studentId,
-    }
-  }
-
-  private async getOwnedRegistrationManager(
-    clubManagerRepository: Repository<ClubManagerEntity>,
-    clubManagerRequestRepository: Repository<ClubManagerRequestEntity>,
-    clubUuid: string,
-    serviceUserId: string,
-  ): Promise<ClubManagerEntity> {
-    const clubManager = await clubManagerRepository.findOneBy({
-      clubId: clubUuid,
-      serviceUserId,
+    const clubManager = await prisma.club_manager.findFirst({
+      where: { club_id: clubUuid, service_user_id: serviceUserId, deleted_at: null },
+      select: { name: true, phone: true, student_id: true },
     })
     if (clubManager) {
-      const managerRequest = await clubManagerRequestRepository.findOneBy({
-        clubId: clubUuid,
-        serviceUserId,
+      const managerRequest = await prisma.club_manager_request.findFirst({
+        where: { club_id: clubUuid, service_user_id: serviceUserId },
+        select: { id: true },
       })
       if (managerRequest) {
         throw new ForbiddenError('manager request is not a club registration')
       }
-      return clubManager
+      this.assertEditableClubRegistrationStatus(club.status)
+
+      return {
+        name: clubManager.name,
+        phone: clubManager.phone,
+        student_id: clubManager.student_id,
+      }
     }
 
-    const anotherManager = await clubManagerRepository.findOneBy({
-      clubId: clubUuid,
+    const anotherManager = await prisma.club_manager.findFirst({
+      where: { club_id: clubUuid, deleted_at: null },
+      select: { id: true },
     })
     if (anotherManager) {
       throw new ForbiddenError('club registration manager permission required')
@@ -571,7 +558,7 @@ export class ClubService {
     throw new NotFoundError('club registration manager not found')
   }
 
-  private assertEditableClubRegistrationStatus(status: ClubEntity['status']): void {
+  private assertEditableClubRegistrationStatus(status: string): void {
     if (status !== PENDING_CLUB_STATUS && status !== REJECTED_CLUB_STATUS) {
       throw new ConflictError('only pending or rejected club registrations can be edited')
     }
@@ -853,22 +840,18 @@ export class ClubService {
   }
 
   async deleteManagedClub(clubUuid: string, serviceUserId: string): Promise<void> {
-    await this.clubRepository.manager.transaction(async (manager) => {
-      const clubRepository = manager.getRepository(ClubEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const club = await clubRepository.findOneBy({
-        uuid: clubUuid,
-        deletedAt: IsNull(),
+    await getPrismaClient().$transaction(async (tx) => {
+      const club = await tx.club.findFirst({
+        where: { uuid: clubUuid, deleted_at: null },
+        select: { status: true },
       })
       if (!club) {
         throw new NotFoundError('club not found')
       }
 
-      const clubManager = await clubManagerRepository.findOneBy({
-        clubId: clubUuid,
-        serviceUserId,
+      const clubManager = await tx.club_manager.findFirst({
+        where: { club_id: clubUuid, service_user_id: serviceUserId, deleted_at: null },
+        select: { id: true },
       })
       if (!clubManager) {
         throw new ForbiddenError('club manager permission required')
@@ -878,16 +861,21 @@ export class ClubService {
         throw new ConflictError('only pending or rejected clubs can be deleted')
       }
 
-      await userNotificationRepository.delete({
-        sourceType: 'CLUB',
-        sourceId: clubUuid,
-        type: In(['CLUB_REGISTRATION_APPROVED', 'CLUB_REGISTRATION_REJECTED']),
+      await tx.user_notification.deleteMany({
+        where: {
+          source_type: 'CLUB',
+          source_id: clubUuid,
+          type: { in: ['CLUB_REGISTRATION_APPROVED', 'CLUB_REGISTRATION_REJECTED'] },
+        },
       })
-      await clubManagerRepository.softDelete({
-        clubId: clubUuid,
+      const deletedAt = new Date()
+      await tx.club_manager.updateMany({
+        where: { club_id: clubUuid, deleted_at: null },
+        data: { deleted_at: deletedAt, updated_at: deletedAt },
       })
-      await clubRepository.softDelete({
-        uuid: clubUuid,
+      await tx.club.updateMany({
+        where: { uuid: clubUuid, deleted_at: null },
+        data: { deleted_at: deletedAt, updated_at: deletedAt },
       })
     })
   }

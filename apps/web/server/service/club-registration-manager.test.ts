@@ -1,10 +1,19 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { prisma } = vi.hoisted(() => ({
+  prisma: {
+    club: { findFirst: vi.fn() },
+    club_manager: { findFirst: vi.fn() },
+    club_manager_request: { findFirst: vi.fn() },
+  },
+}))
 
 vi.mock('../provider', () => ({
   Inject: () => () => undefined,
   InjectRepository: () => () => undefined,
   Service: () => undefined,
 }))
+vi.mock('../infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import { ClubEntity, ClubHistoryEntity, UserNotificationEntity } from '../infra/database/entities'
@@ -26,36 +35,30 @@ function createService({
   anotherManager?: Partial<ClubManagerEntity> | null
   managerRequest?: Partial<ClubManagerRequestEntity> | null
 }) {
-  const clubRepository = {
-    findOneBy: vi.fn().mockResolvedValue(club),
-  }
-  const clubManagerRepository = {
-    findOneBy: vi.fn().mockResolvedValueOnce(ownedManager).mockResolvedValueOnce(anotherManager),
-  }
-  const clubManagerRequestRepository = {
-    findOneBy: vi.fn().mockResolvedValue(managerRequest),
-  }
+  prisma.club.findFirst.mockResolvedValue(club)
+  prisma.club_manager.findFirst
+    .mockResolvedValueOnce(
+      ownedManager && {
+        name: ownedManager.name,
+        phone: ownedManager.phone,
+        student_id: ownedManager.studentId,
+      },
+    )
+    .mockResolvedValueOnce(anotherManager)
+  prisma.club_manager_request.findFirst.mockResolvedValue(managerRequest)
   const service = Object.create(ClubService.prototype) as ClubService
-
-  Object.defineProperties(service, {
-    clubRepository: { value: clubRepository },
-    clubManagerRepository: { value: clubManagerRepository },
-    clubManagerRequestRepository: { value: clubManagerRequestRepository },
-  })
-
-  return {
-    service,
-    clubRepository,
-    clubManagerRepository,
-    clubManagerRequestRepository,
-  }
+  return { service }
 }
+
+beforeEach(() => {
+  vi.resetAllMocks()
+})
 
 describe('club registration manager information', () => {
   it.each(['PENDING', 'REJECTED'] as const)(
     'returns only the current registration manager for a %s club',
     async (status) => {
-      const { service, clubManagerRequestRepository } = createService({
+      const { service } = createService({
         club: { uuid: clubUuid, status },
         ownedManager: {
           id: 1,
@@ -72,9 +75,13 @@ describe('club registration manager information', () => {
         phone: '010-1234-5678',
         student_id: '2021-12345',
       })
-      expect(clubManagerRequestRepository.findOneBy).toHaveBeenCalledWith({
-        clubId: clubUuid,
-        serviceUserId,
+      expect(prisma.club_manager_request.findFirst).toHaveBeenCalledWith({
+        where: { club_id: clubUuid, service_user_id: serviceUserId },
+        select: { id: true },
+      })
+      expect(prisma.club_manager.findFirst).toHaveBeenCalledWith({
+        where: { club_id: clubUuid, service_user_id: serviceUserId, deleted_at: null },
+        select: { name: true, phone: true, student_id: true },
       })
     },
   )
