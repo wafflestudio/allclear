@@ -1,5 +1,4 @@
-import { toClubDomain } from 'server/domain/model/Club'
-import type { ClubEntity } from 'server/infra/database/entities'
+import { type ClubDomainSource, toClubDomain } from 'server/domain/model/Club'
 import { getPrismaClient } from 'server/infra/database/prisma'
 import { Inject, Service } from 'server/provider'
 import { ClubService } from '../club.service'
@@ -10,7 +9,7 @@ export class SearchResultHydratorService {
   @Inject(ClubService)
   private readonly clubService: ClubService
 
-  async toClubs(entities: ClubEntity[]): Promise<SearchClub[]> {
+  async toClubs(entities: ClubDomainSource[]): Promise<SearchClub[]> {
     const uniqueEntities = this.dedupe(entities)
     if (uniqueEntities.length === 0) {
       return []
@@ -31,7 +30,7 @@ export class SearchResultHydratorService {
     }))
   }
 
-  private dedupe(entities: ClubEntity[]): ClubEntity[] {
+  private dedupe(entities: ClubDomainSource[]): ClubDomainSource[] {
     return Array.from(new Map(entities.map((it) => [it.uuid, it])).values())
   }
 }
