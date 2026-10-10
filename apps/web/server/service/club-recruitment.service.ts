@@ -3,19 +3,22 @@ import type {
   CreateClubRecruitment,
   UpdateClubRecruitment,
 } from 'server/http/schemas/club-recruitments'
-import { IsNull, QueryFailedError, type Repository } from 'typeorm'
 import { ConflictError, NotFoundError } from '../domain/error'
-import { type ClubRecruitment, toClubRecruitmentDomain } from '../domain/model/ClubRecruitment'
-import { ClubEntity } from '../infra/database/entities'
-import { ClubRecruitmentEntity } from '../infra/database/entities/club-recruitment.entity'
-import { RegularMeetingEntity } from '../infra/database/entities/regular-meeting.entity'
-import { Inject, InjectRepository, Service } from '../provider'
+import type { ClubRecruitment } from '../domain/model/ClubRecruitment'
+import { Prisma } from '../infra/database/generated/prisma/client'
+import { getPrismaClient } from '../infra/database/prisma'
+import {
+  type RegularMeetingRow,
+  toClubRecruitmentDomain,
+} from '../infra/database/prisma-recruitment-mapping'
+import { Inject, Service } from '../provider'
+import { getSafeDatabaseErrorContext } from '../util/safe-error'
 import { ClubAccessService } from './club-access.service'
+
+type RecruitmentClient = Pick<Prisma.TransactionClient, 'club_recruitment' | '$queryRaw'>
 
 @Service
 export class ClubRecruitmentService {
-  @InjectRepository(ClubRecruitmentEntity)
-  private readonly clubRecruitmentRepository: Repository<ClubRecruitmentEntity>
   @Inject(ClubAccessService)
   private readonly clubAccessService: ClubAccessService
 
@@ -23,13 +26,9 @@ export class ClubRecruitmentService {
     clubUuid: string,
   ): Promise<{ clubName: string; recruitments: ClubRecruitment[] }> {
     const club = await this.clubAccessService.getPublicClub(clubUuid)
-    const recruitments = await this.clubRecruitmentRepository.find({
-      where: { clubId: clubUuid, deletedAt: IsNull() },
-      order: { createdAt: 'DESC' },
-    })
     return {
       clubName: club.name,
-      recruitments: recruitments.map((it) => toClubRecruitmentDomain(it)),
+      recruitments: await this.findRecruitmentsByClub(clubUuid),
     }
   }
 
@@ -37,22 +36,21 @@ export class ClubRecruitmentService {
     clubUuid: string,
   ): Promise<ClubRecruitment | null> {
     await this.clubAccessService.getPublicClub(clubUuid)
-    const recruitment = await this.clubRecruitmentRepository.findOne({
-      where: { clubId: clubUuid, deletedAt: IsNull() },
-      order: { yearMonth: 'DESC', createdAt: 'DESC' },
+    const recruitment = await getPrismaClient().club_recruitment.findFirst({
+      where: { club_id: clubUuid, deleted_at: null },
+      orderBy: [{ year_month: 'desc' }, { created_at: 'desc' }],
     })
-    return recruitment ? toClubRecruitmentDomain(recruitment) : null
+    if (!recruitment) {
+      return null
+    }
+    const meetings = await this.loadRegularMeetings([recruitment.id])
+    return toClubRecruitmentDomain(recruitment, meetings)
   }
 
   async findPublicRecruitmentById(recruitmentId: string): Promise<ClubRecruitment> {
-    const recruitment = await this.clubRecruitmentRepository.findOne({
-      where: { id: recruitmentId, deletedAt: IsNull() },
-    })
-    if (!recruitment) {
-      throw new NotFoundError('recruitment not found')
-    }
+    const recruitment = await this.loadRecruitment(BigInt(recruitmentId))
     await this.clubAccessService.getPublicClub(recruitment.clubId)
-    return toClubRecruitmentDomain(recruitment)
+    return recruitment
   }
 
   async findManagedRecruitmentsByClub(
@@ -60,11 +58,7 @@ export class ClubRecruitmentService {
     serviceUserId: string,
   ): Promise<ClubRecruitment[]> {
     await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
-    const recruitments = await this.clubRecruitmentRepository.find({
-      where: { clubId: clubUuid, deletedAt: IsNull() },
-      order: { createdAt: 'DESC' },
-    })
-    return recruitments.map((it) => toClubRecruitmentDomain(it))
+    return this.findRecruitmentsByClub(clubUuid)
   }
 
   async findManagedRecruitmentById(
@@ -72,12 +66,8 @@ export class ClubRecruitmentService {
     recruitmentId: string,
     serviceUserId: string,
   ): Promise<ClubRecruitment> {
-    const recruitment = await this.getManagedRecruitmentEntity(
-      clubUuid,
-      recruitmentId,
-      serviceUserId,
-    )
-    return toClubRecruitmentDomain(recruitment)
+    await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
+    return this.loadRecruitment(BigInt(recruitmentId), clubUuid)
   }
 
   async createRecruitment(
@@ -86,31 +76,26 @@ export class ClubRecruitmentService {
     recruitment: CreateClubRecruitment,
   ): Promise<ClubRecruitment> {
     await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
-
-    const now = new Date().toISOString()
-    const saved = await this.clubRecruitmentRepository.manager.transaction(async (manager) => {
-      const clubRecruitmentRepository = manager.getRepository(ClubRecruitmentEntity)
-      const regularMeetingRepository = manager.getRepository(RegularMeetingEntity)
-      const clubRepository = manager.getRepository(ClubEntity)
-      const entity = clubRecruitmentRepository.create({
-        clubId: clubUuid,
-        ...this.toPersistencePayload(recruitment),
-        createdAt: now,
-        updatedAt: now,
-        yearMonth: formatYearMonth(now),
-      })
-
-      const created = await this.saveOrThrowConflict(entity, clubRecruitmentRepository)
-      const regularMeetings = this.toRegularMeetingEntities(recruitment.regular_meetings).map(
-        (regularMeeting) => ({ ...regularMeeting, clubRecruitmentId: created.id }),
-      )
-      if (regularMeetings.length > 0) {
-        await regularMeetingRepository.insert(regularMeetings)
-      }
-      await this.touchClubArticleUploadedAt(clubUuid, now, clubRepository)
-      return this.getRecruitmentEntity(clubUuid, created.id, clubRecruitmentRepository)
-    })
-    return toClubRecruitmentDomain(saved)
+    const now = new Date()
+    return getPrismaClient().$transaction(
+      async (tx) => {
+        const created = await this.saveOrThrowConflict(
+          tx.club_recruitment.create({
+            data: {
+              club_id: clubUuid,
+              ...this.toPersistencePayload(recruitment),
+              created_at: now,
+              updated_at: now,
+              year_month: formatYearMonth(now),
+            },
+          }),
+        )
+        await this.insertRegularMeetings(tx, created.id, recruitment.regular_meetings)
+        await this.touchClubArticleUploadedAt(clubUuid, now, tx)
+        return this.loadRecruitment(created.id, clubUuid, tx)
+      },
+      { timeout: 30_000 },
+    )
   }
 
   async updateRecruitment(
@@ -118,179 +103,213 @@ export class ClubRecruitmentService {
     serviceUserId: string,
     data: UpdateClubRecruitment,
   ): Promise<ClubRecruitment> {
-    const entity = await this.clubRecruitmentRepository.findOne({
-      where: { id: recruitmentId, deletedAt: IsNull() },
+    const id = BigInt(recruitmentId)
+    const existing = await getPrismaClient().club_recruitment.findFirst({
+      where: { id, deleted_at: null },
+      select: { club_id: true },
     })
-    if (!entity) {
+    if (!existing) {
       throw new NotFoundError('recruitment not found')
     }
+    await this.clubAccessService.assertManagedClub(existing.club_id, serviceUserId)
 
-    await this.clubAccessService.assertManagedClub(entity.clubId, serviceUserId)
-
-    const now = new Date().toISOString()
-    const saved = await this.clubRecruitmentRepository.manager.transaction(async (manager) => {
-      const clubRecruitmentRepository = manager.getRepository(ClubRecruitmentEntity)
-      const regularMeetingRepository = manager.getRepository(RegularMeetingEntity)
-      const clubRepository = manager.getRepository(ClubEntity)
-
-      Object.assign(entity, this.toUpdatePayload(data), { updatedAt: now })
-      const updated = await this.saveOrThrowConflict(entity, clubRecruitmentRepository)
-
-      if (data.regular_meetings !== undefined) {
-        await regularMeetingRepository.delete({ clubRecruitmentId: entity.id })
-        const regularMeetings = this.toRegularMeetingEntities(data.regular_meetings).map(
-          (regularMeeting) => ({ ...regularMeeting, clubRecruitmentId: updated.id }),
+    const now = new Date()
+    return getPrismaClient().$transaction(
+      async (tx) => {
+        const updated = await this.saveOrThrowConflict(
+          tx.club_recruitment.updateMany({
+            where: { id, deleted_at: null },
+            data: { ...this.toUpdatePayload(data), updated_at: now },
+          }),
         )
-        if (regularMeetings.length > 0) {
-          await regularMeetingRepository.insert(regularMeetings)
+        if (updated.count === 0) {
+          throw new NotFoundError('recruitment not found')
         }
-      }
-
-      await this.touchClubArticleUploadedAt(entity.clubId, now, clubRepository)
-      return this.getRecruitmentEntity(entity.clubId, recruitmentId, clubRecruitmentRepository)
-    })
-
-    return toClubRecruitmentDomain(saved)
+        if (data.regular_meetings !== undefined) {
+          await tx.regular_meeting.deleteMany({ where: { club_recruitment_id: id } })
+          await this.insertRegularMeetings(tx, id, data.regular_meetings)
+        }
+        await this.touchClubArticleUploadedAt(existing.club_id, now, tx)
+        return this.loadRecruitment(id, existing.club_id, tx)
+      },
+      { timeout: 30_000 },
+    )
   }
 
   async deleteRecruitment(recruitmentId: string, serviceUserId: string): Promise<void> {
-    const recruitment = await this.clubRecruitmentRepository.findOne({
-      where: { id: recruitmentId, deletedAt: IsNull() },
+    const id = BigInt(recruitmentId)
+    const existing = await getPrismaClient().club_recruitment.findFirst({
+      where: { id, deleted_at: null },
+      select: { club_id: true },
+    })
+    if (!existing) {
+      throw new NotFoundError('recruitment not found')
+    }
+    await this.clubAccessService.assertManagedClub(existing.club_id, serviceUserId)
+    await getPrismaClient().club_recruitment.updateMany({
+      where: { id, deleted_at: null },
+      data: { deleted_at: new Date() },
+    })
+  }
+
+  private async findRecruitmentsByClub(clubUuid: string): Promise<ClubRecruitment[]> {
+    const prisma = getPrismaClient()
+    const recruitments = await prisma.club_recruitment.findMany({
+      where: { club_id: clubUuid, deleted_at: null },
+      orderBy: { created_at: 'desc' },
+    })
+    if (recruitments.length === 0) {
+      return []
+    }
+    const meetings = await this.loadRegularMeetings(recruitments.map((item) => item.id))
+    const meetingsByRecruitment = new Map<bigint, typeof meetings>()
+    for (const meeting of meetings) {
+      const group = meetingsByRecruitment.get(meeting.club_recruitment_id) ?? []
+      group.push(meeting)
+      meetingsByRecruitment.set(meeting.club_recruitment_id, group)
+    }
+    return recruitments.map((item) =>
+      toClubRecruitmentDomain(item, meetingsByRecruitment.get(item.id) ?? []),
+    )
+  }
+
+  private async loadRecruitment(
+    id: bigint,
+    clubUuid?: string,
+    client: RecruitmentClient = getPrismaClient(),
+  ): Promise<ClubRecruitment> {
+    const recruitment = await client.club_recruitment.findFirst({
+      where: { id, deleted_at: null, ...(clubUuid && { club_id: clubUuid }) },
     })
     if (!recruitment) {
       throw new NotFoundError('recruitment not found')
     }
-    await this.clubAccessService.assertManagedClub(recruitment.clubId, serviceUserId)
-    await this.clubRecruitmentRepository.softDelete(recruitment.id)
+    const meetings = await this.loadRegularMeetings([id], client)
+    return toClubRecruitmentDomain(recruitment, meetings)
+  }
+
+  private async loadRegularMeetings(
+    recruitmentIds: bigint[],
+    client: RecruitmentClient = getPrismaClient(),
+  ): Promise<RegularMeetingRow[]> {
+    if (recruitmentIds.length === 0) {
+      return []
+    }
+    // Cast TIME(6) to text so fractional seconds survive the JavaScript Date boundary.
+    return client.$queryRaw<RegularMeetingRow[]>`
+      SELECT id, club_recruitment_id, day_of_week,
+             start_time::text AS start_time, end_time::text AS end_time
+      FROM regular_meeting
+      WHERE club_recruitment_id IN (${Prisma.join(recruitmentIds)})
+    `
   }
 
   private toPersistencePayload(
-    recruitment: CreateClubRecruitment,
-  ): Omit<
-    ClubRecruitmentEntity,
-    | 'id'
-    | 'clubId'
-    | 'regularMeetings'
-    | 'yearMonth'
-    | 'createdAt'
-    | 'updatedAt'
-    | 'deletedAt'
-    | 'syncYearMonth'
-  > {
+    data: CreateClubRecruitment,
+  ): Omit<Prisma.club_recruitmentUncheckedCreateInput, 'club_id' | 'year_month'> {
     return {
-      title: recruitment.title,
-      deadline: new Date(recruitment.deadline).toISOString(),
-      isMandatory: recruitment.is_mandatory,
-      hasRegularMeeting: recruitment.has_regular_meeting,
-      activityLocationType: recruitment.activity_location_type,
-      activityLocationText: recruitment.activity_location_text,
-      hasEligibility: recruitment.has_eligibility,
-      eligibilityText: recruitment.eligibility_text,
-      hasCapacityLimit: recruitment.has_capacity_limit,
-      capacityLimitText: recruitment.capacity_limit_text,
-      hasMembershipFee: recruitment.has_membership_fee,
-      membershipFeeText: recruitment.membership_fee_text,
-      applicationUrl: recruitment.application_url,
-      applicationProcess: recruitment.application_process,
-      fullRecruitmentText: recruitment.full_recruitment_text,
-      imageUrls: recruitment.image_urls,
-    }
-  }
-
-  private toUpdatePayload(data: UpdateClubRecruitment): Partial<ClubRecruitmentEntity> {
-    const raw = {
       title: data.title,
-      deadline: data.deadline !== undefined ? new Date(data.deadline).toISOString() : undefined,
-      isMandatory: data.is_mandatory,
-      hasRegularMeeting: data.has_regular_meeting,
-      activityLocationType: data.activity_location_type,
-      activityLocationText: data.activity_location_text,
-      hasEligibility: data.has_eligibility,
-      eligibilityText: data.eligibility_text,
-      hasCapacityLimit: data.has_capacity_limit,
-      capacityLimitText: data.capacity_limit_text,
-      hasMembershipFee: data.has_membership_fee,
-      membershipFeeText: data.membership_fee_text,
-      applicationUrl: data.application_url,
-      applicationProcess: data.application_process,
-      fullRecruitmentText: data.full_recruitment_text,
-      imageUrls: data.image_urls,
+      deadline: new Date(data.deadline),
+      is_mandatory: data.is_mandatory,
+      has_regular_meeting: data.has_regular_meeting,
+      activity_location_type: data.activity_location_type,
+      activity_location_text: data.activity_location_text,
+      has_eligibility: data.has_eligibility,
+      eligibility_text: data.eligibility_text,
+      has_capacity_limit: data.has_capacity_limit,
+      capacity_limit_text: data.capacity_limit_text,
+      has_membership_fee: data.has_membership_fee,
+      membership_fee_text: data.membership_fee_text,
+      application_url: data.application_url,
+      application_process: data.application_process,
+      full_recruitment_text: data.full_recruitment_text,
+      image_urls: data.image_urls,
     }
-    return Object.fromEntries(Object.entries(raw).filter(([, v]) => v !== undefined))
   }
 
-  private toRegularMeetingEntities(
-    regularMeetings: CreateClubRecruitment['regular_meetings'],
-  ): Partial<RegularMeetingEntity>[] {
-    return regularMeetings.map((regularMeeting) => ({
-      dayOfWeek: regularMeeting.day_of_week,
-      startTime: regularMeeting.start_time,
-      endTime: regularMeeting.end_time,
-    }))
-  }
-
-  private async getManagedRecruitmentEntity(
-    clubUuid: string,
-    recruitmentId: string,
-    serviceUserId: string,
-  ): Promise<ClubRecruitmentEntity> {
-    await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
-    return this.getRecruitmentEntity(clubUuid, recruitmentId)
-  }
-
-  private async getRecruitmentEntity(
-    clubUuid: string,
-    recruitmentId: string,
-    repository: Repository<ClubRecruitmentEntity> = this.clubRecruitmentRepository,
-  ): Promise<ClubRecruitmentEntity> {
-    const recruitment = await repository.findOne({
-      where: { id: recruitmentId, clubId: clubUuid, deletedAt: IsNull() },
-    })
-    if (!recruitment) {
-      throw new NotFoundError('recruitment not found')
+  private toUpdatePayload(
+    data: UpdateClubRecruitment,
+  ): Prisma.club_recruitmentUpdateManyMutationInput {
+    return {
+      ...(data.title !== undefined && { title: data.title }),
+      ...(data.deadline !== undefined && { deadline: new Date(data.deadline) }),
+      ...(data.is_mandatory !== undefined && { is_mandatory: data.is_mandatory }),
+      ...(data.has_regular_meeting !== undefined && {
+        has_regular_meeting: data.has_regular_meeting,
+      }),
+      ...(data.activity_location_type !== undefined && {
+        activity_location_type: data.activity_location_type,
+      }),
+      ...(data.activity_location_text !== undefined && {
+        activity_location_text: data.activity_location_text,
+      }),
+      ...(data.has_eligibility !== undefined && { has_eligibility: data.has_eligibility }),
+      ...(data.eligibility_text !== undefined && { eligibility_text: data.eligibility_text }),
+      ...(data.has_capacity_limit !== undefined && { has_capacity_limit: data.has_capacity_limit }),
+      ...(data.capacity_limit_text !== undefined && {
+        capacity_limit_text: data.capacity_limit_text,
+      }),
+      ...(data.has_membership_fee !== undefined && { has_membership_fee: data.has_membership_fee }),
+      ...(data.membership_fee_text !== undefined && {
+        membership_fee_text: data.membership_fee_text,
+      }),
+      ...(data.application_url !== undefined && { application_url: data.application_url }),
+      ...(data.application_process !== undefined && {
+        application_process: data.application_process,
+      }),
+      ...(data.full_recruitment_text !== undefined && {
+        full_recruitment_text: data.full_recruitment_text,
+      }),
+      ...(data.image_urls !== undefined && { image_urls: data.image_urls }),
     }
-    return recruitment
   }
 
-  private async saveOrThrowConflict(
-    entity: ClubRecruitmentEntity,
-    repository: Repository<ClubRecruitmentEntity> = this.clubRecruitmentRepository,
-  ): Promise<ClubRecruitmentEntity> {
-    try {
-      return await repository.save(entity)
-    } catch (error) {
-      if (this.isMonthlyRecruitmentConflict(error)) {
-        throw new ConflictError('recruitment already exists for this month')
-      }
-      throw error
+  private async insertRegularMeetings(
+    tx: Prisma.TransactionClient,
+    recruitmentId: bigint,
+    meetings: CreateClubRecruitment['regular_meetings'],
+  ): Promise<void> {
+    for (const meeting of meetings) {
+      await tx.$executeRaw`
+        INSERT INTO regular_meeting
+          (club_recruitment_id, day_of_week, start_time, end_time)
+        VALUES (
+          ${recruitmentId}, ${meeting.day_of_week},
+          ${meeting.start_time}::time, ${meeting.end_time}::time
+        )
+      `
     }
   }
 
   private async touchClubArticleUploadedAt(
     clubUuid: string,
-    uploadedAt: string,
-    repository: Repository<ClubEntity>,
+    uploadedAt: Date,
+    tx: Prisma.TransactionClient,
   ): Promise<void> {
-    await repository.update(
-      {
-        uuid: clubUuid,
-        deletedAt: IsNull(),
-      },
-      {
-        articleUploadedAt: uploadedAt,
-      },
-    )
+    await tx.club.updateMany({
+      where: { uuid: clubUuid, deleted_at: null },
+      data: { article_uploaded_at: uploadedAt },
+    })
   }
 
-  private isMonthlyRecruitmentConflict(error: unknown): boolean {
-    if (!(error instanceof QueryFailedError)) {
-      return false
+  private async saveOrThrowConflict<T>(operation: Promise<T>): Promise<T> {
+    try {
+      return await operation
+    } catch (error) {
+      const { databaseCode, prismaCode, constraint } = getSafeDatabaseErrorContext(error)
+      const knownConstraint = constraint === 'idx_unique_club_month_active'
+      const prismaFields =
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002' &&
+        Array.isArray(error.meta?.target) &&
+        error.meta.target.join(',') === 'club_id,year_month'
+      if (
+        ((databaseCode === '23505' || prismaCode === 'P2002') && knownConstraint) ||
+        prismaFields
+      ) {
+        throw new ConflictError('recruitment already exists for this month')
+      }
+      throw error
     }
-    const driverError = (
-      error as QueryFailedError & { driverError?: { code?: string; constraint?: string } }
-    ).driverError
-    return (
-      driverError?.code === '23505' && driverError?.constraint === 'idx_unique_club_month_active'
-    )
   }
 }
