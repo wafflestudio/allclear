@@ -1,31 +1,22 @@
-import { IsNull, type Repository } from 'typeorm'
 import { NotFoundError } from '../domain/error'
 import { toUserNotificationDomain, type UserNotification } from '../domain/model/UserNotification'
-import { UserNotificationEntity } from '../infra/database/entities'
-import { InjectRepository, Service } from '../provider'
+import { getPrismaClient } from '../infra/database/prisma'
+import { Service } from '../provider'
 
 @Service
 export class UserNotificationService {
-  @InjectRepository(UserNotificationEntity)
-  private readonly userNotificationRepository: Repository<UserNotificationEntity>
-
   async findByUser(serviceUserId: string): Promise<{
     notifications: UserNotification[]
     unreadCount: number
   }> {
+    const prisma = getPrismaClient()
     const [notifications, unreadCount] = await Promise.all([
-      this.userNotificationRepository.find({
-        where: { serviceUserId },
-        order: {
-          createdAt: 'DESC',
-          id: 'DESC',
-        },
+      prisma.user_notification.findMany({
+        where: { service_user_id: serviceUserId },
+        orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
       }),
-      this.userNotificationRepository.count({
-        where: {
-          serviceUserId,
-          readAt: IsNull(),
-        },
+      prisma.user_notification.count({
+        where: { service_user_id: serviceUserId, read_at: null },
       }),
     ])
 
@@ -36,24 +27,19 @@ export class UserNotificationService {
   }
 
   async markAsRead(serviceUserId: string, notificationId: string): Promise<void> {
-    const result = await this.userNotificationRepository.update(
-      {
-        id: notificationId,
-        serviceUserId,
-        readAt: IsNull(),
-      },
-      {
-        readAt: new Date().toISOString(),
-      },
-    )
+    const prisma = getPrismaClient()
+    const id = BigInt(notificationId)
+    const result = await prisma.user_notification.updateMany({
+      where: { id, service_user_id: serviceUserId, read_at: null },
+      data: { read_at: new Date() },
+    })
 
-    if ((result.affected ?? 0) > 0) {
+    if (result.count > 0) {
       return
     }
 
-    const notification = await this.userNotificationRepository.findOneBy({
-      id: notificationId,
-      serviceUserId,
+    const notification = await prisma.user_notification.findFirst({
+      where: { id, service_user_id: serviceUserId },
     })
     if (!notification) {
       throw new NotFoundError('notification not found')

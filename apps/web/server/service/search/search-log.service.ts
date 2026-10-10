@@ -1,17 +1,16 @@
-import { UserActivityLogEntity, UserActivityLogType } from 'server/infra/database/entities'
-import { InjectRepository, Service } from 'server/provider'
-import type { Repository } from 'typeorm'
+import { UserActivityLogType } from 'server/infra/database/entities'
+import { getPrismaClient } from 'server/infra/database/prisma'
+import { Service } from 'server/provider'
 
 @Service
 export class SearchLogService {
-  @InjectRepository(UserActivityLogEntity)
-  private readonly userActivityLogRepository: Repository<UserActivityLogEntity>
-
   logSearch(query: string): void {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.CALL_SEARCH_CLUBS_API,
-        params: JSON.stringify({ query }),
+    getPrismaClient()
+      .user_activity_log.create({
+        data: {
+          type: UserActivityLogType.CALL_SEARCH_CLUBS_API,
+          params: JSON.stringify({ query }),
+        },
       })
       .catch(console.error)
   }
