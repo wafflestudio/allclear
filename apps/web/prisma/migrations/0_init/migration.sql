@@ -1,4 +1,4 @@
--- Baseline of the dev database after 260904 and the club review category primary key.
+-- Baseline after 260904, the club review category primary key, and the 261011 dev alignment.
 -- Existing databases must mark this migration as applied; run it only on an empty database.
 -- Objects below are required by defaults and a legacy function, but are not emitted by Prisma Migrate.
 CREATE SCHEMA IF NOT EXISTS "public";
@@ -11,7 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "vector" WITH SCHEMA "public";
 CREATE TABLE "account" (
     "id" UUID NOT NULL DEFAULT extensions.uuid_generate_v4(),
     "type" VARCHAR(20) NOT NULL,
-    "username" VARCHAR(64) NOT NULL,
+    "username" VARCHAR(255) NOT NULL,
     "social_info" JSON,
     "last_login_at" TIMESTAMP(6),
     "created_at" TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
@@ -100,7 +100,7 @@ CREATE TABLE "club" (
     "college_major_id" INTEGER,
     "approved_at" TIMESTAMP(6),
     "status" VARCHAR NOT NULL DEFAULT 'PENDING',
-    "reject_reason" VARCHAR,
+    "reject_reason" VARCHAR DEFAULT '',
     "short_description" VARCHAR NOT NULL DEFAULT '',
     "dongbang_location" VARCHAR DEFAULT '',
     "min_activity_period" INTEGER NOT NULL DEFAULT 0,

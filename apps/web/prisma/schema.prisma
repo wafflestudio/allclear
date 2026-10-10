@@ -13,7 +13,7 @@ datasource db {
 model account {
   id            String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
   type          String    @db.VarChar(20)
-  username      String    @db.VarChar(64)
+  username      String    @db.VarChar(255)
   social_info   Json?     @db.Json
   last_login_at DateTime? @db.Timestamp(6)
   created_at    DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
@@ -103,7 +103,7 @@ model club {
   college_major_id     Int?
   approved_at          DateTime? @db.Timestamp(6)
   status               String    @default("PENDING") @db.VarChar
-  reject_reason        String?   @db.VarChar
+  reject_reason        String?   @default("") @db.VarChar
   short_description    String    @default("") @db.VarChar
   dongbang_location    String?   @default("") @db.VarChar
   min_activity_period  Int       @default(0)
