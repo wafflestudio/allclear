@@ -283,71 +283,72 @@ export class AdminClubService {
     clubUuid: string,
     decision: AdminClubStatusUpdate,
   ): Promise<{ club_uuid: string; status: AdminClubStatusUpdate['status']; processed_at: string }> {
-    return this.clubRepository.manager.transaction(async (manager) => {
-      const clubRepository = manager.getRepository(ClubEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const club = await clubRepository.findOneBy({
-        uuid: clubUuid,
-        deletedAt: IsNull(),
-      })
+    return getPrismaClient().$transaction(async (tx) => {
+      const clubs = await tx.$queryRaw<Array<{ status: string }>>`
+        SELECT status FROM club
+        WHERE uuid = ${clubUuid}::uuid AND deleted_at IS NULL
+        FOR UPDATE
+      `
+      const club = clubs[0]
 
       if (!club) {
         throw new NotFoundError('club not found')
       }
 
-      const processedAt = new Date().toISOString()
+      const processedAt = new Date()
       const isApproved = decision.status === PUBLIC_CLUB_STATUS
       const isRejected = decision.status === REJECTED_CLUB_STATUS
       const isPending = decision.status === PENDING_CLUB_STATUS
       const notificationType = this.getClubRegistrationNotificationType(decision.status)
       const shouldCreateNotification = club.status !== decision.status && notificationType !== null
 
-      await clubRepository.update(
-        {
-          uuid: clubUuid,
-          deletedAt: IsNull(),
-        },
-        {
+      await tx.club.updateMany({
+        where: { uuid: clubUuid, deleted_at: null },
+        data: {
           status: decision.status,
-          approvedAt: isApproved ? processedAt : null,
-          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
-          isOfficialVerified: isApproved ? decision.is_official_verified : false,
-          verifiedAt: isApproved && decision.is_official_verified ? processedAt : null,
+          approved_at: isApproved ? processedAt : null,
+          reject_reason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
+          is_official_verified: isApproved ? decision.is_official_verified : false,
+          verified_at: isApproved && decision.is_official_verified ? processedAt : null,
+          updated_at: processedAt,
         },
-      )
+      })
 
       if (isPending) {
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB',
-          sourceId: clubUuid,
-          type: In(this.getClubRegistrationResultNotificationTypes()),
+        await tx.user_notification.deleteMany({
+          where: {
+            source_type: 'CLUB',
+            source_id: clubUuid,
+            type: { in: this.getClubRegistrationResultNotificationTypes() },
+          },
         })
       }
 
       if (shouldCreateNotification) {
-        const clubManagers = await clubManagerRepository.findBy({ clubId: clubUuid })
-        const serviceUserIds = Array.from(new Set(clubManagers.map((it) => it.serviceUserId)))
+        const clubManagers = await tx.club_manager.findMany({
+          where: { club_id: clubUuid, deleted_at: null },
+          select: { service_user_id: true },
+        })
+        const serviceUserIds = Array.from(new Set(clubManagers.map((it) => it.service_user_id)))
         const metadata = this.getNotificationMetadata(notificationType, decision.reject_reason)
         if (serviceUserIds.length > 0) {
-          await userNotificationRepository.insert(
-            serviceUserIds.map((serviceUserId) => ({
-              serviceUserId,
+          await tx.user_notification.createMany({
+            data: serviceUserIds.map((serviceUserId) => ({
+              service_user_id: serviceUserId,
               type: notificationType,
-              clubId: clubUuid,
-              sourceType: 'CLUB',
-              sourceId: clubUuid,
-              metadata,
+              club_id: clubUuid,
+              source_type: 'CLUB',
+              source_id: clubUuid,
+              ...(metadata && { metadata }),
             })),
-          )
+          })
         }
       }
 
       return {
         club_uuid: clubUuid,
         status: decision.status,
-        processed_at: processedAt,
+        processed_at: processedAt.toISOString(),
       }
     })
   }
