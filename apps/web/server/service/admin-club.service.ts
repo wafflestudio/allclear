@@ -14,7 +14,7 @@ import type {
   AdminClubVerificationRequestStatusUpdate,
   AdminClubVerificationRequestsQuery,
 } from 'server/http/schemas/admin'
-import { type FindOptionsWhere, In, IsNull, Not, type Repository } from 'typeorm'
+import type { Repository } from 'typeorm'
 import {
   ClubEntity,
   ClubHistoryEntity,
@@ -24,10 +24,9 @@ import {
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
-import {
-  UserNotificationEntity,
-  type UserNotificationMetadata,
-  type UserNotificationType,
+import type {
+  UserNotificationMetadata,
+  UserNotificationType,
 } from '../infra/database/entities/user-notification.entity'
 import type { Prisma } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
@@ -132,12 +131,6 @@ const getClubAffiliation = (
 
 @Service
 export class AdminClubService {
-  @InjectRepository(ClubEntity)
-  private readonly clubRepository: Repository<ClubEntity>
-
-  @InjectRepository(ClubManagerEntity)
-  private readonly clubManagerRepository: Repository<ClubManagerEntity>
-
   @InjectRepository(ClubHistoryEntity)
   private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
 
@@ -755,16 +748,18 @@ export class AdminClubService {
     is_official_verified: boolean
     processed_at: string
   }> {
-    return this.clubVerificationRequestRepository.manager.transaction(async (manager) => {
-      const verificationRequestRepository = manager.getRepository(ClubVerificationRequestEntity)
-      const clubRepository = manager.getRepository(ClubEntity)
-
-      const request = await verificationRequestRepository.findOneBy({ id: String(requestId) })
+    return getPrismaClient().$transaction(async (tx) => {
+      const requests = await tx.$queryRaw<Array<{ id: bigint; club_id: string; status: string }>>`
+        SELECT id, club_id, status FROM club_verification_request
+        WHERE id = ${BigInt(requestId)}::bigint
+        FOR UPDATE
+      `
+      const request = requests[0]
       if (!request) {
         throw new NotFoundError('verification request not found')
       }
 
-      const processedAt = new Date().toISOString()
+      const processedAt = new Date()
       const isApproved = decision.status === PUBLIC_CLUB_STATUS
       const isRejected = decision.status === REJECTED_CLUB_STATUS
       const isPending = decision.status === PENDING_CLUB_STATUS
@@ -773,39 +768,41 @@ export class AdminClubService {
         if (request.status !== PENDING_CLUB_STATUS) {
           throw new ConflictError('can only approve from PENDING status')
         }
-        await clubRepository.update(
-          { uuid: request.clubId },
-          {
-            isOfficialVerified: true,
-            verifiedAt: processedAt,
+        await tx.club.updateMany({
+          where: { uuid: request.club_id },
+          data: {
+            is_official_verified: true,
+            verified_at: processedAt,
+            updated_at: processedAt,
           },
-        )
+        })
       }
 
       if (isPending && request.status === PUBLIC_CLUB_STATUS) {
-        await clubRepository.update(
-          { uuid: request.clubId },
-          {
-            isOfficialVerified: false,
-            verifiedAt: null,
+        await tx.club.updateMany({
+          where: { uuid: request.club_id },
+          data: {
+            is_official_verified: false,
+            verified_at: null,
+            updated_at: processedAt,
           },
-        )
+        })
       }
 
-      await verificationRequestRepository.update(
-        { id: request.id },
-        {
+      await tx.club_verification_request.update({
+        where: { id: request.id },
+        data: {
           status: decision.status,
-          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
+          reject_reason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
         },
-      )
+      })
 
       return {
         request_id: requestId,
-        club_uuid: request.clubId,
+        club_uuid: request.club_id,
         status: decision.status,
         is_official_verified: isApproved,
-        processed_at: processedAt,
+        processed_at: processedAt.toISOString(),
       }
     })
   }
