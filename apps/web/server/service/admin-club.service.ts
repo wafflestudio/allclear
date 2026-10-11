@@ -15,12 +15,7 @@ import type {
   AdminClubVerificationRequestsQuery,
 } from 'server/http/schemas/admin'
 import type { Repository } from 'typeorm'
-import {
-  ClubEntity,
-  ClubHistoryEntity,
-  ServiceUserEntity,
-  UserEntity,
-} from '../infra/database/entities'
+import { ClubEntity } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
@@ -28,7 +23,7 @@ import type {
   UserNotificationMetadata,
   UserNotificationType,
 } from '../infra/database/entities/user-notification.entity'
-import type { Prisma } from '../infra/database/generated/prisma/client'
+import { Prisma } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
 import { toStringArray, toTimestampString } from '../infra/database/prisma-mapping'
 import { InjectRepository, Service } from '../provider'
@@ -131,9 +126,6 @@ const getClubAffiliation = (
 
 @Service
 export class AdminClubService {
-  @InjectRepository(ClubHistoryEntity)
-  private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
-
   @InjectRepository(ClubManagerRequestEntity)
   private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
 
@@ -355,71 +347,62 @@ export class AdminClubService {
     limit,
   }: AdminClubHistoriesQuery): Promise<{ total_count: number; histories: AdminClubHistoryItem[] }> {
     const trimmedQuery = query?.trim()
-    const baseQuery = this.clubHistoryRepository
-      .createQueryBuilder('history')
-      .leftJoin(ClubEntity, 'club', 'club.uuid = history.club_id')
-      .leftJoin(
-        ClubManagerEntity,
-        'manager',
-        'manager.club_id = history.club_id AND manager.service_user_id = history.service_user_id',
-      )
-      .leftJoin(ServiceUserEntity, 'service_user', 'service_user.id = history.service_user_id')
-      .leftJoin(UserEntity, 'app_user', 'app_user.id = service_user.user_id')
-
-    if (clubUuid) {
-      baseQuery.andWhere('history.club_id = :clubUuid', { clubUuid })
-    }
-
-    if (affiliationType) {
-      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
-    }
-    if (excludeAffiliationType) {
-      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
-        excludeAffiliationType,
-      })
-    }
-
+    const conditions: Prisma.Sql[] = []
+    if (clubUuid) conditions.push(Prisma.sql`history.club_id = ${clubUuid}::uuid`)
+    if (affiliationType) conditions.push(Prisma.sql`club.affiliation_type = ${affiliationType}`)
+    if (excludeAffiliationType)
+      conditions.push(Prisma.sql`club.affiliation_type != ${excludeAffiliationType}`)
     if (trimmedQuery) {
-      baseQuery.andWhere(
-        '(club.name ILIKE :query OR manager.name ILIKE :query OR app_user.name ILIKE :query)',
-        {
-          query: `%${trimmedQuery}%`,
-        },
-      )
+      const pattern = `%${trimmedQuery}%`
+      conditions.push(Prisma.sql`(
+        club.name ILIKE ${pattern} OR manager.name ILIKE ${pattern} OR app_user.name ILIKE ${pattern}
+      )`)
     }
 
-    const totalCount = await baseQuery.getCount()
-    const histories = await baseQuery
-      .clone()
-      .select([
-        'history.id AS id',
-        'history.club_id AS club_uuid',
-        "COALESCE(club.name, '') AS club_name",
-        'history.service_user_id AS service_user_id',
-        "COALESCE(NULLIF(manager.name, ''), NULLIF(app_user.name, ''), '') AS updated_by_name",
-        'history.changed_fields AS changed_fields',
-        'history.before_data AS before_data',
-        'history.after_data AS after_data',
-        'history.created_at AS created_at',
-      ])
-      .orderBy('history.created_at', 'DESC')
-      .addOrderBy('history.id', 'DESC')
-      .offset(offset)
-      .limit(limit)
-      .getRawMany<{
-        id: string
-        club_uuid: string
-        club_name: string
-        service_user_id: string
-        updated_by_name: string
-        changed_fields: string[]
-        before_data: Record<string, unknown>
-        after_data: Record<string, unknown>
-        created_at: string
-      }>()
+    const from = Prisma.sql`
+      FROM club_history AS history
+      LEFT JOIN club ON club.uuid = history.club_id AND club.deleted_at IS NULL
+      LEFT JOIN club_manager AS manager
+        ON manager.club_id = history.club_id
+        AND manager.service_user_id = history.service_user_id
+        AND manager.deleted_at IS NULL
+      LEFT JOIN allclear_user AS service_user
+        ON service_user.id = history.service_user_id AND service_user.deleted_at IS NULL
+      LEFT JOIN "user" AS app_user
+        ON app_user.id = service_user.user_id AND app_user.deleted_at IS NULL
+      ${conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+    `
+    const prisma = getPrismaClient()
+    const [counts, histories] = await Promise.all([
+      prisma.$queryRaw<Array<{ total_count: bigint }>>`
+        SELECT COUNT(DISTINCT history.id) AS total_count ${from}
+      `,
+      prisma.$queryRaw<
+        Array<{
+          id: bigint
+          club_uuid: string
+          club_name: string
+          service_user_id: string
+          updated_by_name: string
+          changed_fields: string[]
+          before_data: Record<string, unknown>
+          after_data: Record<string, unknown>
+          created_at: Date
+        }>
+      >`
+        SELECT history.id, history.club_id AS club_uuid,
+          COALESCE(club.name, '') AS club_name,
+          history.service_user_id,
+          COALESCE(NULLIF(manager.name, ''), NULLIF(app_user.name, ''), '') AS updated_by_name,
+          history.changed_fields, history.before_data, history.after_data, history.created_at
+        ${from}
+        ORDER BY history.created_at DESC, history.id DESC
+        OFFSET ${offset} LIMIT ${limit}
+      `,
+    ])
 
     return {
-      total_count: totalCount,
+      total_count: Number(counts[0]?.total_count ?? 0),
       histories: histories.map((history) => ({
         id: Number(history.id),
         club_uuid: history.club_uuid,
@@ -431,7 +414,7 @@ export class AdminClubService {
         changed_fields: history.changed_fields,
         before_data: history.before_data,
         after_data: history.after_data,
-        created_at: history.created_at,
+        created_at: toTimestampString(history.created_at),
       })),
     }
   }
