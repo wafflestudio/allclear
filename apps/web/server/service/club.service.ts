@@ -41,7 +41,6 @@ import {
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
-import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import type { Prisma, club as PrismaClub } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
@@ -79,8 +78,6 @@ export class ClubService {
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
   @InjectRepository(ClubManagerRequestEntity)
   private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
-  @InjectRepository(ClubVerificationRequestEntity)
-  private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
   @InjectRepository(ClubHistoryEntity)
   private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
   @InjectRepository(ClubRecruitmentEntity)
@@ -110,8 +107,9 @@ export class ClubService {
     const club = await this.clubAccessService.getPublicClub(uuid)
     const [clubReview, verificationRequest] = await Promise.all([
       this.getClubReviews([club.uuid]),
-      this.clubVerificationRequestRepository.findOneBy({
-        clubId: club.uuid,
+      getPrismaClient().club_verification_request.findUnique({
+        where: { club_id: club.uuid },
+        select: { status: true },
       }),
     ])
     return toClubDetailDomain(club, clubReview.get(club.uuid), verificationRequest)
@@ -121,9 +119,20 @@ export class ClubService {
     await this.clubAccessService.assertManagedClub(clubUuid, serviceUserId)
     const [club, managers, verificationRequest] = await Promise.all([
       this.clubAccessService.getExistingClub(clubUuid),
-      this.clubManagerRepository.findBy({ clubId: clubUuid }),
-      this.clubVerificationRequestRepository.findOneBy({
-        clubId: clubUuid,
+      getPrismaClient().club_manager.findMany({
+        where: { club_id: clubUuid, deleted_at: null },
+        select: { service_user_id: true, name: true, phone: true, student_id: true },
+      }),
+      getPrismaClient().club_verification_request.findUnique({
+        where: { club_id: clubUuid },
+        select: {
+          id: true,
+          status: true,
+          term_key: true,
+          attempt_no: true,
+          reject_reason: true,
+          created_at: true,
+        },
       }),
     ])
     const verificationStatus = club.isOfficialVerified
@@ -134,8 +143,8 @@ export class ClubService {
           ? 'REJECTED'
           : 'UNVERIFIED'
     const effectiveAttemptNo = verificationRequest
-      ? verificationRequest.termKey === getOfficialVerificationTermKey()
-        ? verificationRequest.attemptNo
+      ? verificationRequest.term_key === getOfficialVerificationTermKey()
+        ? verificationRequest.attempt_no
         : 1
       : null
     const retryCount = Math.max((effectiveAttemptNo ?? 1) - 1, 0)
@@ -143,10 +152,10 @@ export class ClubService {
     return {
       ...toClubDomain(club),
       managers: managers.map((m) => ({
-        serviceUserId: m.serviceUserId,
+        serviceUserId: m.service_user_id,
         name: m.name,
         phone: m.phone,
-        studentId: m.studentId,
+        studentId: m.student_id,
       })),
       officialVerification: {
         status: verificationStatus,
@@ -156,8 +165,8 @@ export class ClubService {
         retryLimit: MAX_OFFICIAL_VERIFICATION_RETRY_COUNT,
         remainingRetryCount: Math.max(MAX_OFFICIAL_VERIFICATION_RETRY_COUNT - retryCount, 0),
         rejectReason:
-          verificationStatus === 'REJECTED' ? (verificationRequest?.rejectReason ?? null) : null,
-        requestedAt: verificationRequest?.createdAt ?? null,
+          verificationStatus === 'REJECTED' ? (verificationRequest?.reject_reason ?? null) : null,
+        requestedAt: verificationRequest ? toTimestampString(verificationRequest.created_at) : null,
       },
     }
   }
