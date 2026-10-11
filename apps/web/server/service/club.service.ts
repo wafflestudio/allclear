@@ -1,4 +1,3 @@
-import { groupBy, toPairs } from 'lodash-es'
 import { CATEGORIES } from 'server/domain/constants/club-categories'
 import { normalizeClubRecruitType } from 'server/domain/constants/club-recruit-type'
 import {
@@ -37,8 +36,6 @@ import {
   UserNotificationEntity,
 } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
-import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import type { Prisma, club as PrismaClub } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
 import { toClubDomainSource } from '../infra/database/prisma-club-mapping'
@@ -67,10 +64,6 @@ export class ClubService {
   private readonly clubRepository: Repository<ClubEntity>
   @InjectRepository(UserActivityLogEntity)
   private readonly userActivityLogRepository: Repository<UserActivityLogEntity>
-  @InjectRepository(ClubReviewKeywordEntity)
-  private readonly clubReviewKeywordRepository: Repository<ClubReviewKeywordEntity>
-  @InjectRepository(UserClubReviewEntity)
-  private readonly userClubReviewRepository: Repository<UserClubReviewEntity>
   @InjectRepository(ClubManagerEntity)
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
   @Inject(ClubAccessService)
@@ -598,24 +591,36 @@ export class ClubService {
     if (uuids.length === 0) {
       return new Map()
     }
-    const reviews = await this.userClubReviewRepository.find({
-      where: {
-        clubId: In(uuids),
-      },
-    })
-    const clubToReviewKeywords: Map<
+    const prisma = getPrismaClient()
+    const [reviews, keywords] = await Promise.all([
+      prisma.user_club_review.findMany({
+        where: { club_id: { in: uuids } },
+        select: { club_id: true, review_keyword_ids: true },
+      }),
+      prisma.club_review_keyword.findMany({
+        where: { deleted_at: null },
+        orderBy: { sort_order: 'asc' },
+        select: { id: true, title: true, icon_uri: true },
+      }),
+    ])
+    const clubToReviewKeywords = new Map<
       ClubUuid,
       {
         totalReviews: number
         keywordUpvotes: Map<ReviewKeywordId, number>
       }
-    > = this.clubToReviewKeywords(reviews)
-
-    const keywords = await this.clubReviewKeywordRepository.find({
-      order: {
-        sortOrder: 'ASC',
-      },
-    })
+    >()
+    for (const review of reviews) {
+      const summary = clubToReviewKeywords.get(review.club_id) ?? {
+        totalReviews: 0,
+        keywordUpvotes: new Map<ReviewKeywordId, number>(),
+      }
+      summary.totalReviews += 1
+      for (const keywordId of review.review_keyword_ids) {
+        summary.keywordUpvotes.set(keywordId, (summary.keywordUpvotes.get(keywordId) ?? 0) + 1)
+      }
+      clubToReviewKeywords.set(review.club_id, summary)
+    }
     const out = uuids.map((uuid: ClubUuid) => {
       const { totalReviews, keywordUpvotes } = clubToReviewKeywords.get(uuid) ?? {
         totalReviews: 0,
@@ -625,7 +630,7 @@ export class ClubService {
         .map((it) => ({
           id: it.id,
           title: it.title,
-          iconUri: it.iconUri,
+          iconUri: it.icon_uri,
           totalUpvotes: keywordUpvotes.get(it.id) ?? 0,
         }))
         // 리뷰가 있는 키워드만 반환하도록 수정함
@@ -634,43 +639,6 @@ export class ClubService {
       return [uuid, { totalReviews, reviewKeywords }] as const
     })
     return new Map(out)
-  }
-
-  private clubToReviewKeywords(reviews: UserClubReviewEntity[]): Map<
-    ClubUuid,
-    {
-      totalReviews: number
-      keywordUpvotes: Map<ReviewKeywordId, number>
-    }
-  > {
-    const out = toPairs(groupBy(reviews, (review) => review.clubId)).map(
-      ([clubId, reviews]: [ClubUuid, UserClubReviewEntity[]]): [
-        ClubUuid,
-        {
-          totalReviews: number
-          keywordUpvotes: Map<ReviewKeywordId, number>
-        },
-      ] => {
-        const keywordUpvotes = this.aggregateReviewKeywords(reviews)
-        return [
-          clubId,
-          {
-            totalReviews: reviews.length,
-            keywordUpvotes,
-          },
-        ]
-      },
-    )
-    return new Map(out)
-  }
-
-  private aggregateReviewKeywords(reviews: UserClubReviewEntity[]): Map<ReviewKeywordId, number> {
-    return reviews.reduce((acc, cur) => {
-      cur.reviewKeywordIds.forEach((keywordId) => {
-        acc.set(keywordId, (acc.get(keywordId) ?? 0) + 1)
-      })
-      return acc
-    }, new Map<ReviewKeywordId, number>())
   }
 
   async updateClub(uuid: string, club: Partial<ClubEntity>): Promise<boolean> {
