@@ -32,14 +32,11 @@ import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '.
 import type { ClubCategory } from '../domain/model/ClubCategory'
 import {
   ClubEntity,
-  ClubHistoryEntity,
-  ClubRecruitmentEntity,
   UserActivityLogEntity,
   UserActivityLogType,
   UserNotificationEntity,
 } from '../infra/database/entities'
 import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubReviewKeywordEntity } from '../infra/database/entities/club-review-keyword.entity'
 import { UserClubReviewEntity } from '../infra/database/entities/user-club-review.entity'
 import type { Prisma, club as PrismaClub } from '../infra/database/generated/prisma/client'
@@ -59,7 +56,7 @@ import { ClubAccessService } from './club-access.service'
 type ClubUuid = string
 type ReviewKeywordId = string
 type ManagedClubListEntityItem = {
-  club: ClubEntity
+  club: PrismaClub
   managementStatus: ManagedClubListItem['managementStatus']
   managerRequestId?: number
 }
@@ -76,12 +73,6 @@ export class ClubService {
   private readonly userClubReviewRepository: Repository<UserClubReviewEntity>
   @InjectRepository(ClubManagerEntity)
   private readonly clubManagerRepository: Repository<ClubManagerEntity>
-  @InjectRepository(ClubManagerRequestEntity)
-  private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
-  @InjectRepository(ClubHistoryEntity)
-  private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
-  @InjectRepository(ClubRecruitmentEntity)
-  private readonly clubRecruitmentRepository: Repository<ClubRecruitmentEntity>
   @Inject(ClubAccessService)
   private readonly clubAccessService: ClubAccessService
 
@@ -190,71 +181,64 @@ export class ClubService {
   }
 
   async findAllManagedByUser(serviceUserId: string): Promise<ManagedClubListItem[]> {
+    const prisma = getPrismaClient()
     const [clubManagers, managerRequests] = await Promise.all([
-      this.clubManagerRepository.find({
-        where: {
-          serviceUserId,
-        },
-        order: {
-          createdAt: 'DESC',
-        },
+      prisma.club_manager.findMany({
+        where: { service_user_id: serviceUserId, deleted_at: null },
+        orderBy: { created_at: 'desc' },
+        select: { club_id: true },
       }),
-      this.clubManagerRequestRepository.find({
-        where: {
-          serviceUserId,
-        },
-        order: {
-          createdAt: 'DESC',
-          id: 'DESC',
-        },
+      prisma.club_manager_request.findMany({
+        where: { service_user_id: serviceUserId },
+        orderBy: [{ created_at: 'desc' }, { id: 'desc' }],
+        select: { id: true, club_id: true, status: true },
       }),
     ])
-    const latestManagerRequestByClubId = new Map<string, ClubManagerRequestEntity>()
+    const latestManagerRequestByClubId = new Map<string, (typeof managerRequests)[number]>()
     managerRequests.forEach((request) => {
-      if (!latestManagerRequestByClubId.has(request.clubId)) {
-        latestManagerRequestByClubId.set(request.clubId, request)
+      if (!latestManagerRequestByClubId.has(request.club_id)) {
+        latestManagerRequestByClubId.set(request.club_id, request)
       }
     })
     const latestManagerRequests = Array.from(latestManagerRequestByClubId.values())
 
-    const managerClubIds = clubManagers.map((it) => it.clubId)
+    const managerClubIds = clubManagers.map((it) => it.club_id)
     const managerRequestClubIds = latestManagerRequests
       .filter(
         (request) =>
           request.status === PENDING_CLUB_STATUS || request.status === REJECTED_CLUB_STATUS,
       )
-      .map((it) => it.clubId)
+      .map((it) => it.club_id)
     const clubIds = Array.from(new Set([...managerClubIds, ...managerRequestClubIds]))
     if (clubIds.length === 0) {
       return []
     }
     const [clubs, allClubManagers] = await Promise.all([
-      this.clubRepository.findBy({
-        uuid: In(clubIds),
-        deletedAt: IsNull(),
+      prisma.club.findMany({
+        where: { uuid: { in: clubIds }, deleted_at: null },
       }),
-      this.clubManagerRepository.find({
-        select: { clubId: true },
-        where: { clubId: In(clubIds) },
+      prisma.club_manager.findMany({
+        where: { club_id: { in: clubIds }, deleted_at: null },
+        select: { club_id: true },
       }),
     ])
     const clubById = new Map(clubs.map((club) => [club.uuid, club]))
     const userManagedClubIdSet = new Set(managerClubIds)
-    const clubIdWithManagerSet = new Set(allClubManagers.map((manager) => manager.clubId))
+    const clubIdWithManagerSet = new Set(allClubManagers.map((manager) => manager.club_id))
 
     const approvedManagedClubs = clubManagers
-      .map((manager) => clubById.get(manager.clubId))
-      .filter((club): club is ClubEntity => club?.status === PUBLIC_CLUB_STATUS)
+      .map((manager) => clubById.get(manager.club_id))
+      .filter((club): club is PrismaClub => club?.status === PUBLIC_CLUB_STATUS)
     const latestRecruitmentUpdatedAtByClubId = await this.findLatestRecruitmentUpdatedAtByClubId(
       approvedManagedClubs.map((club) => club.uuid),
     )
 
-    const getRepresentativeUpdatedAt = (club: ClubEntity) => {
+    const getRepresentativeUpdatedAt = (club: PrismaClub) => {
       const latestRecruitmentUpdatedAt = latestRecruitmentUpdatedAtByClubId.get(club.uuid)
       if (!latestRecruitmentUpdatedAt) {
-        return new Date(club.updatedAt).getTime()
+        return club.updated_at.getTime()
       }
-      return Math.max(new Date(club.updatedAt).getTime(), latestRecruitmentUpdatedAt)
+      return Math.max(club.updated_at.getTime(), latestRecruitmentUpdatedAt)
     }
 
     const sortedApprovedManagedClubItems: ManagedClubListEntityItem[] = approvedManagedClubs
@@ -264,8 +248,8 @@ export class ClubService {
         managementStatus: PUBLIC_CLUB_STATUS,
       }))
     const rejectedManagedClubs = clubManagers
-      .map((manager) => clubById.get(manager.clubId))
-      .filter((club): club is ClubEntity => club?.status === REJECTED_CLUB_STATUS)
+      .map((manager) => clubById.get(manager.club_id))
+      .filter((club): club is PrismaClub => club?.status === REJECTED_CLUB_STATUS)
       .map(
         (club): ManagedClubListEntityItem => ({
           club,
@@ -273,8 +257,8 @@ export class ClubService {
         }),
       )
     const pendingManagedClubs = clubManagers
-      .map((manager) => clubById.get(manager.clubId))
-      .filter((club): club is ClubEntity => club?.status === PENDING_CLUB_STATUS)
+      .map((manager) => clubById.get(manager.club_id))
+      .filter((club): club is PrismaClub => club?.status === PENDING_CLUB_STATUS)
       .map(
         (club): ManagedClubListEntityItem => ({
           club,
@@ -284,10 +268,10 @@ export class ClubService {
     const rejectedManagerRequestClubs = latestManagerRequests
       .filter(
         (request) =>
-          request.status === REJECTED_CLUB_STATUS && !userManagedClubIdSet.has(request.clubId),
+          request.status === REJECTED_CLUB_STATUS && !userManagedClubIdSet.has(request.club_id),
       )
       .map((request): ManagedClubListEntityItem | null => {
-        const club = clubById.get(request.clubId)
+        const club = clubById.get(request.club_id)
         if (!club) {
           return null
         }
@@ -300,9 +284,9 @@ export class ClubService {
       .filter((item): item is ManagedClubListEntityItem => !!item)
     const pendingManagerRequestClubs = latestManagerRequests
       .filter((request) => request.status === PENDING_CLUB_STATUS)
-      .filter((request) => !userManagedClubIdSet.has(request.clubId))
+      .filter((request) => !userManagedClubIdSet.has(request.club_id))
       .map((request): ManagedClubListEntityItem | null => {
-        const club = clubById.get(request.clubId)
+        const club = clubById.get(request.club_id)
         if (!club) {
           return null
         }
@@ -323,20 +307,20 @@ export class ClubService {
     ]
     const seenClubIds = new Set<string>()
 
-    return orderedItems
-      .filter((item) => {
-        if (seenClubIds.has(item.club.uuid)) {
-          return false
-        }
-        seenClubIds.add(item.club.uuid)
-        return true
-      })
-      .map((item) => ({
-        ...toClubDomain(item.club),
-        managementStatus: item.managementStatus,
-        hasManager: clubIdWithManagerSet.has(item.club.uuid),
-        ...(item.managerRequestId !== undefined && { managerRequestId: item.managerRequestId }),
-      }))
+    const uniqueItems = orderedItems.filter((item) => {
+      if (seenClubIds.has(item.club.uuid)) {
+        return false
+      }
+      seenClubIds.add(item.club.uuid)
+      return true
+    })
+    const clubSources = await this.toPrismaClubSources(uniqueItems.map((item) => item.club))
+    return uniqueItems.map((item, index) => ({
+      ...toClubDomain(clubSources[index]),
+      managementStatus: item.managementStatus,
+      hasManager: clubIdWithManagerSet.has(item.club.uuid),
+      ...(item.managerRequestId !== undefined && { managerRequestId: item.managerRequestId }),
+    }))
   }
 
   private async findLatestRecruitmentUpdatedAtByClubId(
@@ -346,18 +330,13 @@ export class ClubService {
       return new Map()
     }
 
-    const rows = await this.clubRecruitmentRepository
-      .createQueryBuilder('recruitment')
-      .select('recruitment.club_id', 'club_id')
-      .addSelect('MAX(recruitment.updated_at)', 'latest_updated_at')
-      .where('recruitment.club_id IN (:...clubIds)', { clubIds })
-      .andWhere('recruitment.deleted_at IS NULL')
-      .groupBy('recruitment.club_id')
-      .getRawMany<{ club_id: string; latest_updated_at: string }>()
+    const rows = await getPrismaClient().club_recruitment.groupBy({
+      by: ['club_id'],
+      where: { club_id: { in: clubIds }, deleted_at: null },
+      _max: { updated_at: true },
+    })
 
-    return new Map(
-      rows.map((row) => [row.club_id, new Date(row.latest_updated_at).getTime()] as const),
-    )
+    return new Map(rows.map((row) => [row.club_id, row._max.updated_at?.getTime() ?? 0] as const))
   }
 
   async findClubsReviewedByMe(serviceUserId: string): Promise<Club[]> {
