@@ -16,8 +16,6 @@ import type {
 } from 'server/http/schemas/admin'
 import type { Repository } from 'typeorm'
 import { ClubEntity } from '../infra/database/entities'
-import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import type {
   UserNotificationMetadata,
@@ -126,9 +124,6 @@ const getClubAffiliation = (
 
 @Service
 export class AdminClubService {
-  @InjectRepository(ClubManagerRequestEntity)
-  private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
-
   @InjectRepository(ClubVerificationRequestEntity)
   private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
 
@@ -428,58 +423,55 @@ export class AdminClubService {
   }: AdminClubManagerRequestsQuery): Promise<
     AdminPaginatedList<'requests', AdminClubManagerRequestItem>
   > {
-    const baseQuery = this.clubManagerRequestRepository
-      .createQueryBuilder('manager_request')
-      .leftJoin(ClubEntity, 'club', 'club.uuid = manager_request.club_id')
+    const conditions: Prisma.Sql[] = []
+    if (status) conditions.push(Prisma.sql`manager_request.status = ${status}`)
+    if (affiliationType) conditions.push(Prisma.sql`club.affiliation_type = ${affiliationType}`)
+    if (excludeAffiliationType)
+      conditions.push(Prisma.sql`club.affiliation_type != ${excludeAffiliationType}`)
 
-    if (status) {
-      baseQuery.andWhere('manager_request.status = :status', { status })
-    }
-    if (affiliationType) {
-      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
-    }
-    if (excludeAffiliationType) {
-      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
-        excludeAffiliationType,
-      })
-    }
-
-    const totalCount = await baseQuery.getCount()
-    const requests = await baseQuery
-      .clone()
-      .select([
-        'manager_request.id AS id',
-        'manager_request.club_id AS club_uuid',
-        "COALESCE(club.name, '') AS club_name",
-        'EXISTS (SELECT 1 FROM club_manager WHERE club_manager.club_id = manager_request.club_id) AS has_manager',
-        'manager_request.service_user_id AS service_user_id',
-        'manager_request.name AS applicant_name',
-        'manager_request.phone AS applicant_phone',
-        'manager_request.student_id AS applicant_student_id',
-        'manager_request.status AS status',
-        'manager_request.reject_reason AS reject_reason',
-        'manager_request.created_at AS created_at',
-      ])
-      .orderBy('manager_request.created_at', 'DESC')
-      .addOrderBy('manager_request.id', 'DESC')
-      .offset(offset)
-      .limit(limit)
-      .getRawMany<{
-        id: string
-        club_uuid: string
-        club_name: string
-        has_manager: boolean
-        service_user_id: string
-        applicant_name: string
-        applicant_phone: string
-        applicant_student_id: string
-        status: ClubStatus
-        reject_reason: string | null
-        created_at: string
-      }>()
+    const from = Prisma.sql`
+      FROM club_manager_request AS manager_request
+      LEFT JOIN club ON club.uuid = manager_request.club_id AND club.deleted_at IS NULL
+      ${conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+    `
+    const prisma = getPrismaClient()
+    const [counts, requests] = await Promise.all([
+      prisma.$queryRaw<Array<{ total_count: bigint }>>`
+        SELECT COUNT(*) AS total_count ${from}
+      `,
+      prisma.$queryRaw<
+        Array<{
+          id: bigint
+          club_uuid: string
+          club_name: string
+          has_manager: boolean
+          service_user_id: string
+          applicant_name: string
+          applicant_phone: string
+          applicant_student_id: string
+          status: ClubStatus
+          reject_reason: string | null
+          created_at: Date
+        }>
+      >`
+        SELECT manager_request.id, manager_request.club_id AS club_uuid,
+          COALESCE(club.name, '') AS club_name,
+          EXISTS (
+            SELECT 1 FROM club_manager WHERE club_manager.club_id = manager_request.club_id
+          ) AS has_manager,
+          manager_request.service_user_id,
+          manager_request.name AS applicant_name,
+          manager_request.phone AS applicant_phone,
+          manager_request.student_id AS applicant_student_id,
+          manager_request.status, manager_request.reject_reason, manager_request.created_at
+        ${from}
+        ORDER BY manager_request.created_at DESC, manager_request.id DESC
+        OFFSET ${offset} LIMIT ${limit}
+      `,
+    ])
 
     return {
-      total_count: totalCount,
+      total_count: Number(counts[0]?.total_count ?? 0),
       requests: requests.map((request) => ({
         id: Number(request.id),
         club_uuid: request.club_uuid,
@@ -493,7 +485,7 @@ export class AdminClubService {
         },
         status: request.status,
         reject_reason: request.reject_reason,
-        created_at: request.created_at,
+        created_at: toTimestampString(request.created_at),
       })),
     }
   }
