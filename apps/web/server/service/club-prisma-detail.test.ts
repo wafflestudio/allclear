@@ -4,6 +4,7 @@ const { prisma } = vi.hoisted(() => ({
   prisma: {
     club_manager: { findMany: vi.fn() },
     club_verification_request: { findUnique: vi.fn() },
+    user_activity_log: { create: vi.fn() },
   },
 }))
 
@@ -67,6 +68,7 @@ beforeEach(() => {
   vi.resetAllMocks()
   prisma.club_manager.findMany.mockResolvedValue([])
   prisma.club_verification_request.findUnique.mockResolvedValue(null)
+  prisma.user_activity_log.create.mockResolvedValue({ id: BigInt(1) })
 })
 
 describe('ClubService Prisma detail reads', () => {

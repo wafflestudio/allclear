@@ -7,6 +7,7 @@ const { prisma } = vi.hoisted(() => ({
     college_major: { findMany: vi.fn() },
     user_club_review: { findMany: vi.fn() },
     user_saved_club: { findMany: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
+    user_activity_log: { create: vi.fn() },
   },
 }))
 
@@ -71,6 +72,7 @@ beforeEach(() => {
   prisma.user_club_review.findMany.mockResolvedValue([])
   prisma.user_saved_club.findMany.mockResolvedValue([])
   prisma.$queryRaw.mockResolvedValue([])
+  prisma.user_activity_log.create.mockResolvedValue({ id: BigInt(1) })
 })
 
 describe('ClubService Prisma list and save methods', () => {

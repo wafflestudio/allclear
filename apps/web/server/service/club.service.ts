@@ -26,16 +26,8 @@ import type {
   ClubRegistrationManager,
   ManagedClubPatch,
 } from 'server/http/schemas/managers'
-import { In, IsNull, type Repository } from 'typeorm'
 import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
 import type { ClubCategory } from '../domain/model/ClubCategory'
-import {
-  ClubEntity,
-  UserActivityLogEntity,
-  UserActivityLogType,
-  UserNotificationEntity,
-} from '../infra/database/entities'
-import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
 import type { Prisma, club as PrismaClub } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
 import { toClubDomainSource } from '../infra/database/prisma-club-mapping'
@@ -46,7 +38,7 @@ import {
   toStringArray,
   toTimestampString,
 } from '../infra/database/prisma-mapping'
-import { Inject, InjectRepository, Service } from '../provider'
+import { Inject, Service } from '../provider'
 import { sortEachRandom } from '../util/club-sort'
 import { ClubAccessService } from './club-access.service'
 
@@ -60,34 +52,18 @@ type ManagedClubListEntityItem = {
 
 @Service
 export class ClubService {
-  @InjectRepository(ClubEntity)
-  private readonly clubRepository: Repository<ClubEntity>
-  @InjectRepository(UserActivityLogEntity)
-  private readonly userActivityLogRepository: Repository<UserActivityLogEntity>
-  @InjectRepository(ClubManagerEntity)
-  private readonly clubManagerRepository: Repository<ClubManagerEntity>
   @Inject(ClubAccessService)
   private readonly clubAccessService: ClubAccessService
 
   async findByUuid(uuid: string): Promise<Club> {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.CALL_GET_CLUB_API,
-        params: JSON.stringify({ uuid }),
-      })
-      .catch(console.error)
+    this.logActivity('CALL_GET_CLUB_API', JSON.stringify({ uuid }))
     const club = await this.clubAccessService.getExistingClub(uuid)
     const clubReview = await this.getClubReviews([club.uuid])
     return toClubDomain(club, clubReview.get(club.uuid))
   }
 
   async findPublicByUuid(uuid: string): Promise<ClubDetail> {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.CALL_GET_CLUB_API,
-        params: JSON.stringify({ uuid }),
-      })
-      .catch(console.error)
+    this.logActivity('CALL_GET_CLUB_API', JSON.stringify({ uuid }))
     const club = await this.clubAccessService.getPublicClub(uuid)
     const [clubReview, verificationRequest] = await Promise.all([
       this.getClubReviews([club.uuid]),
@@ -156,12 +132,7 @@ export class ClubService {
   }
 
   async findByCategory(category: string): Promise<Club[]> {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.CALL_LIST_CLUBS_OF_CATEGORY_API,
-        params: JSON.stringify({ category }),
-      })
-      .catch(console.error)
+    this.logActivity('CALL_LIST_CLUBS_OF_CATEGORY_API', JSON.stringify({ category }))
     const rows = await getPrismaClient().club.findMany({
       where: { category, status: PUBLIC_CLUB_STATUS, deleted_at: null },
     })
@@ -570,13 +541,12 @@ export class ClubService {
   }
 
   async getCategories(): Promise<ClubCategory[]> {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.CALL_GET_CATEGORY_LIST_API,
-        params: '{}',
-      })
-      .catch(console.error)
+    this.logActivity('CALL_GET_CATEGORY_LIST_API', '{}')
     return CATEGORIES
+  }
+
+  private logActivity(type: string, params: string): void {
+    getPrismaClient().user_activity_log.create({ data: { type, params } }).catch(console.error)
   }
 
   async getClubReviews(uuids: ClubUuid[]): Promise<
@@ -639,27 +609,6 @@ export class ClubService {
       return [uuid, { totalReviews, reviewKeywords }] as const
     })
     return new Map(out)
-  }
-
-  async updateClub(uuid: string, club: Partial<ClubEntity>): Promise<boolean> {
-    this.userActivityLogRepository
-      .insert({
-        type: UserActivityLogType.EDIT_CLUB,
-        userDevice: '',
-        params: JSON.stringify({
-          uuid: uuid,
-          club: club,
-        }),
-        userIp: '',
-      })
-      .catch(console.error)
-    const updated = await this.clubRepository.update(
-      {
-        uuid: uuid,
-      },
-      club,
-    )
-    return !!updated.affected && updated.affected > 0
   }
 
   async patchManagedClub(
@@ -1106,10 +1055,16 @@ export class ClubService {
 
   async registerClubManager(serviceUserId: string, clubUuid: string) {
     await this.clubAccessService.getExistingClub(clubUuid)
-    const exist = await this.clubManagerRepository.findOneBy({ serviceUserId, clubId: clubUuid })
+    const prisma = getPrismaClient()
+    const exist = await prisma.club_manager.findFirst({
+      where: { service_user_id: serviceUserId, club_id: clubUuid, deleted_at: null },
+      select: { id: true },
+    })
     if (exist) {
       return
     }
-    await this.clubManagerRepository.insert({ serviceUserId, clubId: clubUuid })
+    await prisma.club_manager.create({
+      data: { service_user_id: serviceUserId, club_id: clubUuid },
+    })
   }
 }
