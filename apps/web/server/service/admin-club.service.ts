@@ -29,6 +29,9 @@ import {
   type UserNotificationMetadata,
   type UserNotificationType,
 } from '../infra/database/entities/user-notification.entity'
+import type { Prisma } from '../infra/database/generated/prisma/client'
+import { getPrismaClient } from '../infra/database/prisma'
+import { toStringArray, toTimestampString } from '../infra/database/prisma-mapping'
 import { InjectRepository, Service } from '../provider'
 
 export type AdminClubItem = {
@@ -119,6 +122,14 @@ type AdminPaginatedList<TItemsKey extends string, TItem> = {
   total_count: number
 } & Record<TItemsKey, TItem[]>
 
+const getClubAffiliation = (
+  affiliationType: string,
+  collegeMajor: { college: string | null; major: string | null } | null | undefined,
+): string =>
+  affiliationType === '소속동아리'
+    ? (collegeMajor?.major ?? collegeMajor?.college ?? '')
+    : affiliationType
+
 @Service
 export class AdminClubService {
   @InjectRepository(ClubEntity)
@@ -143,25 +154,27 @@ export class AdminClubService {
     offset,
     limit,
   }: AdminClubsQuery): Promise<AdminPaginatedList<'clubs', AdminClubItem>> {
-    const where: FindOptionsWhere<ClubEntity> = {
-      deletedAt: IsNull(),
-    }
+    const where: Prisma.clubWhereInput = { deleted_at: null }
     if (status) {
       where.status = status
     }
     if (affiliationType) {
-      where.affiliationType = affiliationType
+      where.affiliation_type = affiliationType
     }
     if (excludeAffiliationType) {
-      where.affiliationType = Not(excludeAffiliationType)
+      where.affiliation_type = { not: excludeAffiliationType }
     }
 
-    const [clubs, totalCount] = await this.clubRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC', uuid: 'ASC' },
-      skip: offset,
-      take: limit,
-    })
+    const prisma = getPrismaClient()
+    const [clubs, totalCount] = await Promise.all([
+      prisma.club.findMany({
+        where,
+        orderBy: [{ created_at: 'desc' }, { uuid: 'asc' }],
+        skip: offset,
+        take: limit,
+      }),
+      prisma.club.count({ where }),
+    ])
 
     if (clubs.length === 0) {
       return {
@@ -170,10 +183,23 @@ export class AdminClubService {
       }
     }
 
-    const managers = await this.clubManagerRepository.findBy({
-      clubId: In(clubs.map((c) => c.uuid)),
-    })
-    const managerMap = new Map(managers.map((m) => [m.clubId, m]))
+    const majorIds = Array.from(
+      new Set(clubs.map((club) => club.college_major_id).filter((id): id is number => id !== null)),
+    )
+    const [managers, majors] = await Promise.all([
+      prisma.club_manager.findMany({
+        where: { club_id: { in: clubs.map((club) => club.uuid) }, deleted_at: null },
+        select: { club_id: true, name: true, phone: true, student_id: true },
+      }),
+      majorIds.length
+        ? prisma.college_major.findMany({
+            where: { id: { in: majorIds }, deleted_at: null },
+            select: { id: true, college: true, major: true },
+          })
+        : Promise.resolve([]),
+    ])
+    const managerMap = new Map(managers.map((manager) => [manager.club_id, manager]))
+    const majorMap = new Map(majors.map((major) => [major.id, major] as const))
 
     return {
       total_count: totalCount,
@@ -182,18 +208,18 @@ export class AdminClubService {
         return {
           uuid: club.uuid,
           name: club.name,
-          status: club.status,
+          status: club.status as ClubStatus,
           category: club.category,
-          affiliation:
-            club.affiliationType === '소속동아리'
-              ? (club.collegeMajor?.major ?? club.collegeMajor?.college ?? '')
-              : club.affiliationType,
-          short_description: club.shortDescription,
-          created_at: club.createdAt,
+          affiliation: getClubAffiliation(
+            club.affiliation_type,
+            club.college_major_id === null ? null : majorMap.get(club.college_major_id),
+          ),
+          short_description: club.short_description,
+          created_at: toTimestampString(club.created_at),
           manager: {
             name: manager?.name ?? '',
             phone: manager?.phone ?? '',
-            student_id: manager?.studentId ?? '',
+            student_id: manager?.student_id ?? '',
           },
         }
       }),
@@ -201,48 +227,54 @@ export class AdminClubService {
   }
 
   async getAdminClubDetail(clubUuid: string): Promise<AdminClubDetail> {
-    const club = await this.clubRepository.findOneBy({
-      uuid: clubUuid,
-      deletedAt: IsNull(),
+    const prisma = getPrismaClient()
+    const club = await prisma.club.findFirst({
+      where: { uuid: clubUuid, deleted_at: null },
     })
 
     if (!club) {
       throw new NotFoundError('club not found')
     }
 
-    const manager = await this.clubManagerRepository.findOneBy({
-      clubId: clubUuid,
-    })
+    const [manager, collegeMajor] = await Promise.all([
+      prisma.club_manager.findFirst({
+        where: { club_id: clubUuid, deleted_at: null },
+        select: { name: true, phone: true, student_id: true, service_user_id: true },
+      }),
+      club.college_major_id === null
+        ? Promise.resolve(null)
+        : prisma.college_major.findFirst({
+            where: { id: club.college_major_id, deleted_at: null },
+            select: { college: true, major: true },
+          }),
+    ])
 
     return {
       club_data: {
         uuid: club.uuid,
-        status: club.status,
+        status: club.status as ClubStatus,
         name: club.name,
         type: club.type,
         category: club.category,
-        affiliation:
-          club.affiliationType === '소속동아리'
-            ? (club.collegeMajor?.major ?? club.collegeMajor?.college ?? '')
-            : club.affiliationType,
-        college_major_id: club.collegeMajorId,
-        short_description: club.shortDescription,
-        image_uri: club.imageUri,
-        recruit_type: club.recruitType,
-        min_activity_period: club.minActivityPeriod,
-        has_dongbang: club.hasDongbang,
-        dongbang_location: club.dongbangLocation,
-        sns_urls: club.snsUrls ?? [],
+        affiliation: getClubAffiliation(club.affiliation_type, collegeMajor),
+        college_major_id: club.college_major_id,
+        short_description: club.short_description,
+        image_uri: club.image_uri,
+        recruit_type: club.recruit_type,
+        min_activity_period: club.min_activity_period,
+        has_dongbang: club.has_dongbang,
+        dongbang_location: club.dongbang_location ?? '',
+        sns_urls: toStringArray(club.sns_urls),
         introduction: club.introduction,
-        activity_image_urls: club.activityImageUrls ?? [],
-        created_at: club.createdAt,
-        reject_reason: club.rejectReason,
+        activity_image_urls: toStringArray(club.activity_image_urls),
+        created_at: toTimestampString(club.created_at),
+        reject_reason: club.reject_reason,
       },
       manager_data: {
         name: manager?.name ?? '',
         phone: manager?.phone ?? '',
-        student_id: manager?.studentId ?? '',
-        service_user_id: manager?.serviceUserId ?? '',
+        student_id: manager?.student_id ?? '',
+        service_user_id: manager?.service_user_id ?? '',
       },
     }
   }
