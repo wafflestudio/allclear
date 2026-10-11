@@ -596,12 +596,24 @@ export class AdminClubService {
     status: AdminClubManagerRequestStatusUpdate['status']
     processed_at: string
   }> {
-    return this.clubManagerRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const request = await managerRequestRepository.findOneBy({ id: String(requestId) })
+    return getPrismaClient().$transaction(async (tx) => {
+      const requests = await tx.$queryRaw<
+        Array<{
+          id: bigint
+          club_id: string
+          service_user_id: string
+          name: string
+          phone: string
+          student_id: string
+          status: string
+        }>
+      >`
+        SELECT id, club_id, service_user_id, name, phone, student_id, status
+        FROM club_manager_request
+        WHERE id = ${BigInt(requestId)}::bigint
+        FOR UPDATE
+      `
+      const request = requests[0]
       if (!request) {
         throw new NotFoundError('manager request not found')
       }
@@ -618,58 +630,69 @@ export class AdminClubService {
         if (request.status !== PENDING_CLUB_STATUS) {
           throw new ConflictError('can only approve from PENDING status')
         }
-        const existingManager = await clubManagerRepository.findOneBy({ clubId: request.clubId })
+        const existingManager = await tx.club_manager.findFirst({
+          where: { club_id: request.club_id, deleted_at: null },
+          select: { id: true },
+        })
         if (existingManager) {
           throw new ConflictError('club already has a manager')
         }
 
-        await clubManagerRepository.insert({
-          clubId: request.clubId,
-          serviceUserId: request.serviceUserId,
-          name: request.name,
-          phone: request.phone,
-          studentId: request.studentId,
+        await tx.club_manager.create({
+          data: {
+            club_id: request.club_id,
+            service_user_id: request.service_user_id,
+            name: request.name,
+            phone: request.phone,
+            student_id: request.student_id,
+          },
         })
       }
 
       if (isPending && request.status === PUBLIC_CLUB_STATUS) {
-        await clubManagerRepository.delete({
-          clubId: request.clubId,
-          serviceUserId: request.serviceUserId,
+        await tx.club_manager.deleteMany({
+          where: {
+            club_id: request.club_id,
+            service_user_id: request.service_user_id,
+          },
         })
       }
 
-      await managerRequestRepository.update(
-        { id: request.id },
-        {
+      await tx.club_manager_request.update({
+        where: { id: request.id },
+        data: {
           status: decision.status,
-          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
+          reject_reason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
         },
-      )
+      })
 
       if (isPending) {
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB_MANAGER_REQUEST',
-          sourceId: request.id,
-          type: In(this.getManagerRequestResultNotificationTypes()),
+        await tx.user_notification.deleteMany({
+          where: {
+            source_type: 'CLUB_MANAGER_REQUEST',
+            source_id: request.id.toString(),
+            type: { in: this.getManagerRequestResultNotificationTypes() },
+          },
         })
       }
 
       if (shouldCreateNotification) {
         const metadata = this.getNotificationMetadata(notificationType, decision.reject_reason)
-        await userNotificationRepository.insert({
-          serviceUserId: request.serviceUserId,
-          type: notificationType,
-          clubId: request.clubId,
-          sourceType: 'CLUB_MANAGER_REQUEST',
-          sourceId: request.id,
-          metadata,
+        await tx.user_notification.create({
+          data: {
+            service_user_id: request.service_user_id,
+            type: notificationType,
+            club_id: request.club_id,
+            source_type: 'CLUB_MANAGER_REQUEST',
+            source_id: request.id.toString(),
+            ...(metadata && { metadata }),
+          },
         })
       }
 
       return {
         request_id: requestId,
-        club_uuid: request.clubId,
+        club_uuid: request.club_id,
         status: decision.status,
         processed_at: processedAt,
       }
