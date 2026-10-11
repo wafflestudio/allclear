@@ -14,9 +14,6 @@ import type {
   AdminClubVerificationRequestStatusUpdate,
   AdminClubVerificationRequestsQuery,
 } from 'server/http/schemas/admin'
-import type { Repository } from 'typeorm'
-import { ClubEntity } from '../infra/database/entities'
-import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
 import type {
   UserNotificationMetadata,
   UserNotificationType,
@@ -24,7 +21,7 @@ import type {
 import { Prisma } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
 import { toStringArray, toTimestampString } from '../infra/database/prisma-mapping'
-import { InjectRepository, Service } from '../provider'
+import { Service } from '../provider'
 
 export type AdminClubItem = {
   uuid: string
@@ -124,9 +121,6 @@ const getClubAffiliation = (
 
 @Service
 export class AdminClubService {
-  @InjectRepository(ClubVerificationRequestEntity)
-  private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
-
   async getAdminClubs({
     status,
     affiliation_type: affiliationType,
@@ -499,50 +493,46 @@ export class AdminClubService {
   }: AdminClubVerificationRequestsQuery): Promise<
     AdminPaginatedList<'requests', AdminClubVerificationRequestItem>
   > {
-    const baseQuery = this.clubVerificationRequestRepository
-      .createQueryBuilder('verification_request')
-      .leftJoin(ClubEntity, 'club', 'club.uuid = verification_request.club_id')
+    const conditions: Prisma.Sql[] = []
+    if (status) conditions.push(Prisma.sql`verification_request.status = ${status}`)
+    if (affiliationType) conditions.push(Prisma.sql`club.affiliation_type = ${affiliationType}`)
+    if (excludeAffiliationType)
+      conditions.push(Prisma.sql`club.affiliation_type != ${excludeAffiliationType}`)
 
-    if (status) {
-      baseQuery.andWhere('verification_request.status = :status', { status })
-    }
-    if (affiliationType) {
-      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
-    }
-    if (excludeAffiliationType) {
-      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
-        excludeAffiliationType,
-      })
-    }
-
-    const totalCount = await baseQuery.getCount()
-    const requests = await baseQuery
-      .clone()
-      .select([
-        'verification_request.id AS id',
-        'verification_request.club_id AS club_uuid',
-        "COALESCE(club.name, '') AS club_name",
-        "COALESCE(club.category, '') AS category",
-        'verification_request.status AS status',
-        'verification_request.reject_reason AS reject_reason',
-        'verification_request.created_at AS created_at',
-      ])
-      .orderBy('verification_request.created_at', 'DESC')
-      .addOrderBy('verification_request.id', 'DESC')
-      .offset(offset)
-      .limit(limit)
-      .getRawMany<{
-        id: string
-        club_uuid: string
-        club_name: string
-        category: string
-        status: ClubStatus
-        reject_reason: string | null
-        created_at: string
-      }>()
+    const from = Prisma.sql`
+      FROM club_verification_request AS verification_request
+      LEFT JOIN club ON club.uuid = verification_request.club_id AND club.deleted_at IS NULL
+      ${conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+    `
+    const prisma = getPrismaClient()
+    const [counts, requests] = await Promise.all([
+      prisma.$queryRaw<Array<{ total_count: bigint }>>`
+        SELECT COUNT(*) AS total_count ${from}
+      `,
+      prisma.$queryRaw<
+        Array<{
+          id: bigint
+          club_uuid: string
+          club_name: string
+          category: string
+          status: ClubStatus
+          reject_reason: string | null
+          created_at: Date
+        }>
+      >`
+        SELECT verification_request.id, verification_request.club_id AS club_uuid,
+          COALESCE(club.name, '') AS club_name,
+          COALESCE(club.category, '') AS category,
+          verification_request.status, verification_request.reject_reason,
+          verification_request.created_at
+        ${from}
+        ORDER BY verification_request.created_at DESC, verification_request.id DESC
+        OFFSET ${offset} LIMIT ${limit}
+      `,
+    ])
 
     return {
-      total_count: totalCount,
+      total_count: Number(counts[0]?.total_count ?? 0),
       requests: requests.map((request) => ({
         id: Number(request.id),
         club_uuid: request.club_uuid,
@@ -550,7 +540,7 @@ export class AdminClubService {
         category: request.category,
         status: request.status,
         reject_reason: request.reject_reason,
-        created_at: request.created_at,
+        created_at: toTimestampString(request.created_at),
       })),
     }
   }
