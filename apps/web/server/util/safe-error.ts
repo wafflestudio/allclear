@@ -1,4 +1,3 @@
-import { QueryFailedError } from 'typeorm'
 import { Prisma } from '../infra/database/generated/prisma/client'
 
 const SAFE_ERROR_NAME = /^[A-Za-z][A-Za-z0-9]{0,63}$/
@@ -47,23 +46,19 @@ export const getSafeDatabaseErrorContext = (error: unknown): SafeDatabaseErrorCo
     }
     return context
   }
-  if (!(error instanceof QueryFailedError)) {
+  if (!(error instanceof Error)) {
     return context
   }
 
-  const driverError = (
-    error as QueryFailedError & {
-      driverError?: { code?: unknown; constraint?: unknown }
-    }
-  ).driverError
-  if (typeof driverError?.code === 'string' && SAFE_DATABASE_CODE.test(driverError.code)) {
-    context.databaseCode = driverError.code
+  const databaseError = error as Error & { code?: unknown; constraint?: unknown }
+  if (typeof databaseError.code === 'string' && SAFE_DATABASE_CODE.test(databaseError.code)) {
+    context.databaseCode = databaseError.code
   }
   if (
-    typeof driverError?.constraint === 'string' &&
-    SAFE_DATABASE_IDENTIFIER.test(driverError.constraint)
+    typeof databaseError.constraint === 'string' &&
+    SAFE_DATABASE_IDENTIFIER.test(databaseError.constraint)
   ) {
-    context.constraint = driverError.constraint
+    context.constraint = databaseError.constraint
   }
   return context
 }

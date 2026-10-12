@@ -17,7 +17,7 @@ import type {
 import type {
   UserNotificationMetadata,
   UserNotificationType,
-} from '../infra/database/entities/user-notification.entity'
+} from '../domain/model/UserNotification'
 import { Prisma } from '../infra/database/generated/prisma/client'
 import { getPrismaClient } from '../infra/database/prisma'
 import { toStringArray, toTimestampString } from '../infra/database/prisma-mapping'

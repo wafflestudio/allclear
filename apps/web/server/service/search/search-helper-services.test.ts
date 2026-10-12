@@ -16,7 +16,7 @@ vi.mock('server/infra/database/prisma', () => ({ getPrismaClient: () => prisma }
 vi.mock('server/domain/model/Club', () => ({ toClubDomain }))
 vi.mock('../club.service', () => ({ ClubService: class ClubService {} }))
 
-import type { ClubEntity } from 'server/infra/database/entities'
+import type { ClubDomainSource } from 'server/domain/model/Club'
 import { SearchResultHydratorService } from './search-result-hydrator.service'
 import { SearchTypoCorrectionService } from './search-typo-correction.service'
 
@@ -62,7 +62,11 @@ describe('SearchResultHydratorService with Prisma', () => {
   it('deduplicates clubs and marks only active manager clubs', async () => {
     const { service, getClubReviews } = createService()
     prisma.club_manager.findMany.mockResolvedValue([{ club_id: 'club-2' }])
-    const entities = [{ uuid: 'club-1' }, { uuid: 'club-1' }, { uuid: 'club-2' }] as ClubEntity[]
+    const entities = [
+      { uuid: 'club-1' },
+      { uuid: 'club-1' },
+      { uuid: 'club-2' },
+    ] as ClubDomainSource[]
 
     await expect(service.toClubs(entities)).resolves.toEqual([
       { uuid: 'club-1', review: { totalReviews: 2 }, hasManager: false },

@@ -1,4 +1,3 @@
-import { QueryFailedError } from 'typeorm'
 import { describe, expect, it } from 'vitest'
 import { Prisma } from '../infra/database/generated/prisma/client'
 import { getSafeDatabaseErrorContext, getSafeErrorName } from './safe-error'
@@ -21,20 +20,16 @@ describe('safe error logging', () => {
   })
 
   it('returns only PostgreSQL code and constraint metadata', () => {
-    const error = new QueryFailedError(
-      'INSERT accessToken=secret-value',
-      ['secret-value'],
-      Object.assign(new Error('unique violation'), {
-        code: '23505',
-        constraint: 'uq_club_manager_active_club',
-        detail: 'sensitive database row',
-      }),
-    )
+    const error = Object.assign(new Error('accessToken=secret-value'), {
+      code: '23505',
+      constraint: 'uq_club_manager_active_club',
+      detail: 'sensitive database row',
+    })
 
     const context = getSafeDatabaseErrorContext(error)
 
     expect(context).toEqual({
-      errorName: 'QueryFailedError',
+      errorName: 'Error',
       databaseCode: '23505',
       constraint: 'uq_club_manager_active_club',
     })

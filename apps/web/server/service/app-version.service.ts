@@ -1,5 +1,5 @@
+import type { AppClientType } from 'server/domain/constants/app-client-type'
 import { NotFoundError } from 'server/domain/error'
-import type { AppClientType } from 'server/infra/database/entities'
 import { getPrismaClient } from 'server/infra/database/prisma'
 import { getRedisClient } from 'server/infra/redis/client'
 import { Service } from 'server/provider'

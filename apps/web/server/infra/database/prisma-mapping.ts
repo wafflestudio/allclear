@@ -1,4 +1,4 @@
-/** Preserve the string IDs returned by the TypeORM-backed API for BIGINT columns. */
+/** Preserve string IDs in API responses for BIGINT columns. */
 export const toDatabaseIdString = (value: bigint | number | string): string => String(value)
 
 /** Prisma returns Date objects; the API exposes timestamps as strings. */

@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-import { QueryFailedError } from 'typeorm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { prisma, tx } = vi.hoisted(() => {
@@ -190,11 +189,7 @@ describe('ClubManagerTransferService with Prisma', () => {
     'maps %s uniqueness conflicts to a safe domain error',
     async (constraint) => {
       prisma.$transaction.mockRejectedValueOnce(
-        new QueryFailedError(
-          'INSERT INTO club_manager ...',
-          [],
-          Object.assign(new Error('unique violation'), { code: '23505', constraint }),
-        ),
+        Object.assign(new Error('unique violation'), { code: '23505', constraint }),
       )
       await expect(
         new ClubManagerTransferService().acceptInvitation(rawToken, recipient),

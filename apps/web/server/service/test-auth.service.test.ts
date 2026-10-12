@@ -15,7 +15,7 @@ vi.mock('server/provider', () => ({ Service: () => undefined }))
 vi.mock('server/infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 vi.mock('jsonwebtoken', () => ({ default: { sign } }))
 
-import { AccountType } from '../infra/database/entities/account-type.enum'
+import { AccountType } from '../domain/constants/account-type'
 import { TestAuthService } from './test-auth.service'
 
 beforeEach(() => {

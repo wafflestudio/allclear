@@ -16,8 +16,8 @@ vi.mock('../infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 vi.mock('axios', () => ({ default: vi.fn() }))
 
 import axios from 'axios'
+import { AccountType } from '../domain/constants/account-type'
 import { UserNotFoundError } from '../domain/error'
-import { AccountType } from '../infra/database/entities/account-type.enum'
 import { AuthService } from './auth.service'
 
 beforeEach(() => {

@@ -1,4 +1,4 @@
-import { UserActivityLogType } from 'server/infra/database/entities'
+import { UserActivityLogType } from 'server/domain/constants/user-activity-log-type'
 import { getPrismaClient } from 'server/infra/database/prisma'
 import { Service } from 'server/provider'
 

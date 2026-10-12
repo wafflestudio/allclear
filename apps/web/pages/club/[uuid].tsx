@@ -183,7 +183,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async ({ params }) 
       props: {
         club: {
           ...club,
-          // 타입은 string이지만 런타임엔 TypeORM이 Date를 반환하므로 직렬화 필요
+          // API 응답의 날짜를 문자열로 직렬화합니다.
           articleUploadedAt: club.articleUploadedAt
             ? new Date(club.articleUploadedAt).toISOString()
             : null,

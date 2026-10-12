@@ -1,4 +1,4 @@
-/** Match the existing TypeORM connection settings without a second set of secrets. */
+/** Build the PostgreSQL connection URL from the shared DB_* settings. */
 export function getPrismaDatabaseUrl(): string {
   const url = new URL('postgresql://localhost')
   url.hostname = process.env.DB_HOST ?? 'localhost'

@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
+import { AccountType } from 'server/domain/constants/account-type'
 import { UserRole } from 'server/domain/constants/user-role.enum'
 import { ENV } from 'server/ENV'
-import { AccountType } from 'server/infra/database/entities/account-type.enum'
 import { getPrismaClient } from 'server/infra/database/prisma'
 import { Service } from 'server/provider'
 

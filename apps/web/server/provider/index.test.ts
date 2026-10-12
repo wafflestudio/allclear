@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { Inject, Provider, Service } from './index'
 
 describe('Prisma service provider', () => {
-  it('calls service methods without waiting for a TypeORM connection', async () => {
+  it('calls service methods without waiting for a database connection', async () => {
     @Service
     class DatabaseService {
       async read() {

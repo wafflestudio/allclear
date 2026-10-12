@@ -16,10 +16,23 @@ vi.mock('../provider', () => ({
 vi.mock('../infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 
 import { ConflictError, ForbiddenError, NotFoundError } from '../domain/error'
-import type { ClubEntity } from '../infra/database/entities'
-import type { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import type { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
 import { ClubService } from './club.service'
+
+type ClubFixture = { uuid?: string; status?: string }
+type ManagerFixture = {
+  id?: number
+  clubId?: string
+  serviceUserId?: string
+  name?: string
+  phone?: string
+  studentId?: string
+}
+type ManagerRequestFixture = {
+  id?: string
+  clubId?: string
+  serviceUserId?: string
+  status?: string
+}
 
 const clubUuid = '123e4567-e89b-12d3-a456-426614174000'
 const serviceUserId = '123e4567-e89b-12d3-a456-426614174001'
@@ -30,10 +43,10 @@ function createService({
   anotherManager = null,
   managerRequest = null,
 }: {
-  club: Partial<ClubEntity> | null
-  ownedManager: Partial<ClubManagerEntity> | null
-  anotherManager?: Partial<ClubManagerEntity> | null
-  managerRequest?: Partial<ClubManagerRequestEntity> | null
+  club: ClubFixture | null
+  ownedManager: ManagerFixture | null
+  anotherManager?: ManagerFixture | null
+  managerRequest?: ManagerRequestFixture | null
 }) {
   prisma.club.findFirst.mockResolvedValue(club)
   prisma.club_manager.findFirst

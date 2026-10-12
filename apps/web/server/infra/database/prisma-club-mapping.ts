@@ -3,7 +3,7 @@ import type { ClubDomainSource } from 'server/domain/model/Club'
 import type { club as PrismaClub } from './generated/prisma/client'
 import { toNullableDateString, toNullableTimestampString, toStringArray } from './prisma-mapping'
 
-/** Match the club fields formerly supplied by TypeORM's eager collegeMajor relation. */
+/** Add the college major relation fields expected by the club domain mapper. */
 export function toClubDomainSource(
   club: PrismaClub,
   collegeMajor: ClubDomainSource['collegeMajor'],
