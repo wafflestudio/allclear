@@ -14,22 +14,14 @@ import type {
   AdminClubVerificationRequestStatusUpdate,
   AdminClubVerificationRequestsQuery,
 } from 'server/http/schemas/admin'
-import { type FindOptionsWhere, In, IsNull, Not, type Repository } from 'typeorm'
-import {
-  ClubEntity,
-  ClubHistoryEntity,
-  ServiceUserEntity,
-  UserEntity,
-} from '../infra/database/entities'
-import { ClubManagerEntity } from '../infra/database/entities/club-manager.entity'
-import { ClubManagerRequestEntity } from '../infra/database/entities/club-manager-request.entity'
-import { ClubVerificationRequestEntity } from '../infra/database/entities/club-verification-request.entity'
-import {
-  UserNotificationEntity,
-  type UserNotificationMetadata,
-  type UserNotificationType,
-} from '../infra/database/entities/user-notification.entity'
-import { InjectRepository, Service } from '../provider'
+import type {
+  UserNotificationMetadata,
+  UserNotificationType,
+} from '../domain/model/UserNotification'
+import { Prisma } from '../infra/database/generated/prisma/client'
+import { getPrismaClient } from '../infra/database/prisma'
+import { toStringArray, toTimestampString } from '../infra/database/prisma-mapping'
+import { Service } from '../provider'
 
 export type AdminClubItem = {
   uuid: string
@@ -119,23 +111,16 @@ type AdminPaginatedList<TItemsKey extends string, TItem> = {
   total_count: number
 } & Record<TItemsKey, TItem[]>
 
+const getClubAffiliation = (
+  affiliationType: string,
+  collegeMajor: { college: string | null; major: string | null } | null | undefined,
+): string =>
+  affiliationType === '소속동아리'
+    ? (collegeMajor?.major ?? collegeMajor?.college ?? '')
+    : affiliationType
+
 @Service
 export class AdminClubService {
-  @InjectRepository(ClubEntity)
-  private readonly clubRepository: Repository<ClubEntity>
-
-  @InjectRepository(ClubManagerEntity)
-  private readonly clubManagerRepository: Repository<ClubManagerEntity>
-
-  @InjectRepository(ClubHistoryEntity)
-  private readonly clubHistoryRepository: Repository<ClubHistoryEntity>
-
-  @InjectRepository(ClubManagerRequestEntity)
-  private readonly clubManagerRequestRepository: Repository<ClubManagerRequestEntity>
-
-  @InjectRepository(ClubVerificationRequestEntity)
-  private readonly clubVerificationRequestRepository: Repository<ClubVerificationRequestEntity>
-
   async getAdminClubs({
     status,
     affiliation_type: affiliationType,
@@ -143,25 +128,27 @@ export class AdminClubService {
     offset,
     limit,
   }: AdminClubsQuery): Promise<AdminPaginatedList<'clubs', AdminClubItem>> {
-    const where: FindOptionsWhere<ClubEntity> = {
-      deletedAt: IsNull(),
-    }
+    const where: Prisma.clubWhereInput = { deleted_at: null }
     if (status) {
       where.status = status
     }
     if (affiliationType) {
-      where.affiliationType = affiliationType
+      where.affiliation_type = affiliationType
     }
     if (excludeAffiliationType) {
-      where.affiliationType = Not(excludeAffiliationType)
+      where.affiliation_type = { not: excludeAffiliationType }
     }
 
-    const [clubs, totalCount] = await this.clubRepository.findAndCount({
-      where,
-      order: { createdAt: 'DESC', uuid: 'ASC' },
-      skip: offset,
-      take: limit,
-    })
+    const prisma = getPrismaClient()
+    const [clubs, totalCount] = await Promise.all([
+      prisma.club.findMany({
+        where,
+        orderBy: [{ created_at: 'desc' }, { uuid: 'asc' }],
+        skip: offset,
+        take: limit,
+      }),
+      prisma.club.count({ where }),
+    ])
 
     if (clubs.length === 0) {
       return {
@@ -170,10 +157,23 @@ export class AdminClubService {
       }
     }
 
-    const managers = await this.clubManagerRepository.findBy({
-      clubId: In(clubs.map((c) => c.uuid)),
-    })
-    const managerMap = new Map(managers.map((m) => [m.clubId, m]))
+    const majorIds = Array.from(
+      new Set(clubs.map((club) => club.college_major_id).filter((id): id is number => id !== null)),
+    )
+    const [managers, majors] = await Promise.all([
+      prisma.club_manager.findMany({
+        where: { club_id: { in: clubs.map((club) => club.uuid) }, deleted_at: null },
+        select: { club_id: true, name: true, phone: true, student_id: true },
+      }),
+      majorIds.length
+        ? prisma.college_major.findMany({
+            where: { id: { in: majorIds }, deleted_at: null },
+            select: { id: true, college: true, major: true },
+          })
+        : Promise.resolve([]),
+    ])
+    const managerMap = new Map(managers.map((manager) => [manager.club_id, manager]))
+    const majorMap = new Map(majors.map((major) => [major.id, major] as const))
 
     return {
       total_count: totalCount,
@@ -182,18 +182,18 @@ export class AdminClubService {
         return {
           uuid: club.uuid,
           name: club.name,
-          status: club.status,
+          status: club.status as ClubStatus,
           category: club.category,
-          affiliation:
-            club.affiliationType === '소속동아리'
-              ? (club.collegeMajor?.major ?? club.collegeMajor?.college ?? '')
-              : club.affiliationType,
-          short_description: club.shortDescription,
-          created_at: club.createdAt,
+          affiliation: getClubAffiliation(
+            club.affiliation_type,
+            club.college_major_id === null ? null : majorMap.get(club.college_major_id),
+          ),
+          short_description: club.short_description,
+          created_at: toTimestampString(club.created_at),
           manager: {
             name: manager?.name ?? '',
             phone: manager?.phone ?? '',
-            student_id: manager?.studentId ?? '',
+            student_id: manager?.student_id ?? '',
           },
         }
       }),
@@ -201,48 +201,54 @@ export class AdminClubService {
   }
 
   async getAdminClubDetail(clubUuid: string): Promise<AdminClubDetail> {
-    const club = await this.clubRepository.findOneBy({
-      uuid: clubUuid,
-      deletedAt: IsNull(),
+    const prisma = getPrismaClient()
+    const club = await prisma.club.findFirst({
+      where: { uuid: clubUuid, deleted_at: null },
     })
 
     if (!club) {
       throw new NotFoundError('club not found')
     }
 
-    const manager = await this.clubManagerRepository.findOneBy({
-      clubId: clubUuid,
-    })
+    const [manager, collegeMajor] = await Promise.all([
+      prisma.club_manager.findFirst({
+        where: { club_id: clubUuid, deleted_at: null },
+        select: { name: true, phone: true, student_id: true, service_user_id: true },
+      }),
+      club.college_major_id === null
+        ? Promise.resolve(null)
+        : prisma.college_major.findFirst({
+            where: { id: club.college_major_id, deleted_at: null },
+            select: { college: true, major: true },
+          }),
+    ])
 
     return {
       club_data: {
         uuid: club.uuid,
-        status: club.status,
+        status: club.status as ClubStatus,
         name: club.name,
         type: club.type,
         category: club.category,
-        affiliation:
-          club.affiliationType === '소속동아리'
-            ? (club.collegeMajor?.major ?? club.collegeMajor?.college ?? '')
-            : club.affiliationType,
-        college_major_id: club.collegeMajorId,
-        short_description: club.shortDescription,
-        image_uri: club.imageUri,
-        recruit_type: club.recruitType,
-        min_activity_period: club.minActivityPeriod,
-        has_dongbang: club.hasDongbang,
-        dongbang_location: club.dongbangLocation,
-        sns_urls: club.snsUrls ?? [],
+        affiliation: getClubAffiliation(club.affiliation_type, collegeMajor),
+        college_major_id: club.college_major_id,
+        short_description: club.short_description,
+        image_uri: club.image_uri,
+        recruit_type: club.recruit_type,
+        min_activity_period: club.min_activity_period,
+        has_dongbang: club.has_dongbang,
+        dongbang_location: club.dongbang_location ?? '',
+        sns_urls: toStringArray(club.sns_urls),
         introduction: club.introduction,
-        activity_image_urls: club.activityImageUrls ?? [],
-        created_at: club.createdAt,
-        reject_reason: club.rejectReason,
+        activity_image_urls: toStringArray(club.activity_image_urls),
+        created_at: toTimestampString(club.created_at),
+        reject_reason: club.reject_reason,
       },
       manager_data: {
         name: manager?.name ?? '',
         phone: manager?.phone ?? '',
-        student_id: manager?.studentId ?? '',
-        service_user_id: manager?.serviceUserId ?? '',
+        student_id: manager?.student_id ?? '',
+        service_user_id: manager?.service_user_id ?? '',
       },
     }
   }
@@ -251,71 +257,72 @@ export class AdminClubService {
     clubUuid: string,
     decision: AdminClubStatusUpdate,
   ): Promise<{ club_uuid: string; status: AdminClubStatusUpdate['status']; processed_at: string }> {
-    return this.clubRepository.manager.transaction(async (manager) => {
-      const clubRepository = manager.getRepository(ClubEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const club = await clubRepository.findOneBy({
-        uuid: clubUuid,
-        deletedAt: IsNull(),
-      })
+    return getPrismaClient().$transaction(async (tx) => {
+      const clubs = await tx.$queryRaw<Array<{ status: string }>>`
+        SELECT status FROM club
+        WHERE uuid = ${clubUuid}::uuid AND deleted_at IS NULL
+        FOR UPDATE
+      `
+      const club = clubs[0]
 
       if (!club) {
         throw new NotFoundError('club not found')
       }
 
-      const processedAt = new Date().toISOString()
+      const processedAt = new Date()
       const isApproved = decision.status === PUBLIC_CLUB_STATUS
       const isRejected = decision.status === REJECTED_CLUB_STATUS
       const isPending = decision.status === PENDING_CLUB_STATUS
       const notificationType = this.getClubRegistrationNotificationType(decision.status)
       const shouldCreateNotification = club.status !== decision.status && notificationType !== null
 
-      await clubRepository.update(
-        {
-          uuid: clubUuid,
-          deletedAt: IsNull(),
-        },
-        {
+      await tx.club.updateMany({
+        where: { uuid: clubUuid, deleted_at: null },
+        data: {
           status: decision.status,
-          approvedAt: isApproved ? processedAt : null,
-          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
-          isOfficialVerified: isApproved ? decision.is_official_verified : false,
-          verifiedAt: isApproved && decision.is_official_verified ? processedAt : null,
+          approved_at: isApproved ? processedAt : null,
+          reject_reason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
+          is_official_verified: isApproved ? decision.is_official_verified : false,
+          verified_at: isApproved && decision.is_official_verified ? processedAt : null,
+          updated_at: processedAt,
         },
-      )
+      })
 
       if (isPending) {
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB',
-          sourceId: clubUuid,
-          type: In(this.getClubRegistrationResultNotificationTypes()),
+        await tx.user_notification.deleteMany({
+          where: {
+            source_type: 'CLUB',
+            source_id: clubUuid,
+            type: { in: this.getClubRegistrationResultNotificationTypes() },
+          },
         })
       }
 
       if (shouldCreateNotification) {
-        const clubManagers = await clubManagerRepository.findBy({ clubId: clubUuid })
-        const serviceUserIds = Array.from(new Set(clubManagers.map((it) => it.serviceUserId)))
+        const clubManagers = await tx.club_manager.findMany({
+          where: { club_id: clubUuid, deleted_at: null },
+          select: { service_user_id: true },
+        })
+        const serviceUserIds = Array.from(new Set(clubManagers.map((it) => it.service_user_id)))
         const metadata = this.getNotificationMetadata(notificationType, decision.reject_reason)
         if (serviceUserIds.length > 0) {
-          await userNotificationRepository.insert(
-            serviceUserIds.map((serviceUserId) => ({
-              serviceUserId,
+          await tx.user_notification.createMany({
+            data: serviceUserIds.map((serviceUserId) => ({
+              service_user_id: serviceUserId,
               type: notificationType,
-              clubId: clubUuid,
-              sourceType: 'CLUB',
-              sourceId: clubUuid,
-              metadata,
+              club_id: clubUuid,
+              source_type: 'CLUB',
+              source_id: clubUuid,
+              ...(metadata && { metadata }),
             })),
-          )
+          })
         }
       }
 
       return {
         club_uuid: clubUuid,
         status: decision.status,
-        processed_at: processedAt,
+        processed_at: processedAt.toISOString(),
       }
     })
   }
@@ -329,71 +336,62 @@ export class AdminClubService {
     limit,
   }: AdminClubHistoriesQuery): Promise<{ total_count: number; histories: AdminClubHistoryItem[] }> {
     const trimmedQuery = query?.trim()
-    const baseQuery = this.clubHistoryRepository
-      .createQueryBuilder('history')
-      .leftJoin(ClubEntity, 'club', 'club.uuid = history.club_id')
-      .leftJoin(
-        ClubManagerEntity,
-        'manager',
-        'manager.club_id = history.club_id AND manager.service_user_id = history.service_user_id',
-      )
-      .leftJoin(ServiceUserEntity, 'service_user', 'service_user.id = history.service_user_id')
-      .leftJoin(UserEntity, 'app_user', 'app_user.id = service_user.user_id')
-
-    if (clubUuid) {
-      baseQuery.andWhere('history.club_id = :clubUuid', { clubUuid })
-    }
-
-    if (affiliationType) {
-      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
-    }
-    if (excludeAffiliationType) {
-      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
-        excludeAffiliationType,
-      })
-    }
-
+    const conditions: Prisma.Sql[] = []
+    if (clubUuid) conditions.push(Prisma.sql`history.club_id = ${clubUuid}::uuid`)
+    if (affiliationType) conditions.push(Prisma.sql`club.affiliation_type = ${affiliationType}`)
+    if (excludeAffiliationType)
+      conditions.push(Prisma.sql`club.affiliation_type != ${excludeAffiliationType}`)
     if (trimmedQuery) {
-      baseQuery.andWhere(
-        '(club.name ILIKE :query OR manager.name ILIKE :query OR app_user.name ILIKE :query)',
-        {
-          query: `%${trimmedQuery}%`,
-        },
-      )
+      const pattern = `%${trimmedQuery}%`
+      conditions.push(Prisma.sql`(
+        club.name ILIKE ${pattern} OR manager.name ILIKE ${pattern} OR app_user.name ILIKE ${pattern}
+      )`)
     }
 
-    const totalCount = await baseQuery.getCount()
-    const histories = await baseQuery
-      .clone()
-      .select([
-        'history.id AS id',
-        'history.club_id AS club_uuid',
-        "COALESCE(club.name, '') AS club_name",
-        'history.service_user_id AS service_user_id',
-        "COALESCE(NULLIF(manager.name, ''), NULLIF(app_user.name, ''), '') AS updated_by_name",
-        'history.changed_fields AS changed_fields',
-        'history.before_data AS before_data',
-        'history.after_data AS after_data',
-        'history.created_at AS created_at',
-      ])
-      .orderBy('history.created_at', 'DESC')
-      .addOrderBy('history.id', 'DESC')
-      .offset(offset)
-      .limit(limit)
-      .getRawMany<{
-        id: string
-        club_uuid: string
-        club_name: string
-        service_user_id: string
-        updated_by_name: string
-        changed_fields: string[]
-        before_data: Record<string, unknown>
-        after_data: Record<string, unknown>
-        created_at: string
-      }>()
+    const from = Prisma.sql`
+      FROM club_history AS history
+      LEFT JOIN club ON club.uuid = history.club_id AND club.deleted_at IS NULL
+      LEFT JOIN club_manager AS manager
+        ON manager.club_id = history.club_id
+        AND manager.service_user_id = history.service_user_id
+        AND manager.deleted_at IS NULL
+      LEFT JOIN allclear_user AS service_user
+        ON service_user.id = history.service_user_id AND service_user.deleted_at IS NULL
+      LEFT JOIN "user" AS app_user
+        ON app_user.id = service_user.user_id AND app_user.deleted_at IS NULL
+      ${conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+    `
+    const prisma = getPrismaClient()
+    const [counts, histories] = await Promise.all([
+      prisma.$queryRaw<Array<{ total_count: bigint }>>`
+        SELECT COUNT(DISTINCT history.id) AS total_count ${from}
+      `,
+      prisma.$queryRaw<
+        Array<{
+          id: bigint
+          club_uuid: string
+          club_name: string
+          service_user_id: string
+          updated_by_name: string
+          changed_fields: string[]
+          before_data: Record<string, unknown>
+          after_data: Record<string, unknown>
+          created_at: Date
+        }>
+      >`
+        SELECT history.id, history.club_id AS club_uuid,
+          COALESCE(club.name, '') AS club_name,
+          history.service_user_id,
+          COALESCE(NULLIF(manager.name, ''), NULLIF(app_user.name, ''), '') AS updated_by_name,
+          history.changed_fields, history.before_data, history.after_data, history.created_at
+        ${from}
+        ORDER BY history.created_at DESC, history.id DESC
+        OFFSET ${offset} LIMIT ${limit}
+      `,
+    ])
 
     return {
-      total_count: totalCount,
+      total_count: Number(counts[0]?.total_count ?? 0),
       histories: histories.map((history) => ({
         id: Number(history.id),
         club_uuid: history.club_uuid,
@@ -405,7 +403,7 @@ export class AdminClubService {
         changed_fields: history.changed_fields,
         before_data: history.before_data,
         after_data: history.after_data,
-        created_at: history.created_at,
+        created_at: toTimestampString(history.created_at),
       })),
     }
   }
@@ -419,58 +417,55 @@ export class AdminClubService {
   }: AdminClubManagerRequestsQuery): Promise<
     AdminPaginatedList<'requests', AdminClubManagerRequestItem>
   > {
-    const baseQuery = this.clubManagerRequestRepository
-      .createQueryBuilder('manager_request')
-      .leftJoin(ClubEntity, 'club', 'club.uuid = manager_request.club_id')
+    const conditions: Prisma.Sql[] = []
+    if (status) conditions.push(Prisma.sql`manager_request.status = ${status}`)
+    if (affiliationType) conditions.push(Prisma.sql`club.affiliation_type = ${affiliationType}`)
+    if (excludeAffiliationType)
+      conditions.push(Prisma.sql`club.affiliation_type != ${excludeAffiliationType}`)
 
-    if (status) {
-      baseQuery.andWhere('manager_request.status = :status', { status })
-    }
-    if (affiliationType) {
-      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
-    }
-    if (excludeAffiliationType) {
-      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
-        excludeAffiliationType,
-      })
-    }
-
-    const totalCount = await baseQuery.getCount()
-    const requests = await baseQuery
-      .clone()
-      .select([
-        'manager_request.id AS id',
-        'manager_request.club_id AS club_uuid',
-        "COALESCE(club.name, '') AS club_name",
-        'EXISTS (SELECT 1 FROM club_manager WHERE club_manager.club_id = manager_request.club_id) AS has_manager',
-        'manager_request.service_user_id AS service_user_id',
-        'manager_request.name AS applicant_name',
-        'manager_request.phone AS applicant_phone',
-        'manager_request.student_id AS applicant_student_id',
-        'manager_request.status AS status',
-        'manager_request.reject_reason AS reject_reason',
-        'manager_request.created_at AS created_at',
-      ])
-      .orderBy('manager_request.created_at', 'DESC')
-      .addOrderBy('manager_request.id', 'DESC')
-      .offset(offset)
-      .limit(limit)
-      .getRawMany<{
-        id: string
-        club_uuid: string
-        club_name: string
-        has_manager: boolean
-        service_user_id: string
-        applicant_name: string
-        applicant_phone: string
-        applicant_student_id: string
-        status: ClubStatus
-        reject_reason: string | null
-        created_at: string
-      }>()
+    const from = Prisma.sql`
+      FROM club_manager_request AS manager_request
+      LEFT JOIN club ON club.uuid = manager_request.club_id AND club.deleted_at IS NULL
+      ${conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+    `
+    const prisma = getPrismaClient()
+    const [counts, requests] = await Promise.all([
+      prisma.$queryRaw<Array<{ total_count: bigint }>>`
+        SELECT COUNT(*) AS total_count ${from}
+      `,
+      prisma.$queryRaw<
+        Array<{
+          id: bigint
+          club_uuid: string
+          club_name: string
+          has_manager: boolean
+          service_user_id: string
+          applicant_name: string
+          applicant_phone: string
+          applicant_student_id: string
+          status: ClubStatus
+          reject_reason: string | null
+          created_at: Date
+        }>
+      >`
+        SELECT manager_request.id, manager_request.club_id AS club_uuid,
+          COALESCE(club.name, '') AS club_name,
+          EXISTS (
+            SELECT 1 FROM club_manager WHERE club_manager.club_id = manager_request.club_id
+          ) AS has_manager,
+          manager_request.service_user_id,
+          manager_request.name AS applicant_name,
+          manager_request.phone AS applicant_phone,
+          manager_request.student_id AS applicant_student_id,
+          manager_request.status, manager_request.reject_reason, manager_request.created_at
+        ${from}
+        ORDER BY manager_request.created_at DESC, manager_request.id DESC
+        OFFSET ${offset} LIMIT ${limit}
+      `,
+    ])
 
     return {
-      total_count: totalCount,
+      total_count: Number(counts[0]?.total_count ?? 0),
       requests: requests.map((request) => ({
         id: Number(request.id),
         club_uuid: request.club_uuid,
@@ -484,7 +479,7 @@ export class AdminClubService {
         },
         status: request.status,
         reject_reason: request.reject_reason,
-        created_at: request.created_at,
+        created_at: toTimestampString(request.created_at),
       })),
     }
   }
@@ -498,50 +493,46 @@ export class AdminClubService {
   }: AdminClubVerificationRequestsQuery): Promise<
     AdminPaginatedList<'requests', AdminClubVerificationRequestItem>
   > {
-    const baseQuery = this.clubVerificationRequestRepository
-      .createQueryBuilder('verification_request')
-      .leftJoin(ClubEntity, 'club', 'club.uuid = verification_request.club_id')
+    const conditions: Prisma.Sql[] = []
+    if (status) conditions.push(Prisma.sql`verification_request.status = ${status}`)
+    if (affiliationType) conditions.push(Prisma.sql`club.affiliation_type = ${affiliationType}`)
+    if (excludeAffiliationType)
+      conditions.push(Prisma.sql`club.affiliation_type != ${excludeAffiliationType}`)
 
-    if (status) {
-      baseQuery.andWhere('verification_request.status = :status', { status })
-    }
-    if (affiliationType) {
-      baseQuery.andWhere('club.affiliation_type = :affiliationType', { affiliationType })
-    }
-    if (excludeAffiliationType) {
-      baseQuery.andWhere('club.affiliation_type != :excludeAffiliationType', {
-        excludeAffiliationType,
-      })
-    }
-
-    const totalCount = await baseQuery.getCount()
-    const requests = await baseQuery
-      .clone()
-      .select([
-        'verification_request.id AS id',
-        'verification_request.club_id AS club_uuid',
-        "COALESCE(club.name, '') AS club_name",
-        "COALESCE(club.category, '') AS category",
-        'verification_request.status AS status',
-        'verification_request.reject_reason AS reject_reason',
-        'verification_request.created_at AS created_at',
-      ])
-      .orderBy('verification_request.created_at', 'DESC')
-      .addOrderBy('verification_request.id', 'DESC')
-      .offset(offset)
-      .limit(limit)
-      .getRawMany<{
-        id: string
-        club_uuid: string
-        club_name: string
-        category: string
-        status: ClubStatus
-        reject_reason: string | null
-        created_at: string
-      }>()
+    const from = Prisma.sql`
+      FROM club_verification_request AS verification_request
+      LEFT JOIN club ON club.uuid = verification_request.club_id AND club.deleted_at IS NULL
+      ${conditions.length ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}` : Prisma.empty}
+    `
+    const prisma = getPrismaClient()
+    const [counts, requests] = await Promise.all([
+      prisma.$queryRaw<Array<{ total_count: bigint }>>`
+        SELECT COUNT(*) AS total_count ${from}
+      `,
+      prisma.$queryRaw<
+        Array<{
+          id: bigint
+          club_uuid: string
+          club_name: string
+          category: string
+          status: ClubStatus
+          reject_reason: string | null
+          created_at: Date
+        }>
+      >`
+        SELECT verification_request.id, verification_request.club_id AS club_uuid,
+          COALESCE(club.name, '') AS club_name,
+          COALESCE(club.category, '') AS category,
+          verification_request.status, verification_request.reject_reason,
+          verification_request.created_at
+        ${from}
+        ORDER BY verification_request.created_at DESC, verification_request.id DESC
+        OFFSET ${offset} LIMIT ${limit}
+      `,
+    ])
 
     return {
-      total_count: totalCount,
+      total_count: Number(counts[0]?.total_count ?? 0),
       requests: requests.map((request) => ({
         id: Number(request.id),
         club_uuid: request.club_uuid,
@@ -549,7 +540,7 @@ export class AdminClubService {
         category: request.category,
         status: request.status,
         reject_reason: request.reject_reason,
-        created_at: request.created_at,
+        created_at: toTimestampString(request.created_at),
       })),
     }
   }
@@ -563,12 +554,24 @@ export class AdminClubService {
     status: AdminClubManagerRequestStatusUpdate['status']
     processed_at: string
   }> {
-    return this.clubManagerRequestRepository.manager.transaction(async (manager) => {
-      const managerRequestRepository = manager.getRepository(ClubManagerRequestEntity)
-      const clubManagerRepository = manager.getRepository(ClubManagerEntity)
-      const userNotificationRepository = manager.getRepository(UserNotificationEntity)
-
-      const request = await managerRequestRepository.findOneBy({ id: String(requestId) })
+    return getPrismaClient().$transaction(async (tx) => {
+      const requests = await tx.$queryRaw<
+        Array<{
+          id: bigint
+          club_id: string
+          service_user_id: string
+          name: string
+          phone: string
+          student_id: string
+          status: string
+        }>
+      >`
+        SELECT id, club_id, service_user_id, name, phone, student_id, status
+        FROM club_manager_request
+        WHERE id = ${BigInt(requestId)}::bigint
+        FOR UPDATE
+      `
+      const request = requests[0]
       if (!request) {
         throw new NotFoundError('manager request not found')
       }
@@ -585,58 +588,69 @@ export class AdminClubService {
         if (request.status !== PENDING_CLUB_STATUS) {
           throw new ConflictError('can only approve from PENDING status')
         }
-        const existingManager = await clubManagerRepository.findOneBy({ clubId: request.clubId })
+        const existingManager = await tx.club_manager.findFirst({
+          where: { club_id: request.club_id, deleted_at: null },
+          select: { id: true },
+        })
         if (existingManager) {
           throw new ConflictError('club already has a manager')
         }
 
-        await clubManagerRepository.insert({
-          clubId: request.clubId,
-          serviceUserId: request.serviceUserId,
-          name: request.name,
-          phone: request.phone,
-          studentId: request.studentId,
+        await tx.club_manager.create({
+          data: {
+            club_id: request.club_id,
+            service_user_id: request.service_user_id,
+            name: request.name,
+            phone: request.phone,
+            student_id: request.student_id,
+          },
         })
       }
 
       if (isPending && request.status === PUBLIC_CLUB_STATUS) {
-        await clubManagerRepository.delete({
-          clubId: request.clubId,
-          serviceUserId: request.serviceUserId,
+        await tx.club_manager.deleteMany({
+          where: {
+            club_id: request.club_id,
+            service_user_id: request.service_user_id,
+          },
         })
       }
 
-      await managerRequestRepository.update(
-        { id: request.id },
-        {
+      await tx.club_manager_request.update({
+        where: { id: request.id },
+        data: {
           status: decision.status,
-          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
+          reject_reason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
         },
-      )
+      })
 
       if (isPending) {
-        await userNotificationRepository.delete({
-          sourceType: 'CLUB_MANAGER_REQUEST',
-          sourceId: request.id,
-          type: In(this.getManagerRequestResultNotificationTypes()),
+        await tx.user_notification.deleteMany({
+          where: {
+            source_type: 'CLUB_MANAGER_REQUEST',
+            source_id: request.id.toString(),
+            type: { in: this.getManagerRequestResultNotificationTypes() },
+          },
         })
       }
 
       if (shouldCreateNotification) {
         const metadata = this.getNotificationMetadata(notificationType, decision.reject_reason)
-        await userNotificationRepository.insert({
-          serviceUserId: request.serviceUserId,
-          type: notificationType,
-          clubId: request.clubId,
-          sourceType: 'CLUB_MANAGER_REQUEST',
-          sourceId: request.id,
-          metadata,
+        await tx.user_notification.create({
+          data: {
+            service_user_id: request.service_user_id,
+            type: notificationType,
+            club_id: request.club_id,
+            source_type: 'CLUB_MANAGER_REQUEST',
+            source_id: request.id.toString(),
+            ...(metadata && { metadata }),
+          },
         })
       }
 
       return {
         request_id: requestId,
-        club_uuid: request.clubId,
+        club_uuid: request.club_id,
         status: decision.status,
         processed_at: processedAt,
       }
@@ -699,16 +713,18 @@ export class AdminClubService {
     is_official_verified: boolean
     processed_at: string
   }> {
-    return this.clubVerificationRequestRepository.manager.transaction(async (manager) => {
-      const verificationRequestRepository = manager.getRepository(ClubVerificationRequestEntity)
-      const clubRepository = manager.getRepository(ClubEntity)
-
-      const request = await verificationRequestRepository.findOneBy({ id: String(requestId) })
+    return getPrismaClient().$transaction(async (tx) => {
+      const requests = await tx.$queryRaw<Array<{ id: bigint; club_id: string; status: string }>>`
+        SELECT id, club_id, status FROM club_verification_request
+        WHERE id = ${BigInt(requestId)}::bigint
+        FOR UPDATE
+      `
+      const request = requests[0]
       if (!request) {
         throw new NotFoundError('verification request not found')
       }
 
-      const processedAt = new Date().toISOString()
+      const processedAt = new Date()
       const isApproved = decision.status === PUBLIC_CLUB_STATUS
       const isRejected = decision.status === REJECTED_CLUB_STATUS
       const isPending = decision.status === PENDING_CLUB_STATUS
@@ -717,39 +733,41 @@ export class AdminClubService {
         if (request.status !== PENDING_CLUB_STATUS) {
           throw new ConflictError('can only approve from PENDING status')
         }
-        await clubRepository.update(
-          { uuid: request.clubId },
-          {
-            isOfficialVerified: true,
-            verifiedAt: processedAt,
+        await tx.club.updateMany({
+          where: { uuid: request.club_id },
+          data: {
+            is_official_verified: true,
+            verified_at: processedAt,
+            updated_at: processedAt,
           },
-        )
+        })
       }
 
       if (isPending && request.status === PUBLIC_CLUB_STATUS) {
-        await clubRepository.update(
-          { uuid: request.clubId },
-          {
-            isOfficialVerified: false,
-            verifiedAt: null,
+        await tx.club.updateMany({
+          where: { uuid: request.club_id },
+          data: {
+            is_official_verified: false,
+            verified_at: null,
+            updated_at: processedAt,
           },
-        )
+        })
       }
 
-      await verificationRequestRepository.update(
-        { id: request.id },
-        {
+      await tx.club_verification_request.update({
+        where: { id: request.id },
+        data: {
           status: decision.status,
-          rejectReason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
+          reject_reason: isRejected ? (decision.reject_reason?.trim() ?? '') : '',
         },
-      )
+      })
 
       return {
         request_id: requestId,
-        club_uuid: request.clubId,
+        club_uuid: request.club_id,
         status: decision.status,
         is_official_verified: isApproved,
-        processed_at: processedAt,
+        processed_at: processedAt.toISOString(),
       }
     })
   }

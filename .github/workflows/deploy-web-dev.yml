@@ -6,6 +6,7 @@ on:
     types: [closed]
     paths:
       - apps/web/**
+      - apps/web-migrator/**
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
