@@ -11,6 +11,11 @@ on:
         description: Kustomize overlay path in waffle-world-oci
         required: true
         type: string
+      run_prisma_migrations:
+        description: Add a Prisma PreSync Job to the production GitOps overlay
+        required: false
+        default: false
+        type: boolean
     secrets:
       OCI_AUTH_TOKEN:
         required: true
@@ -51,10 +56,20 @@ jobs:
             --tag "$OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG" \
             .
 
+      - name: Validate Prisma migration runner
+        run: |
+          docker run --rm \
+            --platform linux/arm64 \
+            --workdir /app/prisma-migrator \
+            --entrypoint /app/prisma-migrator/node_modules/.bin/prisma \
+            "$OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG" \
+            validate
+
       - name: Push web image
         run: docker push "$OCIR_REGISTRY/$OCIR_NAMESPACE/$OCIR_REPOSITORY:$IMAGE_TAG"
 
       - name: Update GitOps image tag
+        if: ${{ !inputs.run_prisma_migrations }}
         uses: wafflestudio/waffle-world-oci/.github/actions/update-image@main
         with:
           image: ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/${{ env.OCIR_REPOSITORY }}
@@ -63,3 +78,29 @@ jobs:
           # overlay is rooted at the environment directory (for example, argocd/allclear-dev).
           overlay-path: ${{ inputs.gitops_overlay_path }}
           private-key: ${{ secrets.DEPLOYER_APP_PRIVATE_KEY }}
+
+      - name: Generate GitOps App token
+        if: ${{ inputs.run_prisma_migrations }}
+        id: gitops-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: Iv23lijiSk5hqJhw5DsY
+          private-key: ${{ secrets.DEPLOYER_APP_PRIVATE_KEY }}
+          owner: wafflestudio
+          repositories: waffle-world-oci
+
+      - name: Checkout GitOps repository
+        if: ${{ inputs.run_prisma_migrations }}
+        uses: actions/checkout@v7
+        with:
+          repository: wafflestudio/waffle-world-oci
+          token: ${{ steps.gitops-token.outputs.token }}
+          path: .gitops
+
+      - name: Update production image and migration Job
+        if: ${{ inputs.run_prisma_migrations }}
+        env:
+          GITOPS_OVERLAY_PATH: ${{ inputs.gitops_overlay_path }}
+          WEB_IMAGE: ${{ env.OCIR_REGISTRY }}/${{ env.OCIR_NAMESPACE }}/${{ env.OCIR_REPOSITORY }}
+          WEB_IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        run: bash .github/scripts/update-gitops-web-with-migration.sh

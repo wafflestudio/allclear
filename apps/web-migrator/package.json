@@ -1,0 +1,9 @@
+{
+  "name": "allclear-web-migrator",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "dotenv": "16.6.1",
+    "prisma": "7.10.0"
+  }
+}

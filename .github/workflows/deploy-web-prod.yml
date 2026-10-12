@@ -6,6 +6,7 @@ on:
     types: [closed]
     paths:
       - apps/web/**
+      - apps/web-migrator/**
       - package.json
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
@@ -14,6 +15,8 @@ on:
       - .dockerignore
       - .github/workflows/_deploy-web.yml
       - .github/workflows/deploy-web-prod.yml
+      - .github/gitops/allclear-prod-prisma-migrate.yaml
+      - .github/scripts/update-gitops-web-with-migration.sh
 
 jobs:
   deploy:
@@ -22,6 +25,7 @@ jobs:
     with:
       ocir_repository: allclear-prod/allclear-web
       gitops_overlay_path: argocd/allclear-prod
+      run_prisma_migrations: true
     secrets:
       OCI_AUTH_TOKEN: ${{ secrets.OCI_AUTH_TOKEN }}
       DEPLOYER_APP_PRIVATE_KEY: ${{ secrets.DEPLOYER_APP_PRIVATE_KEY }}
