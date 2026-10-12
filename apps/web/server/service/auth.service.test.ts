@@ -31,7 +31,7 @@ describe('AuthService with Prisma', () => {
   it('does not log the Kakao profile returned by the provider', async () => {
     vi.mocked(axios).mockResolvedValue({
       data: {
-        id: 'kakao-user-id',
+        id: 123456789,
         kakao_account: { email: 'private@example.com', phone_number: '+82 10-1234-5678' },
       },
     })
@@ -43,10 +43,31 @@ describe('AuthService with Prisma', () => {
       await expect(new AuthService().getOrCreateKakaoUser('raw-access-token')).resolves.toBe(
         'account-id',
       )
+      expect(prisma.account.findFirst).toHaveBeenCalledWith({
+        where: { type: AccountType.KAKAO, username: '123456789', deleted_at: null },
+      })
       expect(consoleLog).not.toHaveBeenCalled()
     } finally {
       consoleLog.mockRestore()
     }
+  })
+
+  it('stores a new numeric Kakao ID as a string', async () => {
+    vi.mocked(axios).mockResolvedValue({
+      data: { id: 123456789, kakao_account: { email: 'private@example.com' } },
+    })
+    prisma.account.findFirst.mockResolvedValue(null)
+    prisma.account.create.mockResolvedValue({ id: 'account-id' })
+    prisma.user.create.mockResolvedValue({ id: 'user-id' })
+    prisma.account_user.create.mockResolvedValue({})
+    prisma.allclear_user.create.mockResolvedValue({})
+
+    await expect(new AuthService().getOrCreateKakaoUser('raw-access-token')).resolves.toBe(
+      'account-id',
+    )
+    expect(prisma.account.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ type: AccountType.KAKAO, username: '123456789' }),
+    })
   })
 
   it('maps an active OAuth user and excludes soft-deleted records', async () => {

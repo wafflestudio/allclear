@@ -133,7 +133,8 @@ export class AuthService {
     })
     const user = userResponse.data
 
-    const account = await this.findOrRestoreAccount(AccountType.KAKAO, user.id)
+    const kakaoUserId = String(user.id)
+    const account = await this.findOrRestoreAccount(AccountType.KAKAO, kakaoUserId)
     if (account) {
       return account.id
     }
@@ -141,7 +142,7 @@ export class AuthService {
     const kakaoAccount = user.kakao_account
     return this.createUserByOauth({
       type: AccountType.KAKAO,
-      username: user.id,
+      username: kakaoUserId,
       nickname: kakaoAccount?.profile?.nickname || user.properties?.nickname,
       name: kakaoAccount?.name,
       email: kakaoAccount.email,
