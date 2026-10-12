@@ -43,7 +43,10 @@ const EntryLoginActions = ({
 	const layoutStyles = useMemo(
 		() => ({
 			actions: {
-				top: nativeSplashContentTop + 468.44,
+				top:
+					Platform.OS === "ios"
+						? nativeSplashContentTop + 468.44
+						: 468.44 * scaleY,
 				left: 53.5 * scaleX,
 				width: 295 * scaleX,
 				gap: 12 * scaleY,
@@ -59,7 +62,8 @@ const EntryLoginActions = ({
 				height: 16 * scaleX,
 			},
 			guestAction: {
-				top: nativeSplashContentTop + 812,
+				top:
+					Platform.OS === "ios" ? nativeSplashContentTop + 812 : 812 * scaleY,
 				left: 53.5 * scaleX,
 				width: 295 * scaleX,
 			},

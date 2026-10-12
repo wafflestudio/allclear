@@ -15,6 +15,7 @@ import SearchBar from "@/features/club/components/SearchBar/SearchBar";
 import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import AlertModal from "@/shared/components/AlertModal";
+import ManagementGuideModal from "@/shared/components/ManagementGuideModal";
 import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
@@ -81,6 +82,7 @@ const ManageClubRegistrationScreen = () => {
 	] = useState(false);
 	const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 	const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+	const [isApprovalGuideVisible, setIsApprovalGuideVisible] = useState(false);
 	const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
 
 	const { data: manageClubs = [] } = useQuery({
@@ -155,6 +157,7 @@ const ManageClubRegistrationScreen = () => {
 			try {
 				const { clubs } = await clubService.searchClubs({
 					query: clubSearchQuery,
+					record_recent_search: "false",
 				});
 				setSearchResults(clubs);
 			} catch {
@@ -310,7 +313,8 @@ const ManageClubRegistrationScreen = () => {
 				phone: adminForm.phone,
 				studentId: adminForm.studentId,
 			});
-			setIsSuccessModalVisible(true);
+			if (isEditMode || isResubmission) setIsSuccessModalVisible(true);
+			else setIsApprovalGuideVisible(true);
 		} catch {
 			setIsErrorModalVisible(true);
 		} finally {
@@ -350,6 +354,7 @@ const ManageClubRegistrationScreen = () => {
 
 	const handleSuccessConfirm = () => {
 		setIsSuccessModalVisible(false);
+		setIsApprovalGuideVisible(false);
 		setFormStep("form");
 		setAdminForm({
 			name: user?.name ?? "",
@@ -378,6 +383,12 @@ const ManageClubRegistrationScreen = () => {
 
 	const renderResultModals = () => (
 		<>
+			<ManagementGuideModal
+				visible={isApprovalGuideVisible}
+				type="approvalTime"
+				onStart={handleSuccessConfirm}
+				onSkip={handleSuccessConfirm}
+			/>
 			<AlertModal
 				visible={isSuccessModalVisible}
 				onClose={() => setIsSuccessModalVisible(false)}

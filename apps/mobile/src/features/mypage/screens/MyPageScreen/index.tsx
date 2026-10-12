@@ -15,19 +15,22 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import type {
 	Club,
 	ManagedClubListItem,
 	ManagedClubManagementStatus,
 } from "@/entities/club";
 import type { UserNotification } from "@/entities/userNotification";
+import { ManagerRegistrationCard } from "@/features/mypage/components/ManagerRegistrationCard";
 import {
 	getNotificationClub,
 	getUserNotificationContent,
 } from "@/features/mypage/utils/userNotification";
 import AlertModal from "@/shared/components/AlertModal";
 import EditPencilButton from "@/shared/components/EditPencilButton";
+import ManagementGuideModal, {
+	type GuideType,
+} from "@/shared/components/ManagementGuideModal";
 import { Colors } from "@/shared/constants/colors";
 import { LOGIN_TOKEN } from "@/shared/constants/localStorage";
 import { SCREEN_TYPE } from "@/shared/constants/screen";
@@ -58,6 +61,8 @@ const MyPageScreen = () => {
 
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false);
+	const [guideType, setGuideType] = useState<GuideType | null>(null);
+	const [guideClub, setGuideClub] = useState<Club | null>(null);
 	const [statusBlurEnabled, setStatusBlurEnabled] = useState(true);
 	const [cancelRequestClub, setCancelRequestClub] =
 		useState<ManagedClubListItem | null>(null);
@@ -152,15 +157,31 @@ const MyPageScreen = () => {
 	};
 
 	const handleRegisterAnnouncement = (club: Club) => {
-		setStatusBlurEnabled(false);
-		navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, {
-			clubId: club.uuid,
-		});
+		setGuideClub(club);
+		setGuideType("announcementRegistration");
 	};
 
 	const handleManageClub = (club: Club) => {
-		setStatusBlurEnabled(false);
-		navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, { clubId: club.uuid });
+		setGuideClub(club);
+		setGuideType("announcementManagement");
+	};
+
+	const startGuide = () => {
+		if (guideType === "clubRegistration") {
+			setGuideType(null);
+			openManageClub();
+			return;
+		}
+		if (guideType === "announcementRegistration" && guideClub)
+			navigation.navigate(SCREEN_TYPE.ANNOUNCEMENT_REGISTRATION, {
+				clubId: guideClub.uuid,
+			});
+		if (guideType === "announcementManagement" && guideClub)
+			navigation.navigate(SCREEN_TYPE.CLUB_MANAGEMENT, {
+				clubId: guideClub.uuid,
+			});
+		setGuideType(null);
+		setGuideClub(null);
 	};
 
 	const cancelRequestMutation = useMutation({
@@ -379,25 +400,9 @@ const MyPageScreen = () => {
 				</View>
 
 				{/* 동아리 운영진이신가요? 카드 */}
-				<Pressable
-					style={({ pressed }) => [
-						styles.managerCard,
-						pressed && styles.pressed,
-					]}
-					onPress={openManageClub}
-				>
-					<View style={styles.managerRow}>
-						<View>
-							<Text style={styles.managerTitle}>동아리 운영진이신가요?</Text>
-							<Text style={styles.managerSub}>신규 동아리 등록하기</Text>
-						</View>
-						<Icon
-							name="chevron-right"
-							color={Colors.POINTCOLOR}
-							size={ms(20)}
-						/>
-					</View>
-				</Pressable>
+				<ManagerRegistrationCard
+					onPress={() => setGuideType("clubRegistration")}
+				/>
 
 				{/* 관리 중인 동아리 가로 스크롤 */}
 				{manageClubs.length > 0 && (
@@ -507,6 +512,15 @@ const MyPageScreen = () => {
 					confirmLogout();
 				}}
 				hasCancel
+			/>
+			<ManagementGuideModal
+				visible={guideType !== null}
+				type={guideType ?? "clubRegistration"}
+				onStart={startGuide}
+				onSkip={() => {
+					setGuideType(null);
+					setGuideClub(null);
+				}}
 			/>
 			<AlertModal
 				visible={leaveModalVisible}
@@ -729,31 +743,6 @@ const styles = StyleSheet.create({
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_SUB,
 		marginTop: vs(6),
-	},
-
-	// 운영진 카드
-	managerCard: {
-		backgroundColor: "#FAFAFA",
-		borderRadius: ms(12),
-		paddingHorizontal: s(24),
-		paddingVertical: vs(20),
-	},
-	managerRow: {
-		flexDirection: "row",
-		justifyContent: "space-between",
-		alignItems: "center",
-	},
-	managerTitle: {
-		...typography.bodyMMedium,
-		color: Colors.POINTCOLOR,
-		letterSpacing: -0.02 * 14,
-	},
-	managerSub: {
-		...typography.bodySRegular,
-		color: Colors.POINTCOLOR,
-		opacity: 0.4,
-		marginTop: vs(4),
-		letterSpacing: -0.02 * 12,
 	},
 
 	// 관리 동아리 스크롤

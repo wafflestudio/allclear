@@ -26,21 +26,20 @@ export const resolveEntrySplashLayoutMetrics = (
 	currentMetrics: EntrySplashLayoutMetrics,
 ): EntrySplashLayoutMetrics => initialMetrics ?? currentMetrics;
 
-export const getEntrySplashViewport = ({
-	width,
-	height,
-	topInset,
-	bottomInset,
-}: EntrySplashLayoutMetrics) => ({
+export const getEntrySplashViewport = (
+	{ width, height, topInset, bottomInset }: EntrySplashLayoutMetrics,
+	platform: "ios" | "android" = "ios",
+) => ({
 	contentTop: topInset,
 	contentBottom: bottomInset,
 	// iOS launch storyboard는 390 x 844pt SplashImage를 화면 중앙에 고정한다.
 	// JS 애니메이션의 첫 프레임도 이 offset을 써야 네이티브 화면과 이어진다.
 	nativeSplashLeft: (width - ENTRY_SPLASH_DESIGN_WIDTH) / 2,
 	nativeSplashTop: (height - ENTRY_SPLASH_DESIGN_HEIGHT) / 2,
-	scaleX: width / ENTRY_SPLASH_DESIGN_WIDTH,
+	scaleX: width / (platform === "ios" ? ENTRY_SPLASH_DESIGN_WIDTH : 402),
 	scaleY:
-		Math.max(height - topInset - bottomInset, 1) / ENTRY_SPLASH_DESIGN_HEIGHT,
+		Math.max(height - topInset - bottomInset, 1) /
+		(platform === "ios" ? ENTRY_SPLASH_DESIGN_HEIGHT : 874),
 });
 
 type CenteredScaledAssetOriginParams = {

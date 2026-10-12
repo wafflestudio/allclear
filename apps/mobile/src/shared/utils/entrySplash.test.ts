@@ -13,6 +13,19 @@ import {
 } from "@/shared/utils/entrySplash";
 
 describe("entry splash timeline", () => {
+	it("preserves Android's 402 x 874 layout after merging the iOS canvas fix", () => {
+		const viewport = getEntrySplashViewport(
+			{
+				width: 402,
+				height: 874,
+				topInset: 24,
+				bottomInset: 48,
+			},
+			"android",
+		);
+		expect(viewport.scaleX).toBe(1);
+		expect(viewport.scaleY).toBe(802 / 874);
+	});
 	it("keeps unauthenticated users on the fourth stage with login actions", () => {
 		expect(getEntrySplashStages(false)).toEqual([1, 2, 3, 4]);
 	});
@@ -28,19 +41,22 @@ describe("entry splash timeline", () => {
 
 	it("excludes the Android system bars from the entry layout viewport", () => {
 		expect(
-			getEntrySplashViewport({
-				width: 390,
-				height: 844,
-				topInset: 24,
-				bottomInset: 48,
-			}),
+			getEntrySplashViewport(
+				{
+					width: 402,
+					height: 874,
+					topInset: 24,
+					bottomInset: 48,
+				},
+				"android",
+			),
 		).toEqual({
 			contentTop: 24,
 			contentBottom: 48,
-			nativeSplashLeft: 0,
-			nativeSplashTop: 0,
+			nativeSplashLeft: 6,
+			nativeSplashTop: 15,
 			scaleX: 1,
-			scaleY: 772 / 844,
+			scaleY: 802 / 874,
 		});
 	});
 

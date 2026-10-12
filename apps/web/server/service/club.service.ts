@@ -316,7 +316,17 @@ export class ClubService {
       where: { service_user_id: serviceUserId },
       select: { club_id: true },
     })
-    return this.findPublicClubsByIds(saved.map((it) => it.club_id))
+    const clubs = await this.findPublicClubsByIds(saved.map((it) => it.club_id))
+    const clubReviews = await this.getClubReviews(clubs.map((it) => it.uuid))
+
+    return clubs.map((club) => {
+      const review = clubReviews.get(club.uuid)
+      return {
+        ...club,
+        totalReviews: review?.totalReviews ?? 0,
+        reviewKeywords: review?.reviewKeywords ?? [],
+      }
+    })
   }
 
   async saveClubToMyCollection(serviceUserId: string, clubId: string) {

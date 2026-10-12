@@ -9,9 +9,22 @@ import { ms, s, vs } from "@/shared/utils/scale";
 type Props = {
 	urls: string[];
 	onChange: (urls: string[]) => void;
+	required?: boolean;
+	isMissing?: boolean;
+	missingText?: string;
 };
 
-const ClubSnsInputList = ({ urls, onChange }: Props) => {
+const DEFAULT_HELPER_TEXT = "SNS 링크를 1개 이상 입력해주세요 (최대 3개)";
+
+const ClubSnsInputList = ({
+	urls,
+	onChange,
+	required = false,
+	isMissing = true,
+	missingText = DEFAULT_HELPER_TEXT,
+}: Props) => {
+	const showError = required && isMissing;
+
 	const updateUrl = (index: number, value: string) => {
 		onChange(urls.map((url, urlIndex) => (urlIndex === index ? value : url)));
 	};
@@ -32,7 +45,7 @@ const ClubSnsInputList = ({ urls, onChange }: Props) => {
 
 	return (
 		<View style={styles.fieldWrapper}>
-			<Text style={styles.fieldLabel}>동아리 SNS</Text>
+			<Text style={styles.fieldLabel}>{required ? "*" : ""}동아리 SNS</Text>
 			{urls.map((url, index) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: The index is the row identity while editable URLs may be empty or duplicated.
 				<View key={index} style={styles.inputRow}>
@@ -42,7 +55,7 @@ const ClubSnsInputList = ({ urls, onChange }: Props) => {
 						color={Colors.BODYTEXT_DISABLED}
 					/>
 					<TextInput
-						style={styles.input}
+						style={[styles.input, showError && styles.inputError]}
 						placeholder="url을 입력하세요"
 						placeholderTextColor={Colors.BODYTEXT_DISABLED}
 						value={url}
@@ -79,9 +92,7 @@ const ClubSnsInputList = ({ urls, onChange }: Props) => {
 					<Text style={styles.addButtonText}>SNS 링크 추가</Text>
 				</Pressable>
 			)}
-			<Text style={styles.helperText}>
-				SNS 링크를 1개 이상 입력해주세요 (최대 3개)
-			</Text>
+			{isMissing && <Text style={styles.helperText}>{missingText}</Text>}
 		</View>
 	);
 };
@@ -95,6 +106,7 @@ const styles = StyleSheet.create({
 	fieldLabel: {
 		...typography.headerXLSemibold,
 		color: Colors.BODYTEXT_SUB,
+		paddingLeft: s(5),
 	},
 	inputRow: {
 		flexDirection: "row",
@@ -111,6 +123,9 @@ const styles = StyleSheet.create({
 		borderColor: Colors.BODYTEXT_DISABLED,
 		borderRadius: 8,
 		backgroundColor: Colors.WHITE,
+	},
+	inputError: {
+		borderColor: Colors.BUTTON_DESTRUCTIVE,
 	},
 	removeButton: {
 		width: ms(32),

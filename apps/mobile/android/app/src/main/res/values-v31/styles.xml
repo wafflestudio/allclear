@@ -1,0 +1,7 @@
+<resources>
+    <style name="AppTheme" parent="BaseAppTheme">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenBackground">@android:color/white</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/entry_splash_icon</item>
+    </style>
+</resources>

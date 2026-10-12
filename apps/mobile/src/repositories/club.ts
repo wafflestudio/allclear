@@ -20,6 +20,7 @@ export type ClubSearchMinActivityPeriod = "0" | "1" | "2" | "3_plus";
 
 export type SearchClubsRequest = {
 	query: string;
+	record_recent_search?: ClubSearchBooleanString;
 	affiliation_type?: ClubSearchAffiliationType;
 	is_recruiting?: ClubSearchBooleanString;
 	recruit_type?: ClubSearchRecruitType;
@@ -366,6 +367,9 @@ export const getClubRepository = (): ClubRepository => ({
 	searchClubs: async (req, signal) => {
 		const searchParams = new URLSearchParams();
 		searchParams.append("query", req.query.toLowerCase().trim());
+		if (req.record_recent_search !== undefined) {
+			searchParams.append("record_recent_search", req.record_recent_search);
+		}
 		if (req.affiliation_type && req.affiliation_type !== "전체") {
 			searchParams.append("affiliation_type", req.affiliation_type);
 		}
