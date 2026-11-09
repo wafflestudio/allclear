@@ -85,36 +85,40 @@ model app_version_policy {
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model club {
-  id                   BigInt    @default(autoincrement())
-  name                 String    @db.VarChar
-  description          String    @default("") @db.VarChar
-  type                 String    @default("") @db.VarChar
-  category             String    @default("") @db.VarChar
-  article              String?   @default("") @db.VarChar
-  article_uploaded_at  DateTime? @db.Timestamptz(6)
-  created_at           DateTime  @default(now()) @db.Timestamptz(6)
-  has_dongbang         Boolean   @default(false)
-  recruit_type         String?   @default("") @db.VarChar
-  introduction         String?   @default("") @db.VarChar
-  uuid                 String    @id @unique(map: "ux_club_uuid") @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
-  updated_at           DateTime  @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
-  deleted_at           DateTime? @db.Timestamp(6)
-  image_uri            String    @default("") @db.VarChar(300)
-  affiliation_type     String    @default("") @db.VarChar
-  college_major_id     Int?
-  approved_at          DateTime? @db.Timestamp(6)
-  status               String    @default("PENDING") @db.VarChar
-  reject_reason        String?   @default("") @db.VarChar
-  short_description    String    @default("") @db.VarChar
-  dongbang_location    String?   @default("") @db.VarChar
-  min_activity_period  Int       @default(0)
-  active_member_count  Int       @default(0)
-  sns                  String    @default("") @db.VarChar
-  is_official_verified Boolean   @default(false)
-  verified_at          DateTime? @db.Timestamp(6)
-  founded_at           DateTime? @db.Date
-  sns_urls             Json      @default("[]")
-  activity_image_urls  Json      @default("[]")
+  id                    BigInt                       @default(autoincrement())
+  name                  String                       @db.VarChar
+  description           String                       @default("") @db.VarChar
+  type                  String                       @default("") @db.VarChar
+  category              String                       @default("") @db.VarChar
+  article               String?                      @default("") @db.VarChar
+  article_uploaded_at   DateTime?                    @db.Timestamptz(6)
+  created_at            DateTime                     @default(now()) @db.Timestamptz(6)
+  has_dongbang          Boolean                      @default(false)
+  recruit_type          String?                      @default("") @db.VarChar
+  introduction          String?                      @default("") @db.VarChar
+  uuid                  String                       @id @unique(map: "ux_club_uuid") @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  updated_at            DateTime                     @default(dbgenerated("CURRENT_TIMESTAMP(6)")) @db.Timestamp(6)
+  deleted_at            DateTime?                    @db.Timestamp(6)
+  image_uri             String                       @default("") @db.VarChar(300)
+  affiliation_type      String                       @default("") @db.VarChar
+  college_major_id      Int?
+  approved_at           DateTime?                    @db.Timestamp(6)
+  status                String                       @default("PENDING") @db.VarChar
+  reject_reason         String?                      @default("") @db.VarChar
+  short_description     String                       @default("") @db.VarChar
+  dongbang_location     String?                      @default("") @db.VarChar
+  min_activity_period   Int                          @default(0)
+  active_member_count   Int                          @default(0)
+  sns                   String                       @default("") @db.VarChar
+  is_official_verified  Boolean                      @default(false)
+  verified_at           DateTime?                    @db.Timestamp(6)
+  founded_at            DateTime?                    @db.Date
+  sns_urls              Json                         @default("[]")
+  activity_image_urls   Json                         @default("[]")
+  embedding             Unsupported("vector(3072)")?
+  embedding_model       String?
+  embedding_source_hash String?
+  embedding_updated_at  DateTime?                    @db.Timestamptz(6)
 
   @@index([affiliation_type], map: "idx_club_search_affiliation_type", where: raw("(deleted_at IS NULL)"))
   @@index([has_dongbang], map: "idx_club_search_has_dongbang", where: raw("(deleted_at IS NULL)"))

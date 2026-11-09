@@ -53,6 +53,8 @@ import {
   ClubRankingSchema,
   ClubRankingsQuerySchema,
   ClubRankingsResponseSchema,
+  ClubSearchIntentQuerySchema,
+  ClubSearchIntentSchema,
   ClubSearchQuerySchema,
   ClubsResponseSchema,
   ClubsSearchResponseSchema,
@@ -878,34 +880,74 @@ registry.registerPath({
   },
 })
 
+for (const { path, summary, description } of [
+  {
+    path: '/api/v2/clubs/search',
+    summary: '동아리 검색',
+    description: '문자열 일치와 오타 교정으로 검색합니다. AI API를 호출하지 않습니다.',
+  },
+  {
+    path: '/api/v2/clubs/ai-search',
+    summary: 'AI 동아리 검색',
+    description:
+      'DeepSeek로 검색 주제와 조건을 추출하고, 문자열 일치 결과 뒤에 의미 검색 결과를 유사도순으로 추가합니다. URL 필터가 추출된 조건보다 우선합니다. 전처리 실패 시 원문으로 검색하며, 임베딩 실패 시 문자열 검색 결과를 반환합니다. 응답과 검색 기록의 query는 원문을 유지합니다.',
+  },
+]) {
+  registry.registerPath({
+    method: 'get',
+    path,
+    tags: ['Clubs'],
+    summary,
+    description: `${description} 유효한 bearer token 또는 x-guest-id header가 필요합니다. 식별 정보가 없거나 잘못된 요청은 검색 전에 거절합니다. query는 1~200자이며, 검색 결과에 필터 조건을 추가로 적용할 수 있습니다. boolean 필터는 "true" 또는 "false" 문자열로 전달하고, min_activity_period는 0, 1, 2, 3_plus 중 하나 이상을 반복 query parameter로 전달합니다. record_recent_search가 true(기본값)이면 bearer token 기준으로 회원 DB에, token 없이 valid x-guest-id가 있으면 비회원 Redis에 최근 검색어 저장을 best-effort로 시도합니다.`,
+    security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
+    request: {
+      query: ClubSearchQuerySchema,
+      headers: GuestIdHeaderSchema,
+    },
+    responses: {
+      200: {
+        description: '검색 성공',
+        content: {
+          'application/json': {
+            schema: ClubsSearchResponseSchema,
+          },
+        },
+      },
+      400: {
+        description:
+          'query, 필터 query string, 또는 비회원 x-guest-id header가 누락되거나 잘못되었습니다.',
+        content: {
+          'text/plain': {
+            schema: ErrorMessageSchema,
+          },
+        },
+      },
+      401: unauthorizedResponse,
+      500: internalServerErrorResponse,
+    },
+  })
+}
+
 registry.registerPath({
   method: 'get',
-  path: '/api/v2/clubs/search',
+  path: '/api/v2/clubs/ai-search/intent',
   tags: ['Clubs'],
-  summary: '동아리 검색',
+  summary: 'AI 검색 전처리 JSON 확인',
   description:
-    '동아리를 검색합니다. query는 필수이며, 검색 결과에 필터 조건을 추가로 적용할 수 있습니다. boolean 필터는 "true" 또는 "false" 문자열로 전달하고, min_activity_period는 0, 1, 2, 3_plus 중 하나 이상을 반복 query parameter로 전달합니다. 검색 성공 후 최근 검색어 저장을 best-effort로 시도합니다. bearer token이 있으면 회원 DB에 저장하고, token이 없으면 valid x-guest-id header 기준으로 비회원 Redis 저장소에 저장합니다.',
+    'AI 검색에 쓰이는 searchQuery와 filters를 반환합니다. 동아리 검색, 임베딩, 검색 기록 저장은 실행하지 않습니다. 한 단어 검색, DEEPSEEK_KEY 미설정, 전처리 오류 시 원문과 빈 filters를 반환합니다. 유효한 bearer token 또는 x-guest-id header가 필요합니다.',
   security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
   request: {
-    query: ClubSearchQuerySchema,
+    query: ClubSearchIntentQuerySchema,
     headers: GuestIdHeaderSchema,
   },
   responses: {
     200: {
-      description: '검색 성공',
-      content: {
-        'application/json': {
-          schema: ClubsSearchResponseSchema,
-        },
-      },
+      description: '전처리 결과',
+      content: { 'application/json': { schema: ClubSearchIntentSchema } },
     },
     400: {
-      description: 'query, 필터 query string, 또는 비회원 x-guest-id header가 잘못되었습니다.',
-      content: {
-        'text/plain': {
-          schema: ErrorMessageSchema,
-        },
-      },
+      description: 'query는 1~200자여야 하며, 비회원은 유효한 x-guest-id가 필요합니다.',
+      content: { 'text/plain': { schema: ErrorMessageSchema } },
     },
     401: unauthorizedResponse,
     500: internalServerErrorResponse,

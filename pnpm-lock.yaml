@@ -229,9 +229,15 @@ importers:
       es-hangul:
         specifier: ^2.3.8
         version: 2.4.0
+      htmlparser2:
+        specifier: 7.2.0
+        version: 7.2.0
       jose:
         specifier: ^5.2.0
         version: 5.10.0
+      js-tiktoken:
+        specifier: ^1.0.21
+        version: 1.0.21
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
@@ -4665,6 +4671,9 @@ packages:
 
   js-sha3@0.8.0:
     resolution: {integrity: sha512-gF1cRrHhIzNfToc802P800N8PpXS+evLLXfsVpowqmAFR9uwbi89WvXg2QspOmXL8QL86J4T1EpFu+yUkwJY3Q==}
+
+  js-tiktoken@1.0.21:
+    resolution: {integrity: sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -12193,6 +12202,10 @@ snapshots:
   js-file-download@0.4.12: {}
 
   js-sha3@0.8.0: {}
+
+  js-tiktoken@1.0.21:
+    dependencies:
+      base64-js: 1.5.1
 
   js-tokens@4.0.0: {}
 

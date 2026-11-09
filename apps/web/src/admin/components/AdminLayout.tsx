@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type React from 'react'
 import { AFFILIATION_FILTERS, TABS } from 'src/admin/constants'
 import type { AdminTab, AffiliationFilter, StatusFilter } from 'src/admin/types'
@@ -105,6 +106,12 @@ export const AdminLayout = ({
             </h2>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin/update-embedding"
+              className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+            >
+              검색 정보 갱신
+            </Link>
             <button
               type="button"
               onClick={onLogout}

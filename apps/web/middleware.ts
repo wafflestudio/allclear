@@ -72,6 +72,7 @@ export const config = {
     '/api/v2/managers/me/recruitments/:recruitmentId?',
     '/api/v2/admin/me',
     '/api/v2/admin/clubs',
+    '/api/v2/admin/clubs/embeddings',
     '/api/v2/admin/clubs/histories',
     '/api/v2/admin/clubs/manager-requests',
     '/api/v2/admin/clubs/manager-requests/:id/status',
