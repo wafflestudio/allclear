@@ -18,9 +18,6 @@ export const ENV = {
   DEEPSEEK: {
     API_KEY: process.env.DEEPSEEK_KEY ?? '',
   },
-  PERPLEXITY: {
-    API_KEY: process.env.PERPLEXITY_KEY ?? '',
-  },
   KAKAO: {
     CLIENT_ID: process.env.KAKAO_CLIENT_ID ?? '',
     CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET ?? '',

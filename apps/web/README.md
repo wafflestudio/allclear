@@ -88,28 +88,17 @@ DB를 변경하지 않습니다. 과거 수동 SQL로 네 컬럼을 만든 DB도
 AI 검색은 문자열 일치 결과 뒤에 의미 검색 결과를 유사도순으로 추가합니다.
 웹과 앱의 기존 검색은 `/search`를 사용하며, AI 검색은 `/ai-search`로 별도 요청합니다.
 
-모든 AI 검색문은 길이나 공백 유무와 관계없이 두 단계로 해석합니다.
-
-| 순서 | 역할 | 코드 |
-| --- | --- | --- |
-| 1 | Perplexity Decider가 명시적 조건을 `filters`로 선택 | [search-filter-intent.ts](server/service/search/search-filter-intent.ts) |
-| 2 | DeepSeek가 적용된 조건을 빼고 `searchQuery` 생성 | [search-query-intent.ts](server/service/search/search-query-intent.ts) |
-
-서버 환경 변수는 `PERPLEXITY_KEY`, `DEEPSEEK_KEY`입니다. Decider는 `pplx-decider-v1.2`로
-7개 필터를 한 번에 판정하며, `none` 또는 신뢰도 0.85 미만인 선택은 적용하지 않습니다.
-DeepSeek는 `deepseek-flash`의 비추론·JSON 모드로 검색 문구만 만듭니다.
-확정된 필터를 먼저 전달하므로, 지원하지 않거나 판정하지 못한 조건은 검색문에 남깁니다.
+`DEEPSEEK_KEY`를 설정하면 모든 AI 검색문을 길이나 공백 유무와 관계없이 먼저 해석합니다.
+[search-intent.ts](server/service/search/search-intent.ts)에서 DeepSeek의
+`deepseek-flash`를 비추론·JSON 출력 모드로 호출해 검색 주제와 명시적 필터를 분리합니다.
 예를 들어 `회비 없는 개발 동아리`는 `소프트웨어 개발`과 `hasMembershipFee: false`가 됩니다.
-`INTP한테 어울리는 동아리` 같은 취향은 검색어에 남기며 DB 조건으로 추측하지 않습니다.
+URL에서 선택한 필터를 우선하고, 지원하지 않는 조건은 검색문에 남깁니다.
+한 글자·한 단어 검색도 같은 전처리를 거칩니다. 응답과 검색 기록의 `query`는 원문을 유지하며,
+의도 변환을 오타 교정으로 표시하지 않습니다.
 
-[search-intent.ts](server/service/search/search-intent.ts)가 전체 흐름을 관리합니다.
-두 단계 합계 3초 제한, 최대 500개·24시간 캐시, 동시 요청 공유를 적용합니다.
-Decider 키가 없거나 실패하면 빈 필터로, DeepSeek 키가 없거나 실패하면 원문으로 진행합니다.
-실패한 결과는 캐시하지 않습니다. 한 글자·한 단어 검색도 같은 전처리를 거칩니다.
-URL 필터가 우선하며, 응답·검색 기록의 `query`는 원문을 유지합니다.
-
-[Decisions API](https://docs.perplexity.ai/docs/decisions/quickstart) ·
-[DeepSeek JSON 출력](https://api-docs.deepseek.com/guides/json_mode/)
+변환 결과는 최대 500개, 24시간 캐시하며 동시 요청도 공유합니다. 키가 없거나
+3초 시간 초과·API 오류·잘못된 JSON 응답이 발생하면 원문으로 검색합니다.
+실패는 캐시하지 않습니다. [DeepSeek JSON 출력 문서](https://api-docs.deepseek.com/guides/json_mode/)
 
 `/ai-search/intent`도 같은 전처리 함수를 사용하며, 검색·임베딩·검색 기록 저장은 실행하지 않습니다.
 예를 들어 `회비 없는 개발 동아리`의 응답은 다음과 같습니다.

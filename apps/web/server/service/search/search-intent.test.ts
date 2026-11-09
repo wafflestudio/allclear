@@ -1,254 +1,49 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 
-const { ENV } = vi.hoisted(() => ({
-  ENV: { DEEPSEEK: { API_KEY: 'deepseek-key' }, PERPLEXITY: { API_KEY: 'perplexity-key' } },
-}))
-vi.mock('server/ENV', () => ({ ENV }))
+vi.mock('server/ENV', () => ({ ENV: { DEEPSEEK: { API_KEY: 'test-key' } } }))
 
-let interpret: typeof import('./search-intent').interpretSearchQuery
-
-beforeEach(async () => {
-  vi.resetModules()
-  ENV.DEEPSEEK.API_KEY = 'deepseek-key'
-  ENV.PERPLEXITY.API_KEY = 'perplexity-key'
-  interpret = (await import('./search-intent')).interpretSearchQuery
-  vi.spyOn(console, 'error').mockImplementation(() => {})
-})
+import { interpretSearchQuery as interpret } from './search-intent'
 
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
 
-function decisions(choices: Record<string, string> = {}) {
-  const fields = [
-    'affiliationType',
-    'isRecruiting',
-    'recruitType',
-    'hasMembershipFee',
-    'hasDongbang',
-    'isOfficialVerified',
-    'minActivityPeriods',
-  ]
-  return {
-    answers: Object.fromEntries(
-      fields.map((field) => [
-        field,
-        { type: 'choice', choice: choices[field] ?? 'none', confidence: 0.99 },
-      ]),
-    ),
-  }
-}
-
-function rewritten(searchQuery: string) {
-  return {
-    choices: [{ finish_reason: 'stop', message: { content: JSON.stringify({ searchQuery }) } }],
-  }
-}
-
-function mockResponses(...bodies: unknown[]) {
-  const fetch = vi.fn()
-  for (const body of bodies) fetch.mockResolvedValueOnce(Response.json(body))
-  vi.stubGlobal('fetch', fetch)
-  return fetch
-}
-
-it('passes Decider filters to DeepSeek, which only produces the search query', async () => {
-  const query = '회비 없고 동방 있는 중앙동아리에서 코딩 배우고 싶어'
-  const filters = { affiliationType: '중앙동아리', hasMembershipFee: false, hasDongbang: true }
-  const fetch = mockResponses(
-    decisions({ affiliationType: '중앙동아리', hasMembershipFee: 'false', hasDongbang: 'true' }),
-    rewritten('프로그래밍 초보자 교육'),
+function response(intent: unknown) {
+  return new Response(
+    JSON.stringify({
+      choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(intent) } }],
+    }),
   )
-
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: '프로그래밍 초보자 교육',
-    filters,
-  })
-
-  const [deciderUrl, deciderOptions] = fetch.mock.calls[0]
-  const [deepseekUrl, deepseekOptions] = fetch.mock.calls[1]
-  expect(deciderUrl).toBe('https://api.perplexity.ai/v1/decisions')
-  expect(deepseekUrl).toBe('https://api.deepseek.com/chat/completions')
-  expect(JSON.parse(deciderOptions.body)).toMatchObject({
-    state: query,
-    model: 'pplx-decider-v1.2',
-  })
-  const request = JSON.parse(deepseekOptions.body)
-  expect(JSON.parse(request.messages[1].content)).toEqual({ query, filters })
-  expect(request.messages[0].content).toMatch(/json/i)
-  expect(deepseekOptions.signal).toBe(deciderOptions.signal)
-})
-
-it('does not turn unmentioned or uncertain conditions into false filters', async () => {
-  const result = decisions({ hasDongbang: 'true' })
-  result.answers.hasDongbang.confidence = 0.6
-  mockResponses(result, rewritten('INTP 성향'))
-
-  await expect(interpret('INTP한테 어울리는 동아리')).resolves.toEqual({
-    searchQuery: 'INTP 성향',
-    filters: {},
-  })
-})
-
-it('keeps false and all selected activity-period buckets', async () => {
-  mockResponses(decisions({ isRecruiting: 'false', minActivityPeriods: '0,1' }), rewritten('개발'))
-  await expect(interpret('모집 끝났고 한 학기만 활동 가능한 개발 동아리')).resolves.toEqual({
-    searchQuery: '개발',
-    filters: { isRecruiting: false, minActivityPeriods: ['0', '1'] },
-  })
-})
-
-it.each(['invalid-choice', 'missing-answer', 'invalid-confidence'])(
-  'rejects %s and leaves the original conditions for the rewriter',
-  async (problem) => {
-    const query = '회비 없이 개발 배우고 싶어'
-    const invalid = decisions({ hasMembershipFee: 'false' })
-    if (problem === 'invalid-choice') invalid.answers.hasMembershipFee.choice = 'free'
-    if (problem === 'missing-answer') delete invalid.answers.hasMembershipFee
-    if (problem === 'invalid-confidence') invalid.answers.hasMembershipFee.confidence = 2
-    const fetch = mockResponses(
-      invalid,
-      rewritten('회비 없는 소프트웨어 개발'),
-      decisions({ hasMembershipFee: 'false' }),
-      rewritten('소프트웨어 개발'),
-    )
-
-    await expect(interpret(query)).resolves.toEqual({
-      searchQuery: '회비 없는 소프트웨어 개발',
-      filters: {},
-    })
-    const rewriteInput = JSON.parse(JSON.parse(fetch.mock.calls[1][1].body).messages[1].content)
-    expect(rewriteInput).toEqual({ query, filters: {} })
-
-    await expect(interpret(query)).resolves.toEqual({
-      searchQuery: '소프트웨어 개발',
-      filters: { hasMembershipFee: false },
-    })
-    expect(fetch).toHaveBeenCalledTimes(4)
-  },
-)
-
-it('keeps accepted filters when DeepSeek fails, and retries on the next search', async () => {
-  const query = '동방 있는 음악 동아리'
-  const fetch = mockResponses(
-    decisions({ hasDongbang: 'true' }),
-    { choices: [{ finish_reason: 'length', message: { content: '{}' } }] },
-    decisions({ hasDongbang: 'true' }),
-    rewritten('음악'),
-  )
-
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: query,
-    filters: { hasDongbang: true },
-  })
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: '음악',
-    filters: { hasDongbang: true },
-  })
-  expect(fetch).toHaveBeenCalledTimes(4)
-})
-
-it('rejects filters returned by DeepSeek', async () => {
-  const query = '동방 있는 음악 동아리'
-  mockResponses(decisions({ hasDongbang: 'true' }), {
-    choices: [
-      {
-        finish_reason: 'stop',
-        message: { content: '{"searchQuery":"음악","filters":{"hasMembershipFee":false}}' },
-      },
-    ],
-  })
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: query,
-    filters: { hasDongbang: true },
-  })
-})
-
-it('shares normalized, simultaneous and repeated searches', async () => {
-  const fetch = mockResponses(decisions(), rewritten('소프트웨어 개발'))
-  const expected = { searchQuery: '소프트웨어 개발', filters: {} }
-  await expect(
-    Promise.all([interpret('  개발   동아리  '), interpret('개발 동아리')]),
-  ).resolves.toEqual([expected, expected])
-  await expect(interpret('개발 동아리')).resolves.toEqual(expected)
-  expect(fetch).toHaveBeenCalledTimes(2)
-})
+}
 
 it.each([
   ['춤', '댄스'],
   ['코딩', '프로그래밍'],
-])('preprocesses %s through both APIs even without spaces', async (query, searchQuery) => {
-  const fetch = mockResponses(decisions(), rewritten(searchQuery))
-  await expect(interpret(`  ${query}  `)).resolves.toEqual({ searchQuery, filters: {} })
-  expect(fetch).toHaveBeenCalledTimes(2)
-  expect(JSON.parse(fetch.mock.calls[0][1].body).state).toBe(query)
-})
-
-it('rewrites with no applied filters when Perplexity is not configured', async () => {
-  ENV.PERPLEXITY.API_KEY = ''
-  const query = '회비 없는 개발 동아리'
-  const fetch = mockResponses(rewritten('회비 없는 소프트웨어 개발'))
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: '회비 없는 소프트웨어 개발',
-    filters: {},
-  })
-  expect(fetch).toHaveBeenCalledTimes(1)
-  expect(JSON.parse(JSON.parse(fetch.mock.calls[0][1].body).messages[1].content)).toEqual({
-    query,
-    filters: {},
-  })
-})
-
-it('uses the original query with Decider filters when DeepSeek is not configured', async () => {
-  ENV.DEEPSEEK.API_KEY = ''
-  const query = '회비 없는 개발 동아리'
-  const fetch = mockResponses(decisions({ hasMembershipFee: 'false' }))
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: query,
-    filters: { hasMembershipFee: false },
-  })
-  expect(fetch).toHaveBeenCalledTimes(1)
-})
-
-it('does not start DeepSeek after the shared deadline has expired', async () => {
-  const controller = new AbortController()
-  const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal)
-  const fetch = vi.fn().mockImplementation(async () => {
-    controller.abort()
-    throw new DOMException('Timed out', 'TimeoutError')
-  })
+])('preprocesses %s even without spaces', async (query, searchQuery) => {
+  const intent = { searchQuery, filters: {} }
+  const fetch = vi.fn().mockResolvedValueOnce(response(intent))
   vi.stubGlobal('fetch', fetch)
 
-  const query = '동방 있는 음악 동아리'
-  await expect(interpret(query)).resolves.toEqual({ searchQuery: query, filters: {} })
-  expect(timeout).toHaveBeenCalledWith(3_000)
+  await expect(interpret(`  ${query}  `)).resolves.toEqual(intent)
   expect(fetch).toHaveBeenCalledTimes(1)
+  expect(JSON.parse(fetch.mock.calls[0][1].body).messages[1].content).toBe(query)
 })
 
-it('retries when the deadline expires after Decider has already returned filters', async () => {
-  const controller = new AbortController()
-  vi.spyOn(AbortSignal, 'timeout')
-    .mockReturnValueOnce(controller.signal)
-    .mockReturnValue(new AbortController().signal)
+it('rejects invalid filter types and retries instead of caching the fallback', async () => {
+  const query = '회비 없이 개발 배우고 싶어'
+  const intent = { searchQuery: '소프트웨어 개발', filters: { hasMembershipFee: false } }
   const fetch = vi
     .fn()
-    .mockImplementationOnce(async () => {
-      controller.abort()
-      return Response.json(decisions({ hasDongbang: 'true' }))
-    })
-    .mockResolvedValueOnce(Response.json(decisions({ hasDongbang: 'true' })))
-    .mockResolvedValueOnce(Response.json(rewritten('음악')))
+    .mockResolvedValueOnce(response({ ...intent, filters: { hasMembershipFee: 'false' } }))
+    .mockResolvedValueOnce(response(intent))
   vi.stubGlobal('fetch', fetch)
+  vi.spyOn(console, 'error').mockImplementation(() => {})
 
-  const query = '동방 있는 음악 동아리'
   await expect(interpret(query)).resolves.toEqual({
     searchQuery: query,
-    filters: { hasDongbang: true },
+    filters: {},
   })
-  await expect(interpret(query)).resolves.toEqual({
-    searchQuery: '음악',
-    filters: { hasDongbang: true },
-  })
-  expect(fetch).toHaveBeenCalledTimes(3)
+  await expect(interpret(query)).resolves.toEqual(intent)
+  expect(fetch).toHaveBeenCalledTimes(2)
 })
