@@ -70,7 +70,7 @@ export class SearchQueryService {
         WHERE uuid IN (${Prisma.join(candidates.map((club) => Prisma.sql`${club.uuid}::uuid`))})
           AND status = ${PUBLIC_CLUB_STATUS} AND deleted_at IS NULL
           AND embedding_model = ${EMBEDDING_VERSION} AND embedding IS NOT NULL
-          AND (embedding <=> ${vector}::vector) <= 0.75
+          AND (embedding <=> ${vector}::vector) <= 0.76
         ORDER BY embedding <=> ${vector}::vector ASC, uuid ASC
         LIMIT 20
       `
