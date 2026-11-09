@@ -90,8 +90,8 @@ export default function UpdateEmbeddingPage() {
           <p className="mt-10 text-sm font-semibold text-primary-700">Allclear Admin</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">검색 정보 갱신</h1>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            새로운 표현으로도 동아리를 찾을 수 있도록 소개 정보를 반영합니다. 한 달에 한 번
-            실행해주세요.
+            새로운 표현으로도 동아리를 찾을 수 있도록 동아리·모집·후기 정보를 반영합니다. 한 달에 한
+            번 실행해주세요.
           </p>
 
           <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6">

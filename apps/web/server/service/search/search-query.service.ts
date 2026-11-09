@@ -10,7 +10,7 @@ import {
   type Repository,
   type SelectQueryBuilder,
 } from 'typeorm'
-import { EMBEDDING_VERSION, embedQuery } from './embedding'
+import { embedQuery, SEARCH_EMBEDDING_VERSIONS } from './embedding'
 import type { SearchFilters } from './search.types'
 import { applySearchFilters } from './search-filter'
 
@@ -36,7 +36,9 @@ export class SearchQueryService {
     try {
       const qb = this.buildBaseQuery()
         .andWhere('club.embedding IS NOT NULL')
-        .andWhere('club.embedding_model = :embeddingModel', { embeddingModel: EMBEDDING_VERSION })
+        .andWhere('club.embedding_model IN (:...embeddingModels)', {
+          embeddingModels: SEARCH_EMBEDDING_VERSIONS,
+        })
       applySearchFilters(qb, filters)
       if (!(await qb.clone().getExists())) return []
 
