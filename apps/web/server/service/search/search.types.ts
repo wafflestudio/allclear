@@ -1,5 +1,4 @@
-import type { Club } from 'server/domain/model/Club'
-import type { ClubEntity } from 'server/infra/database/entities'
+import type { Club, ClubDomainSource } from 'server/domain/model/Club'
 
 export type ClubSearchResponse = {
   clubs: SearchClub[]
@@ -31,7 +30,7 @@ export type SearchOptions = {
 }
 
 export type SearchMatchedClub = {
-  entity: ClubEntity
+  entity: ClubDomainSource
   score?: number
   matchedBy?: 'name' | 'short_description' | 'college_major'
 }

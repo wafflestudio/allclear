@@ -24,6 +24,12 @@ pnpm android:debug
 
 환경 변수 파일은 저장소에 포함하지 않습니다. 각 앱의 `.env.example`을 복사해 로컬 환경에 맞게 설정하세요.
 
+웹 서버는 Prisma Client로 PostgreSQL에 연결합니다. 의존성을 설치한 직후나
+`apps/web/prisma/schema.prisma`를 변경한 뒤에는 저장소 루트에서
+`pnpm --dir apps/web prisma:generate`를 실행하세요. 평소에는 생성된 Client가 있으면
+`pnpm dev:web`만 실행하면 됩니다. 웹 빌드는 Client를 자동 생성하며, Client 생성은
+DB 스키마를 변경하지 않습니다. DB 변경은 별도의 Prisma migration으로 관리합니다.
+
 ## 검사
 
 ```bash

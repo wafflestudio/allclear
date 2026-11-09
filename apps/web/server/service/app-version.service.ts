@@ -1,8 +1,8 @@
-import { BadRequestError, NotFoundError } from 'server/domain/error'
-import { type AppClientType, AppVersionPolicyEntity } from 'server/infra/database/entities'
+import type { AppClientType } from 'server/domain/constants/app-client-type'
+import { NotFoundError } from 'server/domain/error'
+import { getPrismaClient } from 'server/infra/database/prisma'
 import { getRedisClient } from 'server/infra/redis/client'
-import { InjectRepository, Service } from 'server/provider'
-import type { Repository } from 'typeorm'
+import { Service } from 'server/provider'
 
 const APP_VERSION_POLICY_CACHE_TTL_SECONDS = 24 * 60 * 60
 const STORE_URLS: Record<AppClientType, string> = {
@@ -49,9 +49,6 @@ function compareVersions(left: string, right: string): number {
 
 @Service
 export class AppVersionService {
-  @InjectRepository(AppVersionPolicyEntity)
-  private readonly appVersionPolicyRepository: Repository<AppVersionPolicyEntity>
-
   async checkVersion(
     clientType: AppClientType,
     appVersion: string,
@@ -66,18 +63,30 @@ export class AppVersionService {
   }
 
   async upsertPolicy(policy: AppVersionPolicyUpdate): Promise<AppVersionPolicy> {
-    await this.appVersionPolicyRepository.upsert(policy, {
-      conflictPaths: ['clientType'],
-      skipUpdateIfNoValuesChanged: true,
+    const prisma = getPrismaClient()
+    const existing = await prisma.app_version_policy.findUnique({
+      where: { client_type: policy.clientType },
     })
-    await this.deleteCachedPolicy(policy.clientType)
-    const savedPolicy = await this.appVersionPolicyRepository.findOneBy({
-      clientType: policy.clientType,
-    })
-    if (!savedPolicy) {
-      throw new BadRequestError('failed to save app version policy')
+    let savedVersion = existing?.min_supported_version ?? policy.minSupportedVersion
+    if (!existing || existing.min_supported_version !== policy.minSupportedVersion) {
+      const savedPolicy = await prisma.app_version_policy.upsert({
+        where: { client_type: policy.clientType },
+        create: {
+          client_type: policy.clientType,
+          min_supported_version: policy.minSupportedVersion,
+        },
+        update: {
+          min_supported_version: policy.minSupportedVersion,
+          updated_at: new Date(),
+        },
+      })
+      savedVersion = savedPolicy.min_supported_version
     }
-    return this.toPolicy(savedPolicy)
+    await this.deleteCachedPolicy(policy.clientType)
+    return {
+      clientType: policy.clientType,
+      minSupportedVersion: savedVersion,
+    }
   }
 
   private async getPolicy(clientType: AppClientType): Promise<AppVersionPolicy> {
@@ -86,21 +95,19 @@ export class AppVersionService {
       return cachedPolicy
     }
 
-    const policy = await this.appVersionPolicyRepository.findOneBy({ clientType })
+    const policy = await getPrismaClient().app_version_policy.findUnique({
+      where: { client_type: clientType },
+    })
     if (!policy) {
       throw new NotFoundError('app version policy not found')
     }
 
-    const result = this.toPolicy(policy)
+    const result = {
+      clientType,
+      minSupportedVersion: policy.min_supported_version,
+    }
     await this.cachePolicy(result)
     return result
-  }
-
-  private toPolicy(policy: AppVersionPolicyEntity): AppVersionPolicy {
-    return {
-      clientType: policy.clientType,
-      minSupportedVersion: policy.minSupportedVersion,
-    }
   }
 
   private async getCachedPolicy(clientType: AppClientType): Promise<AppVersionPolicy | null> {

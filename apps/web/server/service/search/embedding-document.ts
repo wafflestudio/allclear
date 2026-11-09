@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { Parser } from 'htmlparser2'
+import { Prisma } from 'server/infra/database/generated/prisma/client'
 
 type Json = string | number | boolean | null | Json[] | { [key: string]: Json }
 
@@ -8,12 +9,12 @@ export type ClubEmbeddingSource = {
   document: Json
   embedding_model: string | null
   embedding_source_hash: string | null
-  embedding_updated_at: string | null
+  embedding_updated_at: Date | null
   has_embedding: boolean
 }
 
 // 공개된 업무 정보만 선택합니다. 식별자·관리 기록·임베딩 자체는 입력에 넣지 않습니다.
-export const EMBEDDING_SOURCE_QUERY = `
+export const EMBEDDING_SOURCE_QUERY = Prisma.sql`
   SELECT c.uuid, c.embedding_model, c.embedding_source_hash, c.embedding_updated_at,
          c.embedding IS NOT NULL AS has_embedding,
          jsonb_build_object(

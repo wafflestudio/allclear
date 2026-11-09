@@ -1,11 +1,10 @@
 import { disassemble } from 'es-hangul'
 import leven from 'leven'
 import { PUBLIC_CLUB_STATUS } from 'server/domain/constants/club-status'
-import { ClubEntity } from 'server/infra/database/entities'
-import { InjectRepository, Service } from 'server/provider'
-import { IsNull, type Repository } from 'typeorm'
+import { getPrismaClient } from 'server/infra/database/prisma'
+import { Service } from 'server/provider'
 
-type ClubCorrectionSource = Pick<ClubEntity, 'name' | 'shortDescription'>
+type ClubCorrectionSource = { name: string; shortDescription: string | null }
 type CorrectionCandidate = {
   term: string
   normalizedTerm: string
@@ -14,9 +13,6 @@ type CorrectionCandidate = {
 
 @Service
 export class SearchTypoCorrectionService {
-  @InjectRepository(ClubEntity)
-  private readonly clubRepository: Repository<ClubEntity>
-
   async findCorrectedQuery(query: string): Promise<string | null> {
     if (query.trim().length < 2) {
       return null
@@ -27,18 +23,18 @@ export class SearchTypoCorrectionService {
       return null
     }
 
-    const clubs = await this.clubRepository.find({
-      select: {
-        name: true,
-        shortDescription: true,
-      },
+    const clubs = await getPrismaClient().club.findMany({
+      select: { name: true, short_description: true },
       where: {
         status: PUBLIC_CLUB_STATUS,
-        deletedAt: IsNull(),
+        deleted_at: null,
       },
     })
 
-    const candidateTerms = this.collectCorrectionCandidates(clubs, normalizedQuery.length)
+    const candidateTerms = this.collectCorrectionCandidates(
+      clubs.map((club) => ({ name: club.name, shortDescription: club.short_description })),
+      normalizedQuery.length,
+    )
 
     const bestCandidate = candidateTerms
       .map((candidate) => ({

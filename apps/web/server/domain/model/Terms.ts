@@ -1,4 +1,4 @@
-import type { TermsEntity } from '../../infra/database/entities'
+import type { termsModel } from '../../infra/database/generated/prisma/models/terms'
 
 export type Terms = {
   uuid: string
@@ -9,11 +9,11 @@ export type Terms = {
   isMandatory: boolean
 }
 
-export const toTermsDomain = (entity: TermsEntity): Terms => ({
+export const toTermsDomain = (entity: termsModel): Terms => ({
   uuid: entity.uuid,
-  termsKey: entity.termsKey,
+  termsKey: entity.terms_key,
   title: entity.title,
-  contentUrl: entity.contentUrl,
+  contentUrl: entity.content_url,
   version: entity.version,
-  isMandatory: entity.isMandatory,
+  isMandatory: entity.is_mandatory,
 })

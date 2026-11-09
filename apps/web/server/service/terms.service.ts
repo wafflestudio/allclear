@@ -1,45 +1,27 @@
-import type { Repository } from 'typeorm'
 import { BadRequestError } from '../domain/error'
 import { type Terms, toTermsDomain } from '../domain/model/Terms'
-import { TermsAgreementEntity, TermsEntity } from '../infra/database/entities'
-import { InjectRepository, Service } from '../provider'
+import { getPrismaClient } from '../infra/database/prisma'
+import { Service } from '../provider'
 
 @Service
 export class TermsService {
-  @InjectRepository(TermsEntity)
-  private readonly termsRepository: Repository<TermsEntity>
-  @InjectRepository(TermsAgreementEntity)
-  private readonly termsAgreementRepository: Repository<TermsAgreementEntity>
-
   async listUnagreedTerms(userId: string): Promise<Terms[]> {
-    const agreements = await this.termsAgreementRepository.findBy({
-      userId,
+    const terms = await getPrismaClient().terms.findMany({
+      where: {
+        active: true,
+        terms_agreement: { none: { user_id: userId } },
+      },
+      orderBy: { created_at: 'desc' },
     })
-    const agreedTermsIds = agreements.map((agreement) => agreement.termsId)
-
-    const query = this.termsRepository
-      .createQueryBuilder('terms')
-      .where('terms.active = true')
-      .orderBy('terms.created_at', 'DESC')
-
-    if (agreedTermsIds.length > 0) {
-      query.andWhere('terms.id NOT IN (:...agreedTermsIds)', {
-        agreedTermsIds,
-      })
-    }
-
-    const entities = await query.getMany()
-    return entities.map(toTermsDomain)
+    return terms.map(toTermsDomain)
   }
 
   async agreeToTerms(userId: string, termUuids: string[]): Promise<void> {
     const uniqueTermUuids = [...new Set(termUuids)]
 
-    const terms = await this.termsRepository.find({
-      where: uniqueTermUuids.map((uuid) => ({
-        uuid,
-        active: true,
-      })),
+    const prisma = getPrismaClient()
+    const terms = await prisma.terms.findMany({
+      where: { uuid: { in: uniqueTermUuids }, active: true },
     })
 
     if (terms.length !== uniqueTermUuids.length) {
@@ -50,18 +32,9 @@ export class TermsService {
       return
     }
 
-    await this.termsAgreementRepository
-      .createQueryBuilder()
-      .insert()
-      .into(TermsAgreementEntity)
-      .values(
-        terms.map((terms) => ({
-          userId,
-          termsId: terms.id,
-          agreedAt: new Date().toISOString(),
-        })),
-      )
-      .orIgnore()
-      .execute()
+    await prisma.terms_agreement.createMany({
+      data: terms.map((term) => ({ user_id: userId, terms_id: term.id })),
+      skipDuplicates: true,
+    })
   }
 }

@@ -1,7 +1,6 @@
 import { ENV } from 'server/ENV'
-import { ClubEntity } from 'server/infra/database/entities'
-import { InjectRepository, Service } from 'server/provider'
-import type { Repository } from 'typeorm'
+import { getPrismaClient } from 'server/infra/database/prisma'
+import { Service } from 'server/provider'
 import { createEmbeddings, EMBEDDING_VERSION } from './embedding'
 import {
   type ClubEmbeddingSource,
@@ -17,16 +16,13 @@ const needsUpdate = (club: ClubEmbeddingSource) =>
 
 @Service
 export class EmbeddingUpdateService {
-  @InjectRepository(ClubEntity)
-  private readonly repository: Repository<ClubEntity>
-
   async status() {
-    const clubs: ClubEmbeddingSource[] = await this.repository.query(EMBEDDING_SOURCE_QUERY)
+    const clubs = await getPrismaClient().$queryRaw<ClubEmbeddingSource[]>(EMBEDDING_SOURCE_QUERY)
     const pending = clubs.filter(needsUpdate).length
     const updatedAt = clubs
       .map((club) => club.embedding_updated_at)
-      .filter((date): date is string => !!date)
-      .map((date) => new Date(date).getTime())
+      .filter((date): date is Date => date !== null)
+      .map((date) => date.getTime())
 
     return {
       total: clubs.length,
@@ -38,10 +34,12 @@ export class EmbeddingUpdateService {
   }
 
   async updateBatch(cursor: string | null) {
-    const clubs: ClubEmbeddingSource[] = await this.repository.query(
-      `${EMBEDDING_SOURCE_QUERY} AND ($1::uuid IS NULL OR c.uuid > $1::uuid) ORDER BY c.uuid LIMIT 20`,
-      [cursor],
-    )
+    const prisma = getPrismaClient()
+    const clubs = await prisma.$queryRaw<ClubEmbeddingSource[]>`
+      ${EMBEDDING_SOURCE_QUERY}
+      AND (${cursor}::uuid IS NULL OR c.uuid > ${cursor}::uuid)
+      ORDER BY c.uuid LIMIT 20
+    `
     const changed = clubs.filter(needsUpdate)
     let updated = 0
     let tokens = 0
@@ -49,32 +47,30 @@ export class EmbeddingUpdateService {
     if (changed.length) {
       const result = await createEmbeddings(changed.map(embeddingText))
       tokens = result.tokens
-      await this.repository.manager.transaction(async (manager) => {
-        for (const [index, club] of changed.entries()) {
-          // 동시 갱신을 직렬화한 후 모집·모임·후기를 포함한 전체 입력을 다시 확인합니다.
-          await manager.query('SELECT uuid FROM public.club WHERE uuid = $1 FOR UPDATE', [
-            club.uuid,
-          ])
-          const [current]: ClubEmbeddingSource[] = await manager.query(
-            `${EMBEDDING_SOURCE_QUERY} AND c.uuid = $1`,
-            [club.uuid],
-          )
-          const hash = sourceHash(club)
-          if (!current || !needsUpdate(current) || sourceHash(current) !== hash) continue
+      await prisma.$transaction(
+        async (tx) => {
+          for (const [index, club] of changed.entries()) {
+            // 동시 갱신을 직렬화한 후 모집·모임·후기를 포함한 전체 입력을 다시 확인합니다.
+            await tx.$queryRaw`SELECT uuid FROM public.club WHERE uuid = ${club.uuid}::uuid FOR UPDATE`
+            const [current] = await tx.$queryRaw<ClubEmbeddingSource[]>`
+              ${EMBEDDING_SOURCE_QUERY} AND c.uuid = ${club.uuid}::uuid
+            `
+            const hash = sourceHash(club)
+            if (!current || !needsUpdate(current) || sourceHash(current) !== hash) continue
 
-          const saved: { uuid: string }[] = await manager.query(
-            `WITH saved AS (UPDATE public.club
-             SET embedding = $2::vector, embedding_model = $3,
-                 embedding_source_hash = $4, embedding_updated_at = NOW()
-             WHERE uuid = $1 AND status = 'APPROVED' AND deleted_at IS NULL
-               AND (embedding IS NULL OR embedding_model IS DISTINCT FROM $3
-                    OR embedding_source_hash IS DISTINCT FROM $4)
-             RETURNING uuid) SELECT uuid FROM saved`,
-            [club.uuid, JSON.stringify(result.vectors[index]), EMBEDDING_VERSION, hash],
-          )
-          updated += saved.length
-        }
-      })
+            updated += await tx.$executeRaw`
+              UPDATE public.club
+              SET embedding = ${JSON.stringify(result.vectors[index])}::vector,
+                  embedding_model = ${EMBEDDING_VERSION},
+                  embedding_source_hash = ${hash}, embedding_updated_at = NOW()
+              WHERE uuid = ${club.uuid}::uuid AND status = 'APPROVED' AND deleted_at IS NULL
+                AND (embedding IS NULL OR embedding_model IS DISTINCT FROM ${EMBEDDING_VERSION}
+                     OR embedding_source_hash IS DISTINCT FROM ${hash})
+            `
+          }
+        },
+        { timeout: 30_000 },
+      )
     }
 
     return {

@@ -3,11 +3,10 @@ import { LRUCache } from 'lru-cache'
 import { ENV } from 'server/ENV'
 import { z } from 'zod'
 
-export const EMBEDDING_MODEL = 'text-embedding-3-small'
+export const EMBEDDING_MODEL = 'text-embedding-3-large'
+// large의 dimensions 옵션으로 기존 DB의 vector(1536)을 사용합니다.
 export const EMBEDDING_DIMENSIONS = 1536
-export const EMBEDDING_VERSION = `${EMBEDDING_MODEL}:1536:v2`
-// 같은 모델의 기존 벡터도 수동 갱신이 완료될 때까지 검색에 사용합니다.
-export const SEARCH_EMBEDDING_VERSIONS = [EMBEDDING_VERSION, `${EMBEDDING_MODEL}:1536:v1`]
+export const EMBEDDING_VERSION = `${EMBEDDING_MODEL}:${EMBEDDING_DIMENSIONS}:v2`
 
 const tokenizer = getEncoding('cl100k_base')
 const CHUNK_TOKENS = 8191

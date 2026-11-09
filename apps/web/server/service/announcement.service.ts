@@ -1,57 +1,42 @@
-import type { Repository } from 'typeorm'
 import { BadRequestError } from '../domain/error'
 import { type Announcement, toAnnouncementDomain } from '../domain/model/Announcement'
-import { AnnouncementDismissEntity, AnnouncementEntity } from '../infra/database/entities'
-import { Inject, InjectRepository, Service } from '../provider'
+import { getPrismaClient } from '../infra/database/prisma'
+import { Inject, Service } from '../provider'
 import { UserService } from './user.service'
 
 @Service
 export class AnnouncementService {
-  @InjectRepository(AnnouncementEntity)
-  private readonly announcementRepository: Repository<AnnouncementEntity>
-  @InjectRepository(AnnouncementDismissEntity)
-  private readonly announcementDismissRepository: Repository<AnnouncementDismissEntity>
   @Inject(UserService)
   private readonly userService: UserService
 
   async listVisibleAnnouncements(accountId?: string | null): Promise<Announcement[]> {
-    let dismissedAnnouncementIds: number[] = []
+    let userId: string | undefined
 
     if (accountId) {
       const user = await this.userService.getUserByAccountId(accountId)
-      const dismisses = await this.announcementDismissRepository.findBy({
-        userId: user.id,
-      })
-      dismissedAnnouncementIds = dismisses.map((dismiss) => dismiss.announcementId)
+      userId = user.id
     }
 
-    const query = this.announcementRepository
-      .createQueryBuilder('announcement')
-      .where('announcement.active = true')
-      .andWhere('announcement.start_at <= NOW()')
-      .andWhere('(announcement.end_at IS NULL OR announcement.end_at >= NOW())')
-      .orderBy('announcement.start_at', 'DESC')
-      .addOrderBy('announcement.created_at', 'DESC')
-
-    if (dismissedAnnouncementIds.length > 0) {
-      query.andWhere('announcement.id NOT IN (:...dismissedAnnouncementIds)', {
-        dismissedAnnouncementIds,
-      })
-    }
-
-    const entities = await query.getMany()
-    return entities.map(toAnnouncementDomain)
+    const now = new Date()
+    const announcements = await getPrismaClient().announcement.findMany({
+      where: {
+        active: true,
+        start_at: { lte: now },
+        OR: [{ end_at: null }, { end_at: { gte: now } }],
+        ...(userId ? { announcement_dismiss: { none: { user_id: userId } } } : {}),
+      },
+      orderBy: [{ start_at: 'desc' }, { created_at: 'desc' }],
+    })
+    return announcements.map(toAnnouncementDomain)
   }
 
   async dismissAnnouncements(accountId: string, announcementUuids: string[]): Promise<void> {
     const user = await this.userService.getUserByAccountId(accountId)
     const uniqueAnnouncementUuids = [...new Set(announcementUuids)]
 
-    const announcements = await this.announcementRepository.find({
-      where: uniqueAnnouncementUuids.map((uuid) => ({
-        uuid,
-        active: true,
-      })),
+    const prisma = getPrismaClient()
+    const announcements = await prisma.announcement.findMany({
+      where: { uuid: { in: uniqueAnnouncementUuids }, active: true },
     })
 
     if (announcements.length !== uniqueAnnouncementUuids.length) {
@@ -62,18 +47,12 @@ export class AnnouncementService {
       return
     }
 
-    await this.announcementDismissRepository
-      .createQueryBuilder()
-      .insert()
-      .into(AnnouncementDismissEntity)
-      .values(
-        announcements.map((announcement) => ({
-          announcementId: announcement.id,
-          userId: user.id,
-          dismissedAt: new Date().toISOString(),
-        })),
-      )
-      .orIgnore()
-      .execute()
+    await prisma.announcement_dismiss.createMany({
+      data: announcements.map((announcement) => ({
+        announcement_id: announcement.id,
+        user_id: user.id,
+      })),
+      skipDuplicates: true,
+    })
   }
 }

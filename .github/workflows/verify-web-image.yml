@@ -1,0 +1,51 @@
+name: Verify web image
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - apps/web/**
+      - apps/web-migrator/**
+      - package.json
+      - pnpm-lock.yaml
+      - pnpm-workspace.yaml
+      - turbo.json
+      - biome.json
+      - .dockerignore
+      - .github/workflows/_deploy-web.yml
+      - .github/workflows/deploy-web-prod.yml
+      - .github/gitops/allclear-prod-prisma-migrate.yaml
+      - .github/scripts/update-gitops-web-with-migration.sh
+      - .github/workflows/verify-web-image.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-24.04-arm
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5.0.1
+
+      - name: Build ARM64 web image
+        run: |
+          docker build \
+            --file apps/web/Dockerfile \
+            --platform linux/arm64 \
+            --tag allclear-web:prisma-verify \
+            .
+
+      - name: Validate Prisma migration runner
+        run: |
+          docker run --rm \
+            --platform linux/arm64 \
+            --workdir /app/prisma-migrator \
+            --entrypoint /app/prisma-migrator/node_modules/.bin/prisma \
+            allclear-web:prisma-verify \
+            validate
