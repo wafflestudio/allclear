@@ -5,8 +5,8 @@ import { ENV } from 'server/ENV'
 import { z } from 'zod'
 
 export const EMBEDDING_MODEL = 'text-embedding-3-large'
-// large의 dimensions 옵션으로 기존 DB의 vector(1536)을 사용합니다.
-export const EMBEDDING_DIMENSIONS = 1536
+// large의 기본 차원. Prisma 스키마의 vector(3072)와 일치해야 합니다.
+export const EMBEDDING_DIMENSIONS = 3072
 export const EMBEDDING_VERSION = `${EMBEDDING_MODEL}:${EMBEDDING_DIMENSIONS}:v2`
 
 const tokenizer = getEncoding('cl100k_base')

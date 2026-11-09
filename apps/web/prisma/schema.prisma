@@ -115,7 +115,7 @@ model club {
   founded_at            DateTime?                    @db.Date
   sns_urls              Json                         @default("[]")
   activity_image_urls   Json                         @default("[]")
-  embedding             Unsupported("vector(1536)")?
+  embedding             Unsupported("vector(3072)")?
   embedding_model       String?
   embedding_source_hash String?
   embedding_updated_at  DateTime?                    @db.Timestamptz(6)

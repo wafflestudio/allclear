@@ -26,12 +26,13 @@ pnpm dev:web
 
 ## AI 검색
 
-1. Prisma migration `20261109143000_club_semantic_search`를 적용합니다.
+1. Prisma migration `20261109143000_club_semantic_search`와
+   `20261110000000_club_embedding_3072`를 순서대로 적용합니다.
 2. 서버 환경 변수 `OPEN_AI_KEY`를 설정합니다. 로컬은 `.env.local`을 사용합니다.
 3. `/admin`의 **검색 정보 갱신** 버튼에서 최초 생성 후 월 1회 갱신합니다.
 
 `schema.prisma`의 `club`에 `embedding`, `embedding_model`, `embedding_source_hash`,
-`embedding_updated_at`을 선언합니다. `vector(1536)`은 `Unsupported` 타입으로 관리하고,
+`embedding_updated_at`을 선언합니다. `vector(3072)`는 `Unsupported` 타입으로 관리하고,
 벡터 저장·거리 계산은 Prisma의 파라미터 바인딩된 `$executeRaw` / `$queryRaw`로 실행합니다.
 일반 조회와 검색 필터는 Prisma Client를 사용합니다.
 
@@ -40,6 +41,41 @@ DB 변경은 저장소 루트에서 `pnpm --dir apps/web exec prisma migrate dep
 Prisma PreSync 작업이 migration을 실행합니다. 개발 배포에는 자동 migration이 없으므로
 개발 DB에도 새 앱 배포 전에 적용해야 합니다. `prisma:generate`는 Client 코드만 생성하며
 DB를 변경하지 않습니다. 과거 수동 SQL로 네 컬럼을 만든 DB도 이번 migration을 적용할 수 있습니다.
+
+### 1536 → 3072차원 전환
+
+기존 migration은 수정하지 않고 `20261110000000_club_embedding_3072`를 추가했습니다.
+새 migration은 `club.embedding`을 `vector(3072)`로 바꾸면서 기존 벡터와 모델·문서 해시·
+갱신 시각을 NULL로 초기화합니다. 동아리 원문은 유지됩니다. 기존 1536차원 벡터를
+3072차원으로 복원할 수 없으므로 API로 전체 임베딩을 다시 생성해야 합니다.
+
+1. 실행 중인 관리자 임베딩 갱신을 완료하거나 중지합니다.
+2. 아래 명령을 저장소 루트에서 실행합니다. `prisma.config.ts`가 읽는
+   `apps/web/.env.local` 또는 실행 환경의 `DB_HOST`, `DB_PORT`, `DB_USERNAME`,
+   `DB_PASSWORD`, `DB_NAME`이 적용할 DB를 가리키는지 확인합니다.
+
+   ```bash
+   pnpm --dir apps/web prisma:validate
+   pnpm --dir apps/web exec prisma migrate status
+   pnpm --dir apps/web exec prisma migrate deploy
+   pnpm --dir apps/web prisma:generate
+   ```
+
+3. 새 앱을 배포하거나 로컬 서버를 재시작합니다. 이때 검색어 임베딩 캐시도 초기화됩니다.
+4. `/admin`의 **검색 정보 갱신**을 실행해 전체 임베딩을 재생성합니다.
+   재생성이 끝나기 전에는 아직 처리되지 않은 동아리가 의미 검색 결과에 포함되지 않습니다.
+   문자열 검색은 계속 사용할 수 있습니다.
+
+이번 변경의 SQL은 이미 작성되어 있으므로 별도 `migrate dev` 실행은 필요하지 않습니다.
+이후 새로운 스키마 변경을 작성할 때는 개발 DB에서 `prisma migrate dev --create-only --name ...`로
+초안을 만들고 필요한 SQL을 편집합니다. 이 프로젝트의 Prisma 7 기준
+[사용자 정의 migration 문서](https://www.prisma.io/docs/orm/v7/prisma-migrate/workflows/customizing-migrations)를 참고합니다.
+
+현재 의미 검색은 벡터 인덱스 없이 코사인 거리를 계산합니다. `vector(3072)` 저장과 거리 계산은
+가능하지만, `vector`의 HNSW/IVFFlat 인덱스는 최대 2000차원이므로 향후 인덱스를 추가할 때는
+`halfvec(3072)` 표현식 인덱스 등 별도 설계가 필요합니다. [pgvector 문서](https://github.com/pgvector/pgvector#what-if-i-want-to-index-vectors-with-more-than-2000-dimensions)
+
+### 검색 API와 갱신 동작
 
 | API | 동작 |
 | --- | --- |
@@ -87,14 +123,16 @@ URL에서 선택한 필터를 우선하고, 지원하지 않는 조건은 검색
 내용은 가져오지 않으며, 식별자·내부 심사 기록·후기 작성자는 제외합니다. 모집 기간·회비 같은
 정확한 조건은 SQL 필터로 판단합니다.
 
-모델은 `text-embedding-3-large`, 차원은 1536, 입력 버전은 `v2`입니다. 8191토큰을 넘으면
-모든 조각을 길이로 가중 합산해 단위 벡터로 만듭니다. 여러 주제를 하나의 벡터에 담으므로
+모델은 `text-embedding-3-large`, 차원은 기본값인 3072, 입력 버전은 `v2`입니다.
+[OpenAI 공식 임베딩 문서](https://developers.openai.com/api/docs/guides/embeddings)
+
+8191토큰을 넘으면 모든 조각을 길이로 가중 합산해 단위 벡터로 만듭니다. 여러 주제를 하나의 벡터에 담으므로
 개별 주제의 검색 신호는 약해질 수 있습니다. 의미 검색의 유사도 기준은 0.24입니다.
 
 관리자 API `GET/POST /api/v2/admin/clubs/embeddings`가 20개씩 처리합니다. 모델·입력 버전이나
 문서 해시가 달라진 동아리를 갱신하며, 저장 전 재조회에서 원문 변경이 확인되면 건너뜁니다.
-중단 후 다시 실행해도 저장된 배치는 유지됩니다. 이전 `small` 벡터는 사용하지 않으므로
-모델 변경 후에는 전체를 재생성해야 합니다.
+중단 후 다시 실행해도 저장된 배치는 유지됩니다. `text-embedding-3-large:3072:v2`와 일치하는
+벡터만 검색에 사용하므로 모델이나 차원을 변경한 후에는 전체를 재생성해야 합니다.
 
 검색어 벡터는 최대 500개, 24시간 캐시합니다. API 오류 시에는 문자열 검색을 제공합니다.
 앱은 DB 스키마를 변경하거나 갱신 배치를 자동 실행하지 않습니다.
