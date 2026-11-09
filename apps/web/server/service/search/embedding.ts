@@ -1,4 +1,5 @@
 import { getEncoding } from 'js-tiktoken'
+import { chunk } from 'lodash-es'
 import { LRUCache } from 'lru-cache'
 import { ENV } from 'server/ENV'
 import { z } from 'zod'
@@ -12,6 +13,64 @@ const tokenizer = getEncoding('cl100k_base')
 const CHUNK_TOKENS = 8191
 // 최대 262,112토큰: 요청당 300,000토큰 한도 안에서 처리합니다.
 const CHUNKS_PER_REQUEST = 32
+
+export async function createEmbeddings(input: string[], timeoutMs = 30_000) {
+  if (!ENV.OPENAI.API_KEY) throw new Error('OPEN_AI_KEY가 설정되지 않았습니다.')
+  if (input.length === 0 || input.some((text) => !text.trim())) {
+    throw new Error('임베딩 입력이 비어 있습니다.')
+  }
+
+  const chunks = input.flatMap((text, documentIndex) =>
+    chunk(tokenizer.encode(text, [], []), CHUNK_TOKENS).map((tokens) => ({
+      documentIndex,
+      tokens,
+    })),
+  )
+  const sums: number[][] = input.map(() => Array(EMBEDDING_DIMENSIONS).fill(0))
+  let totalTokens = 0
+
+  for (const batch of chunk(chunks, CHUNKS_PER_REQUEST)) {
+    const result = await requestEmbeddings(
+      batch.map(({ tokens }) => tokens),
+      timeoutMs,
+    )
+    totalTokens += result.tokens
+
+    // 문서별로 조각 길이를 가중치로 더합니다. 정규화하면 가중 평균과 방향이 같습니다.
+    for (const [index, { documentIndex, tokens }] of batch.entries()) {
+      const sum = sums[documentIndex]
+      const vector = result.vectors[index]
+      for (let dimension = 0; dimension < sum.length; dimension++) {
+        sum[dimension] += vector[dimension] * tokens.length
+      }
+    }
+  }
+
+  return { vectors: sums.map(normalizeVector), tokens: totalTokens }
+}
+
+const queryCache = new LRUCache<string, Promise<number[]>>({ max: 500, ttl: 86_400_000 })
+
+export async function embedQuery(query: string): Promise<number[]> {
+  const text = query.trim().replace(/\s+/g, ' ')
+  const cached = queryCache.get(text)
+  if (cached) return cached
+
+  const pending = createEmbeddings([text], 8_000)
+    .then(({ vectors }) => vectors[0])
+    .catch((error) => {
+      queryCache.delete(text)
+      throw error
+    })
+  queryCache.set(text, pending)
+  return pending
+}
+
+function normalizeVector(vector: number[]): number[] {
+  const norm = Math.hypot(...vector)
+  if (!Number.isFinite(norm) || norm === 0) throw new Error('임베딩을 합칠 수 없습니다.')
+  return vector.map((value) => value / norm)
+}
 
 const responseSchema = z.object({
   data: z.array(
@@ -49,62 +108,4 @@ async function requestEmbeddings(input: number[][], timeoutMs: number) {
     throw new Error('임베딩 API 응답 형식이 올바르지 않습니다.')
   }
   return { vectors: rows.map((row) => row.embedding), tokens: result.usage.total_tokens }
-}
-
-export async function createEmbeddings(input: string[], timeoutMs = 30_000) {
-  if (!ENV.OPENAI.API_KEY) throw new Error('OPEN_AI_KEY가 설정되지 않았습니다.')
-  if (input.length === 0 || input.some((text) => !text.trim())) {
-    throw new Error('임베딩 입력이 비어 있습니다.')
-  }
-
-  const chunks = input.flatMap((text, owner) => {
-    const tokens = tokenizer.encode(text, [], [])
-    const parts: { owner: number; tokens: number[] }[] = []
-    for (let offset = 0; offset < tokens.length; offset += CHUNK_TOKENS) {
-      parts.push({ owner, tokens: tokens.slice(offset, offset + CHUNK_TOKENS) })
-    }
-    return parts
-  })
-  const vectors: number[][] = input.map(() => Array(EMBEDDING_DIMENSIONS).fill(0))
-  let tokens = 0
-
-  for (let offset = 0; offset < chunks.length; offset += CHUNKS_PER_REQUEST) {
-    const batch = chunks.slice(offset, offset + CHUNKS_PER_REQUEST)
-    const result = await requestEmbeddings(
-      batch.map((chunk) => chunk.tokens),
-      timeoutMs,
-    )
-    tokens += result.tokens
-    for (const [index, chunk] of batch.entries()) {
-      const vector = vectors[chunk.owner]
-      for (let dimension = 0; dimension < vector.length; dimension++) {
-        vector[dimension] += result.vectors[index][dimension] * chunk.tokens.length
-      }
-    }
-  }
-
-  // 조각 길이로 가중 평균한 뒤 정규화해 기존 vector(1536) 컬럼에 저장합니다.
-  for (const vector of vectors) {
-    const norm = Math.hypot(...vector)
-    if (!Number.isFinite(norm) || norm === 0) throw new Error('임베딩을 합칠 수 없습니다.')
-    for (let index = 0; index < vector.length; index++) vector[index] /= norm
-  }
-  return { vectors, tokens }
-}
-
-const queryCache = new LRUCache<string, Promise<number[]>>({ max: 500, ttl: 86_400_000 })
-
-export async function embedQuery(query: string): Promise<number[]> {
-  const text = query.trim().replace(/\s+/g, ' ')
-  const cached = queryCache.get(text)
-  if (cached) return cached
-
-  const pending = createEmbeddings([text], 8_000)
-    .then(({ vectors }) => vectors[0])
-    .catch((error) => {
-      queryCache.delete(text)
-      throw error
-    })
-  queryCache.set(text, pending)
-  return pending
 }
