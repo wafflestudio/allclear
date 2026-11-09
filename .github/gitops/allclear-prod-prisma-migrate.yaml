@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: allclear-web-prisma-migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      annotations:
+        sidecar.istio.io/inject: "false"
+    spec:
+      serviceAccountName: allclear
+      nodeSelector:
+        kubernetes.io/arch: arm64
+      restartPolicy: Never
+      containers:
+        - name: prisma-migrate
+          image: yny.ocir.io/ax1dvc8vmenm/allclear-prod/allclear-web
+          workingDir: /app/prisma-migrator
+          command:
+            - /app/prisma-migrator/node_modules/.bin/prisma
+            - migrate
+            - deploy
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: allclear-prod
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: allclear-prod
+                  key: DB_PORT
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: allclear-prod
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: allclear-prod
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: allclear-prod
+                  key: DB_NAME
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 1Gi

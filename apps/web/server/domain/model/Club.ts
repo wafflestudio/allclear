@@ -5,7 +5,6 @@ import {
 import { type ClubStatus, PENDING_CLUB_STATUS } from 'server/domain/constants/club-status'
 import type { OfficialVerificationStatus } from 'server/domain/constants/official-verification-status'
 import { ENV } from '../../ENV'
-import type { ClubEntity } from '../../infra/database/entities'
 import type { CollegeMajor } from './CollegeMajor'
 
 export type ClubManager = {
@@ -58,6 +57,35 @@ type ClubReviewSummary = {
   reviewKeywords: ReviewKeyword[]
 }
 
+/** Fields needed to build a club response from either persistence implementation. */
+export type ClubDomainSource = {
+  uuid: string
+  name: string
+  description: string
+  shortDescription: string
+  introduction: string | null
+  type: string
+  category: string
+  affiliationType: string
+  collegeMajorId: number | null
+  collegeMajor: { id: number; college: string | null; major: string | null } | null
+  recruitType: string | null
+  isOfficialVerified: boolean
+  verifiedAt: string | null
+  hasDongbang: boolean
+  dongbangLocation: string | null
+  minActivityPeriod: number
+  activeMemberCount: number
+  foundedAt: string | null
+  snsUrls: string[]
+  activityImageUrls: string[]
+  imageUri: string
+  article: string | null
+  articleUploadedAt: string | null
+  status: ClubStatus
+  rejectReason: string | null
+}
+
 export type Club = {
   // uuid와 동일한 필드. 기존의 id는 number 타입이었으나, string 타입으로 변경되었다.
   id: string
@@ -94,7 +122,7 @@ export type ClubDetail = Club & {
   officialVerificationStatus: OfficialVerificationStatus
 }
 
-export const toClubDomain = (it: ClubEntity, review?: ClubReviewSummary): Club => ({
+export const toClubDomain = (it: ClubDomainSource, review?: ClubReviewSummary): Club => ({
   id: it.uuid,
   uuid: it.uuid,
   name: it.name,
@@ -132,7 +160,7 @@ export const toClubDomain = (it: ClubEntity, review?: ClubReviewSummary): Club =
 })
 
 export const toClubDetailDomain = (
-  club: ClubEntity,
+  club: ClubDomainSource,
   review?: ClubReviewSummary,
   latestVerificationRequest?: {
     status: string
@@ -143,7 +171,7 @@ export const toClubDetailDomain = (
 })
 
 function getOfficialVerificationStatus(
-  club: ClubEntity,
+  club: ClubDomainSource,
   latestVerificationRequest?: { status: string } | null,
 ): OfficialVerificationStatus {
   if (club.isOfficialVerified) {

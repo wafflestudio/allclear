@@ -297,3 +297,6 @@ oci-vault-secrets.md
 
 
 .codex
+
+# Prisma Client is generated during build and CI.
+server/infra/database/generated/prisma/

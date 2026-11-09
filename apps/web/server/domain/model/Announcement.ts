@@ -1,4 +1,4 @@
-import type { AnnouncementEntity } from '../../infra/database/entities'
+import type { announcementModel } from '../../infra/database/generated/prisma/models/announcement'
 
 export type Announcement = {
   uuid: string
@@ -6,7 +6,7 @@ export type Announcement = {
   content: string
 }
 
-export const toAnnouncementDomain = (entity: AnnouncementEntity): Announcement => ({
+export const toAnnouncementDomain = (entity: announcementModel): Announcement => ({
   uuid: entity.uuid,
   title: entity.title,
   content: entity.content,

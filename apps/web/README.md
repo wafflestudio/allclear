@@ -13,12 +13,16 @@
 ## 처음 프로젝트 환경 셋업하기
 
 ```Bash
-git clone https://github.com/pado-corp/clubhouse-web.git
-cd clubhouse-web
+git clone https://github.com/wafflestudio/allclear.git
+cd allclear
 pnpm install
-pnpm husky install
-pnpm dev
+pnpm --dir apps/web prisma:generate
+pnpm dev:web
 ```
+
+위 명령은 저장소 루트에서 실행합니다. 이후에는 Prisma 스키마가 바뀌거나
+`node_modules`를 다시 설치한 경우에만 `prisma:generate`를 다시 실행하면 됩니다.
+`pnpm dev:web`은 DB migration을 실행하지 않습니다.
 
 ## 기술 스택 
 

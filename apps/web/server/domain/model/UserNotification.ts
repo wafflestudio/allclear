@@ -1,9 +1,23 @@
-import type {
-  UserNotificationEntity,
-  UserNotificationMetadata,
-  UserNotificationSourceType,
-  UserNotificationType,
-} from '../../infra/database/entities'
+import type { user_notificationModel } from '../../infra/database/generated/prisma/models/user_notification'
+import {
+  toDatabaseIdString,
+  toNullableTimestampString,
+  toTimestampString,
+} from '../../infra/database/prisma-mapping'
+
+export type UserNotificationType =
+  | 'CLUB_REGISTRATION_APPROVED'
+  | 'CLUB_REGISTRATION_REJECTED'
+  | 'MANAGER_REQUEST_APPROVED'
+  | 'MANAGER_REQUEST_REJECTED'
+  | 'MANAGER_TRANSFER_COMPLETED'
+
+export type UserNotificationSourceType = 'CLUB' | 'CLUB_MANAGER_REQUEST' | 'MANAGER_TRANSFER'
+
+export type UserNotificationMetadata = {
+  rejectReason?: string
+  clubName?: string
+}
 
 export type UserNotification = {
   id: string
@@ -16,13 +30,13 @@ export type UserNotification = {
   createdAt: string
 }
 
-export const toUserNotificationDomain = (entity: UserNotificationEntity): UserNotification => ({
-  id: entity.id,
-  type: entity.type,
-  clubId: entity.clubId,
-  sourceType: entity.sourceType,
-  sourceId: entity.sourceId,
-  metadata: entity.metadata,
-  readAt: entity.readAt,
-  createdAt: entity.createdAt,
+export const toUserNotificationDomain = (entity: user_notificationModel): UserNotification => ({
+  id: toDatabaseIdString(entity.id),
+  type: entity.type as UserNotificationType,
+  clubId: entity.club_id,
+  sourceType: entity.source_type as UserNotificationSourceType,
+  sourceId: entity.source_id,
+  metadata: entity.metadata as UserNotificationMetadata | null,
+  readAt: toNullableTimestampString(entity.read_at),
+  createdAt: toTimestampString(entity.created_at),
 })

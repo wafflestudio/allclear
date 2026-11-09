@@ -1,4 +1,4 @@
-import type { ClubEntity } from '../infra/database/entities'
+import type { ClubDomainSource } from '../domain/model/Club'
 import { Inject, Service } from '../provider'
 import {
   type ClubSearchResponse,
@@ -64,7 +64,10 @@ export class SearchService {
   }
 
   private async runSearch(query: string, options: SearchOptions): Promise<SearchClub[]> {
-    const entities: ClubEntity[] = await this.searchQueryService.search(query, options.filters)
+    const entities: ClubDomainSource[] = await this.searchQueryService.search(
+      query,
+      options.filters,
+    )
     const clubs = await this.hydratorService.toClubs(entities)
     return this.sortService.sort(clubs, query, options.sort ?? DEFAULT_SEARCH_SORT)
   }
