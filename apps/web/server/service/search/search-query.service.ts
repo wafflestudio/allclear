@@ -32,7 +32,7 @@ export class SearchQueryService {
   private findByText(query: string, filters: SearchFilters): Promise<ClubEntity[]> {
     const qb = this.buildBaseQuery()
     qb.andWhere(
-      '(club.name ILIKE :query OR club.short_description ILIKE :query OR club.description ILIKE :query)',
+      '(club.name ILIKE :query OR club.short_description ILIKE :query OR club.description ILIKE :query OR club.introduction ILIKE :query)',
       { query: `%${query}%` },
     )
 
