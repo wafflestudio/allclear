@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { prisma, toClubDomain } = vi.hoisted(() => ({
+const { prisma, toClubDomain, interpretSearchQuery } = vi.hoisted(() => ({
   prisma: {
     club: { findMany: vi.fn() },
     club_manager: { findMany: vi.fn() },
@@ -9,19 +9,54 @@ const { prisma, toClubDomain } = vi.hoisted(() => ({
     uuid: club.uuid,
     review,
   })),
+  interpretSearchQuery: vi.fn(),
 }))
 
 vi.mock('server/provider', () => ({ Service: () => undefined, Inject: () => () => undefined }))
 vi.mock('server/infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 vi.mock('server/domain/model/Club', () => ({ toClubDomain }))
 vi.mock('../club.service', () => ({ ClubService: class ClubService {} }))
+vi.mock('./search-intent', () => ({ interpretSearchQuery }))
 
 import type { ClubDomainSource } from 'server/domain/model/Club'
+import { SearchService } from '../search.service'
 import { SearchResultHydratorService } from './search-result-hydrator.service'
 import { SearchTypoCorrectionService } from './search-typo-correction.service'
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+it('applies interpreted filters to both searches while preserving explicit choices and the original query', async () => {
+  const service = new SearchService()
+  const query = '회비 없는 개발 동아리'
+  const search = vi.fn().mockResolvedValue([])
+  const searchSemantic = vi.fn().mockResolvedValue([])
+  const logSearch = vi.fn()
+  const findCorrectedQuery = vi.fn()
+  interpretSearchQuery.mockResolvedValue({
+    searchQuery: '소프트웨어 개발',
+    filters: { hasMembershipFee: false, hasDongbang: true },
+  })
+  Object.defineProperties(service, {
+    searchQueryService: { value: { search, searchSemantic } },
+    searchLogService: { value: { logSearch } },
+    typoCorrectionService: { value: { findCorrectedQuery } },
+    hydratorService: { value: { toClubs: vi.fn().mockResolvedValue([]) } },
+    sortService: { value: { sort: (clubs: unknown[]) => clubs } },
+  })
+
+  await expect(
+    service.searchWithTypoCorrection(query, {
+      filters: { hasMembershipFee: undefined, hasDongbang: false },
+    }),
+  ).resolves.toEqual({ clubs: [], correctedQuery: null, isTypoCorrected: false })
+
+  const filters = { hasMembershipFee: false, hasDongbang: false }
+  expect(search).toHaveBeenCalledWith('소프트웨어 개발', filters)
+  expect(searchSemantic).toHaveBeenCalledWith('소프트웨어 개발', filters)
+  expect(logSearch).toHaveBeenCalledWith(query)
+  expect(findCorrectedQuery).not.toHaveBeenCalled()
 })
 
 describe('SearchTypoCorrectionService with Prisma', () => {

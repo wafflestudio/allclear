@@ -6,6 +6,7 @@ import {
   type SearchClub,
   type SearchOptions,
 } from './search/search.types'
+import { interpretSearchQuery } from './search/search-intent'
 import { SearchLogService } from './search/search-log.service'
 import { SearchQueryService } from './search/search-query.service'
 import { SearchResultHydratorService } from './search/search-result-hydrator.service'
@@ -35,9 +36,20 @@ export class SearchService {
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
 
+    const intent = await interpretSearchQuery(query)
+    const searchQuery = intent.searchQuery
+    // URL에 명시한 필터가 문장에서 추출한 조건보다 우선합니다.
+    const selectedFilters = Object.fromEntries(
+      Object.entries(options.filters).filter(([, value]) => value !== undefined),
+    )
+    const searchOptions = {
+      ...options,
+      filters: { ...intent.filters, ...selectedFilters },
+    }
+
     const [clubs, semanticEntities] = await Promise.all([
-      this.runSearch(query, options),
-      this.searchQueryService.searchSemantic(query, options.filters),
+      this.runSearch(searchQuery, searchOptions),
+      this.searchQueryService.searchSemantic(searchQuery, searchOptions.filters),
     ])
     if (clubs.length > 0) {
       return {
@@ -47,9 +59,11 @@ export class SearchService {
       }
     }
 
-    const correctedQuery = await this.typoCorrectionService.findCorrectedQuery(query)
+    // 의도 변환은 오타 교정이 아닙니다. 모델이 만든 검색문을 다시 교정하지 않습니다.
+    const correctedQuery =
+      searchQuery === query ? await this.typoCorrectionService.findCorrectedQuery(query) : null
     if (correctedQuery && correctedQuery !== query) {
-      const correctedClubs = await this.runSearch(correctedQuery, options)
+      const correctedClubs = await this.runSearch(correctedQuery, searchOptions)
       if (correctedClubs.length > 0) {
         return {
           clubs: await this.appendSemantic(correctedClubs, semanticEntities),

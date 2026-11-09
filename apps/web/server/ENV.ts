@@ -15,6 +15,9 @@ export const ENV = {
   OPENAI: {
     API_KEY: process.env.OPEN_AI_KEY ?? process.env.open_ai_key ?? process.env.OPENAI_API_KEY ?? '',
   },
+  DEEPSEEK: {
+    API_KEY: process.env.DEEPSEEK_KEY ?? '',
+  },
   KAKAO: {
     CLIENT_ID: process.env.KAKAO_CLIENT_ID ?? '',
     CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET ?? '',

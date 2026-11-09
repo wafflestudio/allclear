@@ -44,6 +44,18 @@ DB를 변경하지 않습니다. 과거 수동 SQL로 네 컬럼을 만든 DB도
 사용자 검색은 기존 `/api/v2/clubs/search?query=컴공`을 사용합니다. 문자열 일치 결과
 뒤에 의미 검색 결과를 거리순으로 추가하며, 기존 필터와 응답 형식을 유지합니다.
 
+`DEEPSEEK_KEY`를 설정하면 여러 단어로 된 검색문을 먼저 해석합니다.
+[search-intent.ts](server/service/search/search-intent.ts)에서 DeepSeek의
+`deepseek-flash`를 비추론·JSON 출력 모드로 호출해 검색 주제와 명시적 필터를 분리합니다.
+예를 들어 `회비 없는 개발 동아리`는 `소프트웨어 개발`과 `hasMembershipFee: false`가 됩니다.
+URL에서 선택한 필터를 우선하고, 지원하지 않는 조건은 검색문에 남깁니다.
+한 단어 검색은 그대로 사용합니다. 응답과 검색 기록의 `query`는 원문을 유지하며,
+의도 변환을 오타 교정으로 표시하지 않습니다.
+
+변환 결과는 최대 500개, 24시간 캐시하며 동시 요청도 공유합니다. 키가 없거나
+3초 시간 초과·API 오류·잘못된 JSON 응답이 발생하면 원문으로 검색합니다.
+실패는 캐시하지 않습니다. [DeepSeek JSON 출력 문서](https://api-docs.deepseek.com/guides/json_mode/)
+
 갱신 코드는 다음 순서로 읽으면 됩니다.
 
 | 단계 | 코드 | 역할 |
