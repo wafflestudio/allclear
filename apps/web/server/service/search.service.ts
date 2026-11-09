@@ -35,9 +35,15 @@ export class SearchService {
     options: SearchOptions = { filters: {} },
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
+    return this.searchKeywords(query, options)
+  }
 
+  async searchWithAi(
+    query: string,
+    options: SearchOptions = { filters: {} },
+  ): Promise<ClubSearchResponse> {
+    this.searchLogService.logSearch(query)
     const intent = await interpretSearchQuery(query)
-    const searchQuery = intent.searchQuery
     // URL에 명시한 필터가 문장에서 추출한 조건보다 우선합니다.
     const selectedFilters = Object.fromEntries(
       Object.entries(options.filters).filter(([, value]) => value !== undefined),
@@ -47,26 +53,39 @@ export class SearchService {
       filters: { ...intent.filters, ...selectedFilters },
     }
 
-    const [clubs, semanticEntities] = await Promise.all([
-      this.runSearch(searchQuery, searchOptions),
-      this.searchQueryService.searchSemantic(searchQuery, searchOptions.filters),
+    const [result, semanticEntities] = await Promise.all([
+      // 의도 변환은 오타 교정이 아닙니다. 모델이 만든 검색문은 다시 교정하지 않습니다.
+      this.searchKeywords(intent.searchQuery, searchOptions, intent.searchQuery === query),
+      this.searchQueryService.searchSemantic(intent.searchQuery, searchOptions.filters),
     ])
+    return {
+      ...result,
+      clubs: await this.appendSemantic(result.clubs, semanticEntities),
+    }
+  }
+
+  private async searchKeywords(
+    query: string,
+    options: SearchOptions,
+    correctTypos = true,
+  ): Promise<ClubSearchResponse> {
+    const clubs = await this.runSearch(query, options)
     if (clubs.length > 0) {
       return {
-        clubs: await this.appendSemantic(clubs, semanticEntities),
+        clubs,
         correctedQuery: null,
         isTypoCorrected: false,
       }
     }
 
-    // 의도 변환은 오타 교정이 아닙니다. 모델이 만든 검색문을 다시 교정하지 않습니다.
-    const correctedQuery =
-      searchQuery === query ? await this.typoCorrectionService.findCorrectedQuery(query) : null
+    const correctedQuery = correctTypos
+      ? await this.typoCorrectionService.findCorrectedQuery(query)
+      : null
     if (correctedQuery && correctedQuery !== query) {
-      const correctedClubs = await this.runSearch(correctedQuery, searchOptions)
+      const correctedClubs = await this.runSearch(correctedQuery, options)
       if (correctedClubs.length > 0) {
         return {
-          clubs: await this.appendSemantic(correctedClubs, semanticEntities),
+          clubs: correctedClubs,
           correctedQuery,
           isTypoCorrected: true,
         }
@@ -74,7 +93,7 @@ export class SearchService {
     }
 
     return {
-      clubs: await this.appendSemantic([], semanticEntities),
+      clubs: [],
       correctedQuery: null,
       isTypoCorrected: false,
     }

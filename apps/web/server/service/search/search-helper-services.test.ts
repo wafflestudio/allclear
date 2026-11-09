@@ -27,6 +27,31 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
+it('keeps keyword search and typo correction independent of AI', async () => {
+  const service = new SearchService()
+  const clubs = [{ uuid: 'club-1' }]
+  const search = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce(clubs)
+  const searchSemantic = vi.fn()
+  const filters = { hasMembershipFee: false }
+  Object.defineProperties(service, {
+    searchQueryService: { value: { search, searchSemantic } },
+    searchLogService: { value: { logSearch: vi.fn() } },
+    typoCorrectionService: { value: { findCorrectedQuery: vi.fn().mockResolvedValue('music') } },
+    hydratorService: { value: { toClubs: (entities: unknown[]) => entities } },
+    sortService: { value: { sort: (results: unknown[]) => results } },
+  })
+
+  await expect(service.searchWithTypoCorrection('musc', { filters })).resolves.toEqual({
+    clubs,
+    correctedQuery: 'music',
+    isTypoCorrected: true,
+  })
+  expect(search).toHaveBeenNthCalledWith(1, 'musc', filters)
+  expect(search).toHaveBeenNthCalledWith(2, 'music', filters)
+  expect(interpretSearchQuery).not.toHaveBeenCalled()
+  expect(searchSemantic).not.toHaveBeenCalled()
+})
+
 it('applies interpreted filters to both searches while preserving explicit choices and the original query', async () => {
   const service = new SearchService()
   const query = '회비 없는 개발 동아리'
@@ -47,7 +72,7 @@ it('applies interpreted filters to both searches while preserving explicit choic
   })
 
   await expect(
-    service.searchWithTypoCorrection(query, {
+    service.searchWithAi(query, {
       filters: { hasMembershipFee: undefined, hasDongbang: false },
     }),
   ).resolves.toEqual({ clubs: [], correctedQuery: null, isTypoCorrected: false })

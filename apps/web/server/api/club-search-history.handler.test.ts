@@ -18,8 +18,7 @@ import handler from '../../pages/api/v2/clubs/search'
 async function request(query: NextApiRequest['query']) {
   const response = { status: vi.fn(), json: vi.fn(), send: vi.fn() }
   response.status.mockReturnValue(response)
-  const req = { method: 'GET', query, headers: { authorization: 'Bearer test-token' } }
-  await handler(req as NextApiRequest, response as unknown as NextApiResponse)
+  await handler({ method: 'GET', query } as NextApiRequest, response as unknown as NextApiResponse)
   return response
 }
 

@@ -24,7 +24,7 @@ pnpm dev:web
 `node_modules`를 다시 설치한 경우에만 `prisma:generate`를 다시 실행하면 됩니다.
 `pnpm dev:web`은 DB migration을 실행하지 않습니다.
 
-## 의미 검색
+## AI 검색
 
 1. Prisma migration `20261109143000_club_semantic_search`를 적용합니다.
 2. 서버 환경 변수 `OPEN_AI_KEY`를 설정합니다. 로컬은 `.env.local`을 사용합니다.
@@ -41,8 +41,16 @@ Prisma PreSync 작업이 migration을 실행합니다. 개발 배포에는 자�
 개발 DB에도 새 앱 배포 전에 적용해야 합니다. `prisma:generate`는 Client 코드만 생성하며
 DB를 변경하지 않습니다. 과거 수동 SQL로 네 컬럼을 만든 DB도 이번 migration을 적용할 수 있습니다.
 
-사용자 검색은 기존 `/api/v2/clubs/search?query=컴공`을 사용합니다. 문자열 일치 결과
-뒤에 의미 검색 결과를 거리순으로 추가하며, 기존 필터와 응답 형식을 유지합니다.
+| API | 동작 |
+| --- | --- |
+| `GET /api/v2/clubs/search?query=컴공` | 기존 문자열 검색과 오타 교정. AI 호출 없음 |
+| `GET /api/v2/clubs/ai-search?query=개발하기 좋은 동아리` | 검색문 전처리 후 문자열 검색과 의미 검색 |
+| `GET /api/v2/clubs/ai-search/intent?query=회비 없는 개발 동아리` | 전처리 JSON만 확인 |
+
+모든 API는 유효한 bearer token 또는 `x-guest-id` UUID 헤더가 필요하며, 검색문은
+1~200자입니다. 두 검색 API는 필터·응답 형식·최근 검색어 저장 규칙을 공유합니다.
+AI 검색은 문자열 일치 결과 뒤에 의미 검색 결과를 유사도순으로 추가합니다.
+웹과 앱의 기존 검색은 `/search`를 사용하며, AI 검색은 `/ai-search`로 별도 요청합니다.
 
 `DEEPSEEK_KEY`를 설정하면 여러 단어로 된 검색문을 먼저 해석합니다.
 [search-intent.ts](server/service/search/search-intent.ts)에서 DeepSeek의
@@ -55,6 +63,16 @@ URL에서 선택한 필터를 우선하고, 지원하지 않는 조건은 검색
 변환 결과는 최대 500개, 24시간 캐시하며 동시 요청도 공유합니다. 키가 없거나
 3초 시간 초과·API 오류·잘못된 JSON 응답이 발생하면 원문으로 검색합니다.
 실패는 캐시하지 않습니다. [DeepSeek JSON 출력 문서](https://api-docs.deepseek.com/guides/json_mode/)
+
+`/ai-search/intent`도 같은 전처리 함수를 사용하며, 검색·임베딩·검색 기록 저장은 실행하지 않습니다.
+예를 들어 `회비 없는 개발 동아리`의 응답은 다음과 같습니다.
+
+```json
+{
+  "searchQuery": "소프트웨어 개발",
+  "filters": { "hasMembershipFee": false }
+}
+```
 
 갱신 코드는 다음 순서로 읽으면 됩니다.
 
@@ -71,7 +89,7 @@ URL에서 선택한 필터를 우선하고, 지원하지 않는 조건은 검색
 
 모델은 `text-embedding-3-large`, 차원은 1536, 입력 버전은 `v2`입니다. 8191토큰을 넘으면
 모든 조각을 길이로 가중 합산해 단위 벡터로 만듭니다. 여러 주제를 하나의 벡터에 담으므로
-개별 주제의 검색 신호는 약해질 수 있습니다. 의미 검색의 유사도 기준은 0.25입니다.
+개별 주제의 검색 신호는 약해질 수 있습니다. 의미 검색의 유사도 기준은 0.24입니다.
 
 관리자 API `GET/POST /api/v2/admin/clubs/embeddings`가 20개씩 처리합니다. 모델·입력 버전이나
 문서 해시가 달라진 동아리를 갱신하며, 저장 전 재조회에서 원문 변경이 확인되면 건너뜁니다.

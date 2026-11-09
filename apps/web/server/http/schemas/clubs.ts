@@ -21,7 +21,7 @@ export const MinActivityPeriodFilterSchema = z.enum(['0', '1', '2', '3_plus'])
 
 export const ClubSearchQuerySchema = z
   .object({
-    query: z.string(),
+    query: z.string().trim().min(1).max(200),
     record_recent_search: z
       .enum(['true', 'false'])
       .optional()
@@ -37,6 +37,30 @@ export const ClubSearchQuerySchema = z
       .optional(),
   })
   .openapi('ClubSearchQuery')
+
+export const ClubSearchIntentQuerySchema = ClubSearchQuerySchema.pick({ query: true }).openapi(
+  'ClubSearchIntentQuery',
+)
+
+export const ClubSearchIntentSchema = z
+  .object({
+    searchQuery: z.string().trim().min(1).max(200),
+    filters: z
+      .object({
+        affiliationType: z.enum(['중앙동아리', '소속동아리', '기타']).optional(),
+        isRecruiting: z.boolean().optional(),
+        recruitType: z.enum(['정기', '상시']).optional(),
+        hasMembershipFee: z.boolean().optional(),
+        hasDongbang: z.boolean().optional(),
+        isOfficialVerified: z.boolean().optional(),
+        minActivityPeriods: z.array(MinActivityPeriodFilterSchema).min(1).max(4).optional(),
+      })
+      .strict(),
+  })
+  .strict()
+  .openapi('ClubSearchIntent')
+
+export type ClubSearchIntent = z.infer<typeof ClubSearchIntentSchema>
 
 export const UpdateClubReviewSchema = z
   .object({
