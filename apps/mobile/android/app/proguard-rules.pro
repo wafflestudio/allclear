@@ -12,7 +12,12 @@
 # Note: the configuration keeps the entry point 'okhttp3.internal.ws.WebSocketWriter$FrameSink { void write(okio.Buffer,long); }', but not the descriptor class 'okio.Buffer'
 -dontwarn okhttp3.**
 # https://github.com/luggit/react-native-config#problems-with-proguard
--keep class com.mypackage.BuildConfig { *; }
+# RNCConfig loads this class and its environment fields through reflection.
+-keep class com.padocorp.clubhouse.BuildConfig { *; }
+
+# RN 0.77 registers these JNI classes when loading its merged native library,
+# even with developer support disabled. Keep the connection and nested types.
+-keep class com.facebook.react.devsupport.CxxInspectorPackagerConnection* { *; }
 
 # https://github.com/crossplatformkorea/react-native-kakao-login
 -keep class com.kakao.sdk.**.model.* { <fields>; }
