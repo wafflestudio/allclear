@@ -32,7 +32,10 @@ export default async function handler(
     const searchService = Provider.getService(SearchService)
 
     if (req.method == 'GET') {
-      const auth = await resolveOptionalAuth(req)
+      const hasIdentity = ['authorization', 'x-authorization', 'x-guest-id'].some(
+        (header) => req.headers[header] !== undefined,
+      )
+      const auth = hasIdentity ? await resolveOptionalAuth(req) : null
       const query = req.query.query as string
       if (!query) {
         return res.status(400).send('query is required')
@@ -52,7 +55,7 @@ export default async function handler(
 
       const { clubs, correctedQuery, isTypoCorrected } =
         await searchService.searchWithTypoCorrection(query, { filters })
-      if (recordRecentSearch) {
+      if (auth && recordRecentSearch) {
         await saveRecentSearchBestEffort(auth, query)
       }
       return res.status(200).json({
