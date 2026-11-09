@@ -88,7 +88,7 @@ DB를 변경하지 않습니다. 과거 수동 SQL로 네 컬럼을 만든 DB도
 AI 검색은 문자열 일치 결과 뒤에 의미 검색 결과를 유사도순으로 추가합니다.
 웹과 앱의 기존 검색은 `/search`를 사용하며, AI 검색은 `/ai-search`로 별도 요청합니다.
 
-여러 단어로 된 검색문은 두 단계로 해석합니다.
+모든 AI 검색문은 길이나 공백 유무와 관계없이 두 단계로 해석합니다.
 
 | 순서 | 역할 | 코드 |
 | --- | --- | --- |
@@ -105,7 +105,7 @@ DeepSeek는 `deepseek-flash`의 비추론·JSON 모드로 검색 문구만 만�
 [search-intent.ts](server/service/search/search-intent.ts)가 전체 흐름을 관리합니다.
 두 단계 합계 3초 제한, 최대 500개·24시간 캐시, 동시 요청 공유를 적용합니다.
 Decider 키가 없거나 실패하면 빈 필터로, DeepSeek 키가 없거나 실패하면 원문으로 진행합니다.
-실패한 결과는 캐시하지 않습니다. 한 단어 검색은 두 API를 건너뜁니다.
+실패한 결과는 캐시하지 않습니다. 한 글자·한 단어 검색도 같은 전처리를 거칩니다.
 URL 필터가 우선하며, 응답·검색 기록의 `query`는 원문을 유지합니다.
 
 [Decisions API](https://docs.perplexity.ai/docs/decisions/quickstart) ·

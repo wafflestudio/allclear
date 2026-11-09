@@ -7,7 +7,6 @@ const cache = new LRUCache<string, Promise<ClubSearchIntent>>({ max: 500, ttl: 8
 
 export async function interpretSearchQuery(query: string): Promise<ClubSearchIntent> {
   const text = query.trim().replace(/\s+/g, ' ')
-  if (!text.includes(' ')) return { searchQuery: text, filters: {} }
 
   const cached = cache.get(text)
   if (cached) return cached

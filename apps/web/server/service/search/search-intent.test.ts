@@ -175,10 +175,14 @@ it('shares normalized, simultaneous and repeated searches', async () => {
   expect(fetch).toHaveBeenCalledTimes(2)
 })
 
-it('skips both APIs for a single word', async () => {
-  const fetch = mockResponses()
-  await expect(interpret('  코딩  ')).resolves.toEqual({ searchQuery: '코딩', filters: {} })
-  expect(fetch).not.toHaveBeenCalled()
+it.each([
+  ['춤', '댄스'],
+  ['코딩', '프로그래밍'],
+])('preprocesses %s through both APIs even without spaces', async (query, searchQuery) => {
+  const fetch = mockResponses(decisions(), rewritten(searchQuery))
+  await expect(interpret(`  ${query}  `)).resolves.toEqual({ searchQuery, filters: {} })
+  expect(fetch).toHaveBeenCalledTimes(2)
+  expect(JSON.parse(fetch.mock.calls[0][1].body).state).toBe(query)
 })
 
 it('rewrites with no applied filters when Perplexity is not configured', async () => {
