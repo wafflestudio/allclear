@@ -884,8 +884,8 @@ registry.registerPath({
   tags: ['Clubs'],
   summary: '동아리 검색',
   description:
-    '인증 헤더 없이 동아리를 검색할 수 있습니다. query는 필수이며, 검색 결과에 필터 조건을 추가로 적용할 수 있습니다. boolean 필터는 "true" 또는 "false" 문자열로 전달하고, min_activity_period는 0, 1, 2, 3_plus 중 하나 이상을 반복 query parameter로 전달합니다. record_recent_search가 true(기본값)이면 bearer token 기준으로 회원 DB에, token 없이 valid x-guest-id가 있으면 비회원 Redis에 최근 검색어 저장을 best-effort로 시도합니다. 두 식별 정보가 모두 없으면 최근 검색어 저장을 생략합니다. 전달된 헤더는 유효성을 검증합니다.',
-  security: [{}, { bearerAuth: [] }, { guestIdAuth: [] }],
+    '동아리 검색에는 유효한 bearer token 또는 x-guest-id header가 필요합니다. 식별 정보가 없거나 잘못된 요청은 검색 및 임베딩 호출 전에 거절합니다. query는 필수이며, 검색 결과에 필터 조건을 추가로 적용할 수 있습니다. boolean 필터는 "true" 또는 "false" 문자열로 전달하고, min_activity_period는 0, 1, 2, 3_plus 중 하나 이상을 반복 query parameter로 전달합니다. record_recent_search가 true(기본값)이면 bearer token 기준으로 회원 DB에, token 없이 valid x-guest-id가 있으면 비회원 Redis에 최근 검색어 저장을 best-effort로 시도합니다.',
+  security: [{ bearerAuth: [] }, { guestIdAuth: [] }],
   request: {
     query: ClubSearchQuerySchema,
     headers: GuestIdHeaderSchema,
@@ -900,7 +900,8 @@ registry.registerPath({
       },
     },
     400: {
-      description: 'query, 필터 query string, 또는 비회원 x-guest-id header가 잘못되었습니다.',
+      description:
+        'query, 필터 query string, 또는 비회원 x-guest-id header가 누락되거나 잘못되었습니다.',
       content: {
         'text/plain': {
           schema: ErrorMessageSchema,

@@ -29,13 +29,8 @@ export default async function handler(
   res: NextApiResponse<ResponseData | string>,
 ) {
   try {
-    const searchService = Provider.getService(SearchService)
-
     if (req.method == 'GET') {
-      const hasIdentity = ['authorization', 'x-authorization', 'x-guest-id'].some(
-        (header) => req.headers[header] !== undefined,
-      )
-      const auth = hasIdentity ? await resolveOptionalAuth(req) : null
+      const auth = await resolveOptionalAuth(req)
       const query = typeof req.query.query === 'string' ? req.query.query.trim() : ''
       if (!query) {
         return res.status(400).send('query is required')
@@ -54,9 +49,10 @@ export default async function handler(
         throw err
       }
 
+      const searchService = Provider.getService(SearchService)
       const { clubs, correctedQuery, isTypoCorrected } =
         await searchService.searchWithTypoCorrection(query, { filters })
-      if (auth && recordRecentSearch) {
+      if (recordRecentSearch) {
         await saveRecentSearchBestEffort(auth, query)
       }
       return res.status(200).json({
