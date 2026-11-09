@@ -35,10 +35,13 @@ export class SearchService {
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
 
-    const clubs = await this.runSearch(query, options)
+    const [clubs, semanticEntities] = await Promise.all([
+      this.runSearch(query, options),
+      this.searchQueryService.searchSemantic(query, options.filters),
+    ])
     if (clubs.length > 0) {
       return {
-        clubs,
+        clubs: await this.appendSemantic(clubs, semanticEntities),
         correctedQuery: null,
         isTypoCorrected: false,
       }
@@ -49,7 +52,7 @@ export class SearchService {
       const correctedClubs = await this.runSearch(correctedQuery, options)
       if (correctedClubs.length > 0) {
         return {
-          clubs: correctedClubs,
+          clubs: await this.appendSemantic(correctedClubs, semanticEntities),
           correctedQuery,
           isTypoCorrected: true,
         }
@@ -57,10 +60,17 @@ export class SearchService {
     }
 
     return {
-      clubs: [],
+      clubs: await this.appendSemantic([], semanticEntities),
       correctedQuery: null,
       isTypoCorrected: false,
     }
+  }
+
+  private async appendSemantic(clubs: SearchClub[], entities: ClubEntity[]): Promise<SearchClub[]> {
+    const matched = new Set(clubs.map((club) => club.uuid))
+    const additional = entities.filter((club) => !matched.has(club.uuid))
+    // 문자열 일치 결과 뒤에 의미 검색 결과를 거리순으로 붙입니다.
+    return [...clubs, ...(await this.hydratorService.toClubs(additional))]
   }
 
   private async runSearch(query: string, options: SearchOptions): Promise<SearchClub[]> {

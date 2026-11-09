@@ -36,10 +36,11 @@ export default async function handler(
         (header) => req.headers[header] !== undefined,
       )
       const auth = hasIdentity ? await resolveOptionalAuth(req) : null
-      const query = req.query.query as string
+      const query = typeof req.query.query === 'string' ? req.query.query.trim() : ''
       if (!query) {
         return res.status(400).send('query is required')
       }
+      if (query.length > 200) return res.status(400).send('query must be 200 characters or fewer')
 
       let filters: SearchFilters
       let recordRecentSearch: boolean

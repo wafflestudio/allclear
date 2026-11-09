@@ -12,6 +12,9 @@ export const ENV = {
     PASSWORD: process.env.DB_PASSWORD ?? '',
     DB_NAME: process.env.DB_NAME ?? 'postgres',
   },
+  OPENAI: {
+    API_KEY: process.env.OPEN_AI_KEY ?? process.env.open_ai_key ?? process.env.OPENAI_API_KEY ?? '',
+  },
   KAKAO: {
     CLIENT_ID: process.env.KAKAO_CLIENT_ID ?? '',
     CLIENT_SECRET: process.env.KAKAO_CLIENT_SECRET ?? '',

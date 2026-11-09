@@ -1,4 +1,5 @@
 import { PUBLIC_CLUB_STATUS } from 'server/domain/constants/club-status'
+import { ENV } from 'server/ENV'
 import { ClubEntity } from 'server/infra/database/entities'
 import { CollegeMajorEntity } from 'server/infra/database/entities/college-major.entity'
 import { InjectRepository, Service } from 'server/provider'
@@ -9,6 +10,7 @@ import {
   type Repository,
   type SelectQueryBuilder,
 } from 'typeorm'
+import { EMBEDDING_VERSION, embedQuery } from './embedding'
 import type { SearchFilters } from './search.types'
 import { applySearchFilters } from './search-filter'
 
@@ -27,6 +29,35 @@ export class SearchQueryService {
     ])
 
     return this.dedupe([...textMatchedEntities, ...collegeMajorMatchedEntities])
+  }
+
+  async searchSemantic(query: string, filters: SearchFilters = {}): Promise<ClubEntity[]> {
+    if (!ENV.OPENAI.API_KEY) return []
+    try {
+      const qb = this.buildBaseQuery()
+        .andWhere('club.embedding IS NOT NULL')
+        .andWhere('club.embedding_model = :embeddingModel', { embeddingModel: EMBEDDING_VERSION })
+      applySearchFilters(qb, filters)
+      if (!(await qb.clone().getExists())) return []
+
+      const embedding = JSON.stringify(await embedQuery(query))
+      return await qb
+        .andWhere('(club.embedding <=> CAST(:embedding AS vector)) <= :maxDistance', {
+          embedding,
+          maxDistance: 0.75,
+        })
+        .orderBy('club.embedding <=> CAST(:embedding AS vector)', 'ASC')
+        .addOrderBy('club.uuid', 'ASC')
+        .limit(20)
+        .getMany()
+    } catch (error) {
+      // SQL 적용 전이나 외부 API 장애 중에도 기존 문자열 검색을 제공합니다.
+      console.error(
+        'semantic search unavailable:',
+        error instanceof Error ? error.message : 'error',
+      )
+      return []
+    }
   }
 
   private findByText(query: string, filters: SearchFilters): Promise<ClubEntity[]> {
