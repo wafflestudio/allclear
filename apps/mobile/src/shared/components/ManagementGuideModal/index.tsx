@@ -692,8 +692,9 @@ const styles = StyleSheet.create({
 	},
 	profileBorder: {
 		...StyleSheet.absoluteFillObject,
+		// Keep the stroke uniform and crop its bottom edge with the phone viewport.
+		bottom: -ms(3),
 		borderWidth: ms(3),
-		borderBottomWidth: 0,
 		borderColor: "#686868",
 		borderTopLeftRadius: ms(20),
 		borderTopRightRadius: ms(20),
