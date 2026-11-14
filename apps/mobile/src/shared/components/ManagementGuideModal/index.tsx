@@ -539,7 +539,7 @@ const FigmaRegistration = ({
 				style={styles.registrationAsset}
 				resizeMode="stretch"
 			/>
-			<View pointerEvents="none" style={styles.registrationRightBorder} />
+			<View pointerEvents="none" style={styles.registrationBorder} />
 		</Animated.View>
 	);
 };
@@ -807,20 +807,16 @@ const styles = StyleSheet.create({
 		top: -vs(26),
 		width: s(226),
 		height: REGISTRATION_IMAGE_HEIGHT,
-		borderWidth: ms(3),
-		borderColor: "#686868",
+		overflow: "hidden",
 	},
 	registrationAsset: {
 		width: s(226),
 		height: REGISTRATION_IMAGE_HEIGHT,
 	},
-	registrationRightBorder: {
-		position: "absolute",
-		top: 0,
-		right: 0,
-		bottom: 0,
-		width: ms(3),
-		backgroundColor: "#686868",
+	registrationBorder: {
+		...StyleSheet.absoluteFillObject,
+		borderWidth: ms(3),
+		borderColor: "#686868",
 	},
 	managementFrame: {
 		position: "absolute",
