@@ -1,4 +1,3 @@
-import { isUndefined, omitBy } from 'lodash-es'
 import type { ClubDomainSource } from '../domain/model/Club'
 import { Inject, Service } from '../provider'
 import {
@@ -50,23 +49,18 @@ export class SearchService {
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
 
-    // 1. 문장을 검색 주제와 조건으로 나눕니다.
-    const intent = await interpretSearchQuery(query)
-    const topic = intent.searchQuery
-
-    // URL에 명시한 필터가 문장에서 추출한 조건보다 우선합니다.
-    const urlFilters = omitBy(options.filters, isUndefined)
-    const filters = { ...intent.filters, ...urlFilters }
-    const searchOptions = { ...options, filters }
+    // 1. 문장에서 검색 주제만 뽑습니다. 문장에 적은 조건은 해석하지 않고, URL 필터만 적용합니다.
+    const topic = await interpretSearchQuery(query)
 
     // 2. 문자열 검색과 의미 검색을 함께 실행합니다.
-    // 의도 변환은 오타 교정이 아닙니다. 모델이 바꾼 검색문은 다시 교정하지 않습니다.
+    // 주제 추출은 오타 교정이 아닙니다. 모델이 바꾼 검색문은 다시 교정하지 않습니다.
     const isRewritten = topic !== query
     const keywordSearch = isRewritten
-      ? this.searchWithoutCorrection(topic, searchOptions)
-      : this.searchCorrectingTypos(topic, searchOptions)
+      ? this.searchWithoutCorrection(topic, options)
+      : this.searchCorrectingTypos(topic, options)
 
-    const semanticSearch = this.searchSemanticService.search(topic, filters, options.minSimilarity)
+    const { filters, minSimilarity } = options
+    const semanticSearch = this.searchSemanticService.search(topic, filters, minSimilarity)
 
     const [keywordResult, semanticEntities] = await Promise.all([keywordSearch, semanticSearch])
 

@@ -41,17 +41,15 @@ it('keeps keyword search and typo correction independent of AI', async () => {
   expect(searchSemantic).not.toHaveBeenCalled()
 })
 
-it('applies interpreted filters to both searches while preserving explicit choices and the original query', async () => {
+it('searches the extracted topic with the URL filters while preserving the original query', async () => {
   const service = new SearchService()
   const query = '회비 없는 개발 동아리'
   const search = vi.fn().mockResolvedValue([])
   const searchSemantic = vi.fn().mockResolvedValue([])
   const logSearch = vi.fn()
   const findCorrectedQuery = vi.fn()
-  interpretSearchQuery.mockResolvedValue({
-    searchQuery: '소프트웨어 개발',
-    filters: { hasMembershipFee: false, hasDongbang: true },
-  })
+  const filters = { hasDongbang: false }
+  interpretSearchQuery.mockResolvedValue('소프트웨어 개발')
   Object.defineProperties(service, {
     searchQueryService: { value: { search } },
     searchSemanticService: { value: { search: searchSemantic } },
@@ -61,13 +59,12 @@ it('applies interpreted filters to both searches while preserving explicit choic
     sortService: { value: { sort: (clubs: unknown[]) => clubs } },
   })
 
-  await expect(
-    service.searchWithAi(query, {
-      filters: { hasMembershipFee: undefined, hasDongbang: false },
-    }),
-  ).resolves.toEqual({ clubs: [], correctedQuery: null, isTypoCorrected: false })
+  await expect(service.searchWithAi(query, { filters })).resolves.toEqual({
+    clubs: [],
+    correctedQuery: null,
+    isTypoCorrected: false,
+  })
 
-  const filters = { hasMembershipFee: false, hasDongbang: false }
   expect(search).toHaveBeenCalledWith('소프트웨어 개발', filters)
   expect(searchSemantic).toHaveBeenCalledWith('소프트웨어 개발', filters, undefined)
   expect(logSearch).toHaveBeenCalledWith(query)
