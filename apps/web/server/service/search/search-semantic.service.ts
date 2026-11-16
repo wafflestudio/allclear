@@ -1,14 +1,12 @@
 import { DEFAULT_MIN_SIMILARITY } from 'server/domain/constants/ai-search'
 import { PUBLIC_CLUB_STATUS } from 'server/domain/constants/club-status'
-import type { ClubDomainSource } from 'server/domain/model/Club'
 import { ENV } from 'server/ENV'
 import { createEmbeddings, EMBEDDING_VERSION } from 'server/infra/client/elice'
-import { Prisma } from 'server/infra/database/generated/prisma/client'
+import { Prisma, type club as PrismaClub } from 'server/infra/database/generated/prisma/client'
 import { getPrismaClient } from 'server/infra/database/prisma'
 import { Service } from 'server/provider'
 import type { SearchFilters } from './search.types'
 import { normalizeQuery, SearchCache } from './search-cache'
-import { toClubDomainSources } from './search-club-source'
 import { buildSearchFilter } from './search-filter'
 import { formsOf, splitWords } from './search-words'
 
@@ -30,7 +28,7 @@ export class SearchSemanticService {
     query: string,
     filters: SearchFilters = {},
     minSimilarity = DEFAULT_MIN_SIMILARITY,
-  ): Promise<ClubDomainSource[]> {
+  ): Promise<PrismaClub[]> {
     if (!ENV.ELICE.IS_CONFIGURED) {
       return []
     }
@@ -63,9 +61,8 @@ export class SearchSemanticService {
         where: { AND: [where, { uuid: { in: rankedIds } }] },
       })
       const clubById = new Map(clubs.map((club) => [club.uuid, club]))
-      const rankedClubs = rankedIds.flatMap((uuid) => clubById.get(uuid) ?? [])
 
-      return await toClubDomainSources(rankedClubs)
+      return rankedIds.flatMap((uuid) => clubById.get(uuid) ?? [])
     } catch (error) {
       // 의미 검색 장애가 문자열 검색까지 중단시키지 않도록 합니다.
       console.error(

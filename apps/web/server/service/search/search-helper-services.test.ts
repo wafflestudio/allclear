@@ -15,8 +15,12 @@ vi.mock('server/provider', () => ({ Service: () => undefined, Inject: () => () =
 vi.mock('server/infra/database/prisma', () => ({ getPrismaClient: () => prisma }))
 vi.mock('server/domain/model/Club', () => ({ toClubDomain }))
 vi.mock('../club.service', () => ({ ClubService: class ClubService {} }))
+// 학과 붙이기는 search-club-source.test.ts에서 따로 확인합니다.
+vi.mock('./search-club-source', () => ({
+  toClubDomainSources: async (clubs: unknown[]) => clubs,
+}))
 
-import type { ClubDomainSource } from 'server/domain/model/Club'
+import type { club as PrismaClub } from 'server/infra/database/generated/prisma/client'
 import { SearchResultHydratorService } from './search-result-hydrator.service'
 import { SearchTypoCorrectionService } from './search-typo-correction.service'
 
@@ -62,13 +66,9 @@ describe('SearchResultHydratorService with Prisma', () => {
   it('deduplicates clubs and marks only active manager clubs', async () => {
     const { service, getClubReviews } = createService()
     prisma.club_manager.findMany.mockResolvedValue([{ club_id: 'club-2' }])
-    const entities = [
-      { uuid: 'club-1' },
-      { uuid: 'club-1' },
-      { uuid: 'club-2' },
-    ] as ClubDomainSource[]
+    const found = [{ uuid: 'club-1' }, { uuid: 'club-1' }, { uuid: 'club-2' }] as PrismaClub[]
 
-    await expect(service.toClubs(entities)).resolves.toEqual([
+    await expect(service.toClubs(found)).resolves.toEqual([
       { uuid: 'club-1', review: { totalReviews: 2 }, hasManager: false },
       { uuid: 'club-2', review: undefined, hasManager: true },
     ])

@@ -30,12 +30,12 @@ export default async function handler(req: NextApiRequest, res: SearchApiRespons
     // 잘못된 요청은 위에서 이미 거절했으므로 한도에 세지 않습니다.
     await Provider.getService(AiSearchQuotaService).consume(auth.accountId)
 
+    // 검색과 최근 검색어 저장을 함께 합니다. 서로를 기다리지 않습니다.
     const searchService = Provider.getService(SearchService)
-    const result = await searchService.searchWithAi(query, { filters, minSimilarity })
+    const searching = searchService.searchWithAi(query, { filters, minSimilarity })
+    const saving = recordRecentSearch ? saveRecentSearchBestEffort(auth, query) : null
 
-    if (recordRecentSearch) {
-      await saveRecentSearchBestEffort(auth, query)
-    }
+    const [result] = await Promise.all([searching, saving])
     return sendSearchResult(res, query, result)
   } catch (err) {
     return sendError(res, err)

@@ -57,48 +57,14 @@ describe('Prisma search filters', () => {
 })
 
 describe('SearchQueryService with Prisma', () => {
-  it('searches active public clubs and maps deduplicated results with college major', async () => {
-    const club = {
-      uuid: 'club-1',
-      name: 'Music',
-      description: 'description',
-      short_description: 'short',
-      introduction: null,
-      type: 'type',
-      category: 'category',
-      affiliation_type: '중앙',
-      college_major_id: 2,
-      recruit_type: null,
-      is_official_verified: false,
-      verified_at: null,
-      has_dongbang: true,
-      dongbang_location: null,
-      min_activity_period: 1,
-      active_member_count: 10,
-      founded_at: new Date('2020-01-02T00:00:00.000Z'),
-      sns_urls: ['https://example.com'],
-      activity_image_urls: [],
-      image_uri: 'image',
-      article: null,
-      article_uploaded_at: null,
-      status: 'APPROVED',
-      reject_reason: null,
-    }
-    prisma.college_major.findMany
-      .mockResolvedValueOnce([{ id: 2 }])
-      .mockResolvedValueOnce([{ id: 2, college: 'College', major: 'Major' }])
+  it('finds active public clubs by text and by college major, each club once', async () => {
+    const club = { uuid: 'club-1', name: 'Music', college_major_id: 2 }
+    prisma.college_major.findMany.mockResolvedValueOnce([{ id: 2 }])
     prisma.club.findMany.mockResolvedValueOnce([club]).mockResolvedValueOnce([club])
 
     const result = await new SearchQueryService().search('music', { hasDongbang: true })
 
-    expect(result).toHaveLength(1)
-    expect(result[0]).toMatchObject({
-      uuid: 'club-1',
-      collegeMajor: { id: 2, college: 'College', major: 'Major' },
-      foundedAt: '2020-01-02',
-      snsUrls: ['https://example.com'],
-      status: 'APPROVED',
-    })
+    expect(result).toEqual([club])
     expect(prisma.club.findMany).toHaveBeenCalledTimes(2)
     expect(prisma.club.findMany.mock.calls[0][0].where.AND[0]).toEqual({
       status: 'APPROVED',
@@ -109,6 +75,5 @@ describe('SearchQueryService with Prisma', () => {
       college_major_id: { in: [2] },
     })
     expect(prisma.college_major.findMany.mock.calls[0][0].where.deleted_at).toBeNull()
-    expect(prisma.college_major.findMany.mock.calls[1][0].where.deleted_at).toBeNull()
   })
 })
