@@ -3,7 +3,6 @@ const SERVER_BASE_URL = `${HOST}/api`
 const REDIS_URL = process.env.REDIS_URL ? `redis://${process.env.REDIS_URL}` : ''
 
 const ELICE_KEY = process.env.ELICE_KEY ?? ''
-const ELICE_INTENT_ENDPOINT = process.env.ELICE_INTENT_ENDPOINT ?? ''
 const ELICE_EMBEDDING_ENDPOINT = process.env.ELICE_EMBEDDING_ENDPOINT ?? ''
 
 export const ENV = {
@@ -16,13 +15,11 @@ export const ENV = {
     PASSWORD: process.env.DB_PASSWORD ?? '',
     DB_NAME: process.env.DB_NAME ?? 'postgres',
   },
-  // Elice ML API는 모델마다 주소가 따로 있습니다. 키와 두 주소가 모두 있어야 AI 검색이 켜집니다.
+  // Elice ML API의 키와 임베딩 모델 주소입니다. 둘 다 있어야 의미 검색이 켜집니다.
   ELICE: {
     API_KEY: ELICE_KEY,
-    INTENT_ENDPOINT: ELICE_INTENT_ENDPOINT,
     EMBEDDING_ENDPOINT: ELICE_EMBEDDING_ENDPOINT,
-    IS_CONFIGURED:
-      ELICE_KEY !== '' && ELICE_INTENT_ENDPOINT !== '' && ELICE_EMBEDDING_ENDPOINT !== '',
+    IS_CONFIGURED: ELICE_KEY !== '' && ELICE_EMBEDDING_ENDPOINT !== '',
   },
   KAKAO: {
     CLIENT_ID: process.env.KAKAO_CLIENT_ID ?? '',

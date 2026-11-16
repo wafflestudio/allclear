@@ -39,3 +39,44 @@ it.each([
   expect(sql.join('?')).toContain('1 - (embedding <=> ?::vector) >= ?')
   expect(values).toContain(applied)
 })
+
+function findKeywords(topic: string) {
+  return new SearchSemanticService().findKeywords(topic)
+}
+
+// DB가 뜻이 맞는다고 답할 꼴들
+function fittingForms(...forms: string[]) {
+  prisma.$queryRaw.mockResolvedValueOnce(forms.map((form) => ({ form })))
+}
+
+// DB에 물어본 꼴들
+function askedForms(): string[] {
+  const values = prisma.$queryRaw.mock.calls[0].slice(1)
+  return values.find((value) => Array.isArray(value))
+}
+
+it('picks the words whose clubs are close to the topic', async () => {
+  fittingForms('보드게임')
+
+  await expect(findKeywords('보드게임 하는')).resolves.toEqual(['보드게임'])
+})
+
+it('tries a word without its particle, down to two characters', async () => {
+  fittingForms('축구', '농구')
+
+  await expect(findKeywords('축구나 농구면')).resolves.toEqual(['축구', '농구'])
+  expect(askedForms()).toEqual(['축구나', '축구', '농구면', '농구'])
+})
+
+it('prefers the form with the least removed', async () => {
+  fittingForms('보드', '보드게임')
+
+  await expect(findKeywords('보드게임을')).resolves.toEqual(['보드게임'])
+})
+
+it('picks no keyword when the keyword query fails', async () => {
+  prisma.$queryRaw.mockRejectedValueOnce(new Error('db down'))
+  vi.spyOn(console, 'error').mockImplementationOnce(() => undefined)
+
+  await expect(findKeywords('사진 찍는')).resolves.toEqual([])
+})

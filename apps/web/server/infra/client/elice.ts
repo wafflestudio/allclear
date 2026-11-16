@@ -3,12 +3,7 @@ import { chunk } from 'lodash-es'
 import { ENV } from 'server/ENV'
 import { z } from 'zod'
 
-// Elice ML API를 부릅니다. 모델마다 주소가 따로 있습니다.
-//
-//   임베딩: 글 → 벡터
-//   채팅: 지시문 + 입력 → 글
-
-// ── 임베딩 ──────────────────────────────────────────────
+// Elice ML API로 글을 임베딩 벡터로 바꿉니다.
 
 // ELICE_EMBEDDING_ENDPOINT는 이 모델의 주소여야 합니다.
 export const EMBEDDING_MODEL = 'text-embedding-3-large'
@@ -135,52 +130,6 @@ async function requestEmbeddings(inputs: number[][], timeoutMs: number) {
     tokens: result.usage.total_tokens,
   }
 }
-
-// ── 채팅 ────────────────────────────────────────────────
-
-// ELICE_INTENT_ENDPOINT는 이 모델의 주소여야 합니다.
-const CHAT_MODEL = 'gemini-2.5-flash-lite'
-
-type ChatLimits = {
-  // 답의 최대 길이. 넘으면 답이 끊기고, 끊긴 답은 실패로 처리합니다.
-  maxTokens: number
-  timeoutMs: number
-}
-
-// 지시문과 입력을 보내고, 모델이 답한 글을 돌려줍니다. 형식은 부른 쪽이 검사합니다.
-export async function requestChatText(
-  instructions: string,
-  input: string,
-  { maxTokens, timeoutMs }: ChatLimits,
-): Promise<unknown> {
-  const url = `${ENV.ELICE.INTENT_ENDPOINT}/v1/chat/completions`
-  // Elice는 목록에 없는 파라미터를 400으로 거절합니다. 추론은 reasoning_effort로 끕니다.
-  const body = {
-    model: CHAT_MODEL,
-    reasoning_effort: 'none',
-    temperature: 0,
-    max_completion_tokens: maxTokens,
-    messages: [
-      { role: 'system', content: instructions },
-      { role: 'user', content: input },
-    ],
-  }
-
-  const response = await post(url, body, timeoutMs)
-  if (!response.ok) {
-    throw new Error(`채팅 API 요청 실패 (${response.status})`)
-  }
-
-  const result = await response.json()
-  const choice = result.choices?.[0]
-  if (choice?.finish_reason !== 'stop') {
-    throw new Error('채팅 API 응답이 완료되지 않았습니다.')
-  }
-
-  return choice.message.content
-}
-
-// ── 공통 ────────────────────────────────────────────────
 
 function post(url: string, body: unknown, timeoutMs: number): Promise<Response> {
   return fetch(url, {

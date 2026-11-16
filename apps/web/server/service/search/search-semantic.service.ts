@@ -10,8 +10,16 @@ import type { SearchFilters } from './search.types'
 import { normalizeQuery, SearchCache } from './search-cache'
 import { toClubDomainSources } from './search-club-source'
 import { buildSearchFilter } from './search-filter'
+import { formsOf, splitWords } from './search-words'
 
 const QUERY_TIMEOUT_MS = 8_000
+
+// 문자열로 찾을 낱말은, 그 낱말이 든 동아리들의 평균 유사도가
+// 전체 동아리의 평균보다 표준편차의 1.5배 넘게 높아야 합니다.
+const KEYWORD_LIFT = 1.5
+
+// 조사는 두 글자가 남을 때까지 뗍니다. 예: "축구나" → "축구"
+const SHORTEST_KEYWORD = 2
 
 const queryVectorCache = new SearchCache<number[]>()
 
@@ -66,6 +74,61 @@ export class SearchSemanticService {
       )
       return []
     }
+  }
+
+  // 주제의 낱말 가운데 문자열로 찾을 낱말을 고릅니다.
+  // 그 낱말이 든 동아리들이 주제와 뜻으로도 가까워야 합니다.
+  // 예: "보드게임 하는" → ["보드게임"]. "하는"이 든 동아리는 주제와 상관없이 흩어져 있습니다.
+  async findKeywords(topic: string): Promise<string[]> {
+    if (!ENV.ELICE.IS_CONFIGURED) {
+      return []
+    }
+
+    try {
+      const words = splitWords(topic)
+      const formsOfWord = (word: string) => formsOf(word, SHORTEST_KEYWORD)
+
+      const forms = words.flatMap(formsOfWord)
+      const topicVector = await embedQuery(topic)
+      const fittingForms = await this.findFittingForms(forms, topicVector)
+
+      // 낱말마다, 뜻이 맞는 꼴 가운데 가장 덜 뗀 것을 고릅니다.
+      return words.flatMap((word) => formsOfWord(word).find((form) => fittingForms.has(form)) ?? [])
+    } catch (error) {
+      // 낱말을 고르지 못해도 주제 전체로 하는 문자열 검색은 계속합니다.
+      console.error(
+        'keyword selection unavailable:',
+        error instanceof Error ? error.message : 'error',
+      )
+      return []
+    }
+  }
+
+  // 주어진 꼴 가운데, 그 꼴이 든 동아리들이 주제와 뜻으로 가까운 것을 찾습니다.
+  private async findFittingForms(forms: string[], topicVector: number[]): Promise<Set<string>> {
+    const vector = JSON.stringify(topicVector)
+
+    const rows = await getPrismaClient().$queryRaw<Array<{ form: string }>>`
+      WITH club_score AS (
+        SELECT
+          lower(concat_ws(' ', name, short_description, description, introduction)) AS text,
+          1 - (embedding <=> ${vector}::vector) AS similarity
+        FROM public.club
+        WHERE status = ${PUBLIC_CLUB_STATUS}
+          AND deleted_at IS NULL
+          AND embedding_model = ${EMBEDDING_VERSION}
+          AND embedding IS NOT NULL
+      ),
+      overall AS (
+        SELECT avg(similarity) AS mean, stddev_pop(similarity) AS spread
+        FROM club_score
+      )
+      SELECT form
+      FROM unnest(${forms}::text[]) AS form, overall
+      WHERE (SELECT avg(similarity) FROM club_score WHERE position(form IN text) > 0)
+          > overall.mean + ${KEYWORD_LIFT}::float * overall.spread
+    `
+    return new Set(rows.map((row) => row.form))
   }
 
   // 벡터 연산은 Prisma가 지원하지 않아 raw SQL로 처리합니다.
