@@ -26,6 +26,16 @@ export class ConflictError extends Error {
   }
 }
 
+export class TooManyRequestsError extends Error {
+  readonly retryAfterSeconds: number
+
+  constructor(message: string, retryAfterSeconds: number) {
+    super(message)
+    this.name = 'TooManyRequestsError'
+    this.retryAfterSeconds = retryAfterSeconds
+  }
+}
+
 export const NotFoundError = class extends Error {
   constructor(message: string) {
     super(message)

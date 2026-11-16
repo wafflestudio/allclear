@@ -38,6 +38,11 @@ describe('authentication middleware routes', () => {
     expect(config.matcher).toContain('/api/v2/manager-transfer-invitations/:token/acceptance')
   })
 
+  it('requires login for AI search but not for keyword search', () => {
+    expect(config.matcher).toContain('/api/v2/clubs/ai-search')
+    expect(config.matcher).not.toContain('/api/v2/clubs/search')
+  })
+
   it.each(['GET', 'PATCH'])(
     'passes authenticated %s requests to the club registration manager API',
     async (method) => {
