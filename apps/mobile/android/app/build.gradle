@@ -153,6 +153,15 @@ android {
             debuggable true
             resValue "string", "app_name", "(dev)올클"
         }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigningProps) {
+                signingConfig signingConfigs.release
+            }
+        }
+        // Copy the optimized release configuration so dev APKs exercise R8 too.
         devRelease {
             initWith release
             matchingFallbacks = ['release', 'debug']
@@ -161,11 +170,6 @@ android {
             applicationIdSuffix ".debug"
             debuggable false
             resValue "string", "app_name", "(dev)올클"
-        }
-        release {
-            if (hasReleaseSigningProps) {
-                signingConfig signingConfigs.release
-            }
         }
     }
 }
