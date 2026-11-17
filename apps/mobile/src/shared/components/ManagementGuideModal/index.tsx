@@ -295,23 +295,28 @@ const AutoStates = ({
 	kind: Exclude<SceneKind, "management">;
 }) => {
 	const reduceMotion = useReducedMotion();
-	const transitionProgress = useRef(new Animated.Value(0)).current;
+	const sceneOpacities = useRef([
+		new Animated.Value(1),
+		new Animated.Value(0),
+		new Animated.Value(0),
+	]).current;
 	const [stateIndex, setStateIndex] = useState(0);
-	const [incomingIndex, setIncomingIndex] = useState<number | null>(null);
 	const states: readonly SceneState[] =
 		kind === "approval" ? ["first", "second"] : ["first", "second", "third"];
 
 	useEffect(() => {
 		if (!active) {
 			setStateIndex(0);
-			setIncomingIndex(null);
-			transitionProgress.setValue(0);
+			for (const [index, opacity] of sceneOpacities.entries()) {
+				opacity.setValue(index === 0 ? 1 : 0);
+			}
 			return;
 		}
 
 		if (reduceMotion) {
-			setIncomingIndex(null);
-			transitionProgress.setValue(0);
+			for (const [index, opacity] of sceneOpacities.entries()) {
+				opacity.setValue(index <= stateIndex ? 1 : 0);
+			}
 			return;
 		}
 
@@ -325,72 +330,41 @@ const AutoStates = ({
 			kind === "approval"
 				? APPROVAL_OVERLAY_TRANSITION_MS
 				: STATE_OVERLAY_TRANSITION_MS;
-		let frame: number | undefined;
 		let animation: Animated.CompositeAnimation | undefined;
 		const timer = setTimeout(() => {
 			const nextIndex = stateIndex + 1;
-			transitionProgress.setValue(0);
-			setIncomingIndex(nextIndex);
-			frame = requestAnimationFrame(() => {
-				animation = Animated.timing(transitionProgress, {
-					toValue: 1,
-					duration: transitionDuration,
-					easing: FIGMA_EASE_OUT,
-					useNativeDriver: true,
-				});
-				animation.start(({ finished }) => {
-					if (!finished) return;
-
-					transitionProgress.setValue(1);
-					setStateIndex(nextIndex);
-				});
+			animation = Animated.timing(sceneOpacities[nextIndex], {
+				toValue: 1,
+				duration: transitionDuration,
+				easing: FIGMA_EASE_OUT,
+				useNativeDriver: true,
+			});
+			animation.start(({ finished }) => {
+				if (finished) setStateIndex(nextIndex);
 			});
 		}, holdDuration);
 
 		return () => {
 			clearTimeout(timer);
-			if (frame !== undefined) cancelAnimationFrame(frame);
 			animation?.stop();
 		};
-	}, [
-		active,
-		kind,
-		reduceMotion,
-		stateIndex,
-		states.length,
-		transitionProgress,
-	]);
-
-	useEffect(() => {
-		if (!active || incomingIndex === null || incomingIndex !== stateIndex)
-			return;
-
-		const frame = requestAnimationFrame(() => {
-			setIncomingIndex(null);
-			transitionProgress.setValue(0);
-		});
-
-		return () => cancelAnimationFrame(frame);
-	}, [active, incomingIndex, stateIndex, transitionProgress]);
+	}, [active, kind, reduceMotion, stateIndex, states.length, sceneOpacities]);
 
 	return (
 		<View pointerEvents="none" style={styles.stateOverlayMask}>
-			<GuideScene
-				active={active}
-				kind={kind}
-				state={states[stateIndex] ?? "first"}
-			/>
-			{incomingIndex !== null ? (
+			{/* Keep each image mounted so finishing a fade never reloads the scene. */}
+			{states.map((state, index) => (
 				<Animated.View
-					style={[styles.incomingScene, { opacity: transitionProgress }]}
+					key={state}
+					style={[styles.sceneLayer, { opacity: sceneOpacities[index] }]}
 				>
 					<GuideScene
-						active={false}
+						active={active && index === stateIndex}
 						kind={kind}
-						state={states[incomingIndex] ?? "first"}
+						state={state}
 					/>
 				</Animated.View>
-			) : null}
+			))}
 		</View>
 	);
 };
@@ -456,16 +430,19 @@ const FigmaStatusBar = () => (
 		<View style={styles.dynamicIslandSpacer} />
 		<View style={styles.statusLevels}>
 			<Image
+				fadeDuration={0}
 				source={page1StatusCellular}
 				style={styles.statusCellular}
 				resizeMode="contain"
 			/>
 			<Image
+				fadeDuration={0}
 				source={page1StatusWifi}
 				style={styles.statusWifi}
 				resizeMode="contain"
 			/>
 			<Image
+				fadeDuration={0}
 				source={page1StatusBattery}
 				style={styles.statusBattery}
 				resizeMode="contain"
@@ -483,6 +460,7 @@ const FigmaMyPage = ({ state }: { state: SceneState }) => (
 	>
 		<View style={styles.profilePhone}>
 			<Image
+				fadeDuration={0}
 				source={state === "third" ? page1Club : page1Profile}
 				style={styles.profileAsset}
 				resizeMode="stretch"
@@ -501,6 +479,7 @@ const FigmaMyPage = ({ state }: { state: SceneState }) => (
 			<>
 				<View style={styles.calloutDim} />
 				<Image
+					fadeDuration={0}
 					source={page1Callout}
 					style={styles.calloutAsset}
 					resizeMode="stretch"
@@ -520,6 +499,7 @@ const FigmaRegistration = ({
 	if (state !== "third") {
 		return (
 			<Image
+				fadeDuration={0}
 				source={state === "first" ? page2Step1 : page2Step2}
 				style={styles.fullPreviewAsset}
 				resizeMode="stretch"
@@ -535,11 +515,12 @@ const FigmaRegistration = ({
 			]}
 		>
 			<Image
+				fadeDuration={0}
 				source={page2Registration}
 				style={styles.registrationAsset}
 				resizeMode="stretch"
 			/>
-			<View pointerEvents="none" style={styles.registrationRightBorder} />
+			<View pointerEvents="none" style={styles.registrationBorder} />
 		</Animated.View>
 	);
 };
@@ -547,6 +528,7 @@ const FigmaRegistration = ({
 const FigmaManagement = () => (
 	<View style={styles.managementFrame}>
 		<Image
+			fadeDuration={0}
 			source={page3Management}
 			style={styles.managementAsset}
 			resizeMode="stretch"
@@ -559,6 +541,7 @@ const FigmaApproval = ({ state }: { state: SceneState }) => (
 	<>
 		<View style={styles.approvalFrame}>
 			<Image
+				fadeDuration={0}
 				source={page4Approval}
 				style={styles.approvalAsset}
 				resizeMode="stretch"
@@ -567,6 +550,7 @@ const FigmaApproval = ({ state }: { state: SceneState }) => (
 		</View>
 		{state === "second" ? (
 			<Image
+				fadeDuration={0}
 				source={page4Confirmation}
 				style={styles.approvalConfirmation}
 				resizeMode="stretch"
@@ -662,7 +646,7 @@ const styles = StyleSheet.create({
 		borderRadius: ms(10),
 		backgroundColor: "#FCFBFF",
 	},
-	incomingScene: {
+	sceneLayer: {
 		...StyleSheet.absoluteFillObject,
 	},
 	preview: {
@@ -692,8 +676,9 @@ const styles = StyleSheet.create({
 	},
 	profileBorder: {
 		...StyleSheet.absoluteFillObject,
+		// Keep the stroke uniform and crop its bottom edge with the phone viewport.
+		bottom: -ms(3),
 		borderWidth: ms(3),
-		borderBottomWidth: 0,
 		borderColor: "#686868",
 		borderTopLeftRadius: ms(20),
 		borderTopRightRadius: ms(20),
@@ -806,20 +791,16 @@ const styles = StyleSheet.create({
 		top: -vs(26),
 		width: s(226),
 		height: REGISTRATION_IMAGE_HEIGHT,
-		borderWidth: ms(3),
-		borderColor: "#686868",
+		overflow: "hidden",
 	},
 	registrationAsset: {
 		width: s(226),
 		height: REGISTRATION_IMAGE_HEIGHT,
 	},
-	registrationRightBorder: {
-		position: "absolute",
-		top: 0,
-		right: 0,
-		bottom: 0,
-		width: ms(3),
-		backgroundColor: "#686868",
+	registrationBorder: {
+		...StyleSheet.absoluteFillObject,
+		borderWidth: ms(3),
+		borderColor: "#686868",
 	},
 	managementFrame: {
 		position: "absolute",
