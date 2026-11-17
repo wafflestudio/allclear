@@ -1,3 +1,4 @@
+import { DEFAULT_MIN_SIMILARITY } from 'server/domain/constants/ai-search'
 import {
   ClubCategorySchema,
   ClubSchema,
@@ -21,7 +22,7 @@ export const MinActivityPeriodFilterSchema = z.enum(['0', '1', '2', '3_plus'])
 
 export const ClubSearchQuerySchema = z
   .object({
-    query: z.string(),
+    query: z.string().trim().min(1).max(200),
     record_recent_search: z
       .enum(['true', 'false'])
       .optional()
@@ -37,6 +38,17 @@ export const ClubSearchQuerySchema = z
       .optional(),
   })
   .openapi('ClubSearchQuery')
+
+export const ClubAiSearchQuerySchema = ClubSearchQuerySchema.extend({
+  min_similarity: z
+    .number()
+    .min(0)
+    .max(1)
+    .optional()
+    .describe(
+      `의미 검색 결과의 최소 유사도. 0~1이며 높을수록 엄격합니다. 생략 시 ${DEFAULT_MIN_SIMILARITY}.`,
+    ),
+}).openapi('ClubAiSearchQuery')
 
 export const UpdateClubReviewSchema = z
   .object({

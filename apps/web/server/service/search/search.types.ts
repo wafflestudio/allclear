@@ -27,6 +27,8 @@ export type SearchSortType = 'default'
 export type SearchOptions = {
   filters: SearchFilters
   sort?: SearchSortType
+  // AI 검색의 의미 검색 결과는 이 유사도(0~1) 이상만 표시합니다.
+  minSimilarity?: number
 }
 
 export type SearchMatchedClub = {

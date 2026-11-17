@@ -24,6 +24,16 @@ pnpm dev:web
 `node_modules`를 다시 설치한 경우에만 `prisma:generate`를 다시 실행하면 됩니다.
 `pnpm dev:web`은 DB migration을 실행하지 않습니다.
 
+## AI 검색
+
+`/api/v2/clubs/ai-search`는 검색문에서 모든 동아리에 흔한 낱말을 빼고, 문자열 검색 결과 뒤에 뜻이 가까운 동아리를 붙입니다.
+회원 전용이며 계정당 하루 50회까지 쓸 수 있습니다.
+
+1. migration을 적용합니다. `pnpm --dir apps/web exec prisma migrate deploy`
+2. 서버 환경 변수 `ELICE_KEY`, `ELICE_EMBEDDING_ENDPOINT`를 설정합니다.
+   값의 형식은 `.env.example`에 있습니다. 설정이 없으면 문자열 검색만 합니다.
+3. `/admin`의 **검색 정보 갱신**에서 동아리 임베딩을 만듭니다. 이후 월 1회 갱신합니다.
+
 ## 기술 스택 
 
 ### 언어 / 프레임워크

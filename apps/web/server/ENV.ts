@@ -2,6 +2,9 @@ const HOST = process.env.HOST ?? 'http://localhost:3000'
 const SERVER_BASE_URL = `${HOST}/api`
 const REDIS_URL = process.env.REDIS_URL ? `redis://${process.env.REDIS_URL}` : ''
 
+const ELICE_KEY = process.env.ELICE_KEY ?? ''
+const ELICE_EMBEDDING_ENDPOINT = process.env.ELICE_EMBEDDING_ENDPOINT ?? ''
+
 export const ENV = {
   HOST,
   API_SERVER_BASE_URL: SERVER_BASE_URL,
@@ -11,6 +14,12 @@ export const ENV = {
     USERNAME: process.env.DB_USERNAME ?? 'postgres',
     PASSWORD: process.env.DB_PASSWORD ?? '',
     DB_NAME: process.env.DB_NAME ?? 'postgres',
+  },
+  // Elice ML API의 키와 임베딩 모델 주소입니다. 둘 다 있어야 의미 검색이 켜집니다.
+  ELICE: {
+    API_KEY: ELICE_KEY,
+    EMBEDDING_ENDPOINT: ELICE_EMBEDDING_ENDPOINT,
+    IS_CONFIGURED: ELICE_KEY !== '' && ELICE_EMBEDDING_ENDPOINT !== '',
   },
   KAKAO: {
     CLIENT_ID: process.env.KAKAO_CLIENT_ID ?? '',
