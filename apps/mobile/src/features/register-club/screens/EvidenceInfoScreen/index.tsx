@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
@@ -11,6 +10,8 @@ import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
 	clubName: string;
+	evidenceImages: EditableImage[];
+	onEvidenceImagesChange: (images: EditableImage[]) => void;
 	onNext: () => void;
 	onPrevious: () => void;
 	progress?: number;
@@ -18,12 +19,12 @@ type Props = {
 
 export const EvidenceInfoScreen = ({
 	clubName,
+	evidenceImages,
+	onEvidenceImagesChange,
 	onNext,
 	onPrevious,
 	progress,
 }: Props) => {
-	const [evidenceImages, setEvidenceImages] = useState<EditableImage[]>([]);
-
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
 			<ScrollView contentContainerStyle={styles.content}>
@@ -37,7 +38,10 @@ export const EvidenceInfoScreen = ({
 				</Text>
 
 				<View style={styles.notice}>
-					<NoticeCard title="제출 가능한 예시">
+					<NoticeCard
+						title="제출 가능한 예시"
+						style={{ paddingHorizontal: s(20) }}
+					>
 						<Text>
 							동아리 <Text style={styles.noticeStrong}>인스타그램 계정</Text>{" "}
 							로그인된 화면{"\n"}
@@ -60,7 +64,7 @@ export const EvidenceInfoScreen = ({
 				<View style={styles.uploadField}>
 					<ImageUploadField
 						images={evidenceImages}
-						onChange={setEvidenceImages}
+						onChange={onEvidenceImagesChange}
 						maxCount={5}
 						showCount={false}
 						tileSize={120}
@@ -72,6 +76,7 @@ export const EvidenceInfoScreen = ({
 			<FormNavigationButtons
 				onPrevious={onPrevious}
 				onNext={onNext}
+				isNextDisabled={evidenceImages.length === 0}
 				progress={progress}
 			/>
 		</SafeAreaView>

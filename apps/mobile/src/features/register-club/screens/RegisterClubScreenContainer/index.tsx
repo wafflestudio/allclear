@@ -3,6 +3,7 @@ import Toast from "react-native-toast-message";
 import type { User } from "@/entities/user";
 import { RegisterClubConfirmModal } from "@/features/register-club/components/RegisterClubConfirmModal";
 import { useRegisterClub } from "@/features/register-club/hooks/useRegisterClub";
+import { ApplicationReviewScreen } from "@/features/register-club/screens/ApplicationReviewScreen";
 import { CategorySelectionScreen } from "@/features/register-club/screens/CategorySelectionScreen";
 import { ClubAffiliationScreen } from "@/features/register-club/screens/ClubAffiliationScreen";
 import { ClubBasicInfoScreen } from "@/features/register-club/screens/ClubBasicInfoScreen";
@@ -69,6 +70,7 @@ export const RegisterClubScreenContainer = () => {
 	const [formData, setFormData] = useState<RegisterClubFormData>(() =>
 		getInitialFormData(user),
 	);
+	const [evidenceImages, setEvidenceImages] = useState<EditableImage[]>([]);
 	const [showConfirm, setShowConfirm] = useState(false);
 	const { openBottomSheet: openLoginSheet } = useLoginBottomSheet();
 
@@ -91,6 +93,7 @@ export const RegisterClubScreenContainer = () => {
 	const resetAndExit = () => {
 		setShowConfirm(false);
 		setFormData(getInitialFormData(user));
+		setEvidenceImages([]);
 		setCurrentStep(0);
 		navigation.navigate("마이");
 	};
@@ -124,7 +127,7 @@ export const RegisterClubScreenContainer = () => {
 	};
 
 	const handleNext = () => {
-		setCurrentStep((prev) => Math.min(prev + 1, 5));
+		setCurrentStep((prev) => Math.min(prev + 1, 6));
 	};
 
 	const handlePrevious = () => {
@@ -207,12 +210,21 @@ export const RegisterClubScreenContainer = () => {
 		<EvidenceInfoScreen
 			key="step5"
 			clubName={formData.clubName}
+			evidenceImages={evidenceImages}
+			onEvidenceImagesChange={setEvidenceImages}
+			onNext={handleNext}
+			onPrevious={handlePrevious}
+		/>,
+		<ApplicationReviewScreen
+			key="step6"
+			formData={formData}
+			evidenceImages={evidenceImages}
 			onNext={handleOpenConfirm}
 			onPrevious={handlePrevious}
 		/>,
 	];
 
-	// 7 stages total: the 6 form steps plus the final confirmation popup,
+	// 8 stages total: the 7 form steps plus the final confirmation popup,
 	// so the bar is never fully filled while a form step is on screen.
 	const progress = (currentStep + 1) / (screens.length + 1);
 

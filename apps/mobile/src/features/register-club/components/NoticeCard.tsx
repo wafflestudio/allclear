@@ -1,31 +1,39 @@
 import type { ReactNode } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import {
+	type StyleProp,
+	StyleSheet,
+	Text,
+	View,
+	type ViewStyle,
+} from "react-native";
 import VerificationMark from "@/features/club/components/VerificationMark";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	title: string;
+	title?: string;
 	children: ReactNode;
+	style?: StyleProp<ViewStyle>;
 };
 
-export const NoticeCard = ({ title, children }: Props) => (
-	<View style={styles.card}>
-		<View style={styles.heading}>
-			<VerificationMark status="VERIFIED" size={16} />
-			<Text style={styles.title}>{title}</Text>
-		</View>
+export const NoticeCard = ({ title, children, style }: Props) => (
+	<View style={[styles.card, style]}>
+		{title ? (
+			<View style={styles.heading}>
+				<VerificationMark status="VERIFIED" size={16} />
+				<Text style={styles.title}>{title}</Text>
+			</View>
+		) : null}
 		<Text style={styles.body}>{children}</Text>
 	</View>
 );
 
 const styles = StyleSheet.create({
 	card: {
-		backgroundColor: "rgba(135, 79, 255, 0.2)",
-		borderRadius: s(15),
-		paddingHorizontal: s(20),
-		paddingVertical: vs(16),
+		backgroundColor: Colors.POINTCOLOR_10,
+		borderRadius: s(12),
+		padding: s(16),
 		gap: vs(8),
 	},
 	heading: {
