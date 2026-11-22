@@ -7,6 +7,7 @@ import { CategorySelectionScreen } from "@/features/register-club/screens/Catego
 import { ClubAffiliationScreen } from "@/features/register-club/screens/ClubAffiliationScreen";
 import { ClubBasicInfoScreen } from "@/features/register-club/screens/ClubBasicInfoScreen";
 import { ClubDetailsScreen } from "@/features/register-club/screens/ClubDetailsScreen";
+import { EvidenceInfoScreen } from "@/features/register-club/screens/EvidenceInfoScreen";
 import { ManagerInfoScreen } from "@/features/register-club/screens/ManagerInfoScreen";
 import {
 	initialFormData,
@@ -16,6 +17,7 @@ import { getSnsRequestFields } from "@/features/register-club/validation";
 import type { RegisterClubRequest } from "@/repositories/club";
 import { useLoginBottomSheet } from "@/shared/contexts/loginBottomSheetContext";
 import { useProfile } from "@/shared/contexts/profileContext";
+import type { EditableImage, ImageFile } from "@/shared/types/image";
 import {
 	getPhoneNumberPrefill,
 	getStudentIdPrefill,
@@ -122,7 +124,7 @@ export const RegisterClubScreenContainer = () => {
 	};
 
 	const handleNext = () => {
-		setCurrentStep((prev) => Math.min(prev + 1, 4));
+		setCurrentStep((prev) => Math.min(prev + 1, 5));
 	};
 
 	const handlePrevious = () => {
@@ -156,9 +158,12 @@ export const RegisterClubScreenContainer = () => {
 		registerClub({
 			request: mapFormDataToRequest(formData),
 			imageFile: formData.clubImageFile,
-			activityImageFiles: formData.activityImages.flatMap((image) =>
-				image.file ? [image.file] : [],
-			),
+			activityImageFiles: formData.activityImages
+				.filter(
+					(image): image is EditableImage & { file: ImageFile } =>
+						image.file !== undefined,
+				)
+				.map((image) => image.file),
 		});
 	};
 
@@ -195,13 +200,19 @@ export const RegisterClubScreenContainer = () => {
 			key="step4"
 			formData={formData}
 			onFormDataChange={handleFormDataChange}
-			onComplete={handleOpenConfirm}
+			onComplete={handleNext}
 			onPrevious={handlePrevious}
 			isLoading={isLoading}
 		/>,
+		<EvidenceInfoScreen
+			key="step5"
+			clubName={formData.clubName}
+			onNext={handleOpenConfirm}
+			onPrevious={handlePrevious}
+		/>,
 	];
 
-	// 6 stages total: the 5 form steps plus the final confirmation popup,
+	// 7 stages total: the 6 form steps plus the final confirmation popup,
 	// so the bar is never fully filled while a form step is on screen.
 	const progress = (currentStep + 1) / (screens.length + 1);
 

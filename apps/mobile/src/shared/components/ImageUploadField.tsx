@@ -18,12 +18,14 @@ import type { EditableImage } from "@/shared/types/image";
 import { ms, s, vs } from "@/shared/utils/scale";
 
 type Props = {
-	title: string;
+	title?: string;
 	description?: string;
 	images: EditableImage[];
 	onChange: (images: EditableImage[]) => void;
 	maxCount: number;
+	showCount?: boolean;
 	emptyMessage?: string;
+	footerMessage?: string;
 	errorTitle?: string;
 	fileNamePrefix?: string;
 	tileSize?: number;
@@ -38,7 +40,9 @@ const ImageUploadField = ({
 	images,
 	onChange,
 	maxCount,
+	showCount = true,
 	emptyMessage,
+	footerMessage,
 	errorTitle = "이미지를 불러오지 못했어요",
 	fileNamePrefix = "image",
 	tileSize,
@@ -47,8 +51,9 @@ const ImageUploadField = ({
 	onRejectedFiles,
 }: Props) => {
 	const isSingleImage = maxCount === 1;
+	const fieldTitle = title || "이미지";
 	const remainingCount = Math.max(0, maxCount - images.length);
-	const resolvedTileSize = tileSize ?? s(isSingleImage ? 150 : 104);
+	const resolvedTileSize = s(tileSize ?? (isSingleImage ? 150 : 104));
 
 	const handleAddImages = async () => {
 		if (!isSingleImage && remainingCount <= 0) return;
@@ -106,7 +111,7 @@ const ImageUploadField = ({
 		<ImagePickerTile
 			imageUri={images[0]?.uri}
 			onPress={handleAddImages}
-			accessibilityLabel={`${title} 선택`}
+			accessibilityLabel={`${fieldTitle} 선택`}
 			style={[
 				styles.singleTile,
 				{ width: resolvedTileSize, height: resolvedTileSize },
@@ -141,7 +146,7 @@ const ImageUploadField = ({
 					/>
 					<Pressable
 						accessibilityRole="button"
-						accessibilityLabel={`${title} 삭제`}
+						accessibilityLabel={`${fieldTitle} 삭제`}
 						style={styles.removeButton}
 						onPress={() =>
 							onChange(images.filter((item) => item.id !== image.id))
@@ -153,7 +158,7 @@ const ImageUploadField = ({
 			))}
 			{remainingCount > 0 && (
 				<ImagePickerTile
-					accessibilityLabel={`${title} 추가`}
+					accessibilityLabel={`${fieldTitle} 추가`}
 					style={[
 						styles.addTile,
 						{ width: resolvedTileSize, height: resolvedTileSize },
@@ -162,7 +167,6 @@ const ImageUploadField = ({
 					onPress={handleAddImages}
 				>
 					<Icon name="add" size={ms(28)} color={Colors.BODYTEXT_DISABLED} />
-					<Text style={styles.addText}>사진 추가</Text>
 				</ImagePickerTile>
 			)}
 		</ScrollView>
@@ -170,20 +174,25 @@ const ImageUploadField = ({
 
 	return (
 		<View style={styles.wrapper}>
-			<View style={styles.labelRow}>
-				<Text style={styles.label}>{title}</Text>
-				{!isSingleImage && (
-					<Text style={styles.count}>
-						{images.length}/{maxCount}
-					</Text>
-				)}
-			</View>
+			{(title || !isSingleImage) && (
+				<View style={styles.labelRow}>
+					{title ? <Text style={styles.label}>{title}</Text> : <View />}
+					{!isSingleImage && showCount && (
+						<Text style={styles.count}>
+							{images.length}/{maxCount}
+						</Text>
+					)}
+				</View>
+			)}
 			{description ? (
 				<Text style={styles.description}>{description}</Text>
 			) : null}
 			{isSingleImage ? renderSingleImage() : renderMultipleImages()}
 			{images.length === 0 && emptyMessage ? (
 				<Text style={styles.emptyMessage}>{emptyMessage}</Text>
+			) : null}
+			{footerMessage ? (
+				<Text style={styles.footerMessage}>{footerMessage}</Text>
 			) : null}
 		</View>
 	);
@@ -222,9 +231,7 @@ const styles = StyleSheet.create({
 		borderRadius: s(10),
 		alignItems: "center",
 		justifyContent: "center",
-		gap: vs(4),
 	},
-	addText: { ...typography.bodySRegular, color: Colors.BODYTEXT_SUB },
 	singleTile: {
 		borderWidth: 1,
 		borderColor: Colors.BODYTEXT_DISABLED,
@@ -235,4 +242,5 @@ const styles = StyleSheet.create({
 	},
 	singleImage: { borderRadius: s(11) },
 	emptyMessage: { ...typography.bodyMRegular, color: Colors.POINTCOLOR },
+	footerMessage: { ...typography.bodyMRegular, color: Colors.POINTCOLOR },
 });
