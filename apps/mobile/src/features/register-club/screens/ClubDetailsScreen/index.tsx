@@ -11,15 +11,20 @@ import {
 	View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import type { RegisterClubFormData } from "@/features/register-club/types";
 import { areValidSnsUrls } from "@/features/register-club/validation";
-import ClubActivityImagePicker from "@/shared/components/ClubActivityImagePicker";
 import ClubSnsInputList from "@/shared/components/ClubSnsInputList";
+import ImageUploadField from "@/shared/components/ImageUploadField";
 import { CLUB_RECRUIT_TYPES } from "@/shared/constants/club";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
+import {
+	isActivityImageFileSizeAllowed,
+	MAX_CLUB_ACTIVITY_IMAGES,
+} from "@/shared/utils/activityImage";
 import {
 	decrementMinActivityPeriodValue,
 	incrementMinActivityPeriodValue,
@@ -312,10 +317,24 @@ export const ClubDetailsScreen = ({
 							onChange={(clubSNSUrls) => onFormDataChange({ clubSNSUrls })}
 						/>
 
-						<ClubActivityImagePicker
+						<ImageUploadField
+							title="활동 사진 (선택)"
+							description="동아리 활동 모습을 최대 5장까지 등록할 수 있어요"
 							images={formData.activityImages}
 							onChange={(activityImages) =>
 								onFormDataChange({ activityImages })
+							}
+							maxCount={MAX_CLUB_ACTIVITY_IMAGES}
+							errorTitle="활동 사진을 불러오지 못했어요"
+							fileNamePrefix="club_activity"
+							isFileSizeAllowed={isActivityImageFileSizeAllowed}
+							onRejectedFiles={(count) =>
+								Toast.show({
+									type: "error",
+									text1: "10MB 이하 사진만 등록할 수 있어요",
+									text2: `${count}장의 활동 사진을 제외했어요`,
+									position: "top",
+								})
 							}
 						/>
 

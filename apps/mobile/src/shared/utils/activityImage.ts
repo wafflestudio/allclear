@@ -1,3 +1,4 @@
+export const MAX_CLUB_ACTIVITY_IMAGES = 5;
 export const MAX_ACTIVITY_IMAGE_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 export const isActivityImageFileSizeAllowed = (

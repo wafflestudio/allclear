@@ -1,20 +1,12 @@
-import {
-	Image,
-	Pressable,
-	ScrollView,
-	StyleSheet,
-	Text,
-	View,
-} from "react-native";
-import { launchImageLibrary } from "react-native-image-picker";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Toast from "react-native-toast-message";
-import Icon from "react-native-vector-icons/MaterialIcons";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import type { RegisterClubFormData } from "@/features/register-club/types";
+import ImageUploadField from "@/shared/components/ImageUploadField";
 import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
+import type { EditableImage } from "@/shared/types/image";
 import { s, vs } from "@/shared/utils/scale";
 
 type Props = {
@@ -34,40 +26,22 @@ export const ClubBasicInfoScreen = ({
 }: Props) => {
 	const isComplete = formData.clubName.trim();
 
-	const handleAddImage = async () => {
-		const result = await launchImageLibrary({
-			mediaType: "photo",
-			selectionLimit: 1,
-			includeBase64: false,
-		});
-
-		if (result.didCancel) {
-			return;
-		}
-
-		if (result.errorCode) {
-			Toast.show({
-				type: "error",
-				text1: "이미지를 불러오지 못했어요",
-				text2: result.errorMessage,
-				position: "top",
-				topOffset: 60,
-				visibilityTime: 2000,
-			});
-			return;
-		}
-
-		const asset = result.assets?.[0];
-		if (asset?.uri) {
-			onFormDataChange({
-				clubImage: asset.uri,
-				clubImageFile: {
-					uri: asset.uri,
-					type: asset.type ?? "image/jpeg",
-					name: asset.fileName ?? `club_${Date.now()}.jpg`,
+	const clubImages: EditableImage[] = formData.clubImage
+		? [
+				{
+					id: "club-representative-image",
+					uri: formData.clubImage,
+					file: formData.clubImageFile ?? undefined,
 				},
-			});
-		}
+			]
+		: [];
+
+	const handleClubImagesChange = (images: EditableImage[]) => {
+		const image = images[0];
+		onFormDataChange({
+			clubImage: image?.uri ?? null,
+			clubImageFile: image?.file ?? null,
+		});
 	};
 
 	return (
@@ -82,31 +56,15 @@ export const ClubBasicInfoScreen = ({
 				</View>
 
 				<View style={styles.form}>
-					<View style={styles.fieldWrapper}>
-						<Text style={styles.label}>동아리 대표 이미지</Text>
-						<Text style={styles.helperDescription}>
-							4X4 정방형 이미지를 권장드려요
-						</Text>
-						<Pressable style={styles.imageUploadBox} onPress={handleAddImage}>
-							{formData.clubImage ? (
-								<Image
-									source={{ uri: formData.clubImage }}
-									style={styles.uploadedImage}
-								/>
-							) : (
-								<Icon
-									name="add"
-									size={s(40)}
-									color={Colors.BODYTEXT_DISABLED}
-								/>
-							)}
-						</Pressable>
-						{!formData.clubImage && (
-							<Text style={styles.validationText}>
-								대표 이미지를 등록해주세요
-							</Text>
-						)}
-					</View>
+					<ImageUploadField
+						title="동아리 대표 이미지"
+						description="4X4 정방형 이미지를 권장드려요"
+						images={clubImages}
+						onChange={handleClubImagesChange}
+						maxCount={1}
+						emptyMessage="대표 이미지를 등록해주세요"
+						fileNamePrefix="club"
+					/>
 
 					<View style={styles.fieldWrapper}>
 						<Text style={styles.label}>동아리명</Text>
@@ -157,28 +115,8 @@ const styles = StyleSheet.create({
 		...typography.headerXLSemibold,
 		color: Colors.BODYTEXT_SUB,
 	},
-	helperDescription: {
-		...typography.bodySRegular,
-		color: Colors.BODYTEXT_SUB,
-	},
 	validationText: {
 		...typography.bodyMRegular,
 		color: Colors.POINTCOLOR,
-	},
-	imageUploadBox: {
-		width: s(150),
-		height: s(150),
-		borderWidth: 1,
-		borderColor: Colors.BODYTEXT_DISABLED,
-		borderRadius: s(12),
-		justifyContent: "center",
-		alignItems: "center",
-		backgroundColor: Colors.WHITE,
-		marginTop: vs(4),
-	},
-	uploadedImage: {
-		width: "100%",
-		height: "100%",
-		borderRadius: s(11),
 	},
 });

@@ -35,8 +35,8 @@ import type {
 	ManagedClubDetail,
 	UpdateManagedClubRequest,
 } from "@/repositories/club";
-import ClubActivityImagePicker from "@/shared/components/ClubActivityImagePicker";
 import ClubSnsInputList from "@/shared/components/ClubSnsInputList";
+import ImageUploadField from "@/shared/components/ImageUploadField";
 import TextField from "@/shared/components/TextField";
 import { CLUB_CATEGORIES } from "@/shared/constants/category";
 import { CLUB_RECRUIT_TYPES } from "@/shared/constants/club";
@@ -49,6 +49,10 @@ import type { SCREEN_TYPE, StackParamList } from "@/shared/constants/screen";
 import { typography } from "@/shared/constants/typography";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import type { EditableImage, ImageFile } from "@/shared/types/image";
+import {
+	isActivityImageFileSizeAllowed,
+	MAX_CLUB_ACTIVITY_IMAGES,
+} from "@/shared/utils/activityImage";
 import {
 	areValidSnsUrls,
 	getClubSnsUrls,
@@ -1006,9 +1010,12 @@ const ClubInfoEditScreen = () => {
 	const retainedActivityImageUrls = formData.activityImages
 		.filter((image) => !image.file)
 		.map((image) => image.uri);
-	const newActivityImageFiles = formData.activityImages.flatMap((image) =>
-		image.file ? [image.file] : [],
-	);
+	const newActivityImageFiles = formData.activityImages
+		.filter(
+			(image): image is EditableImage & { file: ImageFile } =>
+				image.file !== undefined,
+		)
+		.map((image) => image.file);
 	const activityImagesChanged =
 		newActivityImageFiles.length > 0 ||
 		JSON.stringify(retainedActivityImageUrls) !==
@@ -1180,9 +1187,23 @@ const ClubInfoEditScreen = () => {
 							onChange={handleDescriptionChange}
 						/>
 
-						<ClubActivityImagePicker
+						<ImageUploadField
+							title="활동 사진 (선택)"
+							description="동아리 활동 모습을 최대 5장까지 등록할 수 있어요"
 							images={formData.activityImages}
 							onChange={handleActivityImagesChange}
+							maxCount={MAX_CLUB_ACTIVITY_IMAGES}
+							errorTitle="활동 사진을 불러오지 못했어요"
+							fileNamePrefix="club_activity"
+							isFileSizeAllowed={isActivityImageFileSizeAllowed}
+							onRejectedFiles={(count) =>
+								Toast.show({
+									type: "error",
+									text1: "10MB 이하 사진만 등록할 수 있어요",
+									text2: `${count}장의 활동 사진을 제외했어요`,
+									position: "top",
+								})
+							}
 						/>
 					</View>
 
