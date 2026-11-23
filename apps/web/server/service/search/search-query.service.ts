@@ -28,6 +28,8 @@ export class SearchQueryService {
               OR: [
                 { name: { contains: query, mode: 'insensitive' } },
                 { short_description: { contains: query, mode: 'insensitive' } },
+                { description: { contains: query, mode: 'insensitive' } },
+                { introduction: { contains: query, mode: 'insensitive' } },
               ],
             },
           ],

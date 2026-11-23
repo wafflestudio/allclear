@@ -105,6 +105,12 @@ describe('SearchQueryService with Prisma', () => {
       deleted_at: null,
       has_dongbang: true,
     })
+    expect(prisma.club.findMany.mock.calls[0][0].where.AND[1].OR).toEqual([
+      { name: { contains: 'music', mode: 'insensitive' } },
+      { short_description: { contains: 'music', mode: 'insensitive' } },
+      { description: { contains: 'music', mode: 'insensitive' } },
+      { introduction: { contains: 'music', mode: 'insensitive' } },
+    ])
     expect(prisma.club.findMany.mock.calls[1][0].where.AND[1]).toEqual({
       college_major_id: { in: [2] },
     })
