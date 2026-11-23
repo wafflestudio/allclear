@@ -4,6 +4,7 @@ import type { Prisma } from 'server/infra/database/generated/prisma/client'
 import { getPrismaClient } from 'server/infra/database/prisma'
 import { toClubDomainSource } from 'server/infra/database/prisma-club-mapping'
 import { Service } from 'server/provider'
+import { getCollegeMajorAliasTargets } from './college-major-aliases'
 import type { SearchFilters } from './search.types'
 import { buildSearchFilter } from './search-filter'
 
@@ -86,11 +87,13 @@ export class SearchQueryService {
     ])
     const majorIdsByTerm = terms.map((term) => {
       const normalized = term.toLowerCase()
+      const aliasTargets = new Set(getCollegeMajorAliasTargets(term))
       return collegeMajors
         .filter(
           ({ college, major }) =>
             major?.toLowerCase().includes(normalized) ||
-            (major === null && college?.toLowerCase().includes(normalized)),
+            (major === null && college?.toLowerCase().includes(normalized)) ||
+            aliasTargets.has(major ?? college ?? ''),
         )
         .map(({ id }) => id)
     })
@@ -128,12 +131,19 @@ export class SearchQueryService {
   }
 
   private async findMatchingCollegeMajorIds(query: string): Promise<number[]> {
+    const aliasTargets = getCollegeMajorAliasTargets(query)
     const collegeMajors = await getPrismaClient().college_major.findMany({
       where: {
         deleted_at: null,
         OR: [
           { college: { contains: query, mode: 'insensitive' }, major: null },
           { major: { contains: query, mode: 'insensitive' } },
+          ...(aliasTargets.length
+            ? [
+                { college: { in: [...aliasTargets] }, major: null },
+                { major: { in: [...aliasTargets] } },
+              ]
+            : []),
         ],
       },
       select: { id: true },
