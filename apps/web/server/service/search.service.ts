@@ -22,6 +22,16 @@ function removeIgnoredSearchTerms(query: string): string {
   return terms.filter((term) => !IGNORED_SEARCH_TERMS.has(term)).join(' ')
 }
 
+function replaceHakgwaSuffix(query: string): string {
+  const terms = query.trim().split(/\s+/)
+  if (!terms.some((term) => term.length > 2 && term.endsWith('학과'))) {
+    return query
+  }
+  return terms
+    .map((term) => (term.length > 2 && term.endsWith('학과') ? term.slice(0, -1) : term))
+    .join(' ')
+}
+
 @Service
 export class SearchService {
   @Inject(SearchQueryService)
@@ -49,11 +59,22 @@ export class SearchService {
       return { clubs: [], correctedQuery: null, isTypoCorrected: false }
     }
 
-    const [exactClubs, termClubs] = await Promise.all([
+    const variantQuery = replaceHakgwaSuffix(searchQuery)
+    const hasVariant = variantQuery !== searchQuery
+    const [exactClubs, termClubs, variantExactClubs, variantTermClubs] = await Promise.all([
       this.runSearch(searchQuery, options),
       /\s/.test(searchQuery.trim()) ? this.runTermSearch(searchQuery, options) : Promise.resolve([]),
+      hasVariant ? this.runSearch(variantQuery, options) : Promise.resolve([]),
+      hasVariant && /\s/.test(variantQuery.trim())
+        ? this.runTermSearch(variantQuery, options)
+        : Promise.resolve([]),
     ])
-    const clubs = this.mergeClubs(exactClubs, termClubs, searchQuery, options)
+    const clubs = this.mergeClubs(
+      [...exactClubs, ...termClubs],
+      [...variantExactClubs, ...variantTermClubs],
+      searchQuery,
+      options,
+    )
     if (exactClubs.length > 0) {
       return {
         clubs,
