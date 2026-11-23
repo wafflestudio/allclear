@@ -35,8 +35,12 @@ export class SearchService {
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
 
-    const clubs = await this.runSearch(query, options)
-    if (clubs.length > 0) {
+    const [exactClubs, termClubs] = await Promise.all([
+      this.runSearch(query, options),
+      /\s/.test(query.trim()) ? this.runTermSearch(query, options) : Promise.resolve([]),
+    ])
+    const clubs = this.mergeClubs(exactClubs, termClubs, query, options)
+    if (exactClubs.length > 0) {
       return {
         clubs,
         correctedQuery: null,
@@ -49,7 +53,7 @@ export class SearchService {
       const correctedClubs = await this.runSearch(correctedQuery, options)
       if (correctedClubs.length > 0) {
         return {
-          clubs: correctedClubs,
+          clubs: this.mergeClubs(clubs, correctedClubs, query, options),
           correctedQuery,
           isTypoCorrected: true,
         }
@@ -57,7 +61,7 @@ export class SearchService {
     }
 
     return {
-      clubs: [],
+      clubs,
       correctedQuery: null,
       isTypoCorrected: false,
     }
@@ -70,5 +74,20 @@ export class SearchService {
     )
     const clubs = await this.hydratorService.toClubs(entities)
     return this.sortService.sort(clubs, query, options.sort ?? DEFAULT_SEARCH_SORT)
+  }
+
+  private async runTermSearch(query: string, options: SearchOptions): Promise<SearchClub[]> {
+    const entities = await this.searchQueryService.searchTerms(query, options.filters)
+    return this.hydratorService.toClubs(entities)
+  }
+
+  private mergeClubs(
+    first: SearchClub[],
+    second: SearchClub[],
+    query: string,
+    options: SearchOptions,
+  ): SearchClub[] {
+    const unique = new Map([...first, ...second].map((club) => [club.uuid, club]))
+    return this.sortService.sort([...unique.values()], query, options.sort ?? DEFAULT_SEARCH_SORT)
   }
 }

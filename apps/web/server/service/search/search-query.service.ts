@@ -72,6 +72,61 @@ export class SearchQueryService {
     )
   }
 
+  async searchTerms(query: string, filters: SearchFilters = {}): Promise<ClubDomainSource[]> {
+    const terms = [...new Set(query.trim().split(/\s+/))].filter(Boolean)
+    if (terms.length === 0) return []
+
+    const prisma = getPrismaClient()
+    const [filter, collegeMajors] = await Promise.all([
+      buildSearchFilter(filters),
+      prisma.college_major.findMany({
+        where: { deleted_at: null },
+        select: { id: true, college: true, major: true },
+      }),
+    ])
+    const majorIdsByTerm = terms.map((term) => {
+      const normalized = term.toLowerCase()
+      return collegeMajors
+        .filter(
+          ({ college, major }) =>
+            major?.toLowerCase().includes(normalized) ||
+            (major === null && college?.toLowerCase().includes(normalized)),
+        )
+        .map(({ id }) => id)
+    })
+    const termConditions: Prisma.clubWhereInput[] = terms.map((term, index) => ({
+      OR: [
+        { name: { contains: term, mode: 'insensitive' } },
+        { short_description: { contains: term, mode: 'insensitive' } },
+        { description: { contains: term, mode: 'insensitive' } },
+        { introduction: { contains: term, mode: 'insensitive' } },
+        ...(majorIdsByTerm[index].length
+          ? [{ college_major_id: { in: majorIdsByTerm[index] } }]
+          : []),
+      ],
+    }))
+    const clubs = await prisma.club.findMany({
+      where: {
+        AND: [{ status: PUBLIC_CLUB_STATUS, deleted_at: null, ...filter }, ...termConditions],
+      },
+    })
+    if (clubs.length === 0) return []
+
+    const collegeMajorIds = Array.from(
+      new Set(clubs.map((club) => club.college_major_id).filter((id): id is number => id !== null)),
+    )
+    const matchedMajors = collegeMajors.filter(({ id }) => collegeMajorIds.includes(id))
+    const collegeMajorById = new Map(matchedMajors.map((major) => [major.id, major]))
+    return clubs.map((club) =>
+      toClubDomainSource(
+        club,
+        club.college_major_id === null
+          ? null
+          : (collegeMajorById.get(club.college_major_id) ?? null),
+      ),
+    )
+  }
+
   private async findMatchingCollegeMajorIds(query: string): Promise<number[]> {
     const collegeMajors = await getPrismaClient().college_major.findMany({
       where: {
