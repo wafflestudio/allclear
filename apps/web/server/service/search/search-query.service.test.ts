@@ -57,6 +57,64 @@ describe('Prisma search filters', () => {
 })
 
 describe('SearchQueryService with Prisma', () => {
+  it('matches separate words across a major and a club field', async () => {
+    prisma.college_major.findMany.mockResolvedValueOnce([
+      { id: 2, college: '자연과학대학', major: '물리학부' },
+    ])
+    prisma.club.findMany.mockResolvedValueOnce([
+      {
+        uuid: 'club-1',
+        name: '밴드',
+        description: 'description',
+        short_description: 'short',
+        introduction: null,
+        type: 'type',
+        category: 'category',
+        affiliation_type: '소속동아리',
+        college_major_id: 2,
+        recruit_type: null,
+        is_official_verified: false,
+        verified_at: null,
+        has_dongbang: false,
+        dongbang_location: null,
+        min_activity_period: 0,
+        active_member_count: 5,
+        founded_at: null,
+        status: 'APPROVED',
+        sns_urls: [],
+        activity_image_urls: [],
+        image_uri: 'image',
+        article: null,
+        article_uploaded_at: null,
+        reject_reason: null,
+      },
+    ])
+
+    const result = await new SearchQueryService().searchTerms('물리 밴드')
+
+    expect(result).toMatchObject([{ uuid: 'club-1', collegeMajorId: 2 }])
+    expect(prisma.club.findMany.mock.calls[0][0].where.AND).toEqual([
+      { status: 'APPROVED', deleted_at: null },
+      {
+        OR: [
+          { name: { contains: '물리', mode: 'insensitive' } },
+          { short_description: { contains: '물리', mode: 'insensitive' } },
+          { description: { contains: '물리', mode: 'insensitive' } },
+          { introduction: { contains: '물리', mode: 'insensitive' } },
+          { college_major_id: { in: [2] } },
+        ],
+      },
+      {
+        OR: [
+          { name: { contains: '밴드', mode: 'insensitive' } },
+          { short_description: { contains: '밴드', mode: 'insensitive' } },
+          { description: { contains: '밴드', mode: 'insensitive' } },
+          { introduction: { contains: '밴드', mode: 'insensitive' } },
+        ],
+      },
+    ])
+  })
+
   it('searches active public clubs and maps deduplicated results with college major', async () => {
     const club = {
       uuid: 'club-1',
@@ -105,6 +163,12 @@ describe('SearchQueryService with Prisma', () => {
       deleted_at: null,
       has_dongbang: true,
     })
+    expect(prisma.club.findMany.mock.calls[0][0].where.AND[1].OR).toEqual([
+      { name: { contains: 'music', mode: 'insensitive' } },
+      { short_description: { contains: 'music', mode: 'insensitive' } },
+      { description: { contains: 'music', mode: 'insensitive' } },
+      { introduction: { contains: 'music', mode: 'insensitive' } },
+    ])
     expect(prisma.club.findMany.mock.calls[1][0].where.AND[1]).toEqual({
       college_major_id: { in: [2] },
     })

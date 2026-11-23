@@ -17,11 +17,57 @@ vi.mock('server/domain/model/Club', () => ({ toClubDomain }))
 vi.mock('../club.service', () => ({ ClubService: class ClubService {} }))
 
 import type { ClubDomainSource } from 'server/domain/model/Club'
+import { SearchService } from '../search.service'
 import { SearchResultHydratorService } from './search-result-hydrator.service'
 import { SearchTypoCorrectionService } from './search-typo-correction.service'
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+it('keeps phrase matches and deduplicates word matches', async () => {
+  const service = new SearchService()
+  const search = vi.fn().mockResolvedValue([{ uuid: 'phrase' }])
+  const searchTerms = vi.fn().mockResolvedValue([{ uuid: 'phrase' }, { uuid: 'cross-field' }])
+  const findCorrectedQuery = vi.fn()
+  Object.defineProperties(service, {
+    searchQueryService: { value: { search, searchTerms } },
+    searchLogService: { value: { logSearch: vi.fn() } },
+    typoCorrectionService: { value: { findCorrectedQuery } },
+    hydratorService: { value: { toClubs: (entities: unknown[]) => entities } },
+    sortService: { value: { sort: (clubs: unknown[]) => clubs } },
+  })
+
+  await expect(service.searchWithTypoCorrection('물리 밴드')).resolves.toEqual({
+    clubs: [{ uuid: 'phrase' }, { uuid: 'cross-field' }],
+    correctedQuery: null,
+    isTypoCorrected: false,
+  })
+  expect(findCorrectedQuery).not.toHaveBeenCalled()
+})
+
+it('keeps typo-corrected matches even when word matches exist', async () => {
+  const service = new SearchService()
+  const search = vi
+    .fn()
+    .mockResolvedValueOnce([])
+    .mockResolvedValueOnce([{ uuid: 'corrected' }])
+  const searchTerms = vi.fn().mockResolvedValue([{ uuid: 'cross-field' }])
+  const findCorrectedQuery = vi.fn().mockResolvedValue('물리 밴드')
+  Object.defineProperties(service, {
+    searchQueryService: { value: { search, searchTerms } },
+    searchLogService: { value: { logSearch: vi.fn() } },
+    typoCorrectionService: { value: { findCorrectedQuery } },
+    hydratorService: { value: { toClubs: (entities: unknown[]) => entities } },
+    sortService: { value: { sort: (clubs: unknown[]) => clubs } },
+  })
+
+  await expect(service.searchWithTypoCorrection('물리 밴드드')).resolves.toEqual({
+    clubs: [{ uuid: 'cross-field' }, { uuid: 'corrected' }],
+    correctedQuery: '물리 밴드',
+    isTypoCorrected: true,
+  })
+  expect(findCorrectedQuery).toHaveBeenCalledWith('물리 밴드드')
 })
 
 describe('SearchTypoCorrectionService with Prisma', () => {
