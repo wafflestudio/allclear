@@ -12,6 +12,16 @@ import { SearchResultHydratorService } from './search/search-result-hydrator.ser
 import { SearchSortService } from './search/search-sort.service'
 import { SearchTypoCorrectionService } from './search/search-typo-correction.service'
 
+const IGNORED_SEARCH_TERMS = new Set(['서울대', '서울대학교', '동아리'])
+
+function removeIgnoredSearchTerms(query: string): string {
+  const terms = query.trim().split(/\s+/)
+  if (!terms.some((term) => IGNORED_SEARCH_TERMS.has(term))) {
+    return query
+  }
+  return terms.filter((term) => !IGNORED_SEARCH_TERMS.has(term)).join(' ')
+}
+
 @Service
 export class SearchService {
   @Inject(SearchQueryService)
@@ -34,12 +44,16 @@ export class SearchService {
     options: SearchOptions = { filters: {} },
   ): Promise<ClubSearchResponse> {
     this.searchLogService.logSearch(query)
+    const searchQuery = removeIgnoredSearchTerms(query)
+    if (!searchQuery.trim()) {
+      return { clubs: [], correctedQuery: null, isTypoCorrected: false }
+    }
 
     const [exactClubs, termClubs] = await Promise.all([
-      this.runSearch(query, options),
-      /\s/.test(query.trim()) ? this.runTermSearch(query, options) : Promise.resolve([]),
+      this.runSearch(searchQuery, options),
+      /\s/.test(searchQuery.trim()) ? this.runTermSearch(searchQuery, options) : Promise.resolve([]),
     ])
-    const clubs = this.mergeClubs(exactClubs, termClubs, query, options)
+    const clubs = this.mergeClubs(exactClubs, termClubs, searchQuery, options)
     if (exactClubs.length > 0) {
       return {
         clubs,
@@ -48,12 +62,12 @@ export class SearchService {
       }
     }
 
-    const correctedQuery = await this.typoCorrectionService.findCorrectedQuery(query)
-    if (correctedQuery && correctedQuery !== query) {
+    const correctedQuery = await this.typoCorrectionService.findCorrectedQuery(searchQuery)
+    if (correctedQuery && correctedQuery !== searchQuery) {
       const correctedClubs = await this.runSearch(correctedQuery, options)
       if (correctedClubs.length > 0) {
         return {
-          clubs: this.mergeClubs(clubs, correctedClubs, query, options),
+          clubs: this.mergeClubs(clubs, correctedClubs, searchQuery, options),
           correctedQuery,
           isTypoCorrected: true,
         }
