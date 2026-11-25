@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	Animated,
 	Keyboard,
 	KeyboardAvoidingView,
+	type LayoutChangeEvent,
 	Platform,
 	Pressable,
 	ScrollView,
@@ -14,7 +16,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import { useRegisterClubFieldFocus } from "@/features/register-club/hooks/useRegisterClubFieldFocus";
 import type { RegisterClubFormData } from "@/features/register-club/types";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import { areValidSnsUrls } from "@/features/register-club/validation";
 import ClubSnsInputList from "@/shared/components/ClubSnsInputList";
 import ImageUploadField from "@/shared/components/ImageUploadField";
@@ -39,6 +43,7 @@ type Props = {
 	onPrevious: () => void;
 	isLoading?: boolean;
 	progress?: number;
+	focusTarget?: RegisterClubFocusTarget;
 };
 
 export const ClubDetailsScreen = ({
@@ -48,8 +53,55 @@ export const ClubDetailsScreen = ({
 	onPrevious,
 	isLoading = false,
 	progress,
+	focusTarget,
 }: Props) => {
 	const scrollViewRef = useRef<ScrollView>(null);
+	const [formY, setFormY] = useState(0);
+	const [fieldYs, setFieldYs] = useState<
+		Partial<Record<RegisterClubFocusTarget, number>>
+	>({});
+	const onFieldLayout =
+		(target: RegisterClubFocusTarget) => (event: LayoutChangeEvent) => {
+			const y = event.nativeEvent.layout.y;
+			setFieldYs((previous) => ({
+				...previous,
+				[target]: y,
+			}));
+		};
+	const getFieldY = (target: RegisterClubFocusTarget) => {
+		const fieldY = fieldYs[target];
+		return fieldY === undefined ? null : formY + fieldY;
+	};
+	const highlightedRecruitType = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "recruitType",
+		y: getFieldY("recruitType"),
+		scrollViewRef,
+	});
+	const highlightedActivityPeriod = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "minActivityPeriod",
+		y: getFieldY("minActivityPeriod"),
+		scrollViewRef,
+	});
+	const highlightedDongbang = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "hasDongbang",
+		y: getFieldY("hasDongbang"),
+		scrollViewRef,
+	});
+	const highlightedSns = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "clubSNSUrls",
+		y: getFieldY("clubSNSUrls"),
+		scrollViewRef,
+	});
+	const highlightedDescription = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "clubDescription",
+		y: getFieldY("clubDescription"),
+		scrollViewRef,
+	});
 	const isDescriptionFocusedRef = useRef(false);
 	const [minActivityPeriodMode, setMinActivityPeriodMode] =
 		useState<MinActivityPeriodMode>(
@@ -144,9 +196,19 @@ export const ClubDetailsScreen = ({
 						</Text>
 					</View>
 
-					<View style={styles.form}>
+					<View
+						style={styles.form}
+						onLayout={(event) => setFormY(event.nativeEvent.layout.y)}
+					>
 						{/* Recruitment Type */}
-						<View style={styles.fieldWrapper}>
+						<Animated.View
+							style={[
+								styles.fieldWrapper,
+								styles.highlightedFieldLayout,
+								{ backgroundColor: highlightedRecruitType },
+							]}
+							onLayout={onFieldLayout("recruitType")}
+						>
 							<Text style={styles.fieldLabel}>모집 형태</Text>
 							<View style={styles.buttonGroup}>
 								{CLUB_RECRUIT_TYPES.map((type) => (
@@ -174,10 +236,17 @@ export const ClubDetailsScreen = ({
 							<Text style={styles.validationText}>
 								모집 형태를 선택해주세요
 							</Text>
-						</View>
+						</Animated.View>
 
 						{/* Activity Period */}
-						<View style={styles.fieldWrapper}>
+						<Animated.View
+							style={[
+								styles.fieldWrapper,
+								styles.highlightedFieldLayout,
+								{ backgroundColor: highlightedActivityPeriod },
+							]}
+							onLayout={onFieldLayout("minActivityPeriod")}
+						>
 							<Text style={styles.fieldLabel}>(최소) 활동 기간</Text>
 							<View style={styles.periodRow}>
 								<View style={styles.modeButtons}>
@@ -248,10 +317,17 @@ export const ClubDetailsScreen = ({
 									</View>
 								</View>
 							</View>
-						</View>
+						</Animated.View>
 
 						{/* Dongbang */}
-						<View style={styles.fieldWrapper}>
+						<Animated.View
+							style={[
+								styles.fieldWrapper,
+								styles.highlightedFieldLayout,
+								{ backgroundColor: highlightedDongbang },
+							]}
+							onLayout={onFieldLayout("hasDongbang")}
+						>
 							<Text style={styles.fieldLabel}>동방 보유 여부</Text>
 							<View style={styles.buttonGroup}>
 								<Pressable
@@ -310,11 +386,14 @@ export const ClubDetailsScreen = ({
 							<Text style={styles.validationText}>
 								동방 보유 여부를 알려주세요
 							</Text>
-						</View>
+						</Animated.View>
 
 						<ClubSnsInputList
 							urls={formData.clubSNSUrls}
 							onChange={(clubSNSUrls) => onFormDataChange({ clubSNSUrls })}
+							style={styles.highlightedFieldLayout}
+							highlightColor={highlightedSns}
+							onLayout={onFieldLayout("clubSNSUrls")}
 						/>
 
 						<ImageUploadField
@@ -339,7 +418,14 @@ export const ClubDetailsScreen = ({
 						/>
 
 						{/* Description */}
-						<View style={styles.fieldWrapper}>
+						<Animated.View
+							style={[
+								styles.fieldWrapper,
+								styles.highlightedFieldLayout,
+								{ backgroundColor: highlightedDescription },
+							]}
+							onLayout={onFieldLayout("clubDescription")}
+						>
 							<Text style={styles.fieldLabel}>동아리 추가 설명</Text>
 							<TextInput
 								style={styles.descriptionInput}
@@ -365,7 +451,7 @@ export const ClubDetailsScreen = ({
 							<Text style={styles.validationText}>
 								동아리 추가 설명은 필수 입력 정보예요.
 							</Text>
-						</View>
+						</Animated.View>
 					</View>
 				</ScrollView>
 
@@ -416,6 +502,12 @@ const styles = StyleSheet.create({
 	},
 	fieldWrapper: {
 		gap: vs(8),
+	},
+	highlightedFieldLayout: {
+		marginHorizontal: -s(20),
+		paddingHorizontal: s(20),
+		marginVertical: -vs(8),
+		paddingVertical: vs(8),
 	},
 	fieldLabel: {
 		...typography.headerXLSemibold,

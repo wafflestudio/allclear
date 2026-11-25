@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useRef, useState } from "react";
 import {
+	Animated,
 	FlatList,
 	Modal,
 	Pressable,
@@ -13,7 +14,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import { useRegisterClubFieldFocus } from "@/features/register-club/hooks/useRegisterClubFieldFocus";
 import type { RegisterClubFormData } from "@/features/register-club/types";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
 import {
@@ -30,6 +33,7 @@ type Props = {
 	onNext: () => void;
 	onPrevious: () => void;
 	progress?: number;
+	focusTarget?: RegisterClubFocusTarget;
 };
 
 export const ClubAffiliationScreen = ({
@@ -38,7 +42,17 @@ export const ClubAffiliationScreen = ({
 	onNext,
 	onPrevious,
 	progress,
+	focusTarget,
 }: Props) => {
+	const scrollViewRef = useRef<ScrollView>(null);
+	const [formY, setFormY] = useState(0);
+	const [fieldY, setFieldY] = useState<number | null>(null);
+	const highlighted = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "department",
+		y: fieldY === null ? null : formY + fieldY,
+		scrollViewRef,
+	});
 	const { userService } = useContext(serviceContext);
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [departmentSearch, setDepartmentSearch] = useState("");
@@ -66,7 +80,7 @@ export const ClubAffiliationScreen = ({
 
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
-			<ScrollView contentContainerStyle={styles.content}>
+			<ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
 				<View style={styles.header}>
 					<Text style={styles.title}>
 						<Text style={styles.clubName}>{formData.clubName}</Text>
@@ -79,9 +93,19 @@ export const ClubAffiliationScreen = ({
 					</Text>
 				</View>
 
-				<View style={styles.form}>
+				<View
+					style={styles.form}
+					onLayout={(event) => setFormY(event.nativeEvent.layout.y)}
+				>
 					{/* Department Dropdown + 소속 label */}
-					<View style={styles.affiliationRow}>
+					<Animated.View
+						style={[
+							styles.affiliationRow,
+							styles.highlightedFieldLayout,
+							{ backgroundColor: highlighted },
+						]}
+						onLayout={(event) => setFieldY(event.nativeEvent.layout.y)}
+					>
 						<Pressable
 							style={[styles.dropdown, showDropdown && styles.dropdownActive]}
 							onPress={() => setShowDropdown(!showDropdown)}
@@ -96,7 +120,7 @@ export const ClubAffiliationScreen = ({
 							/>
 						</Pressable>
 						<Text style={styles.affiliationLabel}>소속</Text>
-					</View>
+					</Animated.View>
 
 					{/* Short Introduction Input */}
 					<TextField
@@ -211,6 +235,12 @@ const styles = StyleSheet.create({
 		flexDirection: "row",
 		alignItems: "center",
 		gap: s(16),
+	},
+	highlightedFieldLayout: {
+		marginHorizontal: -s(20),
+		paddingHorizontal: s(20),
+		marginVertical: -vs(8),
+		paddingVertical: vs(8),
 	},
 	affiliationLabel: {
 		...typography.headerXLSemibold,

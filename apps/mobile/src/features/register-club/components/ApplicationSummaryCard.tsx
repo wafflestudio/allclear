@@ -1,5 +1,6 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import type { RegisterClubFormData } from "@/features/register-club/types";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import type { EditableImage } from "@/shared/types/image";
@@ -10,44 +11,90 @@ const editPencilIcon = require("@/assets/icons/club-edit-pencil.png") as number;
 type Props = {
 	formData: RegisterClubFormData;
 	evidenceImages: EditableImage[];
+	onEdit: (target: RegisterClubFocusTarget) => void;
 };
 
 type SummaryRowProps = {
 	label: string;
 	value: string;
+	target: RegisterClubFocusTarget;
+	onEdit: (target: RegisterClubFocusTarget) => void;
 };
 
-const SummaryRow = ({ label, value }: SummaryRowProps) => (
+type SummaryRowData = Omit<SummaryRowProps, "onEdit">;
+
+const SummaryRow = ({ label, value, target, onEdit }: SummaryRowProps) => (
 	<View style={styles.row}>
 		<Text style={styles.label}>{label}</Text>
 		<Text style={styles.value}>{value}</Text>
-		<Image
-			accessible={false}
-			source={editPencilIcon}
-			resizeMode="contain"
-			style={styles.editIcon}
-		/>
+		<Pressable
+			accessibilityRole="button"
+			accessibilityLabel={`${label} 수정`}
+			hitSlop={10}
+			onPress={() => onEdit(target)}
+			style={styles.editButton}
+		>
+			<Image
+				accessible={false}
+				source={editPencilIcon}
+				resizeMode="contain"
+				style={styles.editIcon}
+			/>
+		</Pressable>
 	</View>
 );
 
-export const ApplicationSummaryCard = ({ formData, evidenceImages }: Props) => {
+export const ApplicationSummaryCard = ({
+	formData,
+	evidenceImages,
+	onEdit,
+}: Props) => {
 	const snsCount = formData.clubSNSUrls.filter((url) => url.trim()).length;
 	const activityPeriod = formData.minActivityPeriodInput.trim()
 		? `${formData.minActivityPeriodInput}학기`
 		: "없음";
 
-	const rows: SummaryRowProps[] = [
-		{ label: "동아리명", value: formData.clubName || "없음" },
-		{ label: "동아리 소속", value: formData.department || "없음" },
-		{ label: "모집 형태", value: formData.recruitType || "없음" },
-		{ label: "(최소) 활동 기간", value: activityPeriod },
+	const rows: SummaryRowData[] = [
+		{
+			label: "동아리명",
+			value: formData.clubName || "없음",
+			target: "clubName",
+		},
+		{
+			label: "동아리 소속",
+			value: formData.department || "없음",
+			target: "department",
+		},
+		{
+			label: "모집 형태",
+			value: formData.recruitType || "없음",
+			target: "recruitType",
+		},
+		{
+			label: "(최소) 활동 기간",
+			value: activityPeriod,
+			target: "minActivityPeriod",
+		},
 		{
 			label: "동방 보유 여부",
 			value: formData.hasDongbang ? "보유" : "미보유",
+			target: "hasDongbang",
 		},
-		{ label: "동아리 SNS", value: `등록한 링크 ${snsCount}개` },
-		{ label: "동아리 추가 설명", value: formData.clubDescription || "없음" },
-		{ label: "증빙 자료", value: `${evidenceImages.length}장 첨부` },
+		{
+			label: "동아리 SNS",
+			value: `등록한 링크 ${snsCount}개`,
+			target: "clubSNSUrls",
+		},
+		{
+			label: "동아리 추가 설명",
+			value: formData.clubDescription || "없음",
+			target: "clubDescription",
+		},
+		{
+			label: "증빙 자료",
+			value: `${evidenceImages.length}장 첨부`,
+			target: "evidenceImages",
+		},
 	];
 
 	return (
@@ -55,7 +102,7 @@ export const ApplicationSummaryCard = ({ formData, evidenceImages }: Props) => {
 			<View style={styles.divider} />
 			{rows.map((row) => (
 				<View key={row.label}>
-					<SummaryRow {...row} />
+					<SummaryRow {...row} onEdit={onEdit} />
 					<View style={styles.divider} />
 				</View>
 			))}
@@ -103,6 +150,10 @@ const styles = StyleSheet.create({
 		width: s(10),
 		height: s(10),
 		tintColor: Colors.BODYTEXT_DISABLED,
+	},
+	editButton: {
+		padding: s(6),
+		margin: s(-6),
 	},
 	attachmentNames: {
 		paddingLeft: s(7),

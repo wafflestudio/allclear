@@ -1,7 +1,10 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import { NoticeCard } from "@/features/register-club/components/NoticeCard";
+import { useRegisterClubFieldFocus } from "@/features/register-club/hooks/useRegisterClubFieldFocus";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import ImageUploadField from "@/shared/components/ImageUploadField";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
@@ -15,6 +18,7 @@ type Props = {
 	onNext: () => void;
 	onPrevious: () => void;
 	progress?: number;
+	focusTarget?: RegisterClubFocusTarget;
 };
 
 export const EvidenceInfoScreen = ({
@@ -24,10 +28,19 @@ export const EvidenceInfoScreen = ({
 	onNext,
 	onPrevious,
 	progress,
+	focusTarget,
 }: Props) => {
+	const scrollViewRef = useRef<ScrollView>(null);
+	const [uploadFieldY, setUploadFieldY] = useState<number | null>(null);
+	const highlighted = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "evidenceImages",
+		y: uploadFieldY,
+		scrollViewRef,
+	});
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
-			<ScrollView contentContainerStyle={styles.content}>
+			<ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
 				<Text style={styles.title}>
 					<Text style={styles.clubName}>{clubName}</Text>의{"\n"}
 					증빙자료를 첨부해 주세요
@@ -41,6 +54,12 @@ export const EvidenceInfoScreen = ({
 					<NoticeCard
 						title="제출 가능한 예시"
 						style={{ paddingHorizontal: s(20) }}
+						footer={
+							<Text style={styles.privacyNotice}>
+								* 개인정보가 포함된 모든 증빙자료는 동아리 및 운영진 권한{"\n"}
+								승인 이후 삭제될 예정입니다.
+							</Text>
+						}
 					>
 						<Text>
 							동아리 <Text style={styles.noticeStrong}>인스타그램 계정</Text>{" "}
@@ -61,7 +80,14 @@ export const EvidenceInfoScreen = ({
 					</NoticeCard>
 				</View>
 
-				<View style={styles.uploadField}>
+				<Animated.View
+					style={[
+						styles.uploadField,
+						styles.highlightedFieldLayout,
+						{ backgroundColor: highlighted },
+					]}
+					onLayout={(event) => setUploadFieldY(event.nativeEvent.layout.y)}
+				>
 					<ImageUploadField
 						images={evidenceImages}
 						onChange={onEvidenceImagesChange}
@@ -71,7 +97,7 @@ export const EvidenceInfoScreen = ({
 						fileNamePrefix="club_evidence"
 						footerMessage="최대 5장까지 추가 가능합니다."
 					/>
-				</View>
+				</Animated.View>
 			</ScrollView>
 			<FormNavigationButtons
 				onPrevious={onPrevious}
@@ -111,7 +137,18 @@ const styles = StyleSheet.create({
 	noticeStrong: {
 		fontFamily: "Pretendard-SemiBold",
 	},
+	privacyNotice: {
+		...typography.bodySMedium,
+		color: Colors.POINTCOLOR,
+	},
 	uploadField: {
 		marginTop: vs(16),
+	},
+	highlightedFieldLayout: {
+		marginHorizontal: -s(20),
+		paddingHorizontal: s(20),
+		marginTop: vs(8),
+		marginBottom: -vs(8),
+		paddingVertical: vs(8),
 	},
 });

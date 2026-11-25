@@ -1,5 +1,15 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+	Animated,
+	type LayoutChangeEvent,
+	Pressable,
+	type StyleProp,
+	StyleSheet,
+	Text,
+	TextInput,
+	View,
+	type ViewStyle,
+} from "react-native";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
@@ -12,6 +22,9 @@ type Props = {
 	required?: boolean;
 	isMissing?: boolean;
 	missingText?: string;
+	style?: StyleProp<ViewStyle>;
+	onLayout?: (event: LayoutChangeEvent) => void;
+	highlightColor?: Animated.AnimatedInterpolation<string>;
 };
 
 const DEFAULT_HELPER_TEXT = "SNS 링크를 1개 이상 입력해주세요 (최대 3개)";
@@ -22,6 +35,9 @@ const ClubSnsInputList = ({
 	required = false,
 	isMissing = true,
 	missingText = DEFAULT_HELPER_TEXT,
+	style,
+	onLayout,
+	highlightColor,
 }: Props) => {
 	const showError = required && isMissing;
 
@@ -44,7 +60,10 @@ const ClubSnsInputList = ({
 	};
 
 	return (
-		<View style={styles.fieldWrapper}>
+		<Animated.View
+			style={[styles.fieldWrapper, style, { backgroundColor: highlightColor }]}
+			onLayout={onLayout}
+		>
 			<Text style={styles.fieldLabel}>{required ? "*" : ""}동아리 SNS</Text>
 			{urls.map((url, index) => (
 				// biome-ignore lint/suspicious/noArrayIndexKey: The index is the row identity while editable URLs may be empty or duplicated.
@@ -93,7 +112,7 @@ const ClubSnsInputList = ({
 				</Pressable>
 			)}
 			{isMissing && <Text style={styles.helperText}>{missingText}</Text>}
-		</View>
+		</Animated.View>
 	);
 };
 

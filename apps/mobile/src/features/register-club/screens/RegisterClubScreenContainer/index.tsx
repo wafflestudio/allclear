@@ -14,6 +14,7 @@ import {
 	initialFormData,
 	type RegisterClubFormData,
 } from "@/features/register-club/types";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import { getSnsRequestFields } from "@/features/register-club/validation";
 import type { RegisterClubRequest } from "@/repositories/club";
 import { useLoginBottomSheet } from "@/shared/contexts/loginBottomSheetContext";
@@ -71,6 +72,7 @@ export const RegisterClubScreenContainer = () => {
 		getInitialFormData(user),
 	);
 	const [evidenceImages, setEvidenceImages] = useState<EditableImage[]>([]);
+	const [focusTarget, setFocusTarget] = useState<RegisterClubFocusTarget>();
 	const [showConfirm, setShowConfirm] = useState(false);
 	const { openBottomSheet: openLoginSheet } = useLoginBottomSheet();
 
@@ -127,11 +129,28 @@ export const RegisterClubScreenContainer = () => {
 	};
 
 	const handleNext = () => {
+		setFocusTarget(undefined);
 		setCurrentStep((prev) => Math.min(prev + 1, 6));
 	};
 
 	const handlePrevious = () => {
+		setFocusTarget(undefined);
 		setCurrentStep((prev) => Math.max(prev - 1, 0));
+	};
+
+	const handleEdit = (target: RegisterClubFocusTarget) => {
+		const targetStep: Record<RegisterClubFocusTarget, number> = {
+			clubName: 1,
+			department: 3,
+			recruitType: 4,
+			minActivityPeriod: 4,
+			hasDongbang: 4,
+			clubSNSUrls: 4,
+			clubDescription: 4,
+			evidenceImages: 5,
+		};
+		setFocusTarget(target);
+		setCurrentStep(targetStep[target]);
 	};
 
 	// 이전 on the first step exits the full-screen flow back to the MyPage tab.
@@ -181,6 +200,7 @@ export const RegisterClubScreenContainer = () => {
 		<ClubBasicInfoScreen
 			key="step1"
 			formData={formData}
+			focusTarget={focusTarget}
 			onFormDataChange={handleFormDataChange}
 			onNext={handleNext}
 			onPrevious={handlePrevious}
@@ -195,6 +215,7 @@ export const RegisterClubScreenContainer = () => {
 		<ClubAffiliationScreen
 			key="step3"
 			formData={formData}
+			focusTarget={focusTarget}
 			onFormDataChange={handleFormDataChange}
 			onNext={handleNext}
 			onPrevious={handlePrevious}
@@ -202,6 +223,7 @@ export const RegisterClubScreenContainer = () => {
 		<ClubDetailsScreen
 			key="step4"
 			formData={formData}
+			focusTarget={focusTarget}
 			onFormDataChange={handleFormDataChange}
 			onComplete={handleNext}
 			onPrevious={handlePrevious}
@@ -210,6 +232,7 @@ export const RegisterClubScreenContainer = () => {
 		<EvidenceInfoScreen
 			key="step5"
 			clubName={formData.clubName}
+			focusTarget={focusTarget}
 			evidenceImages={evidenceImages}
 			onEvidenceImagesChange={setEvidenceImages}
 			onNext={handleNext}
@@ -219,6 +242,7 @@ export const RegisterClubScreenContainer = () => {
 			key="step6"
 			formData={formData}
 			evidenceImages={evidenceImages}
+			onEdit={handleEdit}
 			onNext={handleOpenConfirm}
 			onPrevious={handlePrevious}
 		/>,

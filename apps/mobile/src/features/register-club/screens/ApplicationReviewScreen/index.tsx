@@ -4,6 +4,7 @@ import { ApplicationSummaryCard } from "@/features/register-club/components/Appl
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
 import { NoticeCard } from "@/features/register-club/components/NoticeCard";
 import type { RegisterClubFormData } from "@/features/register-club/types";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import { Colors } from "@/shared/constants/colors";
 import { typography } from "@/shared/constants/typography";
 import type { EditableImage } from "@/shared/types/image";
@@ -14,6 +15,7 @@ type Props = {
 	evidenceImages: EditableImage[];
 	onNext: () => void;
 	onPrevious: () => void;
+	onEdit: (target: RegisterClubFocusTarget) => void;
 	progress?: number;
 };
 
@@ -22,6 +24,7 @@ export const ApplicationReviewScreen = ({
 	evidenceImages,
 	onNext,
 	onPrevious,
+	onEdit,
 	progress,
 }: Props) => (
 	<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
@@ -37,6 +40,7 @@ export const ApplicationReviewScreen = ({
 				<ApplicationSummaryCard
 					formData={formData}
 					evidenceImages={evidenceImages}
+					onEdit={onEdit}
 				/>
 			</View>
 			<View style={styles.notice}>

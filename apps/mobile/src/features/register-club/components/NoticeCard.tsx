@@ -14,10 +14,11 @@ import { s, vs } from "@/shared/utils/scale";
 type Props = {
 	title?: string;
 	children: ReactNode;
+	footer?: ReactNode;
 	style?: StyleProp<ViewStyle>;
 };
 
-export const NoticeCard = ({ title, children, style }: Props) => (
+export const NoticeCard = ({ title, children, footer, style }: Props) => (
 	<View style={[styles.card, style]}>
 		{title ? (
 			<View style={styles.heading}>
@@ -26,6 +27,7 @@ export const NoticeCard = ({ title, children, style }: Props) => (
 			</View>
 		) : null}
 		<Text style={styles.body}>{children}</Text>
+		{footer ? <View style={styles.footer}>{footer}</View> : null}
 	</View>
 );
 
@@ -49,5 +51,8 @@ const styles = StyleSheet.create({
 		...typography.bodyMRegular,
 		color: Colors.BODYTEXT_SUB,
 		lineHeight: vs(21),
+	},
+	footer: {
+		marginTop: vs(2),
 	},
 });

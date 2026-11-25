@@ -1,7 +1,10 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import { useRegisterClubFieldFocus } from "@/features/register-club/hooks/useRegisterClubFieldFocus";
 import type { RegisterClubFormData } from "@/features/register-club/types";
+import type { RegisterClubFocusTarget } from "@/features/register-club/types/focus";
 import ImageUploadField from "@/shared/components/ImageUploadField";
 import TextField from "@/shared/components/TextField";
 import { Colors } from "@/shared/constants/colors";
@@ -15,6 +18,7 @@ type Props = {
 	onNext: () => void;
 	onPrevious: () => void;
 	progress?: number;
+	focusTarget?: RegisterClubFocusTarget;
 };
 
 export const ClubBasicInfoScreen = ({
@@ -23,7 +27,17 @@ export const ClubBasicInfoScreen = ({
 	onNext,
 	onPrevious,
 	progress,
+	focusTarget,
 }: Props) => {
+	const scrollViewRef = useRef<ScrollView>(null);
+	const [formY, setFormY] = useState(0);
+	const [fieldY, setFieldY] = useState<number | null>(null);
+	const highlighted = useRegisterClubFieldFocus({
+		focusTarget,
+		target: "clubName",
+		y: fieldY === null ? null : formY + fieldY,
+		scrollViewRef,
+	});
 	const isComplete = formData.clubName.trim();
 
 	const clubImages: EditableImage[] = formData.clubImage
@@ -46,7 +60,7 @@ export const ClubBasicInfoScreen = ({
 
 	return (
 		<SafeAreaView edges={["top", "left", "right"]} style={styles.container}>
-			<ScrollView contentContainerStyle={styles.content}>
+			<ScrollView ref={scrollViewRef} contentContainerStyle={styles.content}>
 				<View style={styles.header}>
 					<Text style={styles.title}>
 						<Text>신규 등록할</Text>
@@ -55,7 +69,10 @@ export const ClubBasicInfoScreen = ({
 					</Text>
 				</View>
 
-				<View style={styles.form}>
+				<View
+					style={styles.form}
+					onLayout={(event) => setFormY(event.nativeEvent.layout.y)}
+				>
 					<ImageUploadField
 						title="동아리 대표 이미지"
 						description="4X4 정방형 이미지를 권장드려요"
@@ -66,7 +83,14 @@ export const ClubBasicInfoScreen = ({
 						fileNamePrefix="club"
 					/>
 
-					<View style={styles.fieldWrapper}>
+					<Animated.View
+						style={[
+							styles.fieldWrapper,
+							styles.highlightedFieldLayout,
+							{ backgroundColor: highlighted },
+						]}
+						onLayout={(event) => setFieldY(event.nativeEvent.layout.y)}
+					>
 						<Text style={styles.label}>동아리명</Text>
 						<TextField
 							placeholder="와플스튜디오"
@@ -75,7 +99,7 @@ export const ClubBasicInfoScreen = ({
 							maxLength={100}
 						/>
 						<Text style={styles.validationText}>동아리명을 입력해주세요</Text>
-					</View>
+					</Animated.View>
 				</View>
 			</ScrollView>
 
@@ -110,6 +134,12 @@ const styles = StyleSheet.create({
 	},
 	fieldWrapper: {
 		gap: vs(8),
+	},
+	highlightedFieldLayout: {
+		marginHorizontal: -s(20),
+		paddingHorizontal: s(20),
+		marginVertical: -vs(8),
+		paddingVertical: vs(8),
 	},
 	label: {
 		...typography.headerXLSemibold,
