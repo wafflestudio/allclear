@@ -14,6 +14,7 @@ import type { Club } from "@/entities/club";
 import SearchBar from "@/features/club/components/SearchBar/SearchBar";
 import { getManagedClubUpdateErrorContent } from "@/features/club/utils/managedClubUpdateError";
 import { FormNavigationButtons } from "@/features/register-club/components/FormNavigationButtons";
+import { EvidenceInfoScreen } from "@/features/register-club/screens/EvidenceInfoScreen";
 import AlertModal from "@/shared/components/AlertModal";
 import ManagementGuideModal from "@/shared/components/ManagementGuideModal";
 import TextField from "@/shared/components/TextField";
@@ -22,6 +23,7 @@ import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
 import { typography } from "@/shared/constants/typography";
 import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
+import type { EditableImage } from "@/shared/types/image";
 import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
 import {
 	formatPhoneNumberInput,
@@ -59,7 +61,9 @@ const ManageClubRegistrationScreen = () => {
 	const isClubRegistrationEditMode = editMode === "clubRegistration";
 	const isEditMode = editClubId !== undefined && editMode !== undefined;
 
-	const [formStep, setFormStep] = useState<"form" | "clubSearch">("form");
+	const [formStep, setFormStep] = useState<"form" | "clubSearch" | "evidence">(
+		"form",
+	);
 	const [adminForm, setAdminForm] = useState<AdminFormData>({
 		name: isEditMode ? "" : (user?.name ?? ""),
 		phone: isEditMode ? "" : getPhoneNumberPrefill(user?.phone ?? ""),
@@ -74,6 +78,9 @@ const ManageClubRegistrationScreen = () => {
 	const [clubPendingRequest, setClubPendingRequest] = useState<Club | null>(
 		null,
 	);
+	const [evidenceImages, setEvidenceImages] = useState<EditableImage[]>([]);
+	const [isEvidenceRequestConfirmVisible, setIsEvidenceRequestConfirmVisible] =
+		useState(false);
 	const [isExistingManagerModalVisible, setIsExistingManagerModalVisible] =
 		useState(false);
 	const [
@@ -225,6 +232,11 @@ const ManageClubRegistrationScreen = () => {
 		getManagedClubUpdateErrorContent(managerInfoError);
 
 	const handleBack = () => {
+		if (formStep === "evidence") {
+			setFormStep("clubSearch");
+			return;
+		}
+
 		if (formStep === "clubSearch") {
 			setFormStep("form");
 			setClubSearchQuery("");
@@ -342,14 +354,19 @@ const ManageClubRegistrationScreen = () => {
 		}
 
 		setClubPendingRequest(club);
+		setEvidenceImages([]);
+		setFormStep("evidence");
 	};
 
-	const handleClubRequestConfirm = () => {
+	const handleEvidenceNext = () => {
 		if (!clubPendingRequest) return;
+		setIsEvidenceRequestConfirmVisible(true);
+	};
 
-		const club = clubPendingRequest;
-		setClubPendingRequest(null);
-		void submitClubRequest(club);
+	const handleEvidenceRequestConfirm = () => {
+		setIsEvidenceRequestConfirmVisible(false);
+		if (!clubPendingRequest) return;
+		void submitClubRequest(clubPendingRequest);
 	};
 
 	const handleSuccessConfirm = () => {
@@ -365,6 +382,9 @@ const ManageClubRegistrationScreen = () => {
 		setClubSearchQuery("");
 		setSearchResults([]);
 		setSelectedClubId("");
+		setClubPendingRequest(null);
+		setEvidenceImages([]);
+		setIsEvidenceRequestConfirmVisible(false);
 		if (isEditMode) {
 			navigation.goBack();
 			return;
@@ -625,23 +645,38 @@ const ManageClubRegistrationScreen = () => {
 					onButtonPress={() => setIsPendingManagerRequestModalVisible(false)}
 					dismissOnBackdropPress
 				/>
-				<AlertModal
-					visible={clubPendingRequest !== null}
-					onClose={() => setClubPendingRequest(null)}
-					title="운영진 권한을 요청하시겠습니까?"
-					description="실제 동아리 운영진 확인 후 권한이 부여됩니다."
-					buttonLabel="요청"
-					onButtonPress={handleClubRequestConfirm}
-					hasCancel
-					cancelLabel="취소"
-					dismissOnBackdropPress
-				/>
 				{renderResultModals()}
 			</ScrollView>
 
 			<FormNavigationButtons onPrevious={handleBack} showNext={false} />
 		</SafeAreaView>
 	);
+
+	if (formStep === "evidence") {
+		return (
+			<>
+				<EvidenceInfoScreen
+					clubName={clubPendingRequest?.name ?? "동아리"}
+					evidenceImages={evidenceImages}
+					onEvidenceImagesChange={setEvidenceImages}
+					onNext={handleEvidenceNext}
+					onPrevious={handleBack}
+				/>
+				<AlertModal
+					visible={isEvidenceRequestConfirmVisible}
+					onClose={() => setIsEvidenceRequestConfirmVisible(false)}
+					title="운영진 권한을 요청하시겠습니까?"
+					description="실제 동아리 운영진 확인 후 권한이 부여됩니다."
+					buttonLabel="요청"
+					onButtonPress={handleEvidenceRequestConfirm}
+					hasCancel
+					cancelLabel="취소"
+					dismissOnBackdropPress
+				/>
+				{renderResultModals()}
+			</>
+		);
+	}
 
 	return formStep === "form" ? renderForm() : renderClubSearch();
 };
