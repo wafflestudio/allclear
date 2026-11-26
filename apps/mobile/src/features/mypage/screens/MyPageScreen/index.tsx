@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BlurView } from "@react-native-community/blur";
-import { useFocusEffect, useIsFocused } from "@react-navigation/native";
+import { useFocusEffect } from "@react-navigation/native";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useContext, useState } from "react";
 import {
@@ -15,12 +15,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import type {
-	Club,
-	ManagedClubListItem,
-	ManagedClubManagementStatus,
-} from "@/entities/club";
+import type { Club, ManagedClubListItem } from "@/entities/club";
 import type { UserNotification } from "@/entities/userNotification";
+import { ClubManagementStatusCard } from "@/features/club/components/ClubManagementStatusCard";
 import { ManagerRegistrationCard } from "@/features/mypage/components/ManagerRegistrationCard";
 import {
 	getNotificationClub,
@@ -40,7 +37,7 @@ import { useProfile } from "@/shared/contexts/profileContext";
 import { serviceContext } from "@/shared/contexts/serviceContext";
 import { useUserVoiceBottomSheet } from "@/shared/contexts/userVoiceBottomSheetContext";
 import { setToken } from "@/shared/utils/api";
-import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
+import { getClubAffiliationLabel, getClubSummary } from "@/shared/utils/club";
 import { navigation } from "@/shared/utils/navigation";
 import { ms, s, vs } from "@/shared/utils/scale";
 
@@ -57,13 +54,15 @@ const MyPageScreen = () => {
 	const { openBottomSheet: openManageClub } = useManageClubBottomSheet();
 	const queryClient = useQueryClient();
 	const { user, setUser } = useProfile();
-	const isFocused = useIsFocused();
 
 	const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 	const [leaveModalVisible, setLeaveModalVisible] = useState(false);
 	const [guideType, setGuideType] = useState<GuideType | null>(null);
 	const [guideClub, setGuideClub] = useState<Club | null>(null);
-	const [statusBlurEnabled, setStatusBlurEnabled] = useState(true);
+	const [rejectionReasonModal, setRejectionReasonModal] = useState<{
+		club: ManagedClubListItem;
+		visible: boolean;
+	} | null>(null);
 	const [cancelRequestClub, setCancelRequestClub] =
 		useState<ManagedClubListItem | null>(null);
 	const [requestRemovalSuccess, setRequestRemovalSuccess] = useState<
@@ -90,7 +89,6 @@ const MyPageScreen = () => {
 
 	useFocusEffect(
 		useCallback(() => {
-			setStatusBlurEnabled(true);
 			refetchManageClubs();
 			refetchNotifications();
 		}, [refetchManageClubs, refetchNotifications]),
@@ -106,6 +104,27 @@ const MyPageScreen = () => {
 	const notificationActionDisabled =
 		currentNotification?.type === "MANAGER_REQUEST_REJECTED" &&
 		getNotificationClub(currentNotification, manageClubs)?.hasManager === true;
+	const rejectionReasonClub = rejectionReasonModal?.club;
+	const rejectionNotification = rejectionReasonClub
+		? notificationData?.notifications.find((notification) => {
+				const expectedType =
+					rejectionReasonClub.managementStatus === "REJECTED"
+						? "CLUB_REGISTRATION_REJECTED"
+						: "MANAGER_REQUEST_REJECTED";
+				return (
+					notification.type === expectedType &&
+					getNotificationClub(notification, manageClubs)?.uuid ===
+						rejectionReasonClub.uuid
+				);
+			})
+		: undefined;
+	const rejectionReason = !rejectionReasonClub
+		? ""
+		: rejectionNotification
+			? getUserNotificationContent(rejectionNotification, manageClubs)
+					.description
+			: rejectionReasonClub.rejectReason?.trim() ||
+				"등록된 반려 사유가 없어요.";
 
 	const handleLeave = () => setLeaveModalVisible(true);
 
@@ -214,8 +233,6 @@ const MyPageScreen = () => {
 	});
 
 	const handleEditRequest = (club: ManagedClubListItem) => {
-		setStatusBlurEnabled(false);
-
 		if (
 			club.managementStatus === "PENDING" ||
 			club.managementStatus === "REJECTED"
@@ -261,7 +278,6 @@ const MyPageScreen = () => {
 			currentNotification.type === "CLUB_REGISTRATION_REJECTED" &&
 			currentNotification.clubId
 		) {
-			setStatusBlurEnabled(false);
 			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
 				clubId: currentNotification.clubId,
 				editMode: "clubRegistration",
@@ -274,7 +290,6 @@ const MyPageScreen = () => {
 			currentNotification.type === "MANAGER_REQUEST_REJECTED" &&
 			currentNotification.clubId
 		) {
-			setStatusBlurEnabled(false);
 			navigation.navigate(SCREEN_TYPE.MANAGE_CLUB_REGISTRATION, {
 				clubId: currentNotification.clubId,
 				editMode: "managerRequest",
@@ -317,9 +332,11 @@ const MyPageScreen = () => {
 					<TouchableOpacity
 						style={styles.manageClubBtnOutline}
 						activeOpacity={0.7}
-						onPress={() => setCancelRequestClub(club)}
+						onPress={() => {
+							setRejectionReasonModal({ club, visible: true });
+						}}
 					>
-						<Text style={styles.manageClubBtnOutlineText}>삭제</Text>
+						<Text style={styles.manageClubBtnOutlineText}>반려 사유 확인</Text>
 					</TouchableOpacity>
 					<TouchableOpacity
 						style={[
@@ -336,7 +353,7 @@ const MyPageScreen = () => {
 								isResubmissionDisabled && styles.manageClubBtnDisabledText,
 							]}
 						>
-							수정 및 재신청
+							다시 신청하기
 						</Text>
 					</TouchableOpacity>
 				</View>
@@ -413,35 +430,13 @@ const MyPageScreen = () => {
 					>
 						{manageClubs.map((club) => (
 							<View key={club.uuid} style={styles.manageClubItem}>
-								{/* 동아리 정보 카드 */}
-								<View style={styles.manageClubInfoCardWrapper}>
-									<View style={styles.manageClubInfoCard}>
-										<View style={styles.manageClubThumbnail}>
-											{club.imageUri ? (
-												<Image
-													source={{ uri: club.imageUri }}
-													style={styles.manageClubThumbnailImage}
-												/>
-											) : null}
-										</View>
-										<View style={styles.manageClubTexts}>
-											<Text style={styles.manageClubName} numberOfLines={1}>
-												{club.name}
-											</Text>
-											<View style={styles.manageClubSubTexts}>
-												<Text style={styles.manageClubSub} numberOfLines={1}>
-													{getClubSummaryWithAffiliation(club)}
-												</Text>
-											</View>
-										</View>
-										<ManageClubStatusBlurLayer
-											status={club.managementStatus}
-											blurEnabled={isFocused && statusBlurEnabled}
-										/>
-									</View>
-									<ManageClubStatusTextLayer status={club.managementStatus} />
-								</View>
-
+								<ClubManagementStatusCard
+									clubName={club.name}
+									clubImageUri={club.imageUri}
+									department={getClubAffiliationLabel(club)}
+									shortIntro={getClubSummary(club)}
+									status={club.managementStatus}
+								/>
 								{renderManageClubButtons(club)}
 							</View>
 						))}
@@ -559,6 +554,30 @@ const MyPageScreen = () => {
 				cancelLabel="돌아가기"
 				dismissOnBackdropPress={!cancelRequestMutation.isPending}
 			/>
+			<AlertModal
+				visible={rejectionReasonModal?.visible ?? false}
+				onClose={() =>
+					setRejectionReasonModal((current) =>
+						current ? { ...current, visible: false } : null,
+					)
+				}
+				title="반려 사유"
+				description={rejectionReason}
+				buttonLabel="다시 신청"
+				onButtonPress={() => {
+					if (!rejectionReasonClub) return;
+					setRejectionReasonModal((current) =>
+						current ? { ...current, visible: false } : null,
+					);
+					handleEditRequest(rejectionReasonClub);
+				}}
+				buttonDisabled={
+					rejectionReasonClub?.managementStatus ===
+						"MANAGER_REQUEST_REJECTED" && rejectionReasonClub.hasManager
+				}
+				hasCancel
+				cancelLabel="닫기"
+			/>
 			<RequestRemovalSuccessModal
 				visible={requestRemovalSuccess !== null}
 				message={
@@ -629,81 +648,6 @@ const RequestRemovalSuccessModal = ({
 	</Modal>
 );
 
-type ManagedClubOverlayStatus = Exclude<
-	ManagedClubManagementStatus,
-	"APPROVED"
->;
-
-const MANAGE_CLUB_STATUS_OVERLAY: Record<
-	ManagedClubOverlayStatus,
-	{ label: string; backgroundColor: string }
-> = {
-	PENDING: {
-		label: "승인 대기 중",
-		backgroundColor: "rgba(135, 79, 255, 0.2)",
-	},
-	REJECTED: {
-		label: "미승인(신청 반려)",
-		backgroundColor: Colors.BACKGROUND_DIM,
-	},
-	MANAGER_REQUEST_PENDING: {
-		label: "운영진 권한 승인 대기 중",
-		backgroundColor: "rgba(135, 79, 255, 0.2)",
-	},
-	MANAGER_REQUEST_REJECTED: {
-		label: "미승인(운영진 권한 신청 반려)",
-		backgroundColor: Colors.BACKGROUND_DIM,
-	},
-};
-
-const ManageClubStatusBlurLayer = ({
-	status,
-	blurEnabled,
-}: {
-	status: ManagedClubManagementStatus;
-	blurEnabled: boolean;
-}) => {
-	if (status === "APPROVED") return null;
-
-	const overlay = MANAGE_CLUB_STATUS_OVERLAY[status];
-
-	return (
-		<View style={styles.manageClubStatusBlurLayer} pointerEvents="none">
-			{blurEnabled && (
-				<BlurView
-					style={StyleSheet.absoluteFillObject}
-					blurType="light"
-					blurAmount={1}
-					overlayColor="transparent"
-					reducedTransparencyFallbackColor="transparent"
-				/>
-			)}
-			<View
-				style={[
-					StyleSheet.absoluteFillObject,
-					{ backgroundColor: overlay.backgroundColor },
-				]}
-			/>
-		</View>
-	);
-};
-
-const ManageClubStatusTextLayer = ({
-	status,
-}: {
-	status: ManagedClubManagementStatus;
-}) => {
-	if (status === "APPROVED") return null;
-
-	const overlay = MANAGE_CLUB_STATUS_OVERLAY[status];
-
-	return (
-		<View style={styles.manageClubStatusTextLayer} pointerEvents="none">
-			<Text style={styles.manageClubStatusOverlayText}>{overlay.label}</Text>
-		</View>
-	);
-};
-
 const styles = StyleSheet.create({
 	safeArea: {
 		flex: 1,
@@ -747,81 +691,13 @@ const styles = StyleSheet.create({
 
 	// 관리 동아리 스크롤
 	manageClubsScroll: {
+		alignItems: "flex-start",
 		gap: s(10),
 		paddingRight: s(4),
 	},
 	manageClubItem: {
 		width: s(330),
 		gap: vs(10),
-	},
-	manageClubInfoCardWrapper: {
-		position: "relative",
-		height: vs(120),
-	},
-	manageClubInfoCard: {
-		flexDirection: "row",
-		alignItems: "center",
-		paddingVertical: vs(20),
-		paddingLeft: s(30),
-		paddingRight: s(20),
-		gap: s(30),
-		backgroundColor: "#FAFAFA",
-		borderRadius: ms(10),
-		height: "100%",
-		overflow: "hidden",
-	},
-	manageClubStatusBlurLayer: {
-		...StyleSheet.absoluteFillObject,
-		zIndex: 1,
-	},
-	manageClubStatusTextLayer: {
-		...StyleSheet.absoluteFillObject,
-		justifyContent: "center",
-		alignItems: "center",
-		zIndex: 2,
-	},
-	manageClubStatusOverlayText: {
-		fontFamily: "Pretendard-Bold",
-		fontSize: ms(14),
-		lineHeight: vs(24),
-		letterSpacing: -0.28,
-		textAlign: "center",
-		color: Colors.POINTCOLOR,
-	},
-	manageClubThumbnail: {
-		width: ms(75),
-		height: ms(75),
-		borderRadius: ms(10),
-		backgroundColor: "#D9D9D9",
-		overflow: "hidden",
-		flexShrink: 0,
-	},
-	manageClubThumbnailImage: {
-		width: "100%",
-		height: "100%",
-	},
-	manageClubTexts: {
-		flex: 1,
-		gap: vs(10),
-	},
-	manageClubName: {
-		fontFamily: "Pretendard",
-		fontWeight: "700",
-		fontSize: ms(17),
-		lineHeight: ms(24),
-		letterSpacing: -0.02 * 17,
-		color: "#202020",
-	},
-	manageClubSubTexts: {
-		gap: vs(5),
-	},
-	manageClubSub: {
-		fontFamily: "Pretendard",
-		fontWeight: "400",
-		fontSize: ms(13),
-		lineHeight: ms(15),
-		letterSpacing: -0.02 * 13,
-		color: "#757474",
 	},
 
 	// 버튼 행
