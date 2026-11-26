@@ -8,9 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useContext, useState } from "react";
 import {
 	ActivityIndicator,
-	Image,
 	Modal,
-	Platform,
 	Pressable,
 	ScrollView,
 	StyleSheet,
@@ -21,21 +19,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/MaterialIcons";
-
-const clubManagementSnuLogo =
-	require("@/assets/images/club-management-snu-logo.png") as number;
-
+import { ClubProfileCard } from "@/features/club/components/ClubProfileCard";
 import ManagerTransferSection from "@/features/club/components/ManagerTransferSection";
 import { NewAnnouncementAction } from "@/features/club/components/NewAnnouncementAction";
 import OfficialVerificationRequestButton from "@/features/club/components/OfficialVerificationRequestButton";
-import VerificationMark from "@/features/club/components/VerificationMark";
 import { getOfficialVerificationRequestErrorContent } from "@/features/club/utils/officialVerificationRequest";
 import AlertModal from "@/shared/components/AlertModal";
-import EditPencilButton from "@/shared/components/EditPencilButton";
 import { Colors } from "@/shared/constants/colors";
 import { SCREEN_TYPE, type StackParamList } from "@/shared/constants/screen";
 import { serviceContext } from "@/shared/contexts/serviceContext";
-import { getClubSummaryWithAffiliation } from "@/shared/utils/club";
+import { getClubAffiliationLabel, getClubSummary } from "@/shared/utils/club";
 import { navigation } from "@/shared/utils/navigation";
 import { ms, s, vs } from "@/shared/utils/scale";
 
@@ -53,7 +46,6 @@ type VerificationSuccess = {
 };
 
 const VERIFICATION_PROCESSING_DURATION = "최대 일주일";
-const MANAGEMENT_VERIFICATION_MARK_SIZE = 16;
 
 const ClubManagementScreen = () => {
 	const route = useRoute<RouteProps>();
@@ -175,7 +167,8 @@ const ClubManagementScreen = () => {
 		: recruitments;
 	const hasMore = previousRecruitments.length > VISIBLE_COUNT;
 	const isRecruitmentsLoading = isLoading || isRepresentativeLoading;
-	const summary = club ? getClubSummaryWithAffiliation(club) : "";
+	const department = club ? getClubAffiliationLabel(club) : "";
+	const shortIntro = club ? getClubSummary(club) : "";
 	const officialVerificationStatus =
 		club?.officialVerification?.status ??
 		(club?.isOfficialVerified ? "VERIFIED" : undefined);
@@ -202,7 +195,7 @@ const ClubManagementScreen = () => {
 					onPress={() => navigation.goBack()}
 					hitSlop={8}
 				>
-					<Icon name="chevron-left" size={ms(24)} color="#757474" />
+					<Icon name="chevron-left" size={ms(24)} color={Colors.BODYTEXT_SUB} />
 				</Pressable>
 				<Text style={styles.headerTitle}>동아리 관리</Text>
 			</View>
@@ -212,45 +205,14 @@ const ClubManagementScreen = () => {
 				contentContainerStyle={styles.scrollContent}
 				showsVerticalScrollIndicator={false}
 			>
-				{/* 동아리 카드 */}
-				<View style={styles.clubCard}>
-					{club?.imageUri ? (
-						<Image
-							source={{ uri: club.imageUri }}
-							style={styles.clubCardBg}
-							blurRadius={Platform.OS === "ios" ? 2 : 1}
-						/>
-					) : (
-						<View style={[styles.clubCardBg, { backgroundColor: "#E8E4F0" }]} />
-					)}
-					<View style={styles.clubCardOverlay} />
-					<View style={styles.clubCardContent}>
-						<View style={styles.clubDetails}>
-							<Image
-								source={clubManagementSnuLogo}
-								style={styles.clubLogoImage}
-							/>
-							<View style={styles.clubTexts}>
-								<View style={styles.clubNameRow}>
-									<Text style={styles.clubName} numberOfLines={1}>
-										{club?.name ?? ""}
-									</Text>
-									<VerificationMark
-										status={officialVerificationStatus}
-										size={MANAGEMENT_VERIFICATION_MARK_SIZE}
-									/>
-								</View>
-								<Text style={styles.clubDesc} numberOfLines={1}>
-									{summary}
-								</Text>
-							</View>
-						</View>
-						<EditPencilButton
-							accessibilityLabel="동아리 정보 수정"
-							onPress={() => setShowEditConfirm(true)}
-						/>
-					</View>
-				</View>
+				<ClubProfileCard
+					clubName={club?.name ?? ""}
+					clubImageUri={club?.imageUri}
+					department={department}
+					shortIntro={shortIntro}
+					officialVerificationStatus={officialVerificationStatus}
+					onEdit={() => setShowEditConfirm(true)}
+				/>
 
 				<OfficialVerificationRequestButton
 					status={officialVerificationStatus}
@@ -319,7 +281,11 @@ const ClubManagementScreen = () => {
 													})
 												}
 											>
-												<Icon name="edit" size={ms(16)} color="#C1C1C1" />
+												<Icon
+													name="edit"
+													size={ms(16)}
+													color={Colors.BODYTEXT_DISABLED}
+												/>
 											</Pressable>
 											<Pressable
 												hitSlop={8}
@@ -330,7 +296,11 @@ const ClubManagementScreen = () => {
 													})
 												}
 											>
-												<Icon name="delete" size={ms(16)} color="#C1C1C1" />
+												<Icon
+													name="delete"
+													size={ms(16)}
+													color={Colors.BODYTEXT_DISABLED}
+												/>
 											</Pressable>
 										</View>
 									</View>
@@ -353,7 +323,11 @@ const ClubManagementScreen = () => {
 													})
 												}
 											>
-												<Icon name="edit" size={ms(16)} color="#C1C1C1" />
+												<Icon
+													name="edit"
+													size={ms(16)}
+													color={Colors.BODYTEXT_DISABLED}
+												/>
 											</Pressable>
 											<Pressable
 												hitSlop={8}
@@ -364,7 +338,11 @@ const ClubManagementScreen = () => {
 													})
 												}
 											>
-												<Icon name="delete" size={ms(16)} color="#C1C1C1" />
+												<Icon
+													name="delete"
+													size={ms(16)}
+													color={Colors.BODYTEXT_DISABLED}
+												/>
 											</Pressable>
 										</View>
 									</View>
@@ -401,7 +379,11 @@ const ClubManagementScreen = () => {
 														})
 													}
 												>
-													<Icon name="edit" size={ms(16)} color="#C1C1C1" />
+													<Icon
+														name="edit"
+														size={ms(16)}
+														color={Colors.BODYTEXT_DISABLED}
+													/>
 												</Pressable>
 												<Pressable
 													hitSlop={8}
@@ -412,7 +394,11 @@ const ClubManagementScreen = () => {
 														})
 													}
 												>
-													<Icon name="delete" size={ms(16)} color="#C1C1C1" />
+													<Icon
+														name="delete"
+														size={ms(16)}
+														color={Colors.BODYTEXT_DISABLED}
+													/>
 												</Pressable>
 											</View>
 										</View>
@@ -674,7 +660,7 @@ const styles = StyleSheet.create({
 	},
 	safeArea: {
 		flex: 1,
-		backgroundColor: "#FFFFFF",
+		backgroundColor: Colors.WHITE,
 	},
 
 	// ── 헤더
@@ -684,7 +670,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: s(20),
 		gap: s(105),
 		height: vs(39),
-		backgroundColor: "#FFFFFF",
+		backgroundColor: Colors.WHITE,
 	},
 	backBtn: {
 		width: ms(24),
@@ -698,7 +684,7 @@ const styles = StyleSheet.create({
 		fontSize: ms(16),
 		lineHeight: ms(19),
 		letterSpacing: -0.02 * 16,
-		color: "#757474",
+		color: Colors.BODYTEXT_SUB,
 	},
 
 	// ── 스크롤 영역
@@ -711,72 +697,6 @@ const styles = StyleSheet.create({
 		paddingTop: vs(10),
 		paddingBottom: vs(40),
 		gap: vs(20),
-	},
-
-	// ── 동아리 카드
-	clubCard: {
-		borderRadius: ms(12),
-		overflow: "hidden",
-		height: vs(186),
-	},
-	clubCardBg: {
-		position: "absolute",
-		width: "100%",
-		height: "100%",
-		resizeMode: "cover",
-	},
-	clubCardOverlay: {
-		position: "absolute",
-		width: "100%",
-		height: "100%",
-		backgroundColor: "rgba(255,255,255,0.6)",
-	},
-	clubCardContent: {
-		flex: 1,
-		flexDirection: "row",
-		alignItems: "flex-start",
-		justifyContent: "space-between",
-		paddingHorizontal: s(20),
-		paddingVertical: vs(30),
-	},
-	clubDetails: {
-		flex: 1,
-		marginRight: s(16),
-		gap: vs(12),
-		alignItems: "flex-start",
-	},
-	clubLogoImage: {
-		width: ms(40),
-		height: ms(40),
-		borderRadius: ms(20),
-		opacity: 1,
-		resizeMode: "contain",
-	},
-	clubTexts: {
-		alignSelf: "stretch",
-		gap: vs(8),
-	},
-	clubNameRow: {
-		flexDirection: "row",
-		alignItems: "center",
-		gap: s(4),
-	},
-	clubName: {
-		fontFamily: "Pretendard",
-		fontWeight: "700",
-		fontSize: ms(20),
-		lineHeight: ms(24),
-		letterSpacing: -0.02 * 20,
-		color: "#000000",
-		flexShrink: 1,
-	},
-	clubDesc: {
-		fontFamily: "Pretendard",
-		fontWeight: "500",
-		fontSize: ms(14),
-		lineHeight: ms(17),
-		letterSpacing: -0.02 * 14,
-		color: "#757474",
 	},
 
 	// ── 섹션
@@ -797,7 +717,7 @@ const styles = StyleSheet.create({
 		fontWeight: "500",
 		fontSize: ms(14),
 		lineHeight: ms(24),
-		color: "#757474",
+		color: Colors.BODYTEXT_SUB,
 		flex: 1,
 	},
 
@@ -817,15 +737,15 @@ const styles = StyleSheet.create({
 		minHeight: vs(34),
 	},
 	rowNormal: {
-		backgroundColor: "#FFFFFF",
+		backgroundColor: Colors.WHITE,
 	},
 	rowActive: {
-		backgroundColor: "#FFFFFF",
+		backgroundColor: Colors.WHITE,
 		minHeight: vs(48),
 		paddingLeft: s(10),
 	},
 	rowMore: {
-		backgroundColor: "#F3F0F5",
+		backgroundColor: Colors.BACKGROUND_SUB,
 	},
 	rowLeft: {
 		flexDirection: "row",
@@ -869,7 +789,7 @@ const styles = StyleSheet.create({
 		fontSize: ms(10),
 		lineHeight: ms(12),
 		letterSpacing: 0,
-		color: "#FFFFFF",
+		color: Colors.WHITE,
 	},
 
 	// ── 공고 제목 텍스트
@@ -879,7 +799,7 @@ const styles = StyleSheet.create({
 		fontSize: ms(12),
 		lineHeight: ms(14),
 		letterSpacing: -0.02 * 12,
-		color: "#757474",
+		color: Colors.BODYTEXT_SUB,
 		flex: 1,
 	},
 	// ── 삭제 확인 모달
@@ -891,7 +811,7 @@ const styles = StyleSheet.create({
 	},
 	modalCard: {
 		width: ms(320),
-		backgroundColor: "#FFFFFF",
+		backgroundColor: Colors.WHITE,
 		borderRadius: ms(12),
 		padding: ms(24),
 		gap: ms(24),
@@ -916,7 +836,7 @@ const styles = StyleSheet.create({
 		fontWeight: "500",
 		fontSize: ms(14),
 		lineHeight: ms(24),
-		color: "#000000",
+		color: Colors.BLACK,
 		textAlign: "center",
 		alignSelf: "stretch",
 	},
@@ -950,14 +870,14 @@ const styles = StyleSheet.create({
 		alignItems: "center",
 	},
 	modalTitleBlack: {
-		color: "#000000",
+		color: Colors.BLACK,
 	},
 	modalConfirmText: {
 		fontFamily: "Apple SD Gothic Neo",
 		fontWeight: "600",
 		fontSize: ms(16),
 		lineHeight: ms(20),
-		color: "#FFFFFF",
+		color: Colors.WHITE,
 	},
 	modalSingleBtn: {
 		alignSelf: "stretch",
