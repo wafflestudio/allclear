@@ -12,6 +12,7 @@ type Props = {
 	isLastStep?: boolean;
 	isNextDisabled?: boolean;
 	showNext?: boolean;
+	showProgress?: boolean;
 	/** Step completion ratio (0–1) used to fill the progress bar. */
 	progress?: number;
 };
@@ -24,6 +25,7 @@ export const FormNavigationButtons = ({
 	isLastStep = false,
 	isNextDisabled = false,
 	showNext = true,
+	showProgress = true,
 	progress = 0,
 }: Props) => {
 	const insets = useSafeAreaInsets();
@@ -31,11 +33,16 @@ export const FormNavigationButtons = ({
 
 	return (
 		<View style={[styles.footer, { paddingBottom: insets.bottom }]}>
-			<View style={styles.progressTrack}>
-				<View
-					style={[styles.progressFill, { width: `${clampedProgress * 100}%` }]}
-				/>
-			</View>
+			{showProgress && (
+				<View style={styles.progressTrack}>
+					<View
+						style={[
+							styles.progressFill,
+							{ width: `${clampedProgress * 100}%` },
+						]}
+					/>
+				</View>
+			)}
 
 			<View style={[styles.row, !onPrevious && styles.rowNoPrevious]}>
 				{onPrevious && (

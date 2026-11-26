@@ -4,6 +4,7 @@ import type { User } from "@/entities/user";
 import { RegisterClubConfirmModal } from "@/features/register-club/components/RegisterClubConfirmModal";
 import { useRegisterClub } from "@/features/register-club/hooks/useRegisterClub";
 import { ApplicationReviewScreen } from "@/features/register-club/screens/ApplicationReviewScreen";
+import { ApplicationSubmittedScreen } from "@/features/register-club/screens/ApplicationSubmittedScreen";
 import { CategorySelectionScreen } from "@/features/register-club/screens/CategorySelectionScreen";
 import { ClubAffiliationScreen } from "@/features/register-club/screens/ClubAffiliationScreen";
 import { ClubBasicInfoScreen } from "@/features/register-club/screens/ClubBasicInfoScreen";
@@ -91,7 +92,7 @@ export const RegisterClubScreenContainer = () => {
 		}));
 	}, [user]);
 
-	// 등록 요청 후에는 성공/실패와 무관하게 폼을 초기화하고 마이페이지 메인으로 돌아간다.
+	// 완료 후 폼을 초기화하고 마이페이지 메인으로 돌아간다.
 	const resetAndExit = () => {
 		setShowConfirm(false);
 		setFormData(getInitialFormData(user));
@@ -101,15 +102,9 @@ export const RegisterClubScreenContainer = () => {
 	};
 
 	const { mutate: registerClub, isLoading } = useRegisterClub({
-		onSuccess: (message) => {
-			Toast.show({
-				type: "success",
-				text1: message,
-				position: "top",
-				topOffset: 60,
-				visibilityTime: 2000,
-			});
-			resetAndExit();
+		onSuccess: () => {
+			setShowConfirm(false);
+			setCurrentStep(7);
 		},
 		onFailure: (message) => {
 			Toast.show({
@@ -251,6 +246,17 @@ export const RegisterClubScreenContainer = () => {
 	// 8 stages total: the 7 form steps plus the final confirmation popup,
 	// so the bar is never fully filled while a form step is on screen.
 	const progress = (currentStep + 1) / (screens.length + 1);
+	if (currentStep === 7) {
+		return (
+			<ApplicationSubmittedScreen
+				clubName={formData.clubName}
+				clubImageUri={formData.clubImage}
+				department={formData.department}
+				shortIntro={formData.shortIntro}
+				onComplete={resetAndExit}
+			/>
+		);
+	}
 
 	return (
 		<>
